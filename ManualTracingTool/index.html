@@ -1,0 +1,200 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Manual tracing tool</title>
+    <script src="./external/glmatrix/gl-matrix-min.js"></script>
+
+    <link href="./external/custombox/custombox.min.css" rel="stylesheet">
+    <script src="./external/custombox/custombox.min.js"></script>
+    <script src="./external/custombox/custombox.legacy.min.js"></script>
+    
+    <link rel="stylesheet" href="app.css" type="text/css" />
+    <script src="./src/conversion.js"></script>
+    <script src="./src/render2d.js"></script>
+    <script src="./src/render3d.js"></script>
+    <script src="./src/data.js"></script>
+    <script src="./src/logic_math.js"></script>
+    <script src="./src/logic_points.js"></script>
+    <script src="./src/logic_hittest.js"></script>
+    <script src="./src/logic_selector.js"></script>
+    <script src="./src/logic_edit_line.js"></script>
+    <script src="./src/base_command.js"></script>
+    <script src="./src/base_tool.js"></script>
+    <script src="./src/command_delete_points.js"></script>
+    <script src="./src/command_edit_layer.js"></script>
+    <script src="./src/tool_draw_line.js"></script>
+    <script src="./src/tool_scratch_line.js"></script>
+    <script src="./src/tool_add_point.js"></script>
+    <script src="./src/tool_select_brush_select.js"></script>
+    <script src="./src/tool_posing3d.js"></script>
+    <script src="./src/posing3d_logic.js"></script>
+    <script src="./src/posing3d_view.js"></script>
+    <script src="./src/app.js"></script>
+    <style>
+
+        html {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            min-height: 100%;
+        }
+
+        header {
+            position: absolute;
+            left: 2%;
+            right: 1%;
+            top: 0;
+            height: 40px;
+            max-width: 1000px;
+            background-color: #fff;
+            position: absolute;
+            text-align: center;
+            padding-top: 8px;
+        }
+
+        div.systemButton {
+            width: 30px;
+            height: 30px;
+            float: left;
+            border: solid;
+            border-width: 1px;
+            margin-top: 5px;
+            cursor: default;
+        }
+
+        div.mainMenuButton {
+            width: 100px;
+            height: 25px;
+            float: left;
+            border: solid;
+            border-width: 1px;
+            margin-top: 5px;
+            margin-left: 5px;
+            text-align: center;
+            padding-top: 5px;
+            cursor: default;
+        }
+
+        .selectedMainButton {
+
+            color: #fff;
+            background: #333;
+        }
+
+        .unselectedMainButton {
+            color: #333;
+            background: #fff;
+        }
+
+        main {
+            position: absolute;
+            left: 2%;
+            right: 1%;
+            top: 48px;
+            bottom: 60px;
+            max-width: 1000px;
+            max-height: 920px;
+        }
+
+        footer {
+            width: 100%;
+            max-width: 1000px;
+            height: 60px;
+            background-color: #fff;
+            position: absolute;
+            bottom: 0;
+            text-align: center;
+        }
+
+        div#mainCanvasWindow {
+            width: 78%;
+            height: 99%;
+            float: left;
+            border: solid;
+            border-width: 1px;
+        }
+
+        div#rightSideWindow {
+            width: 20%;
+            height: 99%;
+            float: left;
+            border: solid;
+            border-width: 1px;
+        }
+
+        canvas#webglCanvas {
+            position: absolute;
+            border: none;
+            z-index: 1;
+        }
+
+        canvas#mainCanvas {
+            position: absolute;
+            border: none;
+            z-index: 2;
+        }
+
+        canvas#editorCanvas {
+            position: absolute;
+            border: none;
+            z-index: 3;
+        }
+
+        canvas#layerCanvas {
+            border: none;
+        }
+
+        .layerPropertyModal {
+            min-width: 50%;
+            max-width: 50%;
+            min-height: 20%;
+            max-height: 20%;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            display: none;
+            padding: 10px;
+            margin-top: 50%;
+        }
+
+            .layerPropertyModal input {
+                margin-left: 5px;
+                margin-top: 5px;
+            }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="systemButton" id="menu_btnSystem"></div>
+        <div class="mainMenuButton" id="menu_btnDrawTool">Draw line</div>
+        <div class="mainMenuButton" id="menu_btnScratchTool">Scratch line</div>
+        <div class="mainMenuButton" id="menu_btnPoseTool">Posing</div>
+    </header>
+    <main>
+        <div id="mainCanvasWindow">
+            <canvas id="webglCanvas"></canvas>
+            <canvas id="mainCanvas"></canvas>
+            <canvas id="editorCanvas"></canvas>
+        </div>
+        <div id="rightSideWindow">
+            <canvas id="layerCanvas"></canvas>
+        </div>
+    </main>
+    <footer id="footer">
+    </footer>
+    <div id="layerPropertyModal" class="layerPropertyModal">
+        <form>
+            <label>Name<input type="text" id="layerPropertyModal.layerName" /></label><br />
+            <label>Layer color<input type="color" id="layerPropertyModal.layerColor"></label><br />
+        </form>
+    </div>
+</body>
+</html>
