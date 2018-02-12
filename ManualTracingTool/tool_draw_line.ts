@@ -16,6 +16,16 @@ namespace ManualTracingTool {
             }
 
             this.editLine = new VectorLine();
+
+            this.addPointToEditLine(e);
+        }
+
+        private addPointToEditLine(e: ToolMouseEvent) {
+
+            let point = new LinePoint();
+            vec3.copy(point.location, e.location);
+
+            this.editLine.points.push(point);
         }
 
         mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
@@ -24,10 +34,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let point = new LinePoint();
-            vec3.copy(point.location, e.location);
-
-            this.editLine.points.push(point);
+            this.addPointToEditLine(e);
 
             env.setRedrawEditorWindow();
         }
