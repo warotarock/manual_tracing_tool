@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var HitTest_VectorLayer_Base = (function () {
+    var HitTest_VectorLayer_Base = /** @class */ (function () {
         function HitTest_VectorLayer_Base() {
             this.exitPointHitTest = false;
         }
@@ -39,7 +39,7 @@ var ManualTracingTool;
         return HitTest_VectorLayer_Base;
     }());
     ManualTracingTool.HitTest_VectorLayer_Base = HitTest_VectorLayer_Base;
-    var HitTest_LinePoint_LocationalDistanceBase = (function (_super) {
+    var HitTest_LinePoint_LocationalDistanceBase = /** @class */ (function (_super) {
         __extends(HitTest_LinePoint_LocationalDistanceBase, _super);
         function HitTest_LinePoint_LocationalDistanceBase() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -101,7 +101,7 @@ var ManualTracingTool;
         return HitTest_LinePoint_LocationalDistanceBase;
     }(HitTest_VectorLayer_Base));
     ManualTracingTool.HitTest_LinePoint_LocationalDistanceBase = HitTest_LinePoint_LocationalDistanceBase;
-    var HitTest_LinePoint_PointDistanceBase = (function (_super) {
+    var HitTest_LinePoint_PointDistanceBase = /** @class */ (function (_super) {
         __extends(HitTest_LinePoint_PointDistanceBase, _super);
         function HitTest_LinePoint_PointDistanceBase() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -122,7 +122,7 @@ var ManualTracingTool;
         return HitTest_LinePoint_PointDistanceBase;
     }(HitTest_LinePoint_LocationalDistanceBase));
     ManualTracingTool.HitTest_LinePoint_PointDistanceBase = HitTest_LinePoint_PointDistanceBase;
-    var HitTest_LinePoint_LineDistanceBase = (function (_super) {
+    var HitTest_LinePoint_LineDistanceBase = /** @class */ (function (_super) {
         __extends(HitTest_LinePoint_LineDistanceBase, _super);
         function HitTest_LinePoint_LineDistanceBase() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -147,7 +147,7 @@ var ManualTracingTool;
         return HitTest_LinePoint_LineDistanceBase;
     }(HitTest_LinePoint_LocationalDistanceBase));
     ManualTracingTool.HitTest_LinePoint_LineDistanceBase = HitTest_LinePoint_LineDistanceBase;
-    var HitTest_LinePoint_LineSingleHitTest = (function (_super) {
+    var HitTest_LinePoint_LineSingleHitTest = /** @class */ (function (_super) {
         __extends(HitTest_LinePoint_LineSingleHitTest, _super);
         function HitTest_LinePoint_LineSingleHitTest() {
             var _this = _super !== null && _super.apply(this, arguments) || this;

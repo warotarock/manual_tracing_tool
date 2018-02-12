@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Tool_ScratchLine_CandidatePair = (function () {
+    var Tool_ScratchLine_CandidatePair = /** @class */ (function () {
         function Tool_ScratchLine_CandidatePair() {
             this.targetPoint = null;
             this.candidatePoint = null;
@@ -18,7 +18,7 @@ var ManualTracingTool;
         }
         return Tool_ScratchLine_CandidatePair;
     }());
-    var Tool_ScratchLine_EditPoint = (function () {
+    var Tool_ScratchLine_EditPoint = /** @class */ (function () {
         function Tool_ScratchLine_EditPoint() {
             this.pair = null;
             this.newLocation = vec3.fromValues(0.0, 0.0, 0.0);
@@ -26,12 +26,12 @@ var ManualTracingTool;
         }
         return Tool_ScratchLine_EditPoint;
     }());
-    var Tool_ScratchLine_EditData = (function () {
+    var Tool_ScratchLine_EditData = /** @class */ (function () {
         function Tool_ScratchLine_EditData() {
         }
         return Tool_ScratchLine_EditData;
     }());
-    var Tool_ScratchLine = (function (_super) {
+    var Tool_ScratchLine = /** @class */ (function (_super) {
         __extends(Tool_ScratchLine, _super);
         function Tool_ScratchLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -419,7 +419,7 @@ var ManualTracingTool;
         return Tool_ScratchLine;
     }(ManualTracingTool.ToolBase));
     ManualTracingTool.Tool_ScratchLine = Tool_ScratchLine;
-    var CommandEditVectorLine = (function () {
+    var CommandEditVectorLine = /** @class */ (function () {
         function CommandEditVectorLine() {
             this.line = null;
             this.oldPointList = null;
@@ -427,7 +427,7 @@ var ManualTracingTool;
         }
         return CommandEditVectorLine;
     }());
-    var Command_ExtrudeLine = (function (_super) {
+    var Command_ExtrudeLine = /** @class */ (function (_super) {
         __extends(Command_ExtrudeLine, _super);
         function Command_ExtrudeLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -469,7 +469,7 @@ var ManualTracingTool;
         return Command_ExtrudeLine;
     }(ManualTracingTool.CommandBase));
     ManualTracingTool.Command_ExtrudeLine = Command_ExtrudeLine;
-    var Command_ScratchLine = (function (_super) {
+    var Command_ScratchLine = /** @class */ (function (_super) {
         __extends(Command_ScratchLine, _super);
         function Command_ScratchLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;

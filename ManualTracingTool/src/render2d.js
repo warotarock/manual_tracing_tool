@@ -1,6 +1,6 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var CanvasWindow = (function () {
+    var CanvasWindow = /** @class */ (function () {
         function CanvasWindow() {
             this.canvas = null;
             this.context = null;
@@ -49,7 +49,7 @@ var ManualTracingTool;
         return CanvasWindow;
     }());
     ManualTracingTool.CanvasWindow = CanvasWindow;
-    var CanvasRender = (function () {
+    var CanvasRender = /** @class */ (function () {
         function CanvasRender() {
             this.context = null;
             this.tempVec3 = vec3.create();

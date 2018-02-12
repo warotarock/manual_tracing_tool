@@ -16,7 +16,7 @@ var ManualTracingTool;
         SelectionEditMode[SelectionEditMode["setUnselected"] = 2] = "setUnselected";
         SelectionEditMode[SelectionEditMode["toggle"] = 3] = "toggle";
     })(SelectionEditMode = ManualTracingTool.SelectionEditMode || (ManualTracingTool.SelectionEditMode = {}));
-    var LineSelectionInfo = (function () {
+    var LineSelectionInfo = /** @class */ (function () {
         function LineSelectionInfo() {
             this.line = null;
             this.selectStateAfter = false;
@@ -25,7 +25,7 @@ var ManualTracingTool;
         return LineSelectionInfo;
     }());
     ManualTracingTool.LineSelectionInfo = LineSelectionInfo;
-    var PointSelectionInfo = (function () {
+    var PointSelectionInfo = /** @class */ (function () {
         function PointSelectionInfo() {
             this.point = null;
             this.selectStateAfter = false;
@@ -34,7 +34,7 @@ var ManualTracingTool;
         return PointSelectionInfo;
     }());
     ManualTracingTool.PointSelectionInfo = PointSelectionInfo;
-    var VectorLineSelectionEditingInfo = (function () {
+    var VectorLineSelectionEditingInfo = /** @class */ (function () {
         function VectorLineSelectionEditingInfo() {
             this.selectedLines = null;
             this.selectedPoints = null;
@@ -104,7 +104,7 @@ var ManualTracingTool;
         return VectorLineSelectionEditingInfo;
     }());
     ManualTracingTool.VectorLineSelectionEditingInfo = VectorLineSelectionEditingInfo;
-    var Selector_LinePoint_BrushSelect = (function (_super) {
+    var Selector_LinePoint_BrushSelect = /** @class */ (function (_super) {
         __extends(Selector_LinePoint_BrushSelect, _super);
         function Selector_LinePoint_BrushSelect() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -137,7 +137,7 @@ var ManualTracingTool;
         return Selector_LinePoint_BrushSelect;
     }(ManualTracingTool.HitTest_LinePoint_PointDistanceBase));
     ManualTracingTool.Selector_LinePoint_BrushSelect = Selector_LinePoint_BrushSelect;
-    var Selector_LinePoint_LineClosingHitTest = (function (_super) {
+    var Selector_LinePoint_LineClosingHitTest = /** @class */ (function (_super) {
         __extends(Selector_LinePoint_LineClosingHitTest, _super);
         function Selector_LinePoint_LineClosingHitTest() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -163,7 +163,7 @@ var ManualTracingTool;
         return Selector_LinePoint_LineClosingHitTest;
     }(ManualTracingTool.HitTest_LinePoint_LineDistanceBase));
     ManualTracingTool.Selector_LinePoint_LineClosingHitTest = Selector_LinePoint_LineClosingHitTest;
-    var Selector_LinePoint_LineSelect = (function (_super) {
+    var Selector_LinePoint_LineSelect = /** @class */ (function (_super) {
         __extends(Selector_LinePoint_LineSelect, _super);
         function Selector_LinePoint_LineSelect() {
             var _this = _super !== null && _super.apply(this, arguments) || this;

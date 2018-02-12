@@ -15,7 +15,7 @@ var ManualTracingTool;
         SelectProcessID[SelectProcessID["none"] = 0] = "none";
         SelectProcessID[SelectProcessID["selectiong"] = 1] = "selectiong";
     })(SelectProcessID || (SelectProcessID = {}));
-    var Tool_Select_BrushSelet = (function (_super) {
+    var Tool_Select_BrushSelet = /** @class */ (function (_super) {
         __extends(Tool_Select_BrushSelet, _super);
         function Tool_Select_BrushSelet() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -84,7 +84,7 @@ var ManualTracingTool;
         return Tool_Select_BrushSelet;
     }(ManualTracingTool.ToolBase));
     ManualTracingTool.Tool_Select_BrushSelet = Tool_Select_BrushSelet;
-    var Command_Select = (function (_super) {
+    var Command_Select = /** @class */ (function (_super) {
         __extends(Command_Select, _super);
         function Command_Select() {
             var _this = _super !== null && _super.apply(this, arguments) || this;

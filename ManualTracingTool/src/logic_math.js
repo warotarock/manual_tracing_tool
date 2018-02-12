@@ -1,6 +1,6 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Maths = (function () {
+    var Maths = /** @class */ (function () {
         function Maths() {
         }
         Maths.clamp = function (a, b, x) {

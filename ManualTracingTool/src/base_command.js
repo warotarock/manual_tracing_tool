@@ -1,6 +1,6 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var CommandBase = (function () {
+    var CommandBase = /** @class */ (function () {
         function CommandBase() {
             this.isContinuing = false;
             this.isContinued = false;
@@ -14,7 +14,7 @@ var ManualTracingTool;
         return CommandBase;
     }());
     ManualTracingTool.CommandBase = CommandBase;
-    var CommandHistory = (function () {
+    var CommandHistory = /** @class */ (function () {
         function CommandHistory() {
             this.maxHistory = 300;
             this.historyList = new List();

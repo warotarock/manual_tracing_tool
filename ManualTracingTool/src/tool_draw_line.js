@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Tool_DrawLine = (function (_super) {
+    var Tool_DrawLine = /** @class */ (function (_super) {
         __extends(Tool_DrawLine, _super);
         function Tool_DrawLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -25,14 +25,18 @@ var ManualTracingTool;
                 return;
             }
             this.editLine = new ManualTracingTool.VectorLine();
+            this.addPointToEditLine(e);
+        };
+        Tool_DrawLine.prototype.addPointToEditLine = function (e) {
+            var point = new ManualTracingTool.LinePoint();
+            vec3.copy(point.location, e.location);
+            this.editLine.points.push(point);
         };
         Tool_DrawLine.prototype.mouseMove = function (e, env) {
             if (this.editLine == null) {
                 return;
             }
-            var point = new ManualTracingTool.LinePoint();
-            vec3.copy(point.location, e.location);
-            this.editLine.points.push(point);
+            this.addPointToEditLine(e);
             env.setRedrawEditorWindow();
         };
         Tool_DrawLine.prototype.mouseUp = function (e, env) {
@@ -60,7 +64,7 @@ var ManualTracingTool;
         return Tool_DrawLine;
     }(ManualTracingTool.ToolBase));
     ManualTracingTool.Tool_DrawLine = Tool_DrawLine;
-    var Command_AddLine = (function (_super) {
+    var Command_AddLine = /** @class */ (function (_super) {
         __extends(Command_AddLine, _super);
         function Command_AddLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;

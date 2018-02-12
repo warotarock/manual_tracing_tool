@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
 var ManualTracingTool;
 (function (ManualTracingTool) {
     // Rendering
-    var ImageResource = (function () {
+    var ImageResource = /** @class */ (function () {
         function ImageResource() {
             this.fileName = null;
             this.image = new RenderImage();
@@ -29,7 +29,7 @@ var ManualTracingTool;
         return ImageResource;
     }());
     ManualTracingTool.ImageResource = ImageResource;
-    var ModelResource = (function () {
+    var ModelResource = /** @class */ (function () {
         function ModelResource() {
             this.modelName = null;
             this.model = new RenderModel();
@@ -37,7 +37,7 @@ var ManualTracingTool;
         return ModelResource;
     }());
     ManualTracingTool.ModelResource = ModelResource;
-    var ModelFile = (function () {
+    var ModelFile = /** @class */ (function () {
         function ModelFile() {
             this.fileName = null;
             this.modelResources = new List();
@@ -56,7 +56,7 @@ var ManualTracingTool;
         DrawImageType[DrawImageType["visualImage"] = 1] = "visualImage";
         DrawImageType[DrawImageType["depthImage"] = 2] = "depthImage";
     })(DrawImageType || (DrawImageType = {}));
-    var JointPartDrawingUnit = (function () {
+    var JointPartDrawingUnit = /** @class */ (function () {
         function JointPartDrawingUnit() {
             this.aName = "";
             this.targetData = null;
@@ -70,7 +70,7 @@ var ManualTracingTool;
         }
         return JointPartDrawingUnit;
     }());
-    var Posing3DView = (function () {
+    var Posing3DView = /** @class */ (function () {
         function Posing3DView() {
             // Posing
             // Rendering
@@ -560,7 +560,7 @@ var ManualTracingTool;
         return Posing3DView;
     }());
     ManualTracingTool.Posing3DView = Posing3DView;
-    var PosingFigureShader = (function (_super) {
+    var PosingFigureShader = /** @class */ (function (_super) {
         __extends(PosingFigureShader, _super);
         function PosingFigureShader() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -644,7 +644,7 @@ var ManualTracingTool;
         return PosingFigureShader;
     }(RenderShader));
     ManualTracingTool.PosingFigureShader = PosingFigureShader;
-    var DepthShader = (function (_super) {
+    var DepthShader = /** @class */ (function (_super) {
         __extends(DepthShader, _super);
         function DepthShader() {
             var _this = _super !== null && _super.apply(this, arguments) || this;

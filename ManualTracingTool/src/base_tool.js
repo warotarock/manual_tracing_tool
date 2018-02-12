@@ -36,7 +36,7 @@ var ManualTracingTool;
         EditModeID[EditModeID["selectMode"] = 1] = "selectMode";
         EditModeID[EditModeID["drawMode"] = 2] = "drawMode";
     })(EditModeID = ManualTracingTool.EditModeID || (ManualTracingTool.EditModeID = {}));
-    var ToolContext = (function () {
+    var ToolContext = /** @class */ (function () {
         function ToolContext() {
             this.mainEditor = null;
             this.mainToolID = MainToolID.none;
@@ -69,7 +69,7 @@ var ManualTracingTool;
         return ToolContext;
     }());
     ManualTracingTool.ToolContext = ToolContext;
-    var ToolEnvironment = (function () {
+    var ToolEnvironment = /** @class */ (function () {
         function ToolEnvironment(toolContext) {
             this.toolContext = null;
             this.mainToolID = MainToolID.posing;
@@ -147,7 +147,7 @@ var ManualTracingTool;
         return ToolEnvironment;
     }());
     ManualTracingTool.ToolEnvironment = ToolEnvironment;
-    var ToolMouseEvent = (function () {
+    var ToolMouseEvent = /** @class */ (function () {
         function ToolMouseEvent() {
             this.button = 0;
             this.buttons = 0;
@@ -174,7 +174,7 @@ var ManualTracingTool;
         return ToolMouseEvent;
     }());
     ManualTracingTool.ToolMouseEvent = ToolMouseEvent;
-    var ToolBase = (function () {
+    var ToolBase = /** @class */ (function () {
         function ToolBase() {
             this.helpText = '';
         }
@@ -190,7 +190,7 @@ var ManualTracingTool;
         return ToolBase;
     }());
     ManualTracingTool.ToolBase = ToolBase;
-    var MainTool = (function () {
+    var MainTool = /** @class */ (function () {
         function MainTool() {
             this.mainToolID = MainToolID.none;
             this.subTools = new List();

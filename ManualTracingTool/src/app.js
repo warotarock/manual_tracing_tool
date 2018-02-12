@@ -10,14 +10,25 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    // ・選択モードでは現在のレイヤーの点と線だけを選択可能にする。見た目も区別がつくようにする。
-    // ・線スクラッチの線修正ツールで選択中の点だけを修正できるようにする
+    // 今やること (current tasks)
+    // ・編集単位選択UIの作成
+    // ・編集単位ロジック
+    //   ・共通のアクティブ線
+    //   ・点、線、変、レイヤーそれぞれの選択ツールクラスの作成
+    //   ・編集単位選択UIの状態で選択ツールを切り替える
+    // ・アクティブ線、レイヤによる絞り込み処理と可視化
+    //   →スクラッチツールで実装
+    // ・スクラッチツールで選択中の点のみ対象とできるよう修正
+    // 変形ツール
+    //   平行移動、回転、拡大縮小、ラティス変形
+    // どこかでやる必要があること (nearest future tasks)
     // ・現在のツールに応じた全選択、全選択解除処理
     // ・線スクラッチで点の削減ツール
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
     // ・ファイル保存、読み込み
     // ・PNG出力、jpeg出力
     // ・現在のレイヤーが変わったときにメインツールを自動で変更する。ベクターレイヤーならスクラッチツールとドローツールのどちらかを記憶、ポージングレイヤーならポーズにする
+    // いつかやる (anytime do)
     // ・レイヤーカラーをどこかに表示する
     // ・レイヤーカラーとレイヤーの透明度の関係を考え直す
     // ・レイヤー削除時に削除前に次に表示されていたレイヤーを選択する
@@ -26,7 +37,9 @@ var ManualTracingTool;
     // ・ポージングレイヤーの表示/非表示、透明度
     // ・ポージングで入力後にキャラの拡大縮小を可能にする
     // ・ポージングで頭の角度の入力で画面の回転に対応する
+    // 既知のバグ (remaining bugs)
     // ・現在のレイヤーが移動したときにカーソルが変な位置に出る
+    // 終わったもの (done)
     // ・レイヤーカラーの設定（カラーピッカー）→レイヤーの設定ウィンドウを出して設定するようにしてみた→モーダルウィンドウの中身を実装する→絵を見ながら設定できるように
     // ・レイヤーの表示/非表示の切り替え（レイヤー名の左に目のマークを表示）
     // ・メインツールを変更したときレイヤーに応じたコンテキストの状態になるようにする
@@ -39,7 +52,7 @@ var ManualTracingTool;
     // ・レイヤーの複製
     // ・モディファイアスタック
     // ・レイヤーを選択変更したときレイヤーに応じたコンテキストの状態になるようにする
-    var Main = (function () {
+    var Main = /** @class */ (function () {
         function Main() {
             this.mainWindow = new ManualTracingTool.CanvasWindow();
             this.editorWindow = new ManualTracingTool.CanvasWindow();
@@ -101,6 +114,14 @@ var ManualTracingTool;
             this.currentDialogID = ModalWindowID.none;
             this.layerPropertyWindow_EditLayer = null;
             this.layerPropertyWindow_LayerClolor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+            this.modalOverlayOption = {
+                speedIn: 0,
+                speedOut: 100,
+                opacity: 0.0
+            };
+            this.modalLoaderOption = {
+                active: false
+            };
             // Main window drawing
             this.dragBeforeTransformMatrix = mat4.create();
             this.dragBeforeViewLocation = vec3.create();
@@ -361,6 +382,7 @@ var ManualTracingTool;
             window.addEventListener('contextmenu', function (e) {
                 return _this.htmlWindow_contextmenu(e);
             });
+            // Menu buttons
             this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', function (e) {
                 _this.setCurrentMainTool(ManualTracingTool.MainToolID.drawLine);
                 _this.toolEnv.setRedrawLayerWindow();
@@ -374,6 +396,10 @@ var ManualTracingTool;
             this.getElement(this.ID.menu_btnPoseTool).addEventListener('mousedown', function (e) {
                 _this.setCurrentMainTool(ManualTracingTool.MainToolID.posing);
                 _this.toolEnv.setRedrawLayerWindow();
+                e.preventDefault();
+            });
+            this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', function (e) {
+                _this.openOperationOptionModal();
                 e.preventDefault();
             });
             document.addEventListener('custombox:content:close', function () {
@@ -960,27 +986,29 @@ var ManualTracingTool;
             }
             this.toolMouseEvent.wheelDelta = wheelDelta;
         };
-        Main.prototype.openLayerPropertyModal = function (layer, layerWindowItem) {
-            this.setInputElementText(this.ID.layerPropertyModal_layerName, layer.name);
-            this.currentDialogID = ModalWindowID.layerPropertyModal;
-            this.layerPropertyWindow_EditLayer = layer;
-            var modal = new Custombox.modal({
+        Main.prototype.createModalOptionObject = function (targetElementId) {
+            return {
                 content: {
-                    target: '#layerPropertyModal',
+                    target: targetElementId,
                     close: true,
                     speedIn: 0,
                     delay: 0,
                     speedOut: 100
                 },
-                overlay: {
-                    speedIn: 0,
-                    speedOut: 100,
-                    opacity: 0.0
-                },
-                loader: {
-                    active: false
-                }
-            });
+                overlay: this.modalOverlayOption,
+                loader: this.modalLoaderOption
+            };
+        };
+        Main.prototype.openLayerPropertyModal = function (layer, layerWindowItem) {
+            this.setInputElementText(this.ID.layerPropertyModal_layerName, layer.name);
+            this.currentDialogID = ModalWindowID.layerPropertyModal;
+            this.layerPropertyWindow_EditLayer = layer;
+            var modal = new Custombox.modal(this.createModalOptionObject('#layerPropertyModal'));
+            modal.open();
+        };
+        Main.prototype.openOperationOptionModal = function () {
+            this.currentDialogID = ModalWindowID.operationOprionModal;
+            var modal = new Custombox.modal(this.createModalOptionObject('#operationOptionModal'));
             modal.open();
         };
         Main.prototype.onModalWindowClosed = function () {
@@ -1589,7 +1617,7 @@ var ManualTracingTool;
         };
         return Main;
     }());
-    var LayerWindow = (function (_super) {
+    var LayerWindow = /** @class */ (function (_super) {
         __extends(LayerWindow, _super);
         function LayerWindow() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -1613,7 +1641,7 @@ var ManualTracingTool;
         }
         return LayerWindow;
     }(ManualTracingTool.CanvasWindow));
-    var RectangleLayoutArea = (function () {
+    var RectangleLayoutArea = /** @class */ (function () {
         function RectangleLayoutArea() {
             this.index = -1;
             this.marginTop = 0.0;
@@ -1655,7 +1683,7 @@ var ManualTracingTool;
         LayerWindowButtonID[LayerWindowButtonID["moveUp"] = 3] = "moveUp";
         LayerWindowButtonID[LayerWindowButtonID["moveDown"] = 4] = "moveDown";
     })(LayerWindowButtonID || (LayerWindowButtonID = {}));
-    var LayerWindowButton = (function (_super) {
+    var LayerWindowButton = /** @class */ (function (_super) {
         __extends(LayerWindowButton, _super);
         function LayerWindowButton() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -1666,7 +1694,7 @@ var ManualTracingTool;
         };
         return LayerWindowButton;
     }(RectangleLayoutArea));
-    var LayerWindowItem = (function (_super) {
+    var LayerWindowItem = /** @class */ (function (_super) {
         __extends(LayerWindowItem, _super);
         function LayerWindowItem() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -1684,7 +1712,7 @@ var ManualTracingTool;
         }
         return LayerWindowItem;
     }(RectangleLayoutArea));
-    var SubToolViewItem = (function (_super) {
+    var SubToolViewItem = /** @class */ (function (_super) {
         __extends(SubToolViewItem, _super);
         function SubToolViewItem() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -1695,14 +1723,14 @@ var ManualTracingTool;
         }
         return SubToolViewItem;
     }(RectangleLayoutArea));
-    var SubToolViewItemOptionButton = (function (_super) {
+    var SubToolViewItemOptionButton = /** @class */ (function (_super) {
         __extends(SubToolViewItemOptionButton, _super);
         function SubToolViewItemOptionButton() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
         return SubToolViewItemOptionButton;
     }(RectangleLayoutArea));
-    var PickingWindow = (function (_super) {
+    var PickingWindow = /** @class */ (function (_super) {
         __extends(PickingWindow, _super);
         function PickingWindow() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -1716,12 +1744,14 @@ var ManualTracingTool;
     (function (ModalWindowID) {
         ModalWindowID[ModalWindowID["none"] = 0] = "none";
         ModalWindowID[ModalWindowID["layerPropertyModal"] = 1] = "layerPropertyModal";
+        ModalWindowID[ModalWindowID["operationOprionModal"] = 2] = "operationOprionModal";
     })(ModalWindowID || (ModalWindowID = {}));
-    var HTMLElementID = (function () {
+    var HTMLElementID = /** @class */ (function () {
         function HTMLElementID() {
             this.menu_btnDrawTool = 'menu_btnDrawTool';
             this.menu_btnScratchTool = 'menu_btnScratchTool';
             this.menu_btnPoseTool = 'menu_btnPoseTool';
+            this.menu_btnOperationOption = 'menu_btnOperationOption';
             this.unselectedMainButton = 'unselectedMainButton';
             this.selectedMainButton = 'selectedMainButton';
             this.layerPropertyModal_layerName = 'layerPropertyModal.layerName';

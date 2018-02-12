@@ -20,7 +20,7 @@ var ManualTracingTool;
         LayerTypeID[LayerTypeID["fileReferenceLayer"] = 4] = "fileReferenceLayer";
         LayerTypeID[LayerTypeID["posingLayer"] = 5] = "posingLayer";
     })(LayerTypeID = ManualTracingTool.LayerTypeID || (ManualTracingTool.LayerTypeID = {}));
-    var Layer = (function () {
+    var Layer = /** @class */ (function () {
         function Layer() {
             this.type = LayerTypeID.none;
             this.name = null;
@@ -41,7 +41,7 @@ var ManualTracingTool;
         ModifyFlagID[ModifyFlagID["delete"] = 3] = "delete";
         ModifyFlagID[ModifyFlagID["deletePoints"] = 4] = "deletePoints";
     })(ModifyFlagID = ManualTracingTool.ModifyFlagID || (ManualTracingTool.ModifyFlagID = {}));
-    var LinePoint = (function () {
+    var LinePoint = /** @class */ (function () {
         function LinePoint() {
             this.location = vec3.fromValues(0.0, 0.0, 0.0);
             this.adjustedLocation = vec3.fromValues(0.0, 0.0, 0.0);
@@ -55,7 +55,7 @@ var ManualTracingTool;
         return LinePoint;
     }());
     ManualTracingTool.LinePoint = LinePoint;
-    var VectorLine = (function () {
+    var VectorLine = /** @class */ (function () {
         function VectorLine() {
             this.points = new List();
             this.isClosingToMouse = false;
@@ -78,7 +78,7 @@ var ManualTracingTool;
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["deletePoints"] = 1] = "deletePoints";
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["deleteLines"] = 2] = "deleteLines";
     })(VectorGroupModifyFlagID = ManualTracingTool.VectorGroupModifyFlagID || (ManualTracingTool.VectorGroupModifyFlagID = {}));
-    var VectorGroup = (function () {
+    var VectorGroup = /** @class */ (function () {
         function VectorGroup() {
             this.lines = new List();
             this.isSelected = false;
@@ -89,7 +89,7 @@ var ManualTracingTool;
         return VectorGroup;
     }());
     ManualTracingTool.VectorGroup = VectorGroup;
-    var VectorLayer = (function (_super) {
+    var VectorLayer = /** @class */ (function (_super) {
         __extends(VectorLayer, _super);
         function VectorLayer() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -101,7 +101,7 @@ var ManualTracingTool;
     }(Layer));
     ManualTracingTool.VectorLayer = VectorLayer;
     // Group layer
-    var GroupLayer = (function (_super) {
+    var GroupLayer = /** @class */ (function (_super) {
         __extends(GroupLayer, _super);
         function GroupLayer() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -112,7 +112,7 @@ var ManualTracingTool;
     }(Layer));
     ManualTracingTool.GroupLayer = GroupLayer;
     // Posing
-    var PosingModel = (function () {
+    var PosingModel = /** @class */ (function () {
         function PosingModel() {
             // Head to body
             this.headSphereSize = 0.17; // 14cm
@@ -146,14 +146,14 @@ var ManualTracingTool;
         InputSideID[InputSideID["front"] = 1] = "front";
         InputSideID[InputSideID["back"] = 2] = "back";
     })(InputSideID = ManualTracingTool.InputSideID || (ManualTracingTool.InputSideID = {}));
-    var PosingInputData = (function () {
+    var PosingInputData = /** @class */ (function () {
         function PosingInputData() {
             this.inputDone = false;
         }
         return PosingInputData;
     }());
     ManualTracingTool.PosingInputData = PosingInputData;
-    var HeadLocationInputData = (function (_super) {
+    var HeadLocationInputData = /** @class */ (function (_super) {
         __extends(HeadLocationInputData, _super);
         function HeadLocationInputData() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -169,7 +169,7 @@ var ManualTracingTool;
         return HeadLocationInputData;
     }(PosingInputData));
     ManualTracingTool.HeadLocationInputData = HeadLocationInputData;
-    var HeadRotationInputData = (function (_super) {
+    var HeadRotationInputData = /** @class */ (function (_super) {
         __extends(HeadRotationInputData, _super);
         function HeadRotationInputData() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -182,7 +182,7 @@ var ManualTracingTool;
         return HeadRotationInputData;
     }(PosingInputData));
     ManualTracingTool.HeadRotationInputData = HeadRotationInputData;
-    var DirectionInputData = (function (_super) {
+    var DirectionInputData = /** @class */ (function (_super) {
         __extends(DirectionInputData, _super);
         function DirectionInputData() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -195,7 +195,7 @@ var ManualTracingTool;
         return DirectionInputData;
     }(PosingInputData));
     ManualTracingTool.DirectionInputData = DirectionInputData;
-    var BodyLocationInputData = (function (_super) {
+    var BodyLocationInputData = /** @class */ (function (_super) {
         __extends(BodyLocationInputData, _super);
         function BodyLocationInputData() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -210,7 +210,7 @@ var ManualTracingTool;
         return BodyLocationInputData;
     }(DirectionInputData));
     ManualTracingTool.BodyLocationInputData = BodyLocationInputData;
-    var BodyRotationInputData = (function (_super) {
+    var BodyRotationInputData = /** @class */ (function (_super) {
         __extends(BodyRotationInputData, _super);
         function BodyRotationInputData() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -223,7 +223,7 @@ var ManualTracingTool;
         return BodyRotationInputData;
     }(PosingInputData));
     ManualTracingTool.BodyRotationInputData = BodyRotationInputData;
-    var JointPartInputData = (function (_super) {
+    var JointPartInputData = /** @class */ (function (_super) {
         __extends(JointPartInputData, _super);
         function JointPartInputData() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -233,7 +233,7 @@ var ManualTracingTool;
         return JointPartInputData;
     }(DirectionInputData));
     ManualTracingTool.JointPartInputData = JointPartInputData;
-    var PosingData = (function () {
+    var PosingData = /** @class */ (function () {
         function PosingData() {
             this.real3DViewHalfWidth = 1.0;
             this.headLocationInputData = new HeadLocationInputData();
@@ -253,7 +253,7 @@ var ManualTracingTool;
         return PosingData;
     }());
     ManualTracingTool.PosingData = PosingData;
-    var PosingLayer = (function (_super) {
+    var PosingLayer = /** @class */ (function (_super) {
         __extends(PosingLayer, _super);
         function PosingLayer() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -266,7 +266,7 @@ var ManualTracingTool;
     }(Layer));
     ManualTracingTool.PosingLayer = PosingLayer;
     // Document
-    var DocumentData = (function () {
+    var DocumentData = /** @class */ (function () {
         function DocumentData() {
             this.rootLayer = new Layer();
             this.documentFrame = [0.0, 0.0, 1024.0, 1024.0];

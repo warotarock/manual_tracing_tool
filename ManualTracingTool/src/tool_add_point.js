@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Tool_AddPoint = (function (_super) {
+    var Tool_AddPoint = /** @class */ (function (_super) {
         __extends(Tool_AddPoint, _super);
         function Tool_AddPoint() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -50,7 +50,7 @@ var ManualTracingTool;
         return Tool_AddPoint;
     }(ManualTracingTool.ToolBase));
     ManualTracingTool.Tool_AddPoint = Tool_AddPoint;
-    var Command_AddPoint = (function (_super) {
+    var Command_AddPoint = /** @class */ (function (_super) {
         __extends(Command_AddPoint, _super);
         function Command_AddPoint() {
             var _this = _super !== null && _super.apply(this, arguments) || this;

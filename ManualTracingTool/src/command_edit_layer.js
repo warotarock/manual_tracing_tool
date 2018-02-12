@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Command_Layer_CommandBase = (function (_super) {
+    var Command_Layer_CommandBase = /** @class */ (function (_super) {
         __extends(Command_Layer_CommandBase, _super);
         function Command_Layer_CommandBase() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -119,7 +119,7 @@ var ManualTracingTool;
         return Command_Layer_CommandBase;
     }(ManualTracingTool.CommandBase));
     ManualTracingTool.Command_Layer_CommandBase = Command_Layer_CommandBase;
-    var Command_Layer_AddVectorLayerToCurrentPosition = (function (_super) {
+    var Command_Layer_AddVectorLayerToCurrentPosition = /** @class */ (function (_super) {
         __extends(Command_Layer_AddVectorLayerToCurrentPosition, _super);
         function Command_Layer_AddVectorLayerToCurrentPosition() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -149,7 +149,7 @@ var ManualTracingTool;
         return Command_Layer_AddVectorLayerToCurrentPosition;
     }(Command_Layer_CommandBase));
     ManualTracingTool.Command_Layer_AddVectorLayerToCurrentPosition = Command_Layer_AddVectorLayerToCurrentPosition;
-    var Command_Layer_Delete = (function (_super) {
+    var Command_Layer_Delete = /** @class */ (function (_super) {
         __extends(Command_Layer_Delete, _super);
         function Command_Layer_Delete() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -175,7 +175,7 @@ var ManualTracingTool;
         return Command_Layer_Delete;
     }(Command_Layer_CommandBase));
     ManualTracingTool.Command_Layer_Delete = Command_Layer_Delete;
-    var Command_Layer_MoveUp = (function (_super) {
+    var Command_Layer_MoveUp = /** @class */ (function (_super) {
         __extends(Command_Layer_MoveUp, _super);
         function Command_Layer_MoveUp() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -205,7 +205,7 @@ var ManualTracingTool;
         return Command_Layer_MoveUp;
     }(Command_Layer_CommandBase));
     ManualTracingTool.Command_Layer_MoveUp = Command_Layer_MoveUp;
-    var Command_Layer_MoveDown = (function (_super) {
+    var Command_Layer_MoveDown = /** @class */ (function (_super) {
         __extends(Command_Layer_MoveDown, _super);
         function Command_Layer_MoveDown() {
             return _super !== null && _super.apply(this, arguments) || this;

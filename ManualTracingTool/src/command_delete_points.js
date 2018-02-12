@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var CommandEditVectorGroup = (function () {
+    var CommandEditVectorGroup = /** @class */ (function () {
         function CommandEditVectorGroup() {
             this.group = null;
             this.oldLineList = null;
@@ -18,7 +18,7 @@ var ManualTracingTool;
         }
         return CommandEditVectorGroup;
     }());
-    var CommandEditVectorLine = (function () {
+    var CommandEditVectorLine = /** @class */ (function () {
         function CommandEditVectorLine() {
             this.line = null;
             this.oldPointList = null;
@@ -26,7 +26,7 @@ var ManualTracingTool;
         }
         return CommandEditVectorLine;
     }());
-    var Command_DeletePoints = (function (_super) {
+    var Command_DeletePoints = /** @class */ (function (_super) {
         __extends(Command_DeletePoints, _super);
         function Command_DeletePoints() {
             var _this = _super !== null && _super.apply(this, arguments) || this;

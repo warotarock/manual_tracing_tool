@@ -1,4 +1,4 @@
-var RenderModel = (function () {
+var RenderModel = /** @class */ (function () {
     function RenderModel() {
         this.vertexBuffer = null;
         this.indexBuffer = null;
@@ -9,7 +9,7 @@ var RenderModel = (function () {
     }
     return RenderModel;
 }());
-var RenderImage = (function () {
+var RenderImage = /** @class */ (function () {
     function RenderImage() {
         this.width = 0;
         this.height = 0;
@@ -18,7 +18,7 @@ var RenderImage = (function () {
     }
     return RenderImage;
 }());
-var RenderShader = (function () {
+var RenderShader = /** @class */ (function () {
     function RenderShader() {
         this.floatPrecisionDefinitionCode = '';
         this.vertexShaderSourceCode = '';
@@ -102,7 +102,7 @@ var WebGLRenderBlendType;
     WebGLRenderBlendType[WebGLRenderBlendType["add"] = 2] = "add";
     WebGLRenderBlendType[WebGLRenderBlendType["src"] = 3] = "src";
 })(WebGLRenderBlendType || (WebGLRenderBlendType = {}));
-var WebGLRender = (function () {
+var WebGLRender = /** @class */ (function () {
     function WebGLRender() {
         this.gl = null;
         this.floatPrecisionText = '';

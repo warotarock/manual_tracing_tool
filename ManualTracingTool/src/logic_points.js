@@ -1,6 +1,6 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Logic_Points = (function () {
+    var Logic_Points = /** @class */ (function () {
         function Logic_Points() {
         }
         // 3 points angle calculation

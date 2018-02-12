@@ -5,7 +5,7 @@ var ManualTracingTool;
         Posing3D_BodyLocateMode[Posing3D_BodyLocateMode["keepFrontUp"] = 1] = "keepFrontUp";
         Posing3D_BodyLocateMode[Posing3D_BodyLocateMode["yawPitch"] = 2] = "yawPitch";
     })(Posing3D_BodyLocateMode = ManualTracingTool.Posing3D_BodyLocateMode || (ManualTracingTool.Posing3D_BodyLocateMode = {}));
-    var Posing3DLogic = (function () {
+    var Posing3DLogic = /** @class */ (function () {
         function Posing3DLogic() {
             this.inputLocation = vec3.create();
             this.upVector = vec3.create();

@@ -1,4 +1,4 @@
-﻿
+
 declare var Custombox: any;
 
 namespace ManualTracingTool {
@@ -465,6 +465,8 @@ namespace ManualTracingTool {
                 return this.htmlWindow_contextmenu(e);
             });
 
+            // Menu buttons
+
             this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', (e: Event) => {
 
                 this.setCurrentMainTool(MainToolID.drawLine);
@@ -483,6 +485,12 @@ namespace ManualTracingTool {
 
                 this.setCurrentMainTool(MainToolID.posing);
                 this.toolEnv.setRedrawLayerWindow()
+                e.preventDefault();
+            });
+
+            this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', (e: Event) => {
+
+                this.openOperationOptionModal();
                 e.preventDefault();
             });
 
@@ -1362,6 +1370,29 @@ namespace ManualTracingTool {
         currentDialogID = ModalWindowID.none;
         layerPropertyWindow_EditLayer: Layer = null;
         layerPropertyWindow_LayerClolor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        modalOverlayOption = {
+            speedIn: 0,
+            speedOut: 100,
+            opacity: 0.0
+        };
+        modalLoaderOption = {
+            active: false
+        };
+
+        private createModalOptionObject(targetElementId: string): any {
+
+            return {
+                content: {
+                    target: targetElementId,
+                    close: true,
+                    speedIn: 0,
+                    delay: 0,
+                    speedOut: 100
+                },
+                overlay: this.modalOverlayOption,
+                loader: this.modalLoaderOption
+            };
+        }
 
         private openLayerPropertyModal(layer: Layer, layerWindowItem: LayerWindowItem) {
 
@@ -1370,23 +1401,20 @@ namespace ManualTracingTool {
             this.currentDialogID = ModalWindowID.layerPropertyModal;
             this.layerPropertyWindow_EditLayer = layer;
 
-            var modal: any = new Custombox.modal({
-                content: {
-                    target: '#layerPropertyModal',
-                    close: true,
-                    speedIn: 0,
-                    delay: 0,
-                    speedOut: 100
-                },
-                overlay: {
-                    speedIn: 0,
-                    speedOut: 100,
-                    opacity: 0.0
-                },
-                loader: {
-                    active: false
-                }
-            });
+            var modal: any = new Custombox.modal(
+                this.createModalOptionObject('#layerPropertyModal')
+            );
+
+            modal.open();
+        }
+
+        private openOperationOptionModal() {
+
+            this.currentDialogID = ModalWindowID.operationOprionModal;
+
+            var modal: any = new Custombox.modal(
+                this.createModalOptionObject('#operationOptionModal')
+            );
 
             modal.open();
         }
@@ -2457,6 +2485,7 @@ namespace ManualTracingTool {
 
         none = 0,
         layerPropertyModal = 1,
+        operationOprionModal = 2,
     }
 
 
@@ -2465,6 +2494,7 @@ namespace ManualTracingTool {
         menu_btnDrawTool = 'menu_btnDrawTool';
         menu_btnScratchTool = 'menu_btnScratchTool';
         menu_btnPoseTool = 'menu_btnPoseTool';
+        menu_btnOperationOption = 'menu_btnOperationOption';
 
         unselectedMainButton = 'unselectedMainButton';
         selectedMainButton = 'selectedMainButton';

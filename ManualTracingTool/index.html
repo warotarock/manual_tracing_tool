@@ -83,6 +83,23 @@
             cursor: default;
         }
 
+        div.mainMenuButton2 {
+            width: 25px;
+            height: 25px;
+            float: left;
+            border: none;
+            margin-top: 0px;
+            margin-left: 5px;
+            text-align: center;
+            padding-top: 5px;
+            cursor: default;
+        }
+
+        .mainMenuButton2 img {
+            width: 34px;
+            height: 34px;
+        }
+
         .selectedMainButton {
 
             color: #fff;
@@ -153,22 +170,40 @@
         }
 
         .layerPropertyModal {
-            min-width: 50%;
-            max-width: 50%;
-            min-height: 20%;
-            max-height: 20%;
+            width: 400px;
+            height: 200px;
             background-color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             border-radius: 10px;
             display: none;
-            padding: 10px;
-            margin-top: 50%;
+            padding: 20px;
+            margin-bottom: -60%;
         }
 
             .layerPropertyModal input {
                 margin-left: 5px;
                 margin-top: 5px;
             }
+
+        .operationOptionModal {
+            width: 400px;
+            height: 200px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            display: none;
+            padding: 20px;
+            margin-top: -60%;
+        }
+
+        .operationOptionModal input {
+            margin-left: 15px;
+            margin-top: 10px;
+        }
+
+        .operationOptionModal div {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -177,6 +212,7 @@
         <div class="mainMenuButton" id="menu_btnDrawTool">Draw line</div>
         <div class="mainMenuButton" id="menu_btnScratchTool">Scratch line</div>
         <div class="mainMenuButton" id="menu_btnPoseTool">Posing</div>
+        <div class="mainMenuButton2" id="menu_btnOperationOption"><img src="./res/icons8-more-50.png" /></div>
     </header>
     <main>
         <div id="mainCanvasWindow">
@@ -192,8 +228,53 @@
     </footer>
     <div id="layerPropertyModal" class="layerPropertyModal">
         <form>
-            <label>Name<input type="text" id="layerPropertyModal.layerName" /></label><br />
-            <label>Layer color<input type="color" id="layerPropertyModal.layerColor"></label><br />
+            <label>
+                Name
+                <input type="text" id="layerPropertyModal.layerName" />
+            </label><br />
+            <label>
+                Layer color
+                <input type="color" id="layerPropertyModal.layerColor">
+            </label><br />
+        </form>
+    </div>
+    <div id="operationOptionModal" class="operationOptionModal">
+        <form>
+            <div>
+                編集単位<br />
+                <label>
+                    <input type="radio" name="operationOptionModal.operationUnit" value="1">
+                    点
+                </label>
+                <label>
+                    <input type="radio" name="operationOptionModal.operationUnit" value="2">
+                    辺
+                </label>
+                <label>
+                    <input type="radio" name="operationOptionModal.operationUnit" value="3">
+                    線
+                </label>
+                <label>
+                    <input type="radio" name="operationOptionModal.operationUnit" value="4">
+                    レイヤー
+                </label>
+                <br />
+            </div>
+            <div>
+                絞り込み<br />
+                <label>
+                    <input type="checkbox" name="operationOptionModal.activeLineOnly" value="1">
+                    アクティブな線の点のみ
+                </label><br />
+                <label>
+                    <input type="checkbox" name="operationOptionModal.activeLayerOnly" value="1">
+                    アクティブなレイヤーのみ
+                </label><br />
+                <label>
+                    <input type="checkbox" name="operationOptionModal.selectedPointOnly" value="1">
+                    選択中の点のみ
+                </label><br />
+            </div>
         </form>
     </div>
 </body>

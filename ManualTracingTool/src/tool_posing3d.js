@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
 var ManualTracingTool;
 (function (ManualTracingTool) {
     // Base tool classes
-    var Tool_Posing3d_ToolBase = (function (_super) {
+    var Tool_Posing3d_ToolBase = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_ToolBase, _super);
         function Tool_Posing3d_ToolBase() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -44,7 +44,7 @@ var ManualTracingTool;
         return Tool_Posing3d_ToolBase;
     }(ManualTracingTool.ToolBase));
     ManualTracingTool.Tool_Posing3d_ToolBase = Tool_Posing3d_ToolBase;
-    var Tool_Posing3d_PointInputToolBase = (function (_super) {
+    var Tool_Posing3d_PointInputToolBase = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_PointInputToolBase, _super);
         function Tool_Posing3d_PointInputToolBase() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -85,7 +85,7 @@ var ManualTracingTool;
         return Tool_Posing3d_PointInputToolBase;
     }(Tool_Posing3d_ToolBase));
     ManualTracingTool.Tool_Posing3d_PointInputToolBase = Tool_Posing3d_PointInputToolBase;
-    var Tool_Posing3d_LineInputToolBase = (function (_super) {
+    var Tool_Posing3d_LineInputToolBase = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LineInputToolBase, _super);
         function Tool_Posing3d_LineInputToolBase() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -135,7 +135,7 @@ var ManualTracingTool;
     }(Tool_Posing3d_ToolBase));
     ManualTracingTool.Tool_Posing3d_LineInputToolBase = Tool_Posing3d_LineInputToolBase;
     // Each tools
-    var Tool_Posing3d_LocateHead = (function (_super) {
+    var Tool_Posing3d_LocateHead = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateHead, _super);
         function Tool_Posing3d_LocateHead() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -203,7 +203,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateHead;
     }(Tool_Posing3d_LineInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateHead = Tool_Posing3d_LocateHead;
-    var Tool_Posing3d_RotateHead = (function (_super) {
+    var Tool_Posing3d_RotateHead = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_RotateHead, _super);
         function Tool_Posing3d_RotateHead() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -253,7 +253,7 @@ var ManualTracingTool;
         return Tool_Posing3d_RotateHead;
     }(Tool_Posing3d_PointInputToolBase));
     ManualTracingTool.Tool_Posing3d_RotateHead = Tool_Posing3d_RotateHead;
-    var Tool_Posing3d_TwistHead = (function (_super) {
+    var Tool_Posing3d_TwistHead = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_TwistHead, _super);
         function Tool_Posing3d_TwistHead() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -301,7 +301,7 @@ var ManualTracingTool;
         return Tool_Posing3d_TwistHead;
     }(Tool_Posing3d_PointInputToolBase));
     ManualTracingTool.Tool_Posing3d_TwistHead = Tool_Posing3d_TwistHead;
-    var Tool_Posing3d_LocateBody = (function (_super) {
+    var Tool_Posing3d_LocateBody = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateBody, _super);
         function Tool_Posing3d_LocateBody() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -363,7 +363,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateBody;
     }(Tool_Posing3d_PointInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateBody = Tool_Posing3d_LocateBody;
-    var Tool_Posing3d_RatateBody = (function (_super) {
+    var Tool_Posing3d_RatateBody = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_RatateBody, _super);
         function Tool_Posing3d_RatateBody() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -411,7 +411,7 @@ var ManualTracingTool;
         return Tool_Posing3d_RatateBody;
     }(Tool_Posing3d_PointInputToolBase));
     ManualTracingTool.Tool_Posing3d_RatateBody = Tool_Posing3d_RatateBody;
-    var Tool_Posing3d_LocateLeftArm1 = (function (_super) {
+    var Tool_Posing3d_LocateLeftArm1 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateLeftArm1, _super);
         function Tool_Posing3d_LocateLeftArm1() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -468,7 +468,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateLeftArm1;
     }(Tool_Posing3d_PointInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateLeftArm1 = Tool_Posing3d_LocateLeftArm1;
-    var Tool_Posing3d_LocateRightArm1 = (function (_super) {
+    var Tool_Posing3d_LocateRightArm1 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateRightArm1, _super);
         function Tool_Posing3d_LocateRightArm1() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -484,7 +484,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateRightArm1;
     }(Tool_Posing3d_LocateLeftArm1));
     ManualTracingTool.Tool_Posing3d_LocateRightArm1 = Tool_Posing3d_LocateRightArm1;
-    var Tool_Posing3d_LocateLeftLeg1 = (function (_super) {
+    var Tool_Posing3d_LocateLeftLeg1 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateLeftLeg1, _super);
         function Tool_Posing3d_LocateLeftLeg1() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -500,7 +500,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateLeftLeg1;
     }(Tool_Posing3d_LocateLeftArm1));
     ManualTracingTool.Tool_Posing3d_LocateLeftLeg1 = Tool_Posing3d_LocateLeftLeg1;
-    var Tool_Posing3d_LocateRightLeg1 = (function (_super) {
+    var Tool_Posing3d_LocateRightLeg1 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateRightLeg1, _super);
         function Tool_Posing3d_LocateRightLeg1() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -516,7 +516,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateRightLeg1;
     }(Tool_Posing3d_LocateLeftArm1));
     ManualTracingTool.Tool_Posing3d_LocateRightLeg1 = Tool_Posing3d_LocateRightLeg1;
-    var Tool_Posing3d_LocateLeftArm2 = (function (_super) {
+    var Tool_Posing3d_LocateLeftArm2 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateLeftArm2, _super);
         function Tool_Posing3d_LocateLeftArm2() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -536,7 +536,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateLeftArm2;
     }(Tool_Posing3d_LocateLeftArm1));
     ManualTracingTool.Tool_Posing3d_LocateLeftArm2 = Tool_Posing3d_LocateLeftArm2;
-    var Tool_Posing3d_LocateRightArm2 = (function (_super) {
+    var Tool_Posing3d_LocateRightArm2 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateRightArm2, _super);
         function Tool_Posing3d_LocateRightArm2() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -556,7 +556,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateRightArm2;
     }(Tool_Posing3d_LocateLeftArm1));
     ManualTracingTool.Tool_Posing3d_LocateRightArm2 = Tool_Posing3d_LocateRightArm2;
-    var Tool_Posing3d_LocateLeftLeg2 = (function (_super) {
+    var Tool_Posing3d_LocateLeftLeg2 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateLeftLeg2, _super);
         function Tool_Posing3d_LocateLeftLeg2() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -576,7 +576,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateLeftLeg2;
     }(Tool_Posing3d_LocateLeftArm1));
     ManualTracingTool.Tool_Posing3d_LocateLeftLeg2 = Tool_Posing3d_LocateLeftLeg2;
-    var Tool_Posing3d_LocateRightLeg2 = (function (_super) {
+    var Tool_Posing3d_LocateRightLeg2 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateRightLeg2, _super);
         function Tool_Posing3d_LocateRightLeg2() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -596,7 +596,7 @@ var ManualTracingTool;
         return Tool_Posing3d_LocateRightLeg2;
     }(Tool_Posing3d_LocateLeftArm1));
     ManualTracingTool.Tool_Posing3d_LocateRightLeg2 = Tool_Posing3d_LocateRightLeg2;
-    var Command_Posing3d_LocateHead = (function (_super) {
+    var Command_Posing3d_LocateHead = /** @class */ (function (_super) {
         __extends(Command_Posing3d_LocateHead, _super);
         function Command_Posing3d_LocateHead() {
             return _super !== null && _super.apply(this, arguments) || this;

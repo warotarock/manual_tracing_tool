@@ -1,6 +1,6 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Logic_Edit_Line = (function () {
+    var Logic_Edit_Line = /** @class */ (function () {
         function Logic_Edit_Line() {
         }
         Logic_Edit_Line.calcParameters = function (line) {
