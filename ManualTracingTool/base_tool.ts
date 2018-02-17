@@ -2,6 +2,7 @@
 namespace ManualTracingTool {
 
     export enum MainToolID {
+
         none = 0,
         drawLine = 1,
         scratchLine = 2,
@@ -9,14 +10,26 @@ namespace ManualTracingTool {
     }
 
     export enum DrawLineToolSubToolID {
+
         drawLine = 0,
     }
 
     export enum ScrathLineToolSubToolID {
+
         scratchLine = 0,
     }
 
+    export enum OperationUnitID {
+
+        none = 0,
+        linePoint = 1,
+        lineEdge = 2,
+        line = 3,
+        layer = 4
+    }
+
     export enum Posing3DSubToolID {
+
         locateHead = 0,
         rotateHead = 1,
         locateBody = 2,
@@ -33,6 +46,7 @@ namespace ManualTracingTool {
     }
 
     export enum EditModeID {
+
         selectMode = 1,
         drawMode = 2
     }
@@ -49,6 +63,7 @@ namespace ManualTracingTool {
         mainToolID = MainToolID.none;
         subToolIndex = 0;
         editMode = EditModeID.drawMode;
+        operationUnitID = OperationUnitID.linePoint;
 
         commandHistory: CommandHistory = null;
 
@@ -89,6 +104,7 @@ namespace ManualTracingTool {
         mainToolID = MainToolID.posing;
         subToolIndex = 0;
         editMode = EditModeID.drawMode;
+        operationUnitID = OperationUnitID.linePoint;
 
         commandHistory: CommandHistory = null;
 
@@ -119,6 +135,7 @@ namespace ManualTracingTool {
             this.mainToolID = this.toolContext.mainToolID;
             this.subToolIndex = this.toolContext.subToolIndex;
             this.editMode = this.toolContext.editMode;
+            this.operationUnitID = this.toolContext.operationUnitID;
 
             this.commandHistory = this.toolContext.commandHistory;
 

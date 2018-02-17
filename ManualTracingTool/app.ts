@@ -85,6 +85,7 @@ namespace ManualTracingTool {
         tool_ScratchLine = new Tool_ScratchLine();
 
         currentSelectTool: ToolBase = null;
+        selectionTools = List<ToolBase>(<int>(OperationUnitID.layer) + 1);
         tool_BrushSelect = new Tool_Select_BrushSelet();
 
         selector_LineClosingHitTest = new Selector_LinePoint_LineClosingHitTest();
@@ -247,6 +248,8 @@ namespace ManualTracingTool {
             this.setCurrentMainTool(MainToolID.drawLine);
             //this.setCurrentMainTool(MainToolID.posing);
 
+            this.setCurrentSelectionTool(this.toolContext.operationUnitID);
+
             // debug
             this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
 
@@ -382,7 +385,9 @@ namespace ManualTracingTool {
             //this.currentTool = this.tool_ScratchLine;
             this.currentTool = this.tool_Posing3d_LocateHead;
 
-            this.currentSelectTool = this.tool_BrushSelect;
+            // Selection tools
+            this.selectionTools[<int>OperationUnitID.none] = null;  
+            this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_BrushSelect;
 
             this.systemImage = this.imageResurces[1];
             this.subToolImages.push(this.imageResurces[2]);
@@ -1178,6 +1183,11 @@ namespace ManualTracingTool {
             this.currentTool = mainTool.subTools[subToolIndex];
         }
 
+        private setCurrentSelectionTool(operationUnitID: OperationUnitID) {
+
+            this.currentSelectTool = this.selectionTools[<int>(operationUnitID)];
+        }
+
         public setCurrentLayer(layer: Layer) {
 
             this.toolContext.currentLayer = layer;
@@ -1402,7 +1412,7 @@ namespace ManualTracingTool {
             this.layerPropertyWindow_EditLayer = layer;
 
             var modal: any = new Custombox.modal(
-                this.createModalOptionObject('#layerPropertyModal')
+                this.createModalOptionObject(this.ID.layerPropertyModal)
             );
 
             modal.open();
@@ -1412,8 +1422,10 @@ namespace ManualTracingTool {
 
             this.currentDialogID = ModalWindowID.operationOprionModal;
 
+            this.setRadioElementIntValue(this.ID.operationOptionModal_operationUnit, this.toolContext.operationUnitID);
+
             var modal: any = new Custombox.modal(
-                this.createModalOptionObject('#operationOptionModal')
+                this.createModalOptionObject(this.ID.operationOptionModal)
             );
 
             modal.open();
@@ -1442,7 +1454,12 @@ namespace ManualTracingTool {
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawLayerWindow();
             }
+            if (this.currentDialogID == ModalWindowID.operationOprionModal) {
 
+                this.toolContext.operationUnitID = <OperationUnitID>(
+                    this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, <int>(OperationUnitID.linePoint))
+                );
+            }
 
             this.currentDialogID = ModalWindowID.none;
         }
@@ -2340,6 +2357,37 @@ namespace ManualTracingTool {
             return element;
         }
 
+        setRadioElementIntValue(elementName: string, value: int) {
+
+            let valueText = value.toString();
+
+            let elements = document.getElementsByName(elementName);
+
+            for (var i = 0; i < elements.length; i++) {
+                let radio = <HTMLInputElement>elements[i];
+
+                radio.checked = (radio.value == valueText);
+            }
+        }
+
+        getRadioElementIntValue(elementName: string, defaultValue: int): int {
+
+            let value = defaultValue;
+
+            let elements = document.getElementsByName(elementName);
+
+            for (var i = 0; i < elements.length; i++) {
+                let radio = <HTMLInputElement>elements[i];
+
+                if (radio.checked) {
+
+                    value = <int>(Number(radio.value));
+                }
+            }
+
+            return value;
+        }
+
         getInputElementText(id: string): string {
 
             let element = <HTMLInputElement>(document.getElementById(id));
@@ -2499,8 +2547,12 @@ namespace ManualTracingTool {
         unselectedMainButton = 'unselectedMainButton';
         selectedMainButton = 'selectedMainButton';
 
+        layerPropertyModal = '#layerPropertyModal';
         layerPropertyModal_layerName = 'layerPropertyModal.layerName';
         layerPropertyModal_layerColor = 'layerPropertyModal.layerColor';
+
+        operationOptionModal = '#operationOptionModal';
+        operationOptionModal_operationUnit = 'operationOptionModal.operationUnit'
     }
 
     var _Main: Main;
