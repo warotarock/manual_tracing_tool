@@ -23,7 +23,7 @@ namespace ManualTracingTool {
 
         none = 0,
         linePoint = 1,
-        lineEdge = 2,
+        lineSegment = 2,
         line = 3,
         layer = 4
     }

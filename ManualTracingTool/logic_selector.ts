@@ -49,18 +49,7 @@ namespace ManualTracingTool {
                     point.isSelected = selPoint.selectStateAfter;
                     point.modifyFlag = ModifyFlagID.unselectedToSelected;
 
-                    if (line.modifyFlag == ModifyFlagID.none) {
-
-                        let selLine = new LineSelectionInfo();
-                        selLine.line = line;
-                        selLine.selectStateAfter = true;
-                        selLine.selectStateBefore = line.isSelected;
-
-                        line.isSelected = selLine.selectStateAfter;
-                        line.modifyFlag = ModifyFlagID.unselectedToSelected;
-
-                        this.selectedLines.push(selLine);
-                    }
+                    this.selectLine(line, editMode);
                 }
             }
 
@@ -79,16 +68,7 @@ namespace ManualTracingTool {
                     point.isSelected = selPoint.selectStateAfter;
                     point.modifyFlag = ModifyFlagID.selectedToUnselected;
 
-                    if (line.modifyFlag == ModifyFlagID.none) {
-
-                        let selLine = new LineSelectionInfo();
-                        selLine.line = line;
-                        selLine.selectStateBefore = line.isSelected;
-
-                        line.modifyFlag = ModifyFlagID.selectedToUnselected;
-
-                        this.selectedLines.push(selLine);
-                    }
+                    this.selectLine(line, editMode);
                 }
 
             }
@@ -99,6 +79,76 @@ namespace ManualTracingTool {
             for (let point of line.points) {
 
                 this.selectPoint(line, point, editMode);
+            }
+        }
+
+        selectLine(line: VectorLine, editMode: SelectionEditMode) {
+
+            if (line.modifyFlag != ModifyFlagID.none) {
+
+                return;
+            }
+
+            let selLine = new LineSelectionInfo();
+            selLine.line = line;
+            selLine.selectStateBefore = line.isSelected;
+
+            if (editMode == SelectionEditMode.setSelected) {
+
+                selLine.selectStateAfter = true;
+                line.isSelected = true;
+                line.modifyFlag = ModifyFlagID.unselectedToSelected;
+            }
+            else if (editMode == SelectionEditMode.setUnselected) {
+
+                selLine.selectStateAfter = false;
+                line.modifyFlag = ModifyFlagID.selectedToUnselected;
+            }
+            else if (editMode == SelectionEditMode.toggle) {
+
+                if (line.isSelected) {
+
+                    selLine.selectStateAfter = false;
+                    line.modifyFlag = ModifyFlagID.selectedToUnselected;
+                }
+                else {
+
+                    selLine.selectStateAfter = true;
+                    line.isSelected = true;
+                    line.modifyFlag = ModifyFlagID.unselectedToSelected;
+                }
+            }
+
+            this.selectedLines.push(selLine);
+        }
+
+        selectLinePointsForLines(editMode: SelectionEditMode) {
+
+            for (let selLineInfo of this.selectedLines) {
+
+                for (let point of selLineInfo.line.points) {
+
+                    this.selectPoint(selLineInfo.line, point, editMode);
+                }
+            }
+        }
+
+        updateLineSelectionState() {
+
+            for (let selLineInfo of this.selectedLines) {
+
+                let existsSelectedPoint = false;
+
+                for (let point of selLineInfo.line.points) {
+
+                    if (point.isSelected) {
+                        existsSelectedPoint = true;
+                        break;
+                    }
+                }
+
+                selLineInfo.selectStateAfter = existsSelectedPoint;
+                selLineInfo.line.isSelected = existsSelectedPoint;
             }
         }
 
@@ -116,11 +166,17 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Selector_LinePoint_BrushSelect extends HitTest_LinePoint_PointDistanceBase {
+    export interface ISelector_BrushSelect extends IHitTest_VectorLayerLinePoint {
 
-        editMode = SelectionEditMode.setSelected;
+        editMode: SelectionEditMode;
+        selectionInfo: VectorLineSelectionEditingInfo;
+    }
 
-        selectionInfo = new VectorLineSelectionEditingInfo();
+    export class Selector_LinePoint_BrushSelect extends HitTest_LinePoint_PointToPointByDistance implements ISelector_BrushSelect {
+
+        editMode = SelectionEditMode.setSelected; // @override
+
+        selectionInfo = new VectorLineSelectionEditingInfo(); // @override
 
         protected beforeHitTest() { // @override
 
@@ -134,63 +190,17 @@ namespace ManualTracingTool {
 
         protected afterHitTest() { // @override
 
-            for (let selLine of this.selectionInfo.selectedLines) {
-
-                let existsSelectedPoint = false;
-
-                for (let point of selLine.line.points) {
-
-                    if (point.isSelected) {
-                        existsSelectedPoint = true;
-                        break;
-                    }
-                }
-
-                selLine.selectStateAfter = existsSelectedPoint;
-                selLine.line.isSelected = existsSelectedPoint;
-            }
+            this.selectionInfo.updateLineSelectionState();
 
             this.selectionInfo.releaseEditState();
         }
     }
 
-    export class Selector_LinePoint_LineClosingHitTest extends HitTest_LinePoint_LineDistanceBase {
+    export class Selector_Line_BrushSelect extends HitTest_Line_PointToLineByDistance implements ISelector_BrushSelect {
 
-        isChanged = false;
+        editMode = SelectionEditMode.setSelected; // @override
 
-        protected beforeHitTest() { // @override
-
-            this.isChanged = false;
-        }
-
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
-
-            if (!line.isClosingToMouse) {
-
-                this.isChanged = true;
-            }
-
-            line.isClosingToMouse = true;
-
-            this.exitPointHitTest = true;
-        }
-
-        protected onLineSegmentNotHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
-
-            if (line.isClosingToMouse) {
-
-                this.isChanged = true;
-            }
-
-            line.isClosingToMouse = false;
-        }
-    }
-
-    export class Selector_LinePoint_LineSelect extends HitTest_LinePoint_LineDistanceBase {
-
-        editMode = SelectionEditMode.setSelected;
-
-        protected selectionInfo = new VectorLineSelectionEditingInfo();
+        selectionInfo = new VectorLineSelectionEditingInfo(); // @override
 
         protected beforeHitTest() { // @override
 
@@ -199,12 +209,41 @@ namespace ManualTracingTool {
 
         protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
 
-            this.selectionInfo.selectLinePoints(line, this.editMode);
+            this.selectionInfo.selectLine(line, this.editMode);
 
             this.exitPointHitTest = true;
         }
 
         protected afterHitTest() { // @override
+
+            this.selectionInfo.selectLinePointsForLines(this.editMode);
+
+            this.selectionInfo.updateLineSelectionState();
+
+            this.selectionInfo.releaseEditState();
+        }
+    }
+
+    export class Selector_LineSegment_BrushSelect extends HitTest_Line_PointToLineByDistance implements ISelector_BrushSelect {
+
+        editMode = SelectionEditMode.setSelected; // @override
+
+        selectionInfo = new VectorLineSelectionEditingInfo(); // @override
+
+        protected beforeHitTest() { // @override
+
+            this.selectionInfo.clear();
+        }
+
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
+
+            this.selectionInfo.selectPoint(line, point1, this.editMode);
+            this.selectionInfo.selectPoint(line, point2, this.editMode);
+        }
+
+        protected afterHitTest() { // @override
+
+            this.selectionInfo.updateLineSelectionState();
 
             this.selectionInfo.releaseEditState();
         }

@@ -50,24 +50,24 @@ namespace ManualTracingTool {
         }
     }
 
-    export class HitTest_LinePoint_LocationalDistanceBase extends HitTest_VectorLayer_Base {
+    export interface IHitTest_VectorLayerLinePoint {
+
+        startProcess();
+        processLayer(layer: Layer, x: float, y: float, minDistance: float);
+        processLayerRecursive(layers: List<Layer>, x: float, y: float, minDistance: float);
+        endProcess();
+    }
+
+    export class HitTest_LinePointBase extends HitTest_VectorLayer_Base implements IHitTest_VectorLayerLinePoint {
 
         processLayer(layer: Layer, x: float, y: float, minDistance: float) {
 
-            this.startProcess();
-
             this.hitTest(layer, x, y, minDistance * minDistance);
-
-            this.endProcess();
         }
 
         processLayerRecursive(layers: List<Layer>, x: float, y: float, minDistance: float) {
 
-            this.startProcess();
-
             this.hitTestRecursive(layers, x, y, minDistance * minDistance);
-
-            this.endProcess();
         }
 
         startProcess() {
@@ -139,7 +139,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class HitTest_LinePoint_PointDistanceBase extends HitTest_LinePoint_LocationalDistanceBase {
+    export class HitTest_LinePoint_PointToPointByDistance extends HitTest_LinePointBase {
 
         protected processHitTestToLine(group: VectorGroup, line: VectorLine, x: float, y: float, minDistance: float) { // @override
 
@@ -163,7 +163,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class HitTest_LinePoint_LineDistanceBase extends HitTest_LinePoint_LocationalDistanceBase {
+    export class HitTest_Line_PointToLineByDistance extends HitTest_LinePointBase {
 
         protected processHitTestToLine(group: VectorGroup, line: VectorLine, x: float, y: float, minDistance: float) { // @override
 
@@ -196,7 +196,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class HitTest_LinePoint_LineSingleHitTest extends HitTest_LinePoint_LineDistanceBase {
+    export class HitTest_Line_PointToLineByDistanceSingle extends HitTest_Line_PointToLineByDistance {
 
         hitedLine: VectorLine = null;
 
@@ -210,6 +210,38 @@ namespace ManualTracingTool {
             this.hitedLine = line;
 
             this.exitPointHitTest = true;
+        }
+    }
+
+    export class HitTest_Line_IsCloseToMouse extends HitTest_Line_PointToLineByDistance {
+
+        isChanged = false;
+
+        protected beforeHitTest() { // @override
+
+            this.isChanged = false;
+        }
+
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
+
+            if (!line.isCloseToMouse) {
+
+                this.isChanged = true;
+            }
+
+            line.isCloseToMouse = true;
+
+            this.exitPointHitTest = true;
+        }
+
+        protected onLineSegmentNotHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
+
+            if (line.isCloseToMouse) {
+
+                this.isChanged = true;
+            }
+
+            line.isCloseToMouse = false;
         }
     }
 }

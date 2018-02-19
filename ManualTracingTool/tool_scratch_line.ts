@@ -33,7 +33,7 @@ namespace ManualTracingTool {
         nearestPoint = vec3.fromValues(0.0, 0.0, 0.0);
         samplePoint = vec3.fromValues(0.0, 0.0, 0.0);
 
-        lineSingleHitTester = new HitTest_LinePoint_LineSingleHitTest();
+        lineSingleHitTester = new HitTest_Line_PointToLineByDistanceSingle();
 
         isLeftButtonEdit = false;
         isRightButtonEdit = false;

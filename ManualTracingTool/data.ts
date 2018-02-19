@@ -54,9 +54,11 @@ namespace ManualTracingTool {
 
         points = new List<LinePoint>();
 
-        isClosingToMouse = false;
+        isCloseToMouse = false;
         isEditTarget = false;
         isSelected = false;
+
+        strokeWidth = 1.0;
 
         // runtime
         modifyFlag = ModifyFlagID.none;

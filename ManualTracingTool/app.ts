@@ -4,16 +4,14 @@ declare var Custombox: any;
 namespace ManualTracingTool {
 
     // 今やること (current tasks)
-    // ・編集単位選択UIの作成
     // ・編集単位ロジック
     //   ・共通のアクティブ線
-    //   ・点、線、変、レイヤーそれぞれの選択ツールクラスの作成
-    //   ・編集単位選択UIの状態で選択ツールを切り替える
     // ・アクティブ線、レイヤによる絞り込み処理と可視化
     //   →スクラッチツールで実装
-    // ・スクラッチツールで選択中の点のみ対象とできるよう修正
-    // 変形ツール
+    // ・スクラッチツールで選択中の点のみ対象にできるよう修正
+    // ・変形ツール
     //   平行移動、回転、拡大縮小、ラティス変形
+    // ・線が１本もないときにエラーが出るためなんとかしる！
 
     // どこかでやる必要があること (nearest future tasks)
     // ・現在のツールに応じた全選択、全選択解除処理
@@ -37,6 +35,10 @@ namespace ManualTracingTool {
     // ・現在のレイヤーが移動したときにカーソルが変な位置に出る
 
     // 終わったもの (done)
+    // ・編集単位選択UIの作成
+    // ・編集単位ロジック
+    //   ・点、線、変、レイヤーそれぞれの選択ツールクラスの作成
+    //   ・編集単位選択UIの状態で選択ツールを切り替える
     // ・レイヤーカラーの設定（カラーピッカー）→レイヤーの設定ウィンドウを出して設定するようにしてみた→モーダルウィンドウの中身を実装する→絵を見ながら設定できるように
     // ・レイヤーの表示/非表示の切り替え（レイヤー名の左に目のマークを表示）
     // ・メインツールを変更したときレイヤーに応じたコンテキストの状態になるようにする
@@ -86,9 +88,11 @@ namespace ManualTracingTool {
 
         currentSelectTool: ToolBase = null;
         selectionTools = List<ToolBase>(<int>(OperationUnitID.layer) + 1);
-        tool_BrushSelect = new Tool_Select_BrushSelet();
+        tool_LinePointBrushSelect = new Tool_Select_BrushSelet_LinePoint();
+        tool_LineSegmentBrushSelect = new Tool_Select_BrushSelet_LineSegment();
+        tool_LineBrushSelect = new Tool_Select_BrushSelet_Line();
 
-        selector_LineClosingHitTest = new Selector_LinePoint_LineClosingHitTest();
+        hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
 
         // Posing tools
         posing3dView = new Posing3DView();
@@ -123,6 +127,9 @@ namespace ManualTracingTool {
         testColor = vec4.fromValues(0.0, 0.7, 0.0, 1.0);
         sampleColor = vec4.fromValues(0.0, 0.5, 1.0, 1.0);
         extColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        editingLineColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
+        editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
+        selectedVectorLineColor = vec4.fromValues(0.8, 0.3, 0.0, 0.5);
 
         isLoaded = false;
 
@@ -387,7 +394,9 @@ namespace ManualTracingTool {
 
             // Selection tools
             this.selectionTools[<int>OperationUnitID.none] = null;  
-            this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_BrushSelect;
+            this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
+            this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
+            this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
 
             this.systemImage = this.imageResurces[1];
             this.subToolImages.push(this.imageResurces[2]);
@@ -569,16 +578,14 @@ namespace ManualTracingTool {
             let context = this.toolContext;
             this.toolEnv.updateContext();
 
-            // Draw mode
             if (context.editMode == EditModeID.drawMode) {
 
                 this.currentTool.mouseMove(this.toolMouseEvent, this.toolEnv);
             }
-            // Select mode
             else if (context.editMode == EditModeID.selectMode) {
 
-                let isSelectionChanged = this.mousemoveHittest(this.toolMouseEvent.location[0], this.toolMouseEvent.location[1], this.toolContext.mouseCursorRadius, false);
-                if (isSelectionChanged) {
+                let isHitChanged = this.mousemoveHittest(this.toolMouseEvent.location[0], this.toolMouseEvent.location[1], this.toolContext.mouseCursorRadius, false);
+                if (isHitChanged) {
                     this.toolEnv.setRedrawMainWindow();
                 }
 
@@ -1119,6 +1126,11 @@ namespace ManualTracingTool {
 
                 this.mainWindow_MouseViewOperationEnd();
             }
+
+            if (e.key == '1') {
+
+                this.openOperationOptionModal();
+            }
         }
 
         private htmlWindow_resize(e: Event) {
@@ -1406,6 +1418,10 @@ namespace ManualTracingTool {
 
         private openLayerPropertyModal(layer: Layer, layerWindowItem: LayerWindowItem) {
 
+            if (this.currentDialogID != ModalWindowID.none) {
+                return;
+            }
+
             this.setInputElementText(this.ID.layerPropertyModal_layerName, layer.name);
 
             this.currentDialogID = ModalWindowID.layerPropertyModal;
@@ -1419,6 +1435,10 @@ namespace ManualTracingTool {
         }
 
         private openOperationOptionModal() {
+
+            if (this.currentDialogID != ModalWindowID.none) {
+                return;
+            }
 
             this.currentDialogID = ModalWindowID.operationOprionModal;
 
@@ -1450,18 +1470,20 @@ namespace ManualTracingTool {
                 vec4.copy(layer.layerColor, this.layerPropertyWindow_LayerClolor);
 
                 this.layerPropertyWindow_EditLayer = null;
-
-                this.toolEnv.setRedrawMainWindowEditorWindow();
-                this.toolEnv.setRedrawLayerWindow();
             }
             if (this.currentDialogID == ModalWindowID.operationOprionModal) {
 
                 this.toolContext.operationUnitID = <OperationUnitID>(
                     this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, <int>(OperationUnitID.linePoint))
                 );
+
+                this.setCurrentSelectionTool(this.toolContext.operationUnitID);
             }
 
             this.currentDialogID = ModalWindowID.none;
+
+            this.toolEnv.setRedrawMainWindowEditorWindow();
+            this.toolEnv.setRedrawLayerWindow();
         }
 
         // Drawings
@@ -1585,6 +1607,9 @@ namespace ManualTracingTool {
 
             let isCurrentLayer = (layer == context.currentVectorLayer);
 
+            vec4.copy(this.editOtherLayerLineColor, layer.layerColor);
+            this.editOtherLayerLineColor[3] *= 0.3;
+
             for (let group of layer.groups) {
 
                 for (let line of group.lines) {
@@ -1593,51 +1618,77 @@ namespace ManualTracingTool {
                         continue;
                     }
 
-                    //this.drawRawLine(canvasWindow, line);
-                    this.drawArangedLine(canvasWindow, line, layer.layerColor, isCurrentLayer);
+                    if (context.editMode == EditModeID.drawMode) {
 
-                    if (context.editMode == EditModeID.selectMode) {
+                        this.drawVectorLine(canvasWindow, line, layer.layerColor, line.strokeWidth);
+                    }
+                    else if (context.editMode == EditModeID.selectMode) {
 
-                        if (line.isClosingToMouse || line.isSelected) {
+                        if (isCurrentLayer) {
 
-                            if (isCurrentLayer) {
+                            if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
 
-                                this.drawLinePoints(canvasWindow, line);
+                                this.drawVectorLine(canvasWindow, line, layer.layerColor, line.strokeWidth);
+
+                                this.drawAdjustingLinePoints(canvasWindow, line);
                             }
+                            else if (this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
+
+                                this.drawVectorLine(canvasWindow, line, layer.layerColor, line.strokeWidth);
+
+                                this.drawAdjustingLinePoints(canvasWindow, line);
+                            }
+                            else if (this.toolContext.operationUnitID == OperationUnitID.line) {
+
+                                let color = layer.layerColor;
+                                if (line.isSelected) {
+                                    color = this.selectedVectorLineColor;
+                                }
+
+                                if (line.isCloseToMouse) {
+
+                                    this.drawVectorLine(canvasWindow, line, color, line.strokeWidth + 2.0);
+                                }
+                                else {
+
+                                    this.drawVectorLine(canvasWindow, line, color, line.strokeWidth);
+                                }
+
+                                //this.drawAdjustingLinePoints(canvasWindow, line);
+                            }
+                        }
+                        else {
+
+                            this.drawVectorLine(canvasWindow, line, this.editOtherLayerLineColor, line.strokeWidth);
                         }
                     }
                 }
             }
         }
 
-        private drawRawLine(canvasWindow: CanvasWindow, line: VectorLine, strokeWidth: float) {
+        private drawVectorLine(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4, strokeWidth: float) {
 
             if (line.points.length == 0) {
                 return;
             }
 
             this.canvasRender.setStrokeWidth(strokeWidth);
-            this.canvasRender.setStrokeColor(0.5, 0.5, 0.5, 1.0);
+            this.canvasRender.setStrokeColorV(color);
 
-            this.canvasRender.beginPath()
-
-            this.canvasRender.moveTo(line.points[0].location[0], line.points[0].location[1]);
-
-            for (let i = 0; i < line.points.length; i++) {
-                let point = line.points[i];
-
-                this.canvasRender.lineTo(point.location[0], point.location[1]);
-            }
-
-            this.canvasRender.stroke()
+            this.drawVectorLineSegment(line, 0, line.points.length - 1, false);
         }
 
         private drawEditLine(canvasWindow: CanvasWindow, line: VectorLine) {
 
-            this.drawRawLine(canvasWindow, line, 3.0 / canvasWindow.viewScale);
+            this.drawVectorLine(
+                canvasWindow
+                , line
+                , this.editingLineColor
+                , this.getViewScaleLineWidth(canvasWindow, 3.0)
+            );
         }
 
-        private drawArangedLine(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4, isCurrentLayer: boolean) {
+        private drawAdjustingLine(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4, isCurrentLayer: boolean) {
 
             if (line.points.length == 0) {
                 return;
@@ -1645,7 +1696,7 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
 
-            this.canvasRender.setStrokeWidth(0.0);
+            this.canvasRender.setStrokeWidth(line.strokeWidth);
 
             if (context.editMode == EditModeID.selectMode) {
 
@@ -1670,19 +1721,21 @@ namespace ManualTracingTool {
                 }
             }
 
-            this.drawLineSegment(line, 0, line.points.length - 1);
+            this.drawVectorLineSegment(line, 0, line.points.length - 1, true);
         }
 
-        private drawLinePoints(canvasWindow: CanvasWindow, line: VectorLine) {
+        private drawAdjustingLinePoints(canvasWindow: CanvasWindow, line: VectorLine) {
+
+            this.canvasRender.setStrokeWidth(this.getViewScaleLineWidth(canvasWindow, 1.0));
 
             for (let i = 0; i < line.points.length; i++) {
                 let point = line.points[i];
 
-                this.drawPoint(point, this.linePointColor, canvasWindow.viewScale);
+                this.drawAdjustingLinePoint(point, this.linePointColor, canvasWindow.viewScale);
             }
         }
 
-        private drawPoint(point: LinePoint, color: Vec4, scale: float) {
+        private drawAdjustingLinePoint(point: LinePoint, color: Vec4, viewScale: float) {
 
             this.canvasRender.beginPath()
 
@@ -1690,8 +1743,8 @@ namespace ManualTracingTool {
             if (point.isSelected) {
 
                 radius = 3.0;
-                this.canvasRender.setStrokeColor(0.8, 0.3, 0.0, 1.0);
-                this.canvasRender.setFillColor(0.8, 0.3, 0.0, 1.0);
+                this.canvasRender.setStrokeColorV(this.selectedVectorLineColor);
+                this.canvasRender.setFillColorV(this.selectedVectorLineColor);
             }
             else {
 
@@ -1699,14 +1752,12 @@ namespace ManualTracingTool {
                 this.canvasRender.setFillColorV(color);
             }
 
-            this.canvasRender.setStrokeWidth(1.0 / scale);
-
-            this.canvasRender.circle(point.adjustedLocation[0], point.adjustedLocation[1], radius / scale);
+            this.canvasRender.circle(point.adjustedLocation[0], point.adjustedLocation[1], radius / viewScale);
 
             this.canvasRender.fill();
         }
 
-        private drawLineSegment(line: VectorLine, startIndex: int, endIndex: int) {
+        private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) {
 
             this.canvasRender.beginPath()
 
@@ -1716,10 +1767,22 @@ namespace ManualTracingTool {
 
                 let point1 = line.points[i];
 
-                this.canvasRender.lineTo(point1.adjustedLocation[0], point1.adjustedLocation[1]);
+                if (useAdjustingLocation) {
+
+                    this.canvasRender.lineTo(point1.adjustedLocation[0], point1.adjustedLocation[1]);
+                }
+                else {
+
+                    this.canvasRender.lineTo(point1.location[0], point1.location[1]);
+                }
             }
 
             this.canvasRender.stroke()
+        }
+
+        private getViewScaleLineWidth(canvasWindow: CanvasWindow, width: float) {
+
+            return width / canvasWindow.viewScale;
         }
 
         // Editor window drawing
@@ -1770,7 +1833,7 @@ namespace ManualTracingTool {
 
                             for (let point of this.tool_ScratchLine.targetLine.points) {
 
-                                this.drawPoint(point, this.testColor, editorWindow.viewScale);
+                                this.drawAdjustingLinePoint(point, this.testColor, editorWindow.viewScale);
                             }
                         }
                     }
@@ -1781,7 +1844,7 @@ namespace ManualTracingTool {
 
                             for (let point of this.tool_ScratchLine.resampledLine.points) {
 
-                                this.drawPoint(point, this.sampleColor, editorWindow.viewScale);
+                                this.drawAdjustingLinePoint(point, this.sampleColor, editorWindow.viewScale);
                             }
                         }
 
@@ -1789,7 +1852,7 @@ namespace ManualTracingTool {
 
                             for (let point of this.tool_ScratchLine.extrudeLine.points) {
 
-                                this.drawPoint(point, this.extColor, editorWindow.viewScale);
+                                this.drawAdjustingLinePoint(point, this.extColor, editorWindow.viewScale);
                             }
                         }
                     }
@@ -1800,7 +1863,7 @@ namespace ManualTracingTool {
 
                             for (let point of this.tool_ScratchLine.candidateLine.points) {
 
-                                this.drawPoint(point, this.linePointColor, editorWindow.viewScale);
+                                this.drawAdjustingLinePoint(point, this.linePointColor, editorWindow.viewScale);
                             }
                         }
                     }
@@ -1830,8 +1893,12 @@ namespace ManualTracingTool {
 
             this.canvasRender.beginPath();
             this.canvasRender.setStrokeColor(1.0, 0.5, 0.5, 1.0);
-            this.canvasRender.setStrokeWidth(1.0 / canvasWindow.viewScale);
-            this.canvasRender.circle(this.toolMouseEvent.location[0], this.toolMouseEvent.location[1], this.toolContext.mouseCursorRadius / canvasWindow.viewScale);
+            this.canvasRender.setStrokeWidth(this.getViewScaleLineWidth(canvasWindow, 1.0));
+            this.canvasRender.circle(
+                this.toolMouseEvent.location[0]
+                , this.toolMouseEvent.location[1]
+                , this.getViewScaleLineWidth(canvasWindow, this.toolContext.mouseCursorRadius)
+            );
             this.canvasRender.stroke();
         }
 
@@ -2329,16 +2396,20 @@ namespace ManualTracingTool {
 
         private mousemoveHittest(x: float, y: float, minDistance: float, recursive: boolean): boolean {
 
+            this.hittest_Line_IsCloseTo.startProcess();
+
             if (recursive) {
 
-                this.selector_LineClosingHitTest.processLayerRecursive(this.document.rootLayer.childLayers, x, y, minDistance);
+                this.hittest_Line_IsCloseTo.processLayerRecursive(this.document.rootLayer.childLayers, x, y, minDistance);
             }
             else {
 
-                this.selector_LineClosingHitTest.processLayer(this.toolEnv.currentVectorLayer, x, y, minDistance);
+                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorLayer, x, y, minDistance);
             }
 
-            return this.selector_LineClosingHitTest.isChanged;
+            this.hittest_Line_IsCloseTo.endProcess();
+
+            return this.hittest_Line_IsCloseTo.isChanged;
         }
 
         // HTML helper

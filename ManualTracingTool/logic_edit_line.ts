@@ -16,11 +16,11 @@ namespace ManualTracingTool {
 
                 let point1 = line.points[i];
 
-                minX = Math.min(point1.adjustedLocation[0], minX);
-                minY = Math.min(point1.adjustedLocation[1], minY);
+                minX = Math.min(point1.location[0], minX);
+                minY = Math.min(point1.location[1], minY);
 
-                maxX = Math.max(point1.adjustedLocation[0], maxX);
-                maxY = Math.max(point1.adjustedLocation[1], maxY);
+                maxX = Math.max(point1.location[0], maxX);
+                maxY = Math.max(point1.location[1], maxY);
             }
 
             line.minX = minX;
@@ -96,7 +96,9 @@ namespace ManualTracingTool {
                 }
             }
 
-            this.calcParameters(line)
+            Logic_Edit_Line.applyAdjustments(line);
+
+            Logic_Edit_Line.calcParameters(line)
         }
 
         private static calcBezier2d(result: Vec3, p0: Vec3, p1: Vec3, p2: Vec3, t: float) {
