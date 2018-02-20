@@ -99,8 +99,7 @@ namespace ManualTracingTool {
                     continue;
                 }
 
-                let newLineList: List<VectorLine> = null;
-
+                // Gthering editing informations for lines in the goroup
                 for (let line of group.lines) {
 
                     if (line.modifyFlag == ModifyFlagID.deletePoints) {
@@ -124,34 +123,33 @@ namespace ManualTracingTool {
 
                         editLines.push(editLine);
                     }
+                }
 
-                    if (group.modifyFlag == VectorGroupModifyFlagID.deleteLines) {
+                // Create a editing information for the group
+                let editGroup = new CommandEditVectorGroup();
+                editGroup.group = group;
+                editGroup.oldLineList = group.lines;
+
+                let newLineList: List<VectorLine> = null;
+
+                if (group.modifyFlag == VectorGroupModifyFlagID.deleteLines) {
+
+                    newLineList = new List<VectorLine>();
+
+                    for (let line of group.lines) {
 
                         if (line.modifyFlag != ModifyFlagID.delete) {
-
-                            // Delete lines by creating new list
-                            if (newLineList == null) {
-
-                                newLineList = new List<VectorLine>();
-                            }
 
                             newLineList.push(line);
                         }
                     }
                 }
-
-                // Push to command argument
-                let editGroup = new CommandEditVectorGroup();
-                editGroup.group = group;
-                editGroup.oldLineList = group.lines;
-                if (group.modifyFlag == VectorGroupModifyFlagID.deleteLines) {
-
-                    editGroup.newLineList = newLineList;
-                }
                 else {
 
-                    editGroup.newLineList = group.lines;
+                    newLineList = group.lines;
                 }
+
+                editGroup.newLineList = newLineList;
 
                 editGroups.push(editGroup);
             }
