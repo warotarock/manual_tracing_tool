@@ -22,13 +22,16 @@ namespace ManualTracingTool {
         editGroups: List<CommandEditVectorGroup> = null;
         editLines: List<CommandEditVectorLine> = null;
 
+        deletedLines: List<VectorLine> = null;
+        deletedPoints: List<LinePoint> = null;
+
         collectEditTargets(layer: VectorLayer): boolean {
 
             if (this.errorCheck(layer)) {
                 return false;
             }
 
-            // Collect deletion target points, if a line has no points in result, delete that line. A group remains even if there is no lines.
+            // Set modify flags to groups, lines and points. If a line has no points in result, delete that line. A group remains even if there is no lines.
             let modifiedGroupCount = 0;
             for (let group of layer.groups) {
 
@@ -42,24 +45,24 @@ namespace ManualTracingTool {
                     // Set flag to delete points
                     for (let point of line.points) {
 
-                        if (point.isSelected && point.modifyFlag == ModifyFlagID.none) {
+                        if (point.isSelected && point.modifyFlag == LinePointModifyFlagID.none) {
 
-                            point.modifyFlag = ModifyFlagID.delete;
+                            point.modifyFlag = LinePointModifyFlagID.delete;
                             deletePointCount++;
                         }
                     }
 
                     // Set flag to delete line
-                    if (deletePointCount > 0 && line.modifyFlag == ModifyFlagID.none) {
+                    if (deletePointCount > 0 && line.modifyFlag == VectorLineModifyFlagID.none) {
 
                         if (deletePointCount >= line.points.length) {
 
-                            line.modifyFlag = ModifyFlagID.delete;
+                            line.modifyFlag = VectorLineModifyFlagID.delete;
                             deleteLineCount++;
                         }
                         else {
 
-                            line.modifyFlag = ModifyFlagID.deletePoints;
+                            line.modifyFlag = VectorLineModifyFlagID.deletePoints;
                         }
 
                         modifiedLineCount++;
@@ -74,7 +77,7 @@ namespace ManualTracingTool {
 
                 if (modifiedLineCount > 0) {
 
-                    group.linePointModifyFlag = VectorGroupModifyFlagID.deletePoints;
+                    group.linePointModifyFlag = VectorGroupModifyFlagID.modifyLines;
                 }
 
                 if (group.modifyFlag != VectorGroupModifyFlagID.none || group.linePointModifyFlag != VectorGroupModifyFlagID.none) {
@@ -83,52 +86,60 @@ namespace ManualTracingTool {
                 }
             }
 
-            // If nochange, cancel it
+            // If no change, cancel it
             if (modifiedGroupCount == 0) {
                 return false;
             }
 
-            // Create command argument
-            let editGroups = new List<CommandEditVectorGroup>();
+            // Collect informations for modified lines and deleted points
             let editLines = new List<CommandEditVectorLine>();
+            let deletedPoints = new List<LinePoint>();
 
             for (let group of layer.groups) {
 
-                if (group.modifyFlag == VectorGroupModifyFlagID.none
-                    && group.linePointModifyFlag == VectorGroupModifyFlagID.none) {
+                if (group.linePointModifyFlag == VectorGroupModifyFlagID.none) {
                     continue;
                 }
 
-                // Gthering editing informations for lines in the goroup
                 for (let line of group.lines) {
 
-                    if (line.modifyFlag == ModifyFlagID.deletePoints) {
-
-                        // Delete points by creating new list
-                        let newPointList = new List<LinePoint>();
-
-                        for (let point of line.points) {
-
-                            if (point.modifyFlag == ModifyFlagID.none) {
-
-                                newPointList.push(point);
-                            }
-                        }
-
-                        // Push to command argument
-                        let editLine = new CommandEditVectorLine();
-                        editLine.line = line;
-                        editLine.oldPointList = line.points;
-                        editLine.newPointList = newPointList;
-
-                        editLines.push(editLine);
+                    if (line.modifyFlag != VectorLineModifyFlagID.deletePoints) {
+                        continue;
                     }
-                }
 
-                // Create a editing information for the group
-                let editGroup = new CommandEditVectorGroup();
-                editGroup.group = group;
-                editGroup.oldLineList = group.lines;
+                    // Delete points by creating new list
+                    let newPointList = new List<LinePoint>();
+
+                    for (let point of line.points) {
+
+                        if (point.modifyFlag == LinePointModifyFlagID.none) {
+
+                            newPointList.push(point);
+                        }
+                        else {
+
+                            deletedPoints.push(point);
+                        }
+                    }
+
+                    let editLine = new CommandEditVectorLine();
+                    editLine.line = line;
+                    editLine.oldPointList = line.points;
+                    editLine.newPointList = newPointList;
+
+                    editLines.push(editLine);
+                }
+            }
+
+            // Collect informations for modified groups and deleted lines
+            let editGroups = new List<CommandEditVectorGroup>();
+            let deletedLines = new List<VectorLine>();
+
+            for (let group of layer.groups) {
+
+                if (group.modifyFlag == VectorGroupModifyFlagID.none) {
+                    continue;
+                }
 
                 let newLineList: List<VectorLine> = null;
 
@@ -138,9 +149,13 @@ namespace ManualTracingTool {
 
                     for (let line of group.lines) {
 
-                        if (line.modifyFlag != ModifyFlagID.delete) {
+                        if (line.modifyFlag != VectorLineModifyFlagID.delete) {
 
                             newLineList.push(line);
+                        }
+                        else {
+
+                            deletedLines.push(line);
                         }
                     }
                 }
@@ -149,6 +164,9 @@ namespace ManualTracingTool {
                     newLineList = group.lines;
                 }
 
+                let editGroup = new CommandEditVectorGroup();
+                editGroup.group = group;
+                editGroup.oldLineList = group.lines;
                 editGroup.newLineList = newLineList;
 
                 editGroups.push(editGroup);
@@ -157,23 +175,8 @@ namespace ManualTracingTool {
             // Set command arguments
             this.editGroups = editGroups;
             this.editLines = editLines;
-
-            // Clear flags
-            for (let group of layer.groups) {
-
-                group.modifyFlag = VectorGroupModifyFlagID.none;
-                group.linePointModifyFlag = VectorGroupModifyFlagID.none;
-
-                for (let line of group.lines) {
-
-                    line.modifyFlag = ModifyFlagID.none;
-
-                    for (let point of line.points) {
-
-                        point.modifyFlag = ModifyFlagID.none;
-                    }
-                }
-            }
+            this.deletedLines = deletedLines;
+            this.deletedPoints = deletedPoints;
 
             this.layer = layer;
 
@@ -182,20 +185,7 @@ namespace ManualTracingTool {
 
         execute(env: ToolEnvironment) { // @override
 
-            this.executeTargets();
-        }
-
-        private executeTargets() {
-
-            for (let editGroup of this.editGroups) {
-
-                editGroup.group.lines = editGroup.newLineList;
-            }
-
-            for (let editLine of this.editLines) {
-
-                editLine.line.points = editLine.newPointList;
-            }
+            this.redo(env);
         }
 
         undo(env: ToolEnvironment) { // @override
@@ -209,11 +199,41 @@ namespace ManualTracingTool {
 
                 editLine.line.points = editLine.oldPointList;
             }
+
+            for (let line of this.deletedLines) {
+
+                line.modifyFlag = VectorLineModifyFlagID.none;
+            }
+
+            for (let point of this.deletedPoints) {
+
+                point.modifyFlag = LinePointModifyFlagID.none;
+            }
         }
 
         redo(env: ToolEnvironment) { // @override
 
-            this.executeTargets();
+            for (let editGroup of this.editGroups) {
+
+                editGroup.group.lines = editGroup.newLineList;
+                editGroup.group.modifyFlag = VectorGroupModifyFlagID.none;
+            }
+
+            for (let editLine of this.editLines) {
+
+                editLine.line.points = editLine.newPointList;
+                editLine.line.modifyFlag = VectorLineModifyFlagID.none;
+            }
+
+            for (let line of this.deletedLines) {
+
+                line.modifyFlag = VectorLineModifyFlagID.delete;
+            }
+
+            for (let point of this.deletedPoints) {
+
+                point.modifyFlag = LinePointModifyFlagID.delete;
+            }
         }
 
         errorCheck(layer: VectorLayer): boolean {

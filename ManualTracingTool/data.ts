@@ -27,13 +27,12 @@ namespace ManualTracingTool {
 
     // Vector layer
 
-    export enum ModifyFlagID {
+    export enum LinePointModifyFlagID {
 
         none = 0,
         selectedToUnselected = 1,
         unselectedToSelected = 2,
         delete = 3,
-        deletePoints = 4
     }
 
     export class LinePoint {
@@ -43,11 +42,20 @@ namespace ManualTracingTool {
         isSelected = false;
 
         // runtime
-        modifyFlag = ModifyFlagID.none;
+        modifyFlag = LinePointModifyFlagID.none;
 
         tempLocation = vec3.fromValues(0.0, 0.0, 0.0);
         totalLength = 0.0;
         curvature = 0.0;
+    }
+
+    export enum VectorLineModifyFlagID {
+
+        none = 0,
+        selectedToUnselected = 1,
+        unselectedToSelected = 2,
+        delete = 3,
+        deletePoints = 4
     }
 
     export class VectorLine {
@@ -61,7 +69,7 @@ namespace ManualTracingTool {
         strokeWidth = 1.0;
 
         // runtime
-        modifyFlag = ModifyFlagID.none;
+        modifyFlag = VectorLineModifyFlagID.none;
 
         minX = 999999.0;
         minY = 999999.0;
@@ -75,8 +83,9 @@ namespace ManualTracingTool {
     export enum VectorGroupModifyFlagID {
 
         none = 0,
-        deletePoints = 1,
-        deleteLines = 2
+        modifyLines = 1,
+        deleteLines = 2,
+        delete = 3,
     }
 
     export class VectorGroup {

@@ -1,6 +1,85 @@
 ﻿
 namespace ManualTracingTool {
 
+    export class Logic_VectorLayer {
+
+        static clearLayerModifyFlags(layer: VectorLayer) {
+
+            for (let group of layer.groups) {
+
+                this.clearGroupModifyFlags(group);
+            }
+        }
+
+        static clearGroupModifyFlags(group: VectorGroup) {
+
+            group.modifyFlag = VectorGroupModifyFlagID.none;
+            group.linePointModifyFlag = VectorGroupModifyFlagID.none;
+
+            for (let line of group.lines) {
+
+                this.clearLineModifyFlags(line);
+            }
+        }
+
+        static clearLineModifyFlags(line: VectorLine) {
+
+            line.modifyFlag = VectorLineModifyFlagID.none;
+
+            for (let point of line.points) {
+
+                point.modifyFlag = LinePointModifyFlagID.none;
+            }
+        }
+
+        static fillLayerDeleteFlags(layer: VectorLayer, forceDelete: boolean) {
+
+            for (let group of layer.groups) {
+
+                this.fillGroupDeleteFlags(group, forceDelete);
+            }
+        }
+
+        static fillGroupDeleteFlags(group: VectorGroup, forceDelete: boolean) {
+
+            if (forceDelete) {
+
+                group.modifyFlag = VectorGroupModifyFlagID.delete;
+            }
+
+            let setDelete = false;
+            if (group.modifyFlag == VectorGroupModifyFlagID.delete) {
+                setDelete = true;
+            }
+
+            for (let line of group.lines) {
+
+                this.fillLineDeleteFlags(line, setDelete);
+            }
+        }
+
+        static fillLineDeleteFlags(line: VectorLine, forceDelete: boolean) {
+
+            if (forceDelete) {
+
+                line.modifyFlag = VectorLineModifyFlagID.delete;
+            }
+
+            let setDelete = false;
+            if (line.modifyFlag == VectorLineModifyFlagID.delete) {
+                setDelete = true;
+            }
+
+            if (setDelete) {
+
+                for (let point of line.points) {
+
+                    point.modifyFlag = LinePointModifyFlagID.delete;
+                }
+            }
+        }
+    }
+
     export class Logic_Edit_Line {
 
         static calcParameters(line: VectorLine) {

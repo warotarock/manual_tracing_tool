@@ -21,7 +21,7 @@ namespace ManualTracingTool {
         selectStateBefore = false;
     }
 
-    export class VectorLineSelectionEditingInfo {
+    export class VectorLayerEditorSelectionInfo {
 
         selectedLines: List<LineSelectionInfo> = null;
         selectedPoints: List<PointSelectionInfo> = null;
@@ -37,7 +37,7 @@ namespace ManualTracingTool {
             if (editMode == SelectionEditMode.setSelected
                 || editMode == SelectionEditMode.toggle) {
 
-                if (!point.isSelected && point.modifyFlag == ModifyFlagID.none) {
+                if (!point.isSelected && point.modifyFlag == LinePointModifyFlagID.none) {
 
                     let selPoint = new PointSelectionInfo();
                     selPoint.point = point;
@@ -47,7 +47,7 @@ namespace ManualTracingTool {
                     this.selectedPoints.push(selPoint);
 
                     point.isSelected = selPoint.selectStateAfter;
-                    point.modifyFlag = ModifyFlagID.unselectedToSelected;
+                    point.modifyFlag = LinePointModifyFlagID.unselectedToSelected;
 
                     this.selectLine(line, editMode);
                 }
@@ -56,7 +56,7 @@ namespace ManualTracingTool {
             if (editMode == SelectionEditMode.setUnselected
                 || editMode == SelectionEditMode.toggle) {
 
-                if (point.isSelected && point.modifyFlag == ModifyFlagID.none) {
+                if (point.isSelected && point.modifyFlag == LinePointModifyFlagID.none) {
 
                     let selPoint = new PointSelectionInfo();
                     selPoint.point = point;
@@ -66,7 +66,7 @@ namespace ManualTracingTool {
                     this.selectedPoints.push(selPoint);
 
                     point.isSelected = selPoint.selectStateAfter;
-                    point.modifyFlag = ModifyFlagID.selectedToUnselected;
+                    point.modifyFlag = LinePointModifyFlagID.selectedToUnselected;
 
                     this.selectLine(line, editMode);
                 }
@@ -84,7 +84,7 @@ namespace ManualTracingTool {
 
         selectLine(line: VectorLine, editMode: SelectionEditMode) {
 
-            if (line.modifyFlag != ModifyFlagID.none) {
+            if (line.modifyFlag != VectorLineModifyFlagID.none) {
 
                 return;
             }
@@ -97,25 +97,25 @@ namespace ManualTracingTool {
 
                 selLine.selectStateAfter = true;
                 line.isSelected = true;
-                line.modifyFlag = ModifyFlagID.unselectedToSelected;
+                line.modifyFlag = VectorLineModifyFlagID.unselectedToSelected;
             }
             else if (editMode == SelectionEditMode.setUnselected) {
 
                 selLine.selectStateAfter = false;
-                line.modifyFlag = ModifyFlagID.selectedToUnselected;
+                line.modifyFlag = VectorLineModifyFlagID.selectedToUnselected;
             }
             else if (editMode == SelectionEditMode.toggle) {
 
                 if (line.isSelected) {
 
                     selLine.selectStateAfter = false;
-                    line.modifyFlag = ModifyFlagID.selectedToUnselected;
+                    line.modifyFlag = VectorLineModifyFlagID.selectedToUnselected;
                 }
                 else {
 
                     selLine.selectStateAfter = true;
                     line.isSelected = true;
-                    line.modifyFlag = ModifyFlagID.unselectedToSelected;
+                    line.modifyFlag = VectorLineModifyFlagID.unselectedToSelected;
                 }
             }
 
@@ -152,16 +152,16 @@ namespace ManualTracingTool {
             }
         }
 
-        releaseEditState() {
+        resetModifyStatus() {
 
             for (let selPoint of this.selectedPoints) {
 
-                selPoint.point.modifyFlag = ModifyFlagID.none;
+                selPoint.point.modifyFlag = LinePointModifyFlagID.none;
             }
 
             for (let selLine of this.selectedLines) {
 
-                selLine.line.modifyFlag = ModifyFlagID.none;
+                selLine.line.modifyFlag = VectorLineModifyFlagID.none;
             }
         }
     }
@@ -169,14 +169,14 @@ namespace ManualTracingTool {
     export interface ISelector_BrushSelect extends IHitTest_VectorLayerLinePoint {
 
         editMode: SelectionEditMode;
-        selectionInfo: VectorLineSelectionEditingInfo;
+        selectionInfo: VectorLayerEditorSelectionInfo;
     }
 
     export class Selector_LinePoint_BrushSelect extends HitTest_LinePoint_PointToPointByDistance implements ISelector_BrushSelect {
 
         editMode = SelectionEditMode.setSelected; // @override
 
-        selectionInfo = new VectorLineSelectionEditingInfo(); // @override
+        selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
 
         protected beforeHitTest() { // @override
 
@@ -192,7 +192,7 @@ namespace ManualTracingTool {
 
             this.selectionInfo.updateLineSelectionState();
 
-            this.selectionInfo.releaseEditState();
+            this.selectionInfo.resetModifyStatus();
         }
     }
 
@@ -200,7 +200,7 @@ namespace ManualTracingTool {
 
         editMode = SelectionEditMode.setSelected; // @override
 
-        selectionInfo = new VectorLineSelectionEditingInfo(); // @override
+        selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
 
         protected beforeHitTest() { // @override
 
@@ -220,7 +220,7 @@ namespace ManualTracingTool {
 
             this.selectionInfo.updateLineSelectionState();
 
-            this.selectionInfo.releaseEditState();
+            this.selectionInfo.resetModifyStatus();
         }
     }
 
@@ -228,7 +228,7 @@ namespace ManualTracingTool {
 
         editMode = SelectionEditMode.setSelected; // @override
 
-        selectionInfo = new VectorLineSelectionEditingInfo(); // @override
+        selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
 
         protected beforeHitTest() { // @override
 
@@ -245,7 +245,7 @@ namespace ManualTracingTool {
 
             this.selectionInfo.updateLineSelectionState();
 
-            this.selectionInfo.releaseEditState();
+            this.selectionInfo.resetModifyStatus();
         }
     }
 }

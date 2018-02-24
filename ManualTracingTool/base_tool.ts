@@ -67,10 +67,12 @@ namespace ManualTracingTool {
 
         commandHistory: CommandHistory = null;
 
-        currentLayer: Layer = null;
         document: DocumentData = null;
+        currentLayer: Layer = null;
+
         currentVectorLayer: VectorLayer = null;
         currentVectorGroup: VectorGroup = null;
+        currentVectorLine: VectorLine = null;
 
         currentPosingLayer: PosingLayer = null;
         currentPosingModel: PosingModel = null;
@@ -108,9 +110,9 @@ namespace ManualTracingTool {
 
         commandHistory: CommandHistory = null;
 
-        document: DocumentData = null;
         currentVectorLayer: VectorLayer = null;
         currentVectorGroup: VectorGroup = null;
+        currentVectorLine: VectorLine = null;
 
         currentPosingLayer: PosingLayer = null;
         currentPosingModel: PosingModel = null;
@@ -139,9 +141,18 @@ namespace ManualTracingTool {
 
             this.commandHistory = this.toolContext.commandHistory;
 
-            this.document = this.toolContext.document;
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
             this.currentVectorGroup = this.toolContext.currentVectorGroup;
+            this.currentVectorLine = this.toolContext.currentVectorLine;
+
+            if (this.toolContext.currentVectorLine != null) {
+
+                if (this.toolContext.currentVectorLine.modifyFlag == VectorLineModifyFlagID.delete) {
+
+                    this.toolContext.currentVectorLine = null;
+                    this.currentVectorLine = null;
+                }
+            }
 
             this.currentPosingLayer = this.toolContext.currentPosingLayer;
             this.currentPosingModel = this.toolContext.currentPosingModel;
