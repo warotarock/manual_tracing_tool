@@ -84,6 +84,8 @@ namespace ManualTracingTool {
             this.errorCheck();
 
             this.group.lines.push(this.line);
+
+            env.setCurrentVectorLine(this.line, false);
         }
 
         undo(env: ToolEnvironment) { // @override

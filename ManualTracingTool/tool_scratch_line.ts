@@ -23,7 +23,6 @@ namespace ManualTracingTool {
     export class Tool_ScratchLine extends ToolBase {
 
         editLine: VectorLine = null;
-        targetLine: VectorLine = null;
 
         resampledLine: VectorLine = null;
         candidateLine: VectorLine = null;
@@ -69,7 +68,7 @@ namespace ManualTracingTool {
 
             env.setRedrawEditorWindow();
 
-            if (this.targetLine == null || this.editLine == null) {
+            if (env.currentVectorLine == null || this.editLine == null) {
                 return;
             }
 
@@ -89,8 +88,10 @@ namespace ManualTracingTool {
 
                 this.isLeftButtonEdit = false;
 
-                if (this.targetLine == null || this.editLine == null
+                if (env.currentVectorLine == null
+                    || this.editLine == null
                     || this.editLine.points.length <= 1) {
+
                     return;
                 }
 
@@ -108,16 +109,15 @@ namespace ManualTracingTool {
                 // Finish selectiong a line
 
                 this.lineSingleHitTester.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorRadius);
+                let hitedLine = this.lineSingleHitTester.hitedLine;
 
-                if (this.lineSingleHitTester.hitedLine != null) {
+                if (hitedLine != null) {
 
-                    if (this.targetLine != null) {
-                        this.targetLine.isEditTarget = false;
+                    if (env.currentVectorLine != null) {
+                        env.currentVectorLine.isEditTarget = false;
                     }
 
-                    // TODO: 線が削除された場合に対応する
-                    this.targetLine = this.lineSingleHitTester.hitedLine;
-                    this.targetLine.isEditTarget = true;
+                    env.setCurrentVectorLine(hitedLine, true);
 
                     env.setRedrawMainWindowEditorWindow();
                 }
@@ -129,6 +129,8 @@ namespace ManualTracingTool {
         private executeCommand(env: ToolEnvironment) {
 
             this.viewScale = env.viewScale;
+
+            let targetLine = env.currentVectorLine;
 
             Logic_Edit_Line.calcParameters(this.editLine);
 
@@ -144,10 +146,10 @@ namespace ManualTracingTool {
 
             // Extruding line
             let forwardExtrude = true;
-            let extrudeLine = this.generateExtrudePoints(this.targetLine, this.resampledLine, false);
+            let extrudeLine = this.generateExtrudePoints(targetLine, this.resampledLine, false);
             if (extrudeLine == null) {
 
-                extrudeLine = this.generateExtrudePoints(this.targetLine, this.resampledLine, true);
+                extrudeLine = this.generateExtrudePoints(targetLine, this.resampledLine, true);
                 if (extrudeLine != null) {
                     forwardExtrude = false;
                 }
@@ -157,7 +159,7 @@ namespace ManualTracingTool {
             this.extrudeLine = extrudeLine;
 
             // Scratching
-            let candidatePointPairs = this.ganerateCandidatePoints(this.targetLine, this.resampledLine);
+            let candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine);
 
             // for display
             this.candidateLine = new VectorLine();
@@ -170,7 +172,7 @@ namespace ManualTracingTool {
 
                 let command = new Command_ExtrudeLine();
                 command.isContinuing = true;
-                command.targetLine = this.targetLine;
+                command.targetLine = targetLine;
                 command.forwardExtrude = this.forwardExtrude;
                 command.extrudeLine = this.extrudeLine;
 
@@ -183,7 +185,7 @@ namespace ManualTracingTool {
 
                 let command = new Command_ScratchLine();
                 command.isContinued = (this.extrudeLine != null);
-                command.targetLine = this.targetLine;
+                command.targetLine = targetLine;
 
                 for (let pair of candidatePointPairs) {
 

@@ -124,7 +124,7 @@ namespace ManualTracingTool {
 
     export class Command_Select extends CommandBase {
 
-        selector: VectorLineSelectionEditingInfo = null;
+        selector: VectorLayerEditorSelectionInfo = null;
 
         selectedLines: List<LineSelectionInfo> = null;
         selectedPoints: List<PointSelectionInfo> = null;
@@ -133,10 +133,16 @@ namespace ManualTracingTool {
 
             this.errorCheck();
 
-            // Selection process is done while inputting
+            // Selection process has done while inputting
 
             this.selectedLines = ListClone(this.selector.selectedLines);
             this.selectedPoints = ListClone(this.selector.selectedPoints);
+
+            if (this.selectedLines.length > 0) {
+
+                let firstLine = this.selectedLines[0];
+                env.setCurrentVectorLine(firstLine.line, false);
+            }
         }
 
         undo(env: ToolEnvironment) { // @override

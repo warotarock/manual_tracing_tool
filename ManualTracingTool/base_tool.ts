@@ -225,6 +225,14 @@ namespace ManualTracingTool {
 
             this.toolContext.mainEditor.setCurrentLayer(layer);
         }
+
+        setCurrentVectorLine(line: VectorLine, isEditTarget: boolean) {
+
+            this.toolContext.currentVectorLine = line;
+            this.currentVectorLine = line;
+
+            this.currentVectorLine.isEditTarget = isEditTarget;
+        }
     }
 
     export class ToolMouseEvent {
