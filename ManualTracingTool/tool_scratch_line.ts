@@ -341,6 +341,11 @@ namespace ManualTracingTool {
 
             for (let point of target_Line.points) {
 
+                // Targets selected point only if line is selected
+                if (target_Line.isSelected && !point.isSelected) {
+                    continue;
+                }
+
                 // Search nearest segment
                 let isHited = false;
                 let minDistance = 99999.0;
