@@ -9,23 +9,14 @@ namespace ManualTracingTool {
         posing = 3
     }
 
-    export enum DrawLineToolSubToolID {
-
-        drawLine = 0,
-    }
-
-    export enum ScrathLineToolSubToolID {
-
-        scratchLine = 0,
-    }
-
     export enum OperationUnitID {
 
         none = 0,
         linePoint = 1,
         lineSegment = 2,
         line = 3,
-        layer = 4
+        layer = 4,
+        countOfID = 5
     }
 
     export enum Posing3DSubToolID {
@@ -54,6 +45,11 @@ namespace ManualTracingTool {
     export interface MainEditor {
 
         setCurrentLayer(layer: Layer);
+    }
+
+    export class PickingWindow extends CanvasWindow {
+
+        maxDepth = 4.0;
     }
 
     export class ToolContext {
@@ -284,6 +280,12 @@ namespace ManualTracingTool {
         }
 
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        }
+    }
+
+    export class ModalToolBase extends ToolBase {
+
+        exitModal(env: ToolEnvironment) { // @virtual
         }
     }
 

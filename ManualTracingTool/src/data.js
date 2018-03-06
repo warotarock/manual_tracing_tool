@@ -33,21 +33,20 @@ var ManualTracingTool;
     }());
     ManualTracingTool.Layer = Layer;
     // Vector layer
-    var ModifyFlagID;
-    (function (ModifyFlagID) {
-        ModifyFlagID[ModifyFlagID["none"] = 0] = "none";
-        ModifyFlagID[ModifyFlagID["selectedToUnselected"] = 1] = "selectedToUnselected";
-        ModifyFlagID[ModifyFlagID["unselectedToSelected"] = 2] = "unselectedToSelected";
-        ModifyFlagID[ModifyFlagID["delete"] = 3] = "delete";
-        ModifyFlagID[ModifyFlagID["deletePoints"] = 4] = "deletePoints";
-    })(ModifyFlagID = ManualTracingTool.ModifyFlagID || (ManualTracingTool.ModifyFlagID = {}));
+    var LinePointModifyFlagID;
+    (function (LinePointModifyFlagID) {
+        LinePointModifyFlagID[LinePointModifyFlagID["none"] = 0] = "none";
+        LinePointModifyFlagID[LinePointModifyFlagID["selectedToUnselected"] = 1] = "selectedToUnselected";
+        LinePointModifyFlagID[LinePointModifyFlagID["unselectedToSelected"] = 2] = "unselectedToSelected";
+        LinePointModifyFlagID[LinePointModifyFlagID["delete"] = 3] = "delete";
+    })(LinePointModifyFlagID = ManualTracingTool.LinePointModifyFlagID || (ManualTracingTool.LinePointModifyFlagID = {}));
     var LinePoint = /** @class */ (function () {
         function LinePoint() {
             this.location = vec3.fromValues(0.0, 0.0, 0.0);
             this.adjustedLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.isSelected = false;
             // runtime
-            this.modifyFlag = ModifyFlagID.none;
+            this.modifyFlag = LinePointModifyFlagID.none;
             this.tempLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.totalLength = 0.0;
             this.curvature = 0.0;
@@ -55,14 +54,23 @@ var ManualTracingTool;
         return LinePoint;
     }());
     ManualTracingTool.LinePoint = LinePoint;
+    var VectorLineModifyFlagID;
+    (function (VectorLineModifyFlagID) {
+        VectorLineModifyFlagID[VectorLineModifyFlagID["none"] = 0] = "none";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["selectedToUnselected"] = 1] = "selectedToUnselected";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["unselectedToSelected"] = 2] = "unselectedToSelected";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["delete"] = 3] = "delete";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["deletePoints"] = 4] = "deletePoints";
+    })(VectorLineModifyFlagID = ManualTracingTool.VectorLineModifyFlagID || (ManualTracingTool.VectorLineModifyFlagID = {}));
     var VectorLine = /** @class */ (function () {
         function VectorLine() {
             this.points = new List();
-            this.isClosingToMouse = false;
+            this.isCloseToMouse = false;
             this.isEditTarget = false;
             this.isSelected = false;
+            this.strokeWidth = 1.0;
             // runtime
-            this.modifyFlag = ModifyFlagID.none;
+            this.modifyFlag = VectorLineModifyFlagID.none;
             this.minX = 999999.0;
             this.minY = 999999.0;
             this.maxX = -999999.0;
@@ -75,8 +83,9 @@ var ManualTracingTool;
     var VectorGroupModifyFlagID;
     (function (VectorGroupModifyFlagID) {
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["none"] = 0] = "none";
-        VectorGroupModifyFlagID[VectorGroupModifyFlagID["deletePoints"] = 1] = "deletePoints";
+        VectorGroupModifyFlagID[VectorGroupModifyFlagID["modifyLines"] = 1] = "modifyLines";
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["deleteLines"] = 2] = "deleteLines";
+        VectorGroupModifyFlagID[VectorGroupModifyFlagID["delete"] = 3] = "delete";
     })(VectorGroupModifyFlagID = ManualTracingTool.VectorGroupModifyFlagID || (ManualTracingTool.VectorGroupModifyFlagID = {}));
     var VectorGroup = /** @class */ (function () {
         function VectorGroup() {

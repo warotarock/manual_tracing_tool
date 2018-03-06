@@ -39,29 +39,25 @@ var ManualTracingTool;
         return HitTest_VectorLayer_Base;
     }());
     ManualTracingTool.HitTest_VectorLayer_Base = HitTest_VectorLayer_Base;
-    var HitTest_LinePoint_LocationalDistanceBase = /** @class */ (function (_super) {
-        __extends(HitTest_LinePoint_LocationalDistanceBase, _super);
-        function HitTest_LinePoint_LocationalDistanceBase() {
+    var HitTest_LinePointBase = /** @class */ (function (_super) {
+        __extends(HitTest_LinePointBase, _super);
+        function HitTest_LinePointBase() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        HitTest_LinePoint_LocationalDistanceBase.prototype.processLayer = function (layer, x, y, minDistance) {
-            this.startProcess();
+        HitTest_LinePointBase.prototype.processLayer = function (layer, x, y, minDistance) {
             this.hitTest(layer, x, y, minDistance * minDistance);
-            this.endProcess();
         };
-        HitTest_LinePoint_LocationalDistanceBase.prototype.processLayerRecursive = function (layers, x, y, minDistance) {
-            this.startProcess();
+        HitTest_LinePointBase.prototype.processLayerRecursive = function (layers, x, y, minDistance) {
             this.hitTestRecursive(layers, x, y, minDistance * minDistance);
-            this.endProcess();
         };
-        HitTest_LinePoint_LocationalDistanceBase.prototype.startProcess = function () {
+        HitTest_LinePointBase.prototype.startProcess = function () {
             this.exitPointHitTest = false;
             this.beforeHitTest();
         };
-        HitTest_LinePoint_LocationalDistanceBase.prototype.endProcess = function () {
+        HitTest_LinePointBase.prototype.endProcess = function () {
             this.afterHitTest();
         };
-        HitTest_LinePoint_LocationalDistanceBase.prototype.hitTest = function (layer, x, y, minDistance) {
+        HitTest_LinePointBase.prototype.hitTest = function (layer, x, y, minDistance) {
             var vectorLayer = layer;
             this.beforeHitTestToLayer(vectorLayer);
             for (var _i = 0, _a = vectorLayer.groups; _i < _a.length; _i++) {
@@ -79,7 +75,7 @@ var ManualTracingTool;
             }
             this.afterHitTestToLayer(vectorLayer);
         };
-        HitTest_LinePoint_LocationalDistanceBase.prototype.hitTestRecursive = function (layers, x, y, minDistance) {
+        HitTest_LinePointBase.prototype.hitTestRecursive = function (layers, x, y, minDistance) {
             for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
                 var layer = layers_1[_i];
                 if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
@@ -90,23 +86,23 @@ var ManualTracingTool;
                 }
             }
         };
-        HitTest_LinePoint_LocationalDistanceBase.prototype.hitTest_LineRectangle = function (line, x, y, minDistance) {
+        HitTest_LinePointBase.prototype.hitTest_LineRectangle = function (line, x, y, minDistance) {
             return (x >= line.minX - minDistance
                 && x <= line.maxX + minDistance
                 && y >= line.minY - minDistance
                 && y <= line.maxY + minDistance);
         };
-        HitTest_LinePoint_LocationalDistanceBase.prototype.processHitTestToLine = function (group, line, x, y, minDistance) {
+        HitTest_LinePointBase.prototype.processHitTestToLine = function (group, line, x, y, minDistance) {
         };
-        return HitTest_LinePoint_LocationalDistanceBase;
+        return HitTest_LinePointBase;
     }(HitTest_VectorLayer_Base));
-    ManualTracingTool.HitTest_LinePoint_LocationalDistanceBase = HitTest_LinePoint_LocationalDistanceBase;
-    var HitTest_LinePoint_PointDistanceBase = /** @class */ (function (_super) {
-        __extends(HitTest_LinePoint_PointDistanceBase, _super);
-        function HitTest_LinePoint_PointDistanceBase() {
+    ManualTracingTool.HitTest_LinePointBase = HitTest_LinePointBase;
+    var HitTest_LinePoint_PointToPointByDistance = /** @class */ (function (_super) {
+        __extends(HitTest_LinePoint_PointToPointByDistance, _super);
+        function HitTest_LinePoint_PointToPointByDistance() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        HitTest_LinePoint_PointDistanceBase.prototype.processHitTestToLine = function (group, line, x, y, minDistance) {
+        HitTest_LinePoint_PointToPointByDistance.prototype.processHitTestToLine = function (group, line, x, y, minDistance) {
             this.exitPointHitTest = false;
             for (var i = 0; i < line.points.length; i++) {
                 var point = line.points[i];
@@ -119,15 +115,15 @@ var ManualTracingTool;
                 }
             }
         };
-        return HitTest_LinePoint_PointDistanceBase;
-    }(HitTest_LinePoint_LocationalDistanceBase));
-    ManualTracingTool.HitTest_LinePoint_PointDistanceBase = HitTest_LinePoint_PointDistanceBase;
-    var HitTest_LinePoint_LineDistanceBase = /** @class */ (function (_super) {
-        __extends(HitTest_LinePoint_LineDistanceBase, _super);
-        function HitTest_LinePoint_LineDistanceBase() {
+        return HitTest_LinePoint_PointToPointByDistance;
+    }(HitTest_LinePointBase));
+    ManualTracingTool.HitTest_LinePoint_PointToPointByDistance = HitTest_LinePoint_PointToPointByDistance;
+    var HitTest_Line_PointToLineByDistance = /** @class */ (function (_super) {
+        __extends(HitTest_Line_PointToLineByDistance, _super);
+        function HitTest_Line_PointToLineByDistance() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        HitTest_LinePoint_LineDistanceBase.prototype.processHitTestToLine = function (group, line, x, y, minDistance) {
+        HitTest_Line_PointToLineByDistance.prototype.processHitTestToLine = function (group, line, x, y, minDistance) {
             this.exitPointHitTest = false;
             for (var i = 0; i + 1 < line.points.length; i++) {
                 var point1 = line.points[i];
@@ -144,24 +140,50 @@ var ManualTracingTool;
                 }
             }
         };
-        return HitTest_LinePoint_LineDistanceBase;
-    }(HitTest_LinePoint_LocationalDistanceBase));
-    ManualTracingTool.HitTest_LinePoint_LineDistanceBase = HitTest_LinePoint_LineDistanceBase;
-    var HitTest_LinePoint_LineSingleHitTest = /** @class */ (function (_super) {
-        __extends(HitTest_LinePoint_LineSingleHitTest, _super);
-        function HitTest_LinePoint_LineSingleHitTest() {
+        return HitTest_Line_PointToLineByDistance;
+    }(HitTest_LinePointBase));
+    ManualTracingTool.HitTest_Line_PointToLineByDistance = HitTest_Line_PointToLineByDistance;
+    var HitTest_Line_PointToLineByDistanceSingle = /** @class */ (function (_super) {
+        __extends(HitTest_Line_PointToLineByDistanceSingle, _super);
+        function HitTest_Line_PointToLineByDistanceSingle() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.hitedLine = null;
             return _this;
         }
-        HitTest_LinePoint_LineSingleHitTest.prototype.beforeHitTest = function () {
+        HitTest_Line_PointToLineByDistanceSingle.prototype.beforeHitTest = function () {
             this.hitedLine = null;
         };
-        HitTest_LinePoint_LineSingleHitTest.prototype.onLineSegmentHited = function (line, point1, point2) {
+        HitTest_Line_PointToLineByDistanceSingle.prototype.onLineSegmentHited = function (line, point1, point2) {
             this.hitedLine = line;
             this.exitPointHitTest = true;
         };
-        return HitTest_LinePoint_LineSingleHitTest;
-    }(HitTest_LinePoint_LineDistanceBase));
-    ManualTracingTool.HitTest_LinePoint_LineSingleHitTest = HitTest_LinePoint_LineSingleHitTest;
+        return HitTest_Line_PointToLineByDistanceSingle;
+    }(HitTest_Line_PointToLineByDistance));
+    ManualTracingTool.HitTest_Line_PointToLineByDistanceSingle = HitTest_Line_PointToLineByDistanceSingle;
+    var HitTest_Line_IsCloseToMouse = /** @class */ (function (_super) {
+        __extends(HitTest_Line_IsCloseToMouse, _super);
+        function HitTest_Line_IsCloseToMouse() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.isChanged = false;
+            return _this;
+        }
+        HitTest_Line_IsCloseToMouse.prototype.beforeHitTest = function () {
+            this.isChanged = false;
+        };
+        HitTest_Line_IsCloseToMouse.prototype.onLineSegmentHited = function (line, point1, point2) {
+            if (!line.isCloseToMouse) {
+                this.isChanged = true;
+            }
+            line.isCloseToMouse = true;
+            this.exitPointHitTest = true;
+        };
+        HitTest_Line_IsCloseToMouse.prototype.onLineSegmentNotHited = function (line, point1, point2) {
+            if (line.isCloseToMouse) {
+                this.isChanged = true;
+            }
+            line.isCloseToMouse = false;
+        };
+        return HitTest_Line_IsCloseToMouse;
+    }(HitTest_Line_PointToLineByDistance));
+    ManualTracingTool.HitTest_Line_IsCloseToMouse = HitTest_Line_IsCloseToMouse;
 })(ManualTracingTool || (ManualTracingTool = {}));

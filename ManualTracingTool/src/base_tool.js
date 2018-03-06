@@ -1,3 +1,13 @@
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var ManualTracingTool;
 (function (ManualTracingTool) {
     var MainToolID;
@@ -7,14 +17,15 @@ var ManualTracingTool;
         MainToolID[MainToolID["scratchLine"] = 2] = "scratchLine";
         MainToolID[MainToolID["posing"] = 3] = "posing";
     })(MainToolID = ManualTracingTool.MainToolID || (ManualTracingTool.MainToolID = {}));
-    var DrawLineToolSubToolID;
-    (function (DrawLineToolSubToolID) {
-        DrawLineToolSubToolID[DrawLineToolSubToolID["drawLine"] = 0] = "drawLine";
-    })(DrawLineToolSubToolID = ManualTracingTool.DrawLineToolSubToolID || (ManualTracingTool.DrawLineToolSubToolID = {}));
-    var ScrathLineToolSubToolID;
-    (function (ScrathLineToolSubToolID) {
-        ScrathLineToolSubToolID[ScrathLineToolSubToolID["scratchLine"] = 0] = "scratchLine";
-    })(ScrathLineToolSubToolID = ManualTracingTool.ScrathLineToolSubToolID || (ManualTracingTool.ScrathLineToolSubToolID = {}));
+    var OperationUnitID;
+    (function (OperationUnitID) {
+        OperationUnitID[OperationUnitID["none"] = 0] = "none";
+        OperationUnitID[OperationUnitID["linePoint"] = 1] = "linePoint";
+        OperationUnitID[OperationUnitID["lineSegment"] = 2] = "lineSegment";
+        OperationUnitID[OperationUnitID["line"] = 3] = "line";
+        OperationUnitID[OperationUnitID["layer"] = 4] = "layer";
+        OperationUnitID[OperationUnitID["countOfID"] = 5] = "countOfID";
+    })(OperationUnitID = ManualTracingTool.OperationUnitID || (ManualTracingTool.OperationUnitID = {}));
     var Posing3DSubToolID;
     (function (Posing3DSubToolID) {
         Posing3DSubToolID[Posing3DSubToolID["locateHead"] = 0] = "locateHead";
@@ -36,17 +47,29 @@ var ManualTracingTool;
         EditModeID[EditModeID["selectMode"] = 1] = "selectMode";
         EditModeID[EditModeID["drawMode"] = 2] = "drawMode";
     })(EditModeID = ManualTracingTool.EditModeID || (ManualTracingTool.EditModeID = {}));
+    var PickingWindow = /** @class */ (function (_super) {
+        __extends(PickingWindow, _super);
+        function PickingWindow() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.maxDepth = 4.0;
+            return _this;
+        }
+        return PickingWindow;
+    }(ManualTracingTool.CanvasWindow));
+    ManualTracingTool.PickingWindow = PickingWindow;
     var ToolContext = /** @class */ (function () {
         function ToolContext() {
             this.mainEditor = null;
             this.mainToolID = MainToolID.none;
             this.subToolIndex = 0;
             this.editMode = EditModeID.drawMode;
+            this.operationUnitID = OperationUnitID.linePoint;
             this.commandHistory = null;
-            this.currentLayer = null;
             this.document = null;
+            this.currentLayer = null;
             this.currentVectorLayer = null;
             this.currentVectorGroup = null;
+            this.currentVectorLine = null;
             this.currentPosingLayer = null;
             this.currentPosingModel = null;
             this.currentPosingData = null;
@@ -75,10 +98,11 @@ var ManualTracingTool;
             this.mainToolID = MainToolID.posing;
             this.subToolIndex = 0;
             this.editMode = EditModeID.drawMode;
+            this.operationUnitID = OperationUnitID.linePoint;
             this.commandHistory = null;
-            this.document = null;
             this.currentVectorLayer = null;
             this.currentVectorGroup = null;
+            this.currentVectorLine = null;
             this.currentPosingLayer = null;
             this.currentPosingModel = null;
             this.currentPosingData = null;
@@ -94,10 +118,17 @@ var ManualTracingTool;
             this.mainToolID = this.toolContext.mainToolID;
             this.subToolIndex = this.toolContext.subToolIndex;
             this.editMode = this.toolContext.editMode;
+            this.operationUnitID = this.toolContext.operationUnitID;
             this.commandHistory = this.toolContext.commandHistory;
-            this.document = this.toolContext.document;
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
             this.currentVectorGroup = this.toolContext.currentVectorGroup;
+            this.currentVectorLine = this.toolContext.currentVectorLine;
+            if (this.toolContext.currentVectorLine != null) {
+                if (this.toolContext.currentVectorLine.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.delete) {
+                    this.toolContext.currentVectorLine = null;
+                    this.currentVectorLine = null;
+                }
+            }
             this.currentPosingLayer = this.toolContext.currentPosingLayer;
             this.currentPosingModel = this.toolContext.currentPosingModel;
             this.currentPosingData = this.toolContext.currentPosingData;
@@ -143,6 +174,11 @@ var ManualTracingTool;
         };
         ToolEnvironment.prototype.setCurrentLayer = function (layer) {
             this.toolContext.mainEditor.setCurrentLayer(layer);
+        };
+        ToolEnvironment.prototype.setCurrentVectorLine = function (line, isEditTarget) {
+            this.toolContext.currentVectorLine = line;
+            this.currentVectorLine = line;
+            this.currentVectorLine.isEditTarget = isEditTarget;
         };
         return ToolEnvironment;
     }());
@@ -190,6 +226,16 @@ var ManualTracingTool;
         return ToolBase;
     }());
     ManualTracingTool.ToolBase = ToolBase;
+    var ModalToolBase = /** @class */ (function (_super) {
+        __extends(ModalToolBase, _super);
+        function ModalToolBase() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        ModalToolBase.prototype.exitModal = function (env) {
+        };
+        return ModalToolBase;
+    }(ToolBase));
+    ManualTracingTool.ModalToolBase = ModalToolBase;
     var MainTool = /** @class */ (function () {
         function MainTool() {
             this.mainToolID = MainToolID.none;

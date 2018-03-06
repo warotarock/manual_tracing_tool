@@ -4,15 +4,12 @@ declare var Custombox: any;
 namespace ManualTracingTool {
 
     // 今やること (current tasks)
-    // ・編集単位ロジック
-    //   ・共通のアクティブ線
-    // ・アクティブ線、レイヤによる絞り込み処理と可視化
-    //   →スクラッチツールで実装
-    // ・スクラッチツールで選択中の点のみ対象にできるよう修正
     // ・変形ツール
     //   平行移動、回転、拡大縮小、ラティス変形
+    //     モーダルツールの仕組みを作る→currentToolを一時的に変える→現在のツールを一時対比する変数→モーダル用のツールイベントを用意
 
     // どこかでやる必要があること (nearest future tasks)
+    // ・アクティブ線、レイヤによる絞り込み処理と可視化
     // ・現在のツールに応じた全選択、全選択解除処理
     // ・線スクラッチで点の削減ツール
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
@@ -35,6 +32,9 @@ namespace ManualTracingTool {
     // ・現在のレイヤーが移動したときにカーソルが変な位置に出る
 
     // 終わったもの (done)
+    // ・スクラッチツールで選択中の点のみ対象にできるよう修正
+    // ・編集単位ロジック
+    //   ・共通のアクティブ線
     // ・線が１本もないときにエラーが出るためなんとかしる！→線の削除処理でグループの線のリストがnullになる場合があったため。直した。
     // ・編集単位選択UIの作成
     // ・編集単位ロジック
@@ -56,6 +56,8 @@ namespace ManualTracingTool {
 
     class Main implements MainEditor {
 
+        // UI elements
+
         mainWindow = new CanvasWindow();
         editorWindow = new CanvasWindow();
         layerWindow = new LayerWindow();
@@ -67,31 +69,40 @@ namespace ManualTracingTool {
 
         ID = new HTMLElementID();
 
-        // Integrated tool system
-
-        mainTools = new List<MainTool>();
-
-        toolContext: ToolContext = null;
-        toolEnv: ToolEnvironment = null;
-        toolMouseEvent = new ToolMouseEvent();
+        // Resources
 
         systemImage: ImageResource = null;
         subToolImages = new List<ImageResource>();
         layerButtonImage: ImageResource = null;
 
+        // Integrated tool system
+
+        toolContext: ToolContext = null;
+        toolEnv: ToolEnvironment = null;
+        toolMouseEvent = new ToolMouseEvent();
+
+        mainTools = new List<MainTool>();
+
+        currentTool: ToolBase = null;
+        currentSelectTool: ToolBase = null;
+
         //layerCommands = new List<Command_Layer_CommandBase>(LayerWindowButtonID.IDCount);
 
-        // Drawing tools
-        currentTool: ToolBase = null;
-        tool_DrawLine = new Tool_DrawLine();
-        tool_AddPoint = new Tool_AddPoint();
-        tool_ScratchLine = new Tool_ScratchLine();
+        // Modal tools
+        currentModalTool: ModalToolBase = null;
+        modalBeforeTool: ToolBase = null;
+        modalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
 
-        currentSelectTool: ToolBase = null;
-        selectionTools = List<ToolBase>(<int>(OperationUnitID.layer) + 1);
+        // Selection tools
+        selectionTools = List<ToolBase>(<int>OperationUnitID.countOfID);
         tool_LinePointBrushSelect = new Tool_Select_BrushSelet_LinePoint();
         tool_LineSegmentBrushSelect = new Tool_Select_BrushSelet_LineSegment();
         tool_LineBrushSelect = new Tool_Select_BrushSelet_Line();
+
+        // Drawing tools
+        tool_DrawLine = new Tool_DrawLine();
+        tool_AddPoint = new Tool_AddPoint();
+        tool_ScratchLine = new Tool_ScratchLine();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
 
@@ -356,6 +367,13 @@ namespace ManualTracingTool {
 
         private initializeTools() {
 
+            // Resoures
+            this.systemImage = this.imageResurces[1];
+            this.subToolImages.push(this.imageResurces[2]);
+            this.layerButtonImage = this.imageResurces[3];
+
+            this.posing3dView.storeResources(this.modelFile, this.imageResurces);
+
             // Constructs main tools and sub tools structure
             this.mainTools.push(
                 new MainTool().id(MainToolID.none)
@@ -388,6 +406,16 @@ namespace ManualTracingTool {
                     .subTool(this.tool_Posing3d_TwistHead)
             );
 
+            // Modal tools
+            this.modalTools[<int>ModalToolID.none] = null;
+            //this.modalTools[<int>ModalToolID.grabMove] = this.tool_LinePointBrushSelect;
+
+            // Selection tools
+            this.selectionTools[<int>OperationUnitID.none] = null;
+            this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
+            this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
+            this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
+
             // Constructs current tool states
             this.toolEnv = new ToolEnvironment(this.toolContext);
 
@@ -395,18 +423,6 @@ namespace ManualTracingTool {
             //this.currentTool = this.tool_AddPoint;
             //this.currentTool = this.tool_ScratchLine;
             this.currentTool = this.tool_Posing3d_LocateHead;
-
-            // Selection tools
-            this.selectionTools[<int>OperationUnitID.none] = null;  
-            this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
-            this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
-            this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
-
-            this.systemImage = this.imageResurces[1];
-            this.subToolImages.push(this.imageResurces[2]);
-            this.layerButtonImage = this.imageResurces[3];
-
-            this.posing3dView.storeResources(this.modelFile, this.imageResurces);
         }
 
         private setEvents() {
@@ -1011,12 +1027,15 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 's' && this.toolEnv.isCtrlKeyPressing()) {
+            if (e.key == 's') {
 
-                window.localStorage.setItem(this.tempFileName, JSON.stringify(this.document));
+                if (this.toolEnv.isCtrlKeyPressing()) {
 
-                e.preventDefault();
-                return;
+                    window.localStorage.setItem(this.tempFileName, JSON.stringify(this.document));
+
+                    e.preventDefault();
+                    return;
+                }
             }
 
             if (e.key == 'Home' || e.key == 'q') {
@@ -1122,6 +1141,14 @@ namespace ManualTracingTool {
 
                 e.preventDefault();
                 return;
+            }
+
+            if (e.key == 'g') {
+
+                if (context.editMode == EditModeID.drawMode) {
+
+                    this.startModalTool(ModalToolID.grabMove);
+                }
             }
         }
 
@@ -1243,6 +1270,22 @@ namespace ManualTracingTool {
             }
 
             layer.isSelected = true;
+        }
+
+        public startModalTool(modalToolID: ModalToolID) {
+
+            this.modalBeforeTool = this.currentTool;
+            this.currentModalTool = this.modalTools[<int>modalToolID];
+            this.currentTool = this.currentModalTool;
+        }
+
+        public eixtModalTool() {
+
+            this.toolEnv.updateContext();
+            this.currentModalTool.exitModal(this.toolEnv);
+
+            this.currentTool = this.modalBeforeTool;
+            this.currentModalTool = null;
         }
 
         // View operations
@@ -2615,18 +2658,12 @@ namespace ManualTracingTool {
 
     }
 
-    export class PickingWindow extends CanvasWindow {
-
-        maxDepth = 4.0;
-    }
-
     enum ModalWindowID {
 
         none = 0,
         layerPropertyModal = 1,
         operationOprionModal = 2,
     }
-
 
     class HTMLElementID {
 
@@ -2644,6 +2681,26 @@ namespace ManualTracingTool {
 
         operationOptionModal = '#operationOptionModal';
         operationOptionModal_operationUnit = 'operationOptionModal.operationUnit'
+    }
+
+    enum DrawLineToolSubToolID {
+
+        drawLine = 0,
+    }
+
+    enum ScrathLineToolSubToolID {
+
+        scratchLine = 0,
+    }
+
+    enum ModalToolID {
+
+        none = 0,
+        grabMove = 0,
+        ratateMove = 1,
+        scaleMove = 2,
+        latticeMove = 3,
+        countOfID = 4,
     }
 
     var _Main: Main;

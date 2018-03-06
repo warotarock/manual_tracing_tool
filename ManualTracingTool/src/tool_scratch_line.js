@@ -36,14 +36,13 @@ var ManualTracingTool;
         function Tool_ScratchLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.editLine = null;
-            _this.targetLine = null;
             _this.resampledLine = null;
             _this.candidateLine = null;
             _this.forwardExtrude = false;
             _this.extrudeLine = null;
             _this.nearestPoint = vec3.fromValues(0.0, 0.0, 0.0);
             _this.samplePoint = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.lineSingleHitTester = new ManualTracingTool.HitTest_LinePoint_LineSingleHitTest();
+            _this.lineSingleHitTester = new ManualTracingTool.HitTest_Line_PointToLineByDistanceSingle();
             _this.isLeftButtonEdit = false;
             _this.isRightButtonEdit = false;
             _this.samplingDivisionCount = 15;
@@ -77,7 +76,7 @@ var ManualTracingTool;
         };
         Tool_ScratchLine.prototype.mouseMove = function (e, env) {
             env.setRedrawEditorWindow();
-            if (this.targetLine == null || this.editLine == null) {
+            if (env.currentVectorLine == null || this.editLine == null) {
                 return;
             }
             if (this.isLeftButtonEdit && e.isLeftButtonPressing()) {
@@ -90,7 +89,8 @@ var ManualTracingTool;
         Tool_ScratchLine.prototype.mouseUp = function (e, env) {
             if (this.isLeftButtonEdit) {
                 this.isLeftButtonEdit = false;
-                if (this.targetLine == null || this.editLine == null
+                if (env.currentVectorLine == null
+                    || this.editLine == null
                     || this.editLine.points.length <= 1) {
                     return;
                 }
@@ -102,13 +102,12 @@ var ManualTracingTool;
                 this.isRightButtonEdit = false;
                 // Finish selectiong a line
                 this.lineSingleHitTester.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorRadius);
-                if (this.lineSingleHitTester.hitedLine != null) {
-                    if (this.targetLine != null) {
-                        this.targetLine.isEditTarget = false;
+                var hitedLine = this.lineSingleHitTester.hitedLine;
+                if (hitedLine != null) {
+                    if (env.currentVectorLine != null) {
+                        env.currentVectorLine.isEditTarget = false;
                     }
-                    // TODO: 線が削除された場合に対応する
-                    this.targetLine = this.lineSingleHitTester.hitedLine;
-                    this.targetLine.isEditTarget = true;
+                    env.setCurrentVectorLine(hitedLine, true);
                     env.setRedrawMainWindowEditorWindow();
                 }
                 return;
@@ -116,6 +115,7 @@ var ManualTracingTool;
         };
         Tool_ScratchLine.prototype.executeCommand = function (env) {
             this.viewScale = env.viewScale;
+            var targetLine = env.currentVectorLine;
             ManualTracingTool.Logic_Edit_Line.calcParameters(this.editLine);
             // Resampling
             this.resampledLine = this.resampleLine(this.editLine);
@@ -126,9 +126,9 @@ var ManualTracingTool;
             ManualTracingTool.Logic_Edit_Line.applyAdjustments(this.resampledLine);
             // Extruding line
             var forwardExtrude = true;
-            var extrudeLine = this.generateExtrudePoints(this.targetLine, this.resampledLine, false);
+            var extrudeLine = this.generateExtrudePoints(targetLine, this.resampledLine, false);
             if (extrudeLine == null) {
-                extrudeLine = this.generateExtrudePoints(this.targetLine, this.resampledLine, true);
+                extrudeLine = this.generateExtrudePoints(targetLine, this.resampledLine, true);
                 if (extrudeLine != null) {
                     forwardExtrude = false;
                 }
@@ -136,7 +136,7 @@ var ManualTracingTool;
             this.forwardExtrude = forwardExtrude;
             this.extrudeLine = extrudeLine;
             // Scratching
-            var candidatePointPairs = this.ganerateCandidatePoints(this.targetLine, this.resampledLine);
+            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine);
             // for display
             this.candidateLine = new ManualTracingTool.VectorLine();
             for (var _i = 0, candidatePointPairs_1 = candidatePointPairs; _i < candidatePointPairs_1.length; _i++) {
@@ -147,7 +147,7 @@ var ManualTracingTool;
             if (this.extrudeLine != null && this.extrudeLine.points.length > 0) {
                 var command = new Command_ExtrudeLine();
                 command.isContinuing = true;
-                command.targetLine = this.targetLine;
+                command.targetLine = targetLine;
                 command.forwardExtrude = this.forwardExtrude;
                 command.extrudeLine = this.extrudeLine;
                 command.execute(env);
@@ -156,7 +156,7 @@ var ManualTracingTool;
             if (candidatePointPairs != null && candidatePointPairs.length > 0) {
                 var command = new Command_ScratchLine();
                 command.isContinued = (this.extrudeLine != null);
-                command.targetLine = this.targetLine;
+                command.targetLine = targetLine;
                 for (var _a = 0, candidatePointPairs_2 = candidatePointPairs; _a < candidatePointPairs_2.length; _a++) {
                     var pair = candidatePointPairs_2[_a];
                     var editPoint = new Tool_ScratchLine_EditPoint();
@@ -255,6 +255,10 @@ var ManualTracingTool;
             var result = new List();
             for (var _i = 0, _a = target_Line.points; _i < _a.length; _i++) {
                 var point = _a[_i];
+                // Targets selected point only if line is selected
+                if (target_Line.isSelected && !point.isSelected) {
+                    continue;
+                }
                 // Search nearest segment
                 var isHited = false;
                 var minDistance = 99999.0;

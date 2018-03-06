@@ -75,6 +75,7 @@ var ManualTracingTool;
         Command_AddLine.prototype.execute = function (env) {
             this.errorCheck();
             this.group.lines.push(this.line);
+            env.setCurrentVectorLine(this.line, false);
         };
         Command_AddLine.prototype.undo = function (env) {
             ListRemoveAt(this.group.lines, this.group.lines.length - 1);
