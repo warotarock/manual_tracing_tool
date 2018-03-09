@@ -79,6 +79,7 @@ namespace ManualTracingTool {
 
         toolContext: ToolContext = null;
         toolEnv: ToolEnvironment = null;
+        toolDrawEnv: ToolDrawingEnvironment = null;
         toolMouseEvent = new ToolMouseEvent();
 
         mainTools = new List<MainTool>();
@@ -98,6 +99,9 @@ namespace ManualTracingTool {
         tool_LinePointBrushSelect = new Tool_Select_BrushSelet_LinePoint();
         tool_LineSegmentBrushSelect = new Tool_Select_BrushSelet_LineSegment();
         tool_LineBrushSelect = new Tool_Select_BrushSelet_Line();
+
+        // Transform tools
+        tool_Transform_Lattice = new Tool_Transform_Lattice();
 
         // Drawing tools
         tool_DrawLine = new Tool_DrawLine();
@@ -408,7 +412,7 @@ namespace ManualTracingTool {
 
             // Modal tools
             this.modalTools[<int>ModalToolID.none] = null;
-            //this.modalTools[<int>ModalToolID.grabMove] = this.tool_LinePointBrushSelect;
+            this.modalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice;
 
             // Selection tools
             this.selectionTools[<int>OperationUnitID.none] = null;
@@ -416,8 +420,9 @@ namespace ManualTracingTool {
             this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
             this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
 
-            // Constructs current tool states
+            // Constructs tool environment variables
             this.toolEnv = new ToolEnvironment(this.toolContext);
+            this.toolDrawEnv = new ToolDrawingEnvironment();
 
             //this.currentTool = this.tool_DrawLine;
             //this.currentTool = this.tool_AddPoint;
@@ -1145,7 +1150,7 @@ namespace ManualTracingTool {
 
             if (e.key == 'g') {
 
-                if (context.editMode == EditModeID.drawMode) {
+                if (context.editMode == EditModeID.selectMode) {
 
                     this.startModalTool(ModalToolID.grabMove);
                 }
@@ -1274,15 +1279,25 @@ namespace ManualTracingTool {
 
         public startModalTool(modalToolID: ModalToolID) {
 
-            this.modalBeforeTool = this.currentTool;
-            this.currentModalTool = this.modalTools[<int>modalToolID];
-            this.currentTool = this.currentModalTool;
+            let modalTool = this.modalTools[<int>modalToolID];
+
+            this.toolEnv.updateContext();
+            let available = modalTool.prepareModal(this.toolEnv);
+
+            if (available) {
+
+                modalTool.startModal(this.toolEnv);
+
+                this.modalBeforeTool = this.currentTool;
+                this.currentModalTool = modalTool;
+                this.currentTool = modalTool;
+            }
         }
 
         public eixtModalTool() {
 
             this.toolEnv.updateContext();
-            this.currentModalTool.exitModal(this.toolEnv);
+            this.currentModalTool.endModal(this.toolEnv);
 
             this.currentTool = this.modalBeforeTool;
             this.currentModalTool = null;
@@ -1871,10 +1886,10 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
 
+            mainWindow.updateViewMatrix();
             mainWindow.copyTransformTo(editorWindow);
 
             this.canvasRender.setContext(editorWindow);
-            this.canvasRender.setTransform(mainWindow);
 
             if (context.editMode == EditModeID.selectMode) {
 
@@ -1949,6 +1964,15 @@ namespace ManualTracingTool {
                         this.drawEditLine(editorWindow, this.tool_Posing3d_LocateHead.editLine);
                     }
                 }
+            }
+
+            if (this.currentTool != null) {
+
+                this.toolDrawEnv.canvasWindow = editorWindow;
+                this.toolDrawEnv.render = this.canvasRender;
+
+                this.toolEnv.updateContext();
+                this.currentTool.onDrawEditor(this.toolEnv, this.toolDrawEnv);
             }
         }
 
@@ -2696,11 +2720,11 @@ namespace ManualTracingTool {
     enum ModalToolID {
 
         none = 0,
-        grabMove = 0,
-        ratateMove = 1,
-        scaleMove = 2,
-        latticeMove = 3,
-        countOfID = 4,
+        grabMove = 1,
+        ratateMove = 2,
+        scaleMove = 3,
+        latticeMove = 4,
+        countOfID = 5,
     }
 
     var _Main: Main;

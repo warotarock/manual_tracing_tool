@@ -80,33 +80,89 @@ namespace ManualTracingTool {
         }
     }
 
+    export class Logic_Edit_Points_RectangleArea {
+
+        top = 0.0;
+        right = 0.0;
+        bottom = 0.0;
+        left = 0.0;
+    }
+
+    export class Logic_Edit_Points {
+
+        static setMinMaxToRectangleArea(result: Logic_Edit_Points_RectangleArea) {
+
+            result.left = 999999.0;
+            result.top = 999999.0;
+
+            result.right = -999999.0;
+            result.bottom = -999999.0;
+        }
+
+        static existsRectangleArea(rectangle: Logic_Edit_Points_RectangleArea): boolean {
+
+            return (rectangle.left != 999999.0
+                && rectangle.top != 999999.0
+                && rectangle.right != -999999.0
+                && rectangle.bottom != -999999.0);
+        }
+
+        static calculateSurroundingRectangle(result: Logic_Edit_Points_RectangleArea, minMaxRectangle: Logic_Edit_Points_RectangleArea, points: List<LinePoint>, selectedOnly: boolean) {
+
+            let left = minMaxRectangle.left;
+            let top = minMaxRectangle.top;
+
+            let right = minMaxRectangle.right;
+            let bottom = minMaxRectangle.bottom;
+
+            for (let point of points) {
+
+                if (selectedOnly
+                    && !point.isSelected) {
+
+                    continue;
+                }
+
+                left = Math.min(point.location[0], left);
+                top = Math.min(point.location[1], top);
+
+                right = Math.max(point.location[0], right);
+                bottom = Math.max(point.location[1], bottom);
+            }
+
+            result.left = left;
+            result.top = top;
+
+            result.right = right;
+            result.bottom = bottom;
+        }
+    }
+
     export class Logic_Edit_Line {
 
         static calcParameters(line: VectorLine) {
 
             // Calculate rectangle area
-            let minX = 999999.0;
-            let minY = 999999.0;
+            let left = 999999.0;
+            let top = 999999.0;
 
-            let maxX = -999999.0;
-            let maxY = -999999.0;
+            let right = -999999.0;
+            let bottom = -999999.0;
 
-            for (let i = 0; i < line.points.length; i++) {
+            for (let point of line.points) {
 
-                let point1 = line.points[i];
+                left = Math.min(point.location[0], left);
+                top = Math.min(point.location[1], top);
 
-                minX = Math.min(point1.location[0], minX);
-                minY = Math.min(point1.location[1], minY);
-
-                maxX = Math.max(point1.location[0], maxX);
-                maxY = Math.max(point1.location[1], maxY);
+                right = Math.max(point.location[0], right);
+                bottom = Math.max(point.location[1], bottom);
             }
 
-            line.minX = minX;
-            line.minY = minY;
+            line.left = left;
+            line.top = top;
 
-            line.maxX = maxX;
-            line.maxY = maxY;
+            line.right = right;
+            line.bottom = bottom;
 
             // Calculate point positon in length
             let totalLength = 0.0;

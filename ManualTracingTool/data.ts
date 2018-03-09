@@ -71,11 +71,11 @@ namespace ManualTracingTool {
         // runtime
         modifyFlag = VectorLineModifyFlagID.none;
 
-        minX = 999999.0;
-        minY = 999999.0;
+        left = 999999.0;
+        top = 999999.0;
 
-        maxX = -999999.0;
-        maxY = -999999.0;
+        right = -999999.0;
+        bottom = -999999.0;
 
         totalLength = 0.0;
     }

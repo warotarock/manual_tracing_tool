@@ -231,7 +231,14 @@ namespace ManualTracingTool {
         }
     }
 
+    export class ToolDrawingEnvironment {
+
+        canvasWindow: CanvasWindow = null;
+        render: CanvasRender = null;
+    }
+
     export class ToolMouseEvent {
+
         button = 0;
         buttons = 0;
         offsetX = 0.0;
@@ -281,11 +288,24 @@ namespace ManualTracingTool {
 
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
+
+        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) {
+
+        }
     }
 
     export class ModalToolBase extends ToolBase {
 
-        exitModal(env: ToolEnvironment) { // @virtual
+        prepareModal(env: ToolEnvironment): boolean { // @virtual
+
+            return false;
+        }
+
+        startModal(env: ToolEnvironment) { // @virtual
+
+        }
+
+        endModal(env: ToolEnvironment) { // @virtual
         }
     }
 

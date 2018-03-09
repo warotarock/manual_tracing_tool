@@ -2,6 +2,7 @@
 namespace ManualTracingTool {
 
     export enum SelectionEditMode {
+
         setSelected = 1,
         setUnselected = 2,
         toggle = 3,
@@ -70,7 +71,6 @@ namespace ManualTracingTool {
 
                     this.selectLine(line, editMode);
                 }
-
             }
         }
 

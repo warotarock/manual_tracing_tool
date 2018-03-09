@@ -24,6 +24,7 @@ namespace ManualTracingTool {
         copyTransformTo(targetWindow: CanvasWindow) {
 
             vec3.copy(targetWindow.viewLocation, this.viewLocation);
+            vec3.copy(targetWindow.centerLocationRate, this.centerLocationRate);
             targetWindow.viewScale = this.viewScale;
             targetWindow.viewRotation = this.viewRotation;
             mat4.copy(targetWindow.transformMatrix, this.transformMatrix);
@@ -86,6 +87,7 @@ namespace ManualTracingTool {
         setTransform(canvasWindow: CanvasWindow) {
 
             canvasWindow.updateViewMatrix();
+
             this.updateContextTransform(canvasWindow);
         }
 

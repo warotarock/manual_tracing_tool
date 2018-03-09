@@ -128,10 +128,10 @@ namespace ManualTracingTool {
 
         protected hitTest_LineRectangle(line: VectorLine, x: float, y: float, minDistance: float): boolean {
 
-            return (x >= line.minX - minDistance
-                && x <= line.maxX + minDistance
-                && y >= line.minY - minDistance
-                && y <= line.maxY + minDistance);
+            return (x >= line.left - minDistance
+                && x <= line.right + minDistance
+                && y >= line.top - minDistance
+                && y <= line.bottom + minDistance);
         }
 
         protected processHitTestToLine(group: VectorGroup, line: VectorLine, x: float, y: float, minDistance: float) { // @virtual
