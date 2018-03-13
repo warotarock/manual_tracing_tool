@@ -149,7 +149,7 @@ namespace ManualTracingTool {
 
                 let point = line.points[i];
 
-                let distance2d = Math.pow(x - point.adjustedLocation[0], 2) + Math.pow(y - point.adjustedLocation[1], 2);
+                let distance2d = Math.pow(x - point.location[0], 2) + Math.pow(y - point.location[1], 2);
 
                 if (distance2d < minDistance) {
 
@@ -175,8 +175,8 @@ namespace ManualTracingTool {
                 let point2 = line.points[i + 1];
 
                 let distance2d = Logic_Points.pointToLineSegmentDistanceSQ(
-                    point1.adjustedLocation,
-                    point2.adjustedLocation,
+                    point1.location,
+                    point2.location,
                     x, y
                 );
 

@@ -45,6 +45,8 @@ namespace ManualTracingTool {
     export interface MainEditor {
 
         setCurrentLayer(layer: Layer);
+        endModalTool();
+        cancelModalTool();
     }
 
     export class PickingWindow extends CanvasWindow {
@@ -229,6 +231,16 @@ namespace ManualTracingTool {
 
             this.currentVectorLine.isEditTarget = isEditTarget;
         }
+
+        endModalTool() {
+
+            this.toolContext.mainEditor.endModalTool();
+        }
+
+        cancelModalTool() {
+
+            this.toolContext.mainEditor.cancelModalTool();
+        }
     }
 
     export class ToolDrawingEnvironment {
@@ -289,14 +301,18 @@ namespace ManualTracingTool {
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
+        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @virtual
+        }
+
         onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) {
 
+            env.setRedrawEditorWindow();
         }
     }
 
     export class ModalToolBase extends ToolBase {
 
-        prepareModal(env: ToolEnvironment): boolean { // @virtual
+        prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @virtual
 
             return false;
         }
@@ -306,6 +322,11 @@ namespace ManualTracingTool {
         }
 
         endModal(env: ToolEnvironment) { // @virtual
+        }
+
+        cancelModal(env: ToolEnvironment) { // @virtual
+
+            env.setRedrawMainWindowEditorWindow();
         }
     }
 

@@ -86,6 +86,40 @@ namespace ManualTracingTool {
         right = 0.0;
         bottom = 0.0;
         left = 0.0;
+
+        getWidth(): float {
+
+            return Math.abs(this.right - this.left);
+        }
+
+        getHeight(): float {
+
+            return Math.abs(this.bottom - this.top) + 1.0;
+        }
+
+        getHorizontalPositionInRate(x: float) {
+
+            let width = this.getWidth();
+
+            if (width == 0.0) {
+
+                return 0.0;
+            }
+
+            return (x - this.left) / width;
+        }
+
+        getVerticalPositionInRate(y: float) {
+
+            let height = this.getHeight();
+
+            if (height == 0.0) {
+
+                return 0.0;
+            }
+
+            return (y - this.top) / height;
+        }
     }
 
     export class Logic_Edit_Points {

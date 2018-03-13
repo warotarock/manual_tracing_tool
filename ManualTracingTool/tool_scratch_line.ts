@@ -17,9 +17,6 @@ namespace ManualTracingTool {
         oldLocation = vec3.fromValues(0.0, 0.0, 0.0);
     }
 
-    class Tool_ScratchLine_EditData {
-    }
-
     export class Tool_ScratchLine extends ToolBase {
 
         editLine: VectorLine = null;
@@ -161,13 +158,13 @@ namespace ManualTracingTool {
             // Scratching
             let candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine);
 
-            // for display
+            // For display
             this.candidateLine = new VectorLine();
             for (let pair of candidatePointPairs) {
                 this.candidateLine.points.push(pair.candidatePoint);
             }
 
-            // command
+            // Create command
             if (this.extrudeLine != null && this.extrudeLine.points.length > 0) {
 
                 let command = new Command_ExtrudeLine();
@@ -640,7 +637,6 @@ namespace ManualTracingTool {
                 ListAddRange(this.editLine.newPointList, this.targetLine.points);
             }
         }
-
 
         undo(env: ToolEnvironment) { // @override
 
