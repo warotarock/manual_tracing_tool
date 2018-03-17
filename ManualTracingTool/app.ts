@@ -99,6 +99,7 @@ namespace ManualTracingTool {
         tool_LinePointBrushSelect = new Tool_Select_BrushSelet_LinePoint();
         tool_LineSegmentBrushSelect = new Tool_Select_BrushSelet_LineSegment();
         tool_LineBrushSelect = new Tool_Select_BrushSelet_Line();
+        tool_SelectAllPoints = new Tool_Select_All_LinePoint();
 
         // Transform tools
         tool_Transform_Lattice = new Tool_Transform_Lattice();
@@ -566,11 +567,11 @@ namespace ManualTracingTool {
 
                 this.currentTool.mouseDown(this.toolMouseEvent, this.toolEnv);
             }
-            else if (context.editMode == EditModeID.drawMode) {
+            else if (this.toolEnv.isDrawMode()) {
 
                 this.currentTool.mouseDown(this.toolMouseEvent, this.toolEnv);
             }
-            else if (context.editMode == EditModeID.selectMode) {
+            else if (this.toolEnv.isSelectMode()) {
 
                 this.currentSelectTool.mouseDown(this.toolMouseEvent, this.toolEnv);
             }
@@ -619,11 +620,11 @@ namespace ManualTracingTool {
                     this.currentTool.mouseMove(this.toolMouseEvent, this.toolEnv);
                 }
             }
-            else if (context.editMode == EditModeID.drawMode) {
+            else if (this.toolEnv.isDrawMode()) {
 
                 this.currentTool.mouseMove(this.toolMouseEvent, this.toolEnv);
             }
-            else if (context.editMode == EditModeID.selectMode) {
+            else if (this.toolEnv.isSelectMode()) {
 
                 let isHitChanged = this.mousemoveHittest(this.toolMouseEvent.location[0], this.toolMouseEvent.location[1], this.toolContext.mouseCursorRadius, false);
                 if (isHitChanged) {
@@ -658,12 +659,12 @@ namespace ManualTracingTool {
             this.toolEnv.updateContext();
 
             // Draw mode
-            if (context.editMode == EditModeID.drawMode) {
+            if (this.toolEnv.isDrawMode()) {
 
                 this.currentTool.mouseUp(this.toolMouseEvent, this.toolEnv);
             }
             // Select mode
-            else if (context.editMode == EditModeID.selectMode) {
+            else if (this.toolEnv.isSelectMode()) {
 
                 this.currentSelectTool.mouseUp(this.toolMouseEvent, this.toolEnv);
             }
@@ -840,7 +841,7 @@ namespace ManualTracingTool {
 
                         this.setCurrentLayer(selectedLayer);
 
-                        if (this.toolContext.editMode == EditModeID.selectMode) {
+                        if (this.toolEnv.isSelectMode()) {
 
                             this.toolEnv.setRedrawMainWindowEditorWindow();
                         }
@@ -929,7 +930,7 @@ namespace ManualTracingTool {
             if (e.key == 'Tab') {
 
                 // Change mode
-                if (context.editMode == EditModeID.drawMode) {
+                if (this.toolEnv.isDrawMode()) {
 
                     context.editMode = EditModeID.selectMode;
                 }
@@ -948,7 +949,7 @@ namespace ManualTracingTool {
 
             if (e.key == 'b') {
 
-                if (context.editMode == EditModeID.drawMode) {
+                if (this.toolEnv.isDrawMode()) {
 
                     this.setCurrentMainTool(MainToolID.drawLine);
                     this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
@@ -963,7 +964,7 @@ namespace ManualTracingTool {
 
             if (e.key == 'e') {
 
-                if (context.editMode == EditModeID.drawMode) {
+                if (this.toolEnv.isDrawMode()) {
 
                     this.setCurrentMainTool(MainToolID.scratchLine);
                     this.setCurrentSubTool(<int>ScrathLineToolSubToolID.scratchLine);
@@ -978,7 +979,7 @@ namespace ManualTracingTool {
 
             if (e.key == 'p') {
 
-                if (context.editMode == EditModeID.drawMode) {
+                if (this.toolEnv.isDrawMode()) {
 
                     this.setCurrentMainTool(MainToolID.posing);
                     if (this.currentTool == this.tool_Posing3d_LocateHead) {
@@ -1022,7 +1023,7 @@ namespace ManualTracingTool {
 
             if (e.key == 'Delete' || e.key == 'x') {
 
-                if (context.editMode == EditModeID.selectMode) {
+                if (this.toolEnv.isSelectMode()) {
 
                     if (this.toolContext.currentLayer != null
                         && this.toolContext.currentLayer.type == LayerTypeID.vectorLayer) {
@@ -1159,9 +1160,18 @@ namespace ManualTracingTool {
                 return;
             }
 
+            if (e.key == 'a') {
+
+                if (this.toolEnv.isSelectMode()) {
+
+                    this.toolEnv.updateContext();
+                    this.tool_SelectAllPoints.execute(this.toolEnv);
+                }
+            }
+
             if (e.key == 'g') {
 
-                if (context.editMode == EditModeID.selectMode) {
+                if (this.toolEnv.isSelectMode()) {
 
                     this.startModalTool(ModalToolID.grabMove);
                 }
@@ -1744,11 +1754,11 @@ namespace ManualTracingTool {
                         continue;
                     }
 
-                    if (context.editMode == EditModeID.drawMode) {
+                    if (this.toolEnv.isDrawMode()) {
 
                         this.drawVectorLine(canvasWindow, line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
                     }
-                    else if (context.editMode == EditModeID.selectMode) {
+                    else if (this.toolEnv.isSelectMode()) {
 
                         if (isCurrentLayer) {
 
@@ -1921,12 +1931,12 @@ namespace ManualTracingTool {
 
             this.canvasRender.setContext(editorWindow);
 
-            if (context.editMode == EditModeID.selectMode) {
+            if (this.toolEnv.isSelectMode()) {
 
                 this.drawCursor(editorWindow);
             }
 
-            if (context.editMode == EditModeID.drawMode) {
+            if (this.toolEnv.isDrawMode()) {
 
                 if (this.currentTool == this.tool_DrawLine) {
 
@@ -2454,18 +2464,18 @@ namespace ManualTracingTool {
             let context = this.toolContext;
             let modeText = '';
 
-            if (context.editMode == EditModeID.drawMode) {
+            if (this.toolEnv.isDrawMode()) {
 
                 modeText = 'DrawMode';
             }
-            else if (context.editMode == EditModeID.selectMode) {
+            else if (this.toolEnv.isSelectMode()) {
 
                 modeText = 'SelectMode';
             }
 
             let toolText = '';
 
-            if (context.editMode == EditModeID.drawMode) {
+            if (this.toolEnv.isDrawMode()) {
 
                 if (this.currentTool == this.tool_DrawLine) {
 
@@ -2480,7 +2490,7 @@ namespace ManualTracingTool {
                     toolText = 'Posing(Head location)';
                 }
             }
-            else if (context.editMode == EditModeID.selectMode) {
+            else if (this.toolEnv.isSelectMode()) {
 
                 toolText = '';
             }

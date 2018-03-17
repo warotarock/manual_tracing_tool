@@ -101,10 +101,10 @@ namespace ManualTracingTool {
             this.executeCommand(env);
         }
 
-        protected executeCommand(env: ToolEnvironment) { // @virtual
+        private executeCommand(env: ToolEnvironment) { // @virtual
 
             let command = new Command_Select();
-            command.selector = this.logic_Selector.selectionInfo;
+            command.selectionInfo = this.logic_Selector.selectionInfo;
 
             command.execute(env);
 
@@ -124,10 +124,10 @@ namespace ManualTracingTool {
 
     export class Command_Select extends CommandBase {
 
-        selector: VectorLayerEditorSelectionInfo = null;
+        selectionInfo: VectorLayerEditorSelectionInfo = null;
 
-        selectedLines: List<LineSelectionInfo> = null;
-        selectedPoints: List<PointSelectionInfo> = null;
+        private selectedLines: List<LineSelectionInfo> = null;
+        private selectedPoints: List<PointSelectionInfo> = null;
 
         execute(env: ToolEnvironment) { // @override
 
@@ -135,8 +135,8 @@ namespace ManualTracingTool {
 
             // Selection process has done while inputting
 
-            this.selectedLines = ListClone(this.selector.selectedLines);
-            this.selectedPoints = ListClone(this.selector.selectedPoints);
+            this.selectedLines = ListClone(this.selectionInfo.selectedLines);
+            this.selectedPoints = ListClone(this.selectionInfo.selectedPoints);
 
             if (this.selectedLines.length > 0) {
 
@@ -173,20 +173,20 @@ namespace ManualTracingTool {
 
         errorCheck() {
 
-            if (this.selector == null) {
+            if (this.selectionInfo == null) {
                 throw ('Com_Select: selectedLines is null!');
             }
 
-            if (this.selector.selectedLines == null) {
+            if (this.selectionInfo.selectedLines == null) {
                 throw ('Com_Select: selectedLines is null!');
             }
 
-            if (this.selector.selectedPoints == null) {
+            if (this.selectionInfo.selectedPoints == null) {
                 throw ('Com_Select: selectedPoints is null!');
             }
 
-            if (this.selector.selectedLines.length == 0
-                && this.selector.selectedPoints.length == 0) {
+            if (this.selectionInfo.selectedLines.length == 0
+                && this.selectionInfo.selectedPoints.length == 0) {
 
                 throw ('Com_Select: no points is selected!');
             }

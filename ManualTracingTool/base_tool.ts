@@ -219,6 +219,16 @@ namespace ManualTracingTool {
             return (this.toolContext.altKey);
         }
 
+        isDrawMode() {
+
+            return (this.toolContext.editMode == EditModeID.drawMode);
+        }
+
+        isSelectMode() {
+
+            return (this.toolContext.editMode == EditModeID.selectMode);
+        }
+
         setCurrentLayer(layer: Layer) {
 
             this.toolContext.mainEditor.setCurrentLayer(layer);

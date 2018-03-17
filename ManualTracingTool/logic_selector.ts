@@ -27,6 +27,11 @@ namespace ManualTracingTool {
         selectedLines: List<LineSelectionInfo> = null;
         selectedPoints: List<PointSelectionInfo> = null;
 
+        constructor() {
+
+            this.clear();
+        }
+
         clear() {
 
             this.selectedLines = new List<LineSelectionInfo>();
