@@ -138,6 +138,11 @@ namespace ManualTracingTool {
             this.setStrokeColor(color[0], color[1], color[2], color[3]);
         }
 
+        setLineDash(segments: List<float>) {
+
+            this.context.setLineDash(segments);
+        }
+
         setGlobalAlpha(a: float) {
 
             this.context.globalAlpha = a;

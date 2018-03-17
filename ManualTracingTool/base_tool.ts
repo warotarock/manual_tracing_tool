@@ -54,6 +54,12 @@ namespace ManualTracingTool {
         maxDepth = 4.0;
     }
 
+    export class OperatorCursor {
+
+        location = vec3.fromValues(0.0, 0.0, 0.0);
+        radius = 15.0;
+    }
+
     export class ToolContext {
 
         mainEditor: MainEditor = null;
@@ -88,6 +94,8 @@ namespace ManualTracingTool {
         pickingWindow: PickingWindow = null;
 
         mouseCursorRadius = 20.0;
+
+        operatorCursor = new OperatorCursor();
 
         shiftKey: boolean = false;
         altKey: boolean = false;

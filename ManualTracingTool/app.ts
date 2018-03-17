@@ -148,6 +148,9 @@ namespace ManualTracingTool {
         editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
         selectedVectorLineColor = vec4.fromValues(0.8, 0.3, 0.0, 0.5);
 
+        mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+        operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+
         generalLinePointRadius = 2.0;
         selectedLinePointRadius = 3.0;
 
@@ -584,6 +587,12 @@ namespace ManualTracingTool {
             else {
 
                 this.mainWindow_MouseViewOperationEnd();
+            }
+
+            if (this.toolEnv.isSelectMode() && this.toolEnv.isCtrlKeyPressing()) {
+
+                vec3.copy(this.toolContext.operatorCursor.location, this.toolMouseEvent.location);
+                this.toolEnv.setRedrawEditorWindow();
             }
         }
 
@@ -1914,6 +1923,11 @@ namespace ManualTracingTool {
 
             return width / canvasWindow.viewScale;
         }
+        private getViewScaledSize(canvasWindow: CanvasWindow, width: float) {
+
+            return width / canvasWindow.viewScale;
+        }
+
 
         // Editor window drawing
 
@@ -1931,9 +1945,11 @@ namespace ManualTracingTool {
 
             this.canvasRender.setContext(editorWindow);
 
+            this.drawOperatorCursor(editorWindow);
+
             if (this.toolEnv.isSelectMode()) {
 
-                this.drawCursor(editorWindow);
+                this.drawMouseCursor(editorWindow);
             }
 
             if (this.toolEnv.isDrawMode()) {
@@ -1947,7 +1963,7 @@ namespace ManualTracingTool {
                 }
                 else if (this.currentTool == this.tool_ScratchLine) {
 
-                    this.drawCursor(editorWindow);
+                    this.drawMouseCursor(editorWindow);
 
                     if (this.tool_ScratchLine_EditLine_Visible) {
 
@@ -2016,17 +2032,58 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawCursor(canvasWindow: CanvasWindow) {
+        private drawMouseCursor(canvasWindow: CanvasWindow) {
 
             this.canvasRender.beginPath();
-            this.canvasRender.setStrokeColor(1.0, 0.5, 0.5, 1.0);
+
+            this.canvasRender.setStrokeColorV(this.mouseCursorCircleColor);
             this.canvasRender.setStrokeWidth(this.getViewScaleLineWidth(canvasWindow, 1.0));
+
             this.canvasRender.circle(
                 this.toolMouseEvent.location[0]
                 , this.toolMouseEvent.location[1]
                 , this.getViewScaleLineWidth(canvasWindow, this.toolContext.mouseCursorRadius)
             );
+
             this.canvasRender.stroke();
+        }
+
+        private operatorCurosrLineDash = [2.0, 2.0];
+        private operatorCurosrLineDashScaled = [0.0, 0.0];
+        private operatorCurosrLineDashNone = [];
+
+        private drawOperatorCursor(canvasWindow: CanvasWindow) {
+
+            this.canvasRender.beginPath();
+
+            this.canvasRender.setStrokeColorV(this.operatorCursorCircleColor);
+            this.canvasRender.setStrokeWidth(this.getViewScaleLineWidth(canvasWindow, 1.0));
+
+            let viewScale = this.getViewScaledSize(canvasWindow, 1.0);
+
+            this.operatorCurosrLineDashScaled[0] = this.operatorCurosrLineDash[0] * viewScale;
+            this.operatorCurosrLineDashScaled[1] = this.operatorCurosrLineDash[1] * viewScale;
+            this.canvasRender.setLineDash(this.operatorCurosrLineDashScaled);
+
+            this.canvasRender.circle(
+                this.toolContext.operatorCursor.location[0]
+                , this.toolContext.operatorCursor.location[1]
+                , this.toolContext.operatorCursor.radius * viewScale
+            );
+
+            this.canvasRender.stroke();
+
+            let centerX = this.toolContext.operatorCursor.location[0];
+            let centerY = this.toolContext.operatorCursor.location[1];
+            let clossBeginPosition = this.toolContext.operatorCursor.radius * viewScale * 1.5;
+            let clossEndPosition = this.toolContext.operatorCursor.radius * viewScale * 0.5;
+
+            this.canvasRender.drawLine(centerX - clossBeginPosition, centerY, centerX - clossEndPosition, centerY);
+            this.canvasRender.drawLine(centerX + clossBeginPosition, centerY, centerX + clossEndPosition, centerY);
+            this.canvasRender.drawLine(centerX, centerY - clossBeginPosition, centerX, centerY - clossEndPosition);
+            this.canvasRender.drawLine(centerX, centerY + clossBeginPosition, centerX, centerY + clossEndPosition);
+
+            this.canvasRender.setLineDash(this.operatorCurosrLineDashNone);
         }
 
         // WebGL window drawing
