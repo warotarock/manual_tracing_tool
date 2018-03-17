@@ -101,10 +101,12 @@
     <TypeScriptCompile Include="render2d.ts" />
     <TypeScriptCompile Include="logic_hittest.ts" />
     <TypeScriptCompile Include="tool_scratch_line.ts" />
+    <TypeScriptCompile Include="tool_select_points_all.ts" />
     <TypeScriptCompile Include="tool_select_brush_select.ts" />
     <TypeScriptCompile Include="tool_draw_line.ts" />
     <TypeScriptCompile Include="data.ts" />
     <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="tool_transform_lattice.ts" />
     <TypeScriptCompile Include="typings\glmatrix\gl-matrix.d.ts" />
   </ItemGroup>
   <ItemGroup>
