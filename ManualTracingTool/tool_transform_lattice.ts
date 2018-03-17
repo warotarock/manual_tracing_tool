@@ -287,6 +287,7 @@ namespace ManualTracingTool {
             for (let editPoint of this.editPoints) {
 
                 vec3.copy(editPoint.targetPoint.location, editPoint.oldLocation);
+                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.oldLocation);
             }
         }
 
@@ -295,6 +296,7 @@ namespace ManualTracingTool {
             for (let editPoint of this.editPoints) {
 
                 vec3.copy(editPoint.targetPoint.location, editPoint.newLocation);
+                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.newLocation);
             }
         }
 
