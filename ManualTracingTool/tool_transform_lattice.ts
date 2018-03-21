@@ -5,7 +5,7 @@ namespace ManualTracingTool {
 
         targetPoint: LinePoint = null;
 
-        rerativeLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        relativeLocation = vec3.fromValues(0.0, 0.0, 0.0);
         newLocation = vec3.fromValues(0.0, 0.0, 0.0);
         oldLocation = vec3.fromValues(0.0, 0.0, 0.0);
     }
@@ -62,7 +62,13 @@ namespace ManualTracingTool {
             // Create edit info
             this.editPoints = this.createEditInfo(this.rectangleArea, env);
 
+            this.prepareModalExt(e, env);
+
             return true;
+        }
+
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+
         }
 
         startModal(env: ToolEnvironment) { // @override
@@ -113,12 +119,7 @@ namespace ManualTracingTool {
 
             // Move lattice points
 
-            vec3.subtract(this.dLocation, e.location, this.mouseAnchorLocation);
-
-            for (let latticePoint of this.latticePoints) {
-
-                vec3.add(latticePoint.location, latticePoint.baseLocation, this.dLocation);
-            }
+            this.processLatticeMouseMove(e, env);
 
             // Move line points adjusting location
 
@@ -214,7 +215,7 @@ namespace ManualTracingTool {
 
                         let xPosition = rectangle.getHorizontalPositionInRate(point.location[0]);
                         let yPosition = rectangle.getVerticalPositionInRate(point.location[1]);
-                        vec3.set(editPoint.rerativeLocation, xPosition, yPosition, 0.0);
+                        vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
 
                         result.push(editPoint);
                     }
@@ -222,6 +223,10 @@ namespace ManualTracingTool {
             }
 
             return result;
+        }
+
+        protected processLatticeMouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+
         }
 
         private processLatticeTransform(editPoints: List<Tool_Transform_Lattice_EditPoint>, latticePoints: List<LatticePoint>) {
@@ -243,10 +248,10 @@ namespace ManualTracingTool {
 
             for (let editPoint of editPoints) {
 
-                vec3.lerp(this.lerpLocation1, latticePointLocationH1A, latticePointLocationH1B, editPoint.rerativeLocation[0]);
-                vec3.lerp(this.lerpLocation2, latticePointLocationH2A, latticePointLocationH2B, editPoint.rerativeLocation[0]);
+                vec3.lerp(this.lerpLocation1, latticePointLocationH1A, latticePointLocationH1B, editPoint.relativeLocation[0]);
+                vec3.lerp(this.lerpLocation2, latticePointLocationH2A, latticePointLocationH2B, editPoint.relativeLocation[0]);
 
-                vec3.lerp(editPoint.targetPoint.adjustedLocation, this.lerpLocation1, this.lerpLocation2, editPoint.rerativeLocation[1]);
+                vec3.lerp(editPoint.targetPoint.adjustedLocation, this.lerpLocation1, this.lerpLocation2, editPoint.relativeLocation[1]);
             }
         }
 
@@ -301,6 +306,59 @@ namespace ManualTracingTool {
         }
 
         errorCheck() {
+        }
+    }
+
+    export class Tool_Transform_Lattice_GrabMove extends Tool_Transform_Lattice {
+
+        protected processLatticeMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+
+            vec3.subtract(this.dLocation, e.location, this.mouseAnchorLocation);
+
+            for (let latticePoint of this.latticePoints) {
+
+                vec3.add(latticePoint.location, latticePoint.baseLocation, this.dLocation);
+            }
+        }
+    }
+
+    export class Tool_Transform_Lattice_Rotate extends Tool_Transform_Lattice {
+
+        initialAngle = 0.0;
+
+        direction = vec3.create();
+        centerLocation = vec3.create();
+        rotationMatrix = mat4.create();
+
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+
+            this.initialAngle = this.calulateInputAngle(e, env);
+        }
+
+        private calulateInputAngle(e: ToolMouseEvent, env: ToolEnvironment): float {
+
+            vec3.subtract(this.direction, e.location, env.operatorCursor.location);
+            let angle = Math.atan2(this.direction[1], this.direction[0]);
+
+            return angle;
+        }
+
+        protected processLatticeMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+
+            let angle = this.calulateInputAngle(e, env) - this.initialAngle;
+
+            vec3.copy(this.centerLocation, env.operatorCursor.location);
+            vec3.scale(this.dLocation, this.centerLocation, -1.0);
+
+            mat4.identity(this.rotationMatrix);
+            mat4.translate(this.rotationMatrix, this.rotationMatrix, this.centerLocation);
+            mat4.rotateZ(this.rotationMatrix, this.rotationMatrix, angle);
+            mat4.translate(this.rotationMatrix, this.rotationMatrix, this.dLocation);
+
+            for (let latticePoint of this.latticePoints) {
+
+                vec3.transformMat4(latticePoint.location, latticePoint.baseLocation, this.rotationMatrix);
+            }
         }
     }
 }

@@ -116,6 +116,8 @@ namespace ManualTracingTool {
 
         commandHistory: CommandHistory = null;
 
+        operatorCursor: OperatorCursor = null;
+
         currentVectorLayer: VectorLayer = null;
         currentVectorGroup: VectorGroup = null;
         currentVectorLine: VectorLine = null;
@@ -146,6 +148,8 @@ namespace ManualTracingTool {
             this.operationUnitID = this.toolContext.operationUnitID;
 
             this.commandHistory = this.toolContext.commandHistory;
+
+            this.operatorCursor = this.toolContext.operatorCursor;
 
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
             this.currentVectorGroup = this.toolContext.currentVectorGroup;

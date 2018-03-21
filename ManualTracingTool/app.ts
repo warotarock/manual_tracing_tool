@@ -102,7 +102,8 @@ namespace ManualTracingTool {
         tool_SelectAllPoints = new Tool_Select_All_LinePoint();
 
         // Transform tools
-        tool_Transform_Lattice = new Tool_Transform_Lattice();
+        tool_Transform_Lattice_GrabMove = new Tool_Transform_Lattice_GrabMove();
+        tool_Transform_Lattice_RotateMove = new Tool_Transform_Lattice_Rotate();
 
         // Drawing tools
         tool_DrawLine = new Tool_DrawLine();
@@ -416,7 +417,8 @@ namespace ManualTracingTool {
 
             // Modal tools
             this.modalTools[<int>ModalToolID.none] = null;
-            this.modalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice;
+            this.modalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
+            this.modalTools[<int>ModalToolID.ratateMove] = this.tool_Transform_Lattice_RotateMove;
 
             // Selection tools
             this.selectionTools[<int>OperationUnitID.none] = null;
@@ -1079,23 +1081,26 @@ namespace ManualTracingTool {
 
             if (e.key == 't' || e.key == 'r') {
 
-                let rot = 10.0;
-                if (e.key == 'r') {
-                    rot = -rot;
-                }
+                if (this.toolEnv.isDrawMode()) {
 
-                this.mainWindow.viewRotation += rot;
-                if (this.mainWindow.viewRotation >= 360.0) {
-                    this.mainWindow.viewRotation -= 360.0;
-                }
-                if (this.mainWindow.viewRotation <= 0.0) {
-                    this.mainWindow.viewRotation += 360.0;
-                }
+                    let rot = 10.0;
+                    if (e.key == 'r') {
+                        rot = -rot;
+                    }
 
-                this.toolEnv.setRedrawMainWindowEditorWindow();
+                    this.mainWindow.viewRotation += rot;
+                    if (this.mainWindow.viewRotation >= 360.0) {
+                        this.mainWindow.viewRotation -= 360.0;
+                    }
+                    if (this.mainWindow.viewRotation <= 0.0) {
+                        this.mainWindow.viewRotation += 360.0;
+                    }
 
-                e.preventDefault();
-                return;
+                    this.toolEnv.setRedrawMainWindowEditorWindow();
+
+                    e.preventDefault();
+                    return;
+                }
             }
 
             if (e.key == 'f' || e.key == 'd') {
@@ -1175,6 +1180,7 @@ namespace ManualTracingTool {
 
                     this.toolEnv.updateContext();
                     this.tool_SelectAllPoints.execute(this.toolEnv);
+                    e.preventDefault();
                 }
             }
 
@@ -1183,6 +1189,16 @@ namespace ManualTracingTool {
                 if (this.toolEnv.isSelectMode()) {
 
                     this.startModalTool(ModalToolID.grabMove);
+                    e.preventDefault();
+                }
+            }
+
+            if (e.key == 'r') {
+
+                if (this.toolEnv.isSelectMode()) {
+
+                    this.startModalTool(ModalToolID.ratateMove);
+                    e.preventDefault();
                 }
             }
 
@@ -1945,9 +1961,9 @@ namespace ManualTracingTool {
 
             this.canvasRender.setContext(editorWindow);
 
-            this.drawOperatorCursor(editorWindow);
-
             if (this.toolEnv.isSelectMode()) {
+
+                this.drawOperatorCursor(editorWindow);
 
                 this.drawMouseCursor(editorWindow);
             }

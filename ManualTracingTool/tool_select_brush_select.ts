@@ -53,11 +53,6 @@ namespace ManualTracingTool {
 
         private startSelection(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            if (this.selectionProcessID != SelectionProgressID.none) {
-
-                return;
-            }
-
             if (env.isCtrlKeyPressing()) {
 
                 this.logic_Selector.editMode = SelectionEditMode.toggle;
