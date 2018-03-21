@@ -61,26 +61,95 @@ var ManualTracingTool;
         return Logic_VectorLayer;
     }());
     ManualTracingTool.Logic_VectorLayer = Logic_VectorLayer;
+    var Logic_Edit_Points_RectangleArea = /** @class */ (function () {
+        function Logic_Edit_Points_RectangleArea() {
+            this.top = 0.0;
+            this.right = 0.0;
+            this.bottom = 0.0;
+            this.left = 0.0;
+        }
+        Logic_Edit_Points_RectangleArea.prototype.getWidth = function () {
+            return Math.abs(this.right - this.left);
+        };
+        Logic_Edit_Points_RectangleArea.prototype.getHeight = function () {
+            return Math.abs(this.bottom - this.top) + 1.0;
+        };
+        Logic_Edit_Points_RectangleArea.prototype.getHorizontalPositionInRate = function (x) {
+            var width = this.getWidth();
+            if (width == 0.0) {
+                return 0.0;
+            }
+            return (x - this.left) / width;
+        };
+        Logic_Edit_Points_RectangleArea.prototype.getVerticalPositionInRate = function (y) {
+            var height = this.getHeight();
+            if (height == 0.0) {
+                return 0.0;
+            }
+            return (y - this.top) / height;
+        };
+        return Logic_Edit_Points_RectangleArea;
+    }());
+    ManualTracingTool.Logic_Edit_Points_RectangleArea = Logic_Edit_Points_RectangleArea;
+    var Logic_Edit_Points = /** @class */ (function () {
+        function Logic_Edit_Points() {
+        }
+        Logic_Edit_Points.setMinMaxToRectangleArea = function (result) {
+            result.left = 999999.0;
+            result.top = 999999.0;
+            result.right = -999999.0;
+            result.bottom = -999999.0;
+        };
+        Logic_Edit_Points.existsRectangleArea = function (rectangle) {
+            return (rectangle.left != 999999.0
+                && rectangle.top != 999999.0
+                && rectangle.right != -999999.0
+                && rectangle.bottom != -999999.0);
+        };
+        Logic_Edit_Points.calculateSurroundingRectangle = function (result, minMaxRectangle, points, selectedOnly) {
+            var left = minMaxRectangle.left;
+            var top = minMaxRectangle.top;
+            var right = minMaxRectangle.right;
+            var bottom = minMaxRectangle.bottom;
+            for (var _i = 0, points_1 = points; _i < points_1.length; _i++) {
+                var point = points_1[_i];
+                if (selectedOnly
+                    && !point.isSelected) {
+                    continue;
+                }
+                left = Math.min(point.location[0], left);
+                top = Math.min(point.location[1], top);
+                right = Math.max(point.location[0], right);
+                bottom = Math.max(point.location[1], bottom);
+            }
+            result.left = left;
+            result.top = top;
+            result.right = right;
+            result.bottom = bottom;
+        };
+        return Logic_Edit_Points;
+    }());
+    ManualTracingTool.Logic_Edit_Points = Logic_Edit_Points;
     var Logic_Edit_Line = /** @class */ (function () {
         function Logic_Edit_Line() {
         }
         Logic_Edit_Line.calcParameters = function (line) {
             // Calculate rectangle area
-            var minX = 999999.0;
-            var minY = 999999.0;
-            var maxX = -999999.0;
-            var maxY = -999999.0;
-            for (var i = 0; i < line.points.length; i++) {
-                var point1 = line.points[i];
-                minX = Math.min(point1.location[0], minX);
-                minY = Math.min(point1.location[1], minY);
-                maxX = Math.max(point1.location[0], maxX);
-                maxY = Math.max(point1.location[1], maxY);
+            var left = 999999.0;
+            var top = 999999.0;
+            var right = -999999.0;
+            var bottom = -999999.0;
+            for (var _i = 0, _a = line.points; _i < _a.length; _i++) {
+                var point = _a[_i];
+                left = Math.min(point.location[0], left);
+                top = Math.min(point.location[1], top);
+                right = Math.max(point.location[0], right);
+                bottom = Math.max(point.location[1], bottom);
             }
-            line.minX = minX;
-            line.minY = minY;
-            line.maxX = maxX;
-            line.maxY = maxY;
+            line.left = left;
+            line.top = top;
+            line.right = right;
+            line.bottom = bottom;
             // Calculate point positon in length
             var totalLength = 0.0;
             for (var i = 1; i < line.points.length; i++) {

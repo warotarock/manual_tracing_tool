@@ -48,9 +48,6 @@ var ManualTracingTool;
             env.setRedrawEditorWindow();
         };
         Tool_Select_BrushSelet_LinePoint.prototype.startSelection = function (e, env) {
-            if (this.selectionProcessID != SelectionProgressID.none) {
-                return;
-            }
             if (env.isCtrlKeyPressing()) {
                 this.logic_Selector.editMode = ManualTracingTool.SelectionEditMode.toggle;
             }
@@ -80,7 +77,7 @@ var ManualTracingTool;
         };
         Tool_Select_BrushSelet_LinePoint.prototype.executeCommand = function (env) {
             var command = new Command_Select();
-            command.selector = this.logic_Selector.selectionInfo;
+            command.selectionInfo = this.logic_Selector.selectionInfo;
             command.execute(env);
             env.commandHistory.addCommand(command);
         };
@@ -111,7 +108,7 @@ var ManualTracingTool;
         __extends(Command_Select, _super);
         function Command_Select() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.selector = null;
+            _this.selectionInfo = null;
             _this.selectedLines = null;
             _this.selectedPoints = null;
             return _this;
@@ -119,8 +116,8 @@ var ManualTracingTool;
         Command_Select.prototype.execute = function (env) {
             this.errorCheck();
             // Selection process has done while inputting
-            this.selectedLines = ListClone(this.selector.selectedLines);
-            this.selectedPoints = ListClone(this.selector.selectedPoints);
+            this.selectedLines = ListClone(this.selectionInfo.selectedLines);
+            this.selectedPoints = ListClone(this.selectionInfo.selectedPoints);
             if (this.selectedLines.length > 0) {
                 var firstLine = this.selectedLines[0];
                 env.setCurrentVectorLine(firstLine.line, false);
@@ -147,17 +144,17 @@ var ManualTracingTool;
             }
         };
         Command_Select.prototype.errorCheck = function () {
-            if (this.selector == null) {
+            if (this.selectionInfo == null) {
                 throw ('Com_Select: selectedLines is null!');
             }
-            if (this.selector.selectedLines == null) {
+            if (this.selectionInfo.selectedLines == null) {
                 throw ('Com_Select: selectedLines is null!');
             }
-            if (this.selector.selectedPoints == null) {
+            if (this.selectionInfo.selectedPoints == null) {
                 throw ('Com_Select: selectedPoints is null!');
             }
-            if (this.selector.selectedLines.length == 0
-                && this.selector.selectedPoints.length == 0) {
+            if (this.selectionInfo.selectedLines.length == 0
+                && this.selectionInfo.selectedPoints.length == 0) {
                 throw ('Com_Select: no points is selected!');
             }
         };

@@ -87,10 +87,10 @@ var ManualTracingTool;
             }
         };
         HitTest_LinePointBase.prototype.hitTest_LineRectangle = function (line, x, y, minDistance) {
-            return (x >= line.minX - minDistance
-                && x <= line.maxX + minDistance
-                && y >= line.minY - minDistance
-                && y <= line.maxY + minDistance);
+            return (x >= line.left - minDistance
+                && x <= line.right + minDistance
+                && y >= line.top - minDistance
+                && y <= line.bottom + minDistance);
         };
         HitTest_LinePointBase.prototype.processHitTestToLine = function (group, line, x, y, minDistance) {
         };
@@ -106,7 +106,7 @@ var ManualTracingTool;
             this.exitPointHitTest = false;
             for (var i = 0; i < line.points.length; i++) {
                 var point = line.points[i];
-                var distance2d = Math.pow(x - point.adjustedLocation[0], 2) + Math.pow(y - point.adjustedLocation[1], 2);
+                var distance2d = Math.pow(x - point.location[0], 2) + Math.pow(y - point.location[1], 2);
                 if (distance2d < minDistance) {
                     this.onPointHited(line, point);
                 }
@@ -128,7 +128,7 @@ var ManualTracingTool;
             for (var i = 0; i + 1 < line.points.length; i++) {
                 var point1 = line.points[i];
                 var point2 = line.points[i + 1];
-                var distance2d = ManualTracingTool.Logic_Points.pointToLineSegmentDistanceSQ(point1.adjustedLocation, point2.adjustedLocation, x, y);
+                var distance2d = ManualTracingTool.Logic_Points.pointToLineSegmentDistanceSQ(point1.location, point2.location, x, y);
                 if (distance2d < minDistance) {
                     this.onLineSegmentHited(line, point1, point2);
                 }

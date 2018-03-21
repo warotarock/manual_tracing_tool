@@ -57,6 +57,14 @@ var ManualTracingTool;
         return PickingWindow;
     }(ManualTracingTool.CanvasWindow));
     ManualTracingTool.PickingWindow = PickingWindow;
+    var OperatorCursor = /** @class */ (function () {
+        function OperatorCursor() {
+            this.location = vec3.fromValues(0.0, 0.0, 0.0);
+            this.radius = 15.0;
+        }
+        return OperatorCursor;
+    }());
+    ManualTracingTool.OperatorCursor = OperatorCursor;
     var ToolContext = /** @class */ (function () {
         function ToolContext() {
             this.mainEditor = null;
@@ -83,6 +91,7 @@ var ManualTracingTool;
             this.mainWindow = null;
             this.pickingWindow = null;
             this.mouseCursorRadius = 20.0;
+            this.operatorCursor = new OperatorCursor();
             this.shiftKey = false;
             this.altKey = false;
             this.ctrlKey = false;
@@ -100,6 +109,7 @@ var ManualTracingTool;
             this.editMode = EditModeID.drawMode;
             this.operationUnitID = OperationUnitID.linePoint;
             this.commandHistory = null;
+            this.operatorCursor = null;
             this.currentVectorLayer = null;
             this.currentVectorGroup = null;
             this.currentVectorLine = null;
@@ -120,6 +130,7 @@ var ManualTracingTool;
             this.editMode = this.toolContext.editMode;
             this.operationUnitID = this.toolContext.operationUnitID;
             this.commandHistory = this.toolContext.commandHistory;
+            this.operatorCursor = this.toolContext.operatorCursor;
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
             this.currentVectorGroup = this.toolContext.currentVectorGroup;
             this.currentVectorLine = this.toolContext.currentVectorLine;
@@ -172,6 +183,12 @@ var ManualTracingTool;
         ToolEnvironment.prototype.isAltKeyPressing = function () {
             return (this.toolContext.altKey);
         };
+        ToolEnvironment.prototype.isDrawMode = function () {
+            return (this.toolContext.editMode == EditModeID.drawMode);
+        };
+        ToolEnvironment.prototype.isSelectMode = function () {
+            return (this.toolContext.editMode == EditModeID.selectMode);
+        };
         ToolEnvironment.prototype.setCurrentLayer = function (layer) {
             this.toolContext.mainEditor.setCurrentLayer(layer);
         };
@@ -180,9 +197,23 @@ var ManualTracingTool;
             this.currentVectorLine = line;
             this.currentVectorLine.isEditTarget = isEditTarget;
         };
+        ToolEnvironment.prototype.endModalTool = function () {
+            this.toolContext.mainEditor.endModalTool();
+        };
+        ToolEnvironment.prototype.cancelModalTool = function () {
+            this.toolContext.mainEditor.cancelModalTool();
+        };
         return ToolEnvironment;
     }());
     ManualTracingTool.ToolEnvironment = ToolEnvironment;
+    var ToolDrawingEnvironment = /** @class */ (function () {
+        function ToolDrawingEnvironment() {
+            this.canvasWindow = null;
+            this.render = null;
+        }
+        return ToolDrawingEnvironment;
+    }());
+    ManualTracingTool.ToolDrawingEnvironment = ToolDrawingEnvironment;
     var ToolMouseEvent = /** @class */ (function () {
         function ToolMouseEvent() {
             this.button = 0;
@@ -223,6 +254,11 @@ var ManualTracingTool;
         };
         ToolBase.prototype.mouseUp = function (e, env) {
         };
+        ToolBase.prototype.keydown = function (e, env) {
+        };
+        ToolBase.prototype.onDrawEditor = function (env, drawEnv) {
+            env.setRedrawEditorWindow();
+        };
         return ToolBase;
     }());
     ManualTracingTool.ToolBase = ToolBase;
@@ -231,7 +267,15 @@ var ManualTracingTool;
         function ModalToolBase() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        ModalToolBase.prototype.exitModal = function (env) {
+        ModalToolBase.prototype.prepareModal = function (e, env) {
+            return false;
+        };
+        ModalToolBase.prototype.startModal = function (env) {
+        };
+        ModalToolBase.prototype.endModal = function (env) {
+        };
+        ModalToolBase.prototype.cancelModal = function (env) {
+            env.setRedrawMainWindowEditorWindow();
         };
         return ModalToolBase;
     }(ToolBase));

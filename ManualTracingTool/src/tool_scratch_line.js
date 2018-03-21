@@ -26,11 +26,6 @@ var ManualTracingTool;
         }
         return Tool_ScratchLine_EditPoint;
     }());
-    var Tool_ScratchLine_EditData = /** @class */ (function () {
-        function Tool_ScratchLine_EditData() {
-        }
-        return Tool_ScratchLine_EditData;
-    }());
     var Tool_ScratchLine = /** @class */ (function (_super) {
         __extends(Tool_ScratchLine, _super);
         function Tool_ScratchLine() {
@@ -137,13 +132,13 @@ var ManualTracingTool;
             this.extrudeLine = extrudeLine;
             // Scratching
             var candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine);
-            // for display
+            // For display
             this.candidateLine = new ManualTracingTool.VectorLine();
             for (var _i = 0, candidatePointPairs_1 = candidatePointPairs; _i < candidatePointPairs_1.length; _i++) {
                 var pair = candidatePointPairs_1[_i];
                 this.candidateLine.points.push(pair.candidatePoint);
             }
-            // command
+            // Create command
             if (this.extrudeLine != null && this.extrudeLine.points.length > 0) {
                 var command = new Command_ExtrudeLine();
                 command.isContinuing = true;

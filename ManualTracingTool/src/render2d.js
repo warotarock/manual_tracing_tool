@@ -17,6 +17,7 @@ var ManualTracingTool;
         }
         CanvasWindow.prototype.copyTransformTo = function (targetWindow) {
             vec3.copy(targetWindow.viewLocation, this.viewLocation);
+            vec3.copy(targetWindow.centerLocationRate, this.centerLocationRate);
             targetWindow.viewScale = this.viewScale;
             targetWindow.viewRotation = this.viewRotation;
             mat4.copy(targetWindow.transformMatrix, this.transformMatrix);
@@ -88,6 +89,9 @@ var ManualTracingTool;
         };
         CanvasRender.prototype.setStrokeColorV = function (color) {
             this.setStrokeColor(color[0], color[1], color[2], color[3]);
+        };
+        CanvasRender.prototype.setLineDash = function (segments) {
+            this.context.setLineDash(segments);
         };
         CanvasRender.prototype.setGlobalAlpha = function (a) {
             this.context.globalAlpha = a;

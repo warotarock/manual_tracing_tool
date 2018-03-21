@@ -38,6 +38,7 @@ var ManualTracingTool;
         function VectorLayerEditorSelectionInfo() {
             this.selectedLines = null;
             this.selectedPoints = null;
+            this.clear();
         }
         VectorLayerEditorSelectionInfo.prototype.clear = function () {
             this.selectedLines = new List();

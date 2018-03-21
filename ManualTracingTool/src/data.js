@@ -71,10 +71,10 @@ var ManualTracingTool;
             this.strokeWidth = 1.0;
             // runtime
             this.modifyFlag = VectorLineModifyFlagID.none;
-            this.minX = 999999.0;
-            this.minY = 999999.0;
-            this.maxX = -999999.0;
-            this.maxY = -999999.0;
+            this.left = 999999.0;
+            this.top = 999999.0;
+            this.right = -999999.0;
+            this.bottom = -999999.0;
             this.totalLength = 0.0;
         }
         return VectorLine;
