@@ -103,7 +103,8 @@ namespace ManualTracingTool {
 
         // Transform tools
         tool_Transform_Lattice_GrabMove = new Tool_Transform_Lattice_GrabMove();
-        tool_Transform_Lattice_RotateMove = new Tool_Transform_Lattice_Rotate();
+        tool_Transform_Lattice_Rotate = new Tool_Transform_Lattice_Rotate();
+        tool_Transform_Lattice_Scale = new Tool_Transform_Lattice_Scale();
 
         // Drawing tools
         tool_DrawLine = new Tool_DrawLine();
@@ -418,7 +419,8 @@ namespace ManualTracingTool {
             // Modal tools
             this.modalTools[<int>ModalToolID.none] = null;
             this.modalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
-            this.modalTools[<int>ModalToolID.ratateMove] = this.tool_Transform_Lattice_RotateMove;
+            this.modalTools[<int>ModalToolID.ratate] = this.tool_Transform_Lattice_Rotate;
+            this.modalTools[<int>ModalToolID.scale] = this.tool_Transform_Lattice_Scale;
 
             // Selection tools
             this.selectionTools[<int>OperationUnitID.none] = null;
@@ -1197,7 +1199,16 @@ namespace ManualTracingTool {
 
                 if (this.toolEnv.isSelectMode()) {
 
-                    this.startModalTool(ModalToolID.ratateMove);
+                    this.startModalTool(ModalToolID.ratate);
+                    e.preventDefault();
+                }
+            }
+
+            if (e.key == 's') {
+
+                if (this.toolEnv.isSelectMode()) {
+
+                    this.startModalTool(ModalToolID.scale);
                     e.preventDefault();
                 }
             }
@@ -2834,8 +2845,8 @@ namespace ManualTracingTool {
 
         none = 0,
         grabMove = 1,
-        ratateMove = 2,
-        scaleMove = 3,
+        ratate = 2,
+        scale = 3,
         latticeMove = 4,
         countOfID = 5,
     }

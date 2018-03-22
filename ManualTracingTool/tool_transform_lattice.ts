@@ -361,4 +361,53 @@ namespace ManualTracingTool {
             }
         }
     }
+
+    export class Tool_Transform_Lattice_Scale extends Tool_Transform_Lattice {
+
+        initialDistance = 0.0;
+
+        direction = vec3.create();
+        centerLocation = vec3.create();
+        rotationMatrix = mat4.create();
+
+        scaling = vec3.create();
+
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+
+            this.initialDistance = this.calulateDistance(e, env);
+
+            if (this.initialDistance == 0.0) {
+
+                this.initialDistance = 1.0;
+            }
+        }
+
+        private calulateDistance(e: ToolMouseEvent, env: ToolEnvironment): float {
+
+            vec3.subtract(this.direction, e.location, env.operatorCursor.location);
+
+            let distance = vec3.length(this.direction);
+
+            return distance;
+        }
+
+        protected processLatticeMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+
+            let scale = this.calulateDistance(e, env) / this.initialDistance;
+            vec3.set(this.scaling, scale, scale, 1.0);
+
+            vec3.copy(this.centerLocation, env.operatorCursor.location);
+            vec3.scale(this.dLocation, this.centerLocation, -1.0);
+
+            mat4.identity(this.rotationMatrix);
+            mat4.translate(this.rotationMatrix, this.rotationMatrix, this.centerLocation);
+            mat4.scale(this.rotationMatrix, this.rotationMatrix, this.scaling);
+            mat4.translate(this.rotationMatrix, this.rotationMatrix, this.dLocation);
+
+            for (let latticePoint of this.latticePoints) {
+
+                vec3.transformMat4(latticePoint.location, latticePoint.baseLocation, this.rotationMatrix);
+            }
+        }
+    }
 }
