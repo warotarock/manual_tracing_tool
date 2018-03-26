@@ -3,12 +3,12 @@ namespace ManualTracingTool {
 
     export class Maths {
 
-        static clamp(a: float, b: float, x: float): float {
+        static clamp(x: float, a: float, b: float): float {
 
             return (x < a ? a : (x > b ? b : x));
         }
 
-        static lerp(a: float, b: float, x: float): float {
+        static lerp(x: float, a: float, b: float): float {
 
             return a + x * (b - a);
         }

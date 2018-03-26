@@ -201,8 +201,8 @@ namespace ManualTracingTool {
         curveCheckPointCount = 3;
         cutoutAngle = 30 / 180.0 * Math.PI;
 
-        editFalloffRadiusMin = 10.0;
-        editFalloffRadiusMax = 20.0;
+        editFalloffRadiusMin = 5.0;
+        editFalloffRadiusMax = 40.0;
         editInfluence = 0.5;
 
         editExtrudeMinRadius = 1.0;
@@ -347,8 +347,6 @@ namespace ManualTracingTool {
                 let isHited = false;
                 let minDistance = 99999.0;
                 let nearestSegmentIndex = -1;
-                let nearestLinePoint1: LinePoint = null;
-                let nearestLinePoint2: LinePoint = null;
 
                 for (let i = 0; i < editorLine.points.length - 1; i++) {
 
@@ -366,13 +364,13 @@ namespace ManualTracingTool {
 
                         minDistance = distance;
                         nearestSegmentIndex = i;
-
-                        nearestLinePoint1 = editPoint1;
-                        nearestLinePoint2 = editPoint2;
                     }
                 }
 
                 if (nearestSegmentIndex != -1) {
+
+                    let nearestLinePoint1 = editorLine.points[nearestSegmentIndex];
+                    let nearestLinePoint2 = editorLine.points[nearestSegmentIndex + 1];
 
                     // Calculate candidate point
                     Logic_Points.pointToLineNearestPoint(
@@ -393,9 +391,9 @@ namespace ManualTracingTool {
                     let editFalloffRadiusMax = this.editFalloffRadiusMax / this.viewScale;
                     let editFalloffRadiusMin = this.editFalloffRadiusMin / this.viewScale;
 
-                    if (falloffDistance > editFalloffRadiusMax) {
-                        continue;
-                    }
+                    //if (falloffDistance > editFalloffRadiusMax) {
+                    //    continue;
+                    //}
 
                     let influenceDistance = vec3.distance(point.adjustedLocation, this.nearestPoint);
 
@@ -403,8 +401,8 @@ namespace ManualTracingTool {
                         continue;
                     }
                     
-                    let influence = Maths.smoothstep(editFalloffRadiusMin, editFalloffRadiusMax, influenceDistance);
-                    influence = 1.0 - Maths.clamp(influence, 0.0, 1.0);
+                    let distanceRate = Maths.smoothstep(editFalloffRadiusMin, editFalloffRadiusMax, falloffDistance);
+                    let influence = 1.0 - Maths.clamp(distanceRate, 0.0, 1.0);
 
                     if (influence == 0.0) {
                         continue;
