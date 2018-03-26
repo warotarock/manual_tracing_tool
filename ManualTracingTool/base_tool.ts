@@ -326,9 +326,7 @@ namespace ManualTracingTool {
         keydown(e: KeyboardEvent, env: ToolEnvironment) { // @virtual
         }
 
-        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) {
-
-            env.setRedrawEditorWindow();
+        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @virtual
         }
     }
 
