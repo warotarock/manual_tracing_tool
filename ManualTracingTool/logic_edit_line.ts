@@ -174,7 +174,9 @@ namespace ManualTracingTool {
 
     export class Logic_Edit_Line {
 
-        static calcParameters(line: VectorLine) {
+        static sampledLocation = vec3.fromValues(0.0, 0.0, 0.0);
+
+        static calculateParameters(line: VectorLine) {
 
             // Calculate rectangle area
             let left = 999999.0;
@@ -229,6 +231,14 @@ namespace ManualTracingTool {
             }
         }
 
+        static calculateParametersV(lines: List<VectorLine>) {
+
+            for (let line of lines) {
+
+                Logic_Edit_Line.calculateParameters(line);
+            }
+        }
+
         static smooth(line: VectorLine) {
 
             // Smoothing
@@ -267,7 +277,7 @@ namespace ManualTracingTool {
 
             Logic_Edit_Line.applyAdjustments(line);
 
-            Logic_Edit_Line.calcParameters(line)
+            Logic_Edit_Line.calculateParameters(line)
         }
 
         private static calcBezier2d(result: Vec3, p0: Vec3, p1: Vec3, p2: Vec3, t: float) {
@@ -292,6 +302,105 @@ namespace ManualTracingTool {
             for (let point of line.points) {
 
                 vec3.copy(point.location, point.adjustedLocation)
+            }
+        }
+
+        static clalculateLineDivisionCount(line: VectorLine, resamplingUnitLength: float): int {
+
+            let divisionCount = Math.floor(line.totalLength / resamplingUnitLength);
+            if ((divisionCount % 2) == 0) {
+                divisionCount = divisionCount + 1;
+            }
+
+            return divisionCount;
+        }
+
+        static createResampledLine(baseLine: VectorLine, samplingDivisionCount: int): VectorLine {
+
+            let result = new VectorLine();
+
+            let samplingUnitLength = baseLine.totalLength / samplingDivisionCount;
+            let samplePos = samplingUnitLength;
+
+            let sampledLocation = Logic_Edit_Line.sampledLocation;
+
+            let currentIndex = 0;
+            let sampledLength = 0.0;
+
+            {
+                let sampledPoint = new LinePoint();
+                vec3.copy(sampledPoint.location, baseLine.points[0].location);
+                vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+                result.points.push(sampledPoint);
+            }
+
+            let sampledCount = 1;
+
+            while (sampledLength < baseLine.totalLength) {
+
+                let currentPoint = baseLine.points[currentIndex];
+                let nextPoint = baseLine.points[currentIndex + 1];
+                let segmentLength = nextPoint.totalLength - currentPoint.totalLength;
+
+                if (segmentLength == 0.0) {
+
+                    currentIndex++;
+                    if (currentIndex + 1 >= baseLine.points.length) {
+                        break;
+                    }
+                }
+
+                if (sampledLength + samplePos <= nextPoint.totalLength) {
+
+                    let localPosition = (sampledLength + samplePos) - currentPoint.totalLength;
+                    let positionRate = localPosition / segmentLength;
+
+                    vec3.lerp(sampledLocation, currentPoint.location, nextPoint.location, positionRate);
+
+                    let sampledPoint = new LinePoint();
+                    vec3.copy(sampledPoint.location, sampledLocation);
+                    vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+
+                    result.points.push(sampledPoint);
+
+                    sampledLength = sampledLength + samplePos;
+                    samplePos = samplingUnitLength;
+
+                    sampledCount++;
+                    if (sampledCount >= samplingDivisionCount) {
+
+                        break;
+                    }
+                }
+                else {
+
+                    samplePos = (sampledLength + samplePos) - nextPoint.totalLength;
+                    sampledLength = nextPoint.totalLength;
+                    currentIndex++;
+
+                    if (currentIndex + 1 >= baseLine.points.length) {
+                        break;
+                    }
+                }
+            }
+
+            {
+                let sampledPoint = new LinePoint();
+                vec3.copy(sampledPoint.location, baseLine.points[baseLine.points.length - 1].location);
+                vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+                result.points.push(sampledPoint);
+            }
+
+            Logic_Edit_Line.calculateParameters(result);
+
+            return result;
+        }
+
+        static resetModifyStatus(lines: List<VectorLine>) {
+
+            for (let line of lines) {
+
+                line.modifyFlag = VectorLineModifyFlagID.none;
             }
         }
     }

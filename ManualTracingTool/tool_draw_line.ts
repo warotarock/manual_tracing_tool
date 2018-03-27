@@ -5,6 +5,8 @@ namespace ManualTracingTool {
 
         editLine: VectorLine = null;
 
+        resamplingUnitLength = 8.0;
+
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             if (!e.isLeftButtonPressing()) {
@@ -54,8 +56,6 @@ namespace ManualTracingTool {
 
             this.executeCommand(env);
 
-            Logic_Edit_Line.smooth(this.editLine);
-
             env.setRedrawMainWindow();
             env.setRedrawEditorWindow();
 
@@ -64,13 +64,23 @@ namespace ManualTracingTool {
 
         private executeCommand(env: ToolEnvironment) {
 
+            Logic_Edit_Line.smooth(this.editLine);
+
+            Logic_Edit_Line.calculateParameters(this.editLine);
+
+            let divisionCount = Logic_Edit_Line.clalculateLineDivisionCount(this.editLine, this.resamplingUnitLength);
+
+            let resampledLine = Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
+
             let command = new Command_AddLine();
             command.group = env.currentVectorGroup;
-            command.line = this.editLine;
+            command.line = resampledLine;
 
             command.execute(env);
 
             env.commandHistory.addCommand(command);
+
+            this.editLine = null;
         }
     }
 

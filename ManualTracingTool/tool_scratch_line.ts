@@ -129,7 +129,7 @@ namespace ManualTracingTool {
 
             let targetLine = env.currentVectorLine;
 
-            Logic_Edit_Line.calcParameters(this.editLine);
+            Logic_Edit_Line.calculateParameters(this.editLine);
 
             // Resampling
             this.resampledLine = this.resampleLine(this.editLine);
@@ -197,7 +197,8 @@ namespace ManualTracingTool {
             }
         }
 
-        samplingDivisionCount = 15;
+        resamplingUnitLength = 8.0;
+        maxResamplingDivisionCount = 15;
         curveCheckPointCount = 3;
         cutoutAngle = 30 / 180.0 * Math.PI;
 
@@ -212,81 +213,13 @@ namespace ManualTracingTool {
 
         private resampleLine(baseLine: VectorLine): VectorLine {
 
-            let sampledLine = new VectorLine();
+            let divisionCount = Logic_Edit_Line.clalculateLineDivisionCount(baseLine, this.resamplingUnitLength);
+            if (divisionCount > this.maxResamplingDivisionCount) {
 
-            let samplingLength = baseLine.totalLength / this.samplingDivisionCount;
-            let samplePos = samplingLength;
-
-            let currentIndex = 0;
-            let sampledLength = 0.0;
-
-            {
-                let sampledPoint = new LinePoint();
-                vec3.copy(sampledPoint.location, baseLine.points[0].location);
-                vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
-                sampledLine.points.push(sampledPoint);
+                divisionCount = this.maxResamplingDivisionCount;
             }
 
-            let sampledCount = 1;
-
-            while (sampledLength < baseLine.totalLength) {
-
-                let currentPoint = baseLine.points[currentIndex];
-                let nextPoint = baseLine.points[currentIndex + 1];
-                let segmentLength = nextPoint.totalLength - currentPoint.totalLength;
-
-                if (segmentLength == 0.0) {
-
-                    currentIndex++;
-                    if (currentIndex + 1 >= baseLine.points.length) {
-                        break;
-                    }
-                }
-
-                if (sampledLength + samplePos <= nextPoint.totalLength) {
-
-                    let localPosition = (sampledLength + samplePos) - currentPoint.totalLength;
-                    let positionRate = localPosition / segmentLength;
-
-                    vec3.lerp(this.samplePoint, currentPoint.location, nextPoint.location, positionRate);
-
-                    let sampledPoint = new LinePoint();
-                    vec3.copy(sampledPoint.location, this.samplePoint);
-                    vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
-
-                    sampledLine.points.push(sampledPoint);
-
-                    sampledLength = sampledLength + samplePos;
-                    samplePos = samplingLength;
-
-                    sampledCount++;
-                    if (sampledCount >= this.samplingDivisionCount) {
-
-                        break;
-                    }
-                }
-                else {
-
-                    samplePos = (sampledLength + samplePos) - nextPoint.totalLength;
-                    sampledLength = nextPoint.totalLength;
-                    currentIndex++;
-
-                    if (currentIndex + 1 >= baseLine.points.length) {
-                        break;
-                    }
-                }
-            }
-
-            {
-                let sampledPoint = new LinePoint();
-                vec3.copy(sampledPoint.location, baseLine.points[baseLine.points.length - 1].location);
-                vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
-                sampledLine.points.push(sampledPoint);
-            }
-
-            Logic_Edit_Line.calcParameters(sampledLine);
-
-            return sampledLine;
+            return Logic_Edit_Line.createResampledLine(baseLine, divisionCount);
         }
 
         private searchCutoutIndex(editorLine: VectorLine, isForward: boolean): int {
@@ -577,12 +510,14 @@ namespace ManualTracingTool {
             if (forwardSearch) {
 
                 for (let i = startIndex; i < sampleLine.points.length; i++) {
+
                     result.push(sampleLine.points[i]);
                 }
             }
             else {
 
                 for (let i = startIndex; i >= 0; i--) {
+
                     result.push(sampleLine.points[i]);
                 }
             }
@@ -692,6 +627,8 @@ namespace ManualTracingTool {
                 vec3.copy(targetPoint.location, editPoint.oldLocation);
                 vec3.copy(targetPoint.adjustedLocation, targetPoint.location);
             }
+
+            Logic_Edit_Line.calculateParameters(this.targetLine);
         }
 
         redo(env: ToolEnvironment) { // @override
@@ -702,6 +639,8 @@ namespace ManualTracingTool {
                 vec3.copy(targetPoint.location, editPoint.newLocation);
                 vec3.copy(targetPoint.adjustedLocation, targetPoint.location);
             }
+
+            Logic_Edit_Line.calculateParameters(this.targetLine);
         }
 
         errorCheck() {

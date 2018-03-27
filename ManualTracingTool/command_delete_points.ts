@@ -198,6 +198,8 @@ namespace ManualTracingTool {
             for (let editLine of this.editLines) {
 
                 editLine.line.points = editLine.oldPointList;
+
+                Logic_Edit_Line.calculateParameters(editLine.line);
             }
 
             for (let line of this.deletedLines) {
@@ -223,6 +225,8 @@ namespace ManualTracingTool {
 
                 editLine.line.points = editLine.newPointList;
                 editLine.line.modifyFlag = VectorLineModifyFlagID.none;
+
+                Logic_Edit_Line.calculateParameters(editLine.line);
             }
 
             for (let line of this.deletedLines) {

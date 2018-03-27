@@ -150,7 +150,7 @@ namespace ManualTracingTool {
                     return;
                 }
 
-                Logic_Edit_Line.calcParameters(this.editLine);
+                Logic_Edit_Line.calculateParameters(this.editLine);
 
                 if (this.editLine.points.length <= 1 || this.editLine.totalLength < 1) {
                     return;

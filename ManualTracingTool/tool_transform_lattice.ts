@@ -4,6 +4,7 @@ namespace ManualTracingTool {
     class Tool_Transform_Lattice_EditPoint {
 
         targetPoint: LinePoint = null;
+        targetLine: VectorLine = null;
 
         relativeLocation = vec3.fromValues(0.0, 0.0, 0.0);
         newLocation = vec3.fromValues(0.0, 0.0, 0.0);
@@ -209,6 +210,7 @@ namespace ManualTracingTool {
 
                         let editPoint = new Tool_Transform_Lattice_EditPoint();
                         editPoint.targetPoint = point;
+                        editPoint.targetLine = line;
 
                         vec3.copy(editPoint.oldLocation, point.location);
                         vec3.copy(editPoint.newLocation, point.location);
@@ -260,13 +262,29 @@ namespace ManualTracingTool {
             // Commit location
             this.processLatticeTransform(this.editPoints, this.latticePoints);
 
+            let targetLines = new List<VectorLine>();
+
             for (let editPoint of this.editPoints) {
 
                 vec3.copy(editPoint.newLocation, editPoint.targetPoint.adjustedLocation);
             }
 
+            // Get target line
+            for (let editPoint of this.editPoints) {
+
+                if (editPoint.targetLine.modifyFlag == VectorLineModifyFlagID.none) {
+
+                    targetLines.push(editPoint.targetLine);
+                    editPoint.targetLine.modifyFlag = VectorLineModifyFlagID.transform;
+                }
+            }
+
+            Logic_Edit_Line.resetModifyStatus(targetLines);
+
+            // Execute the command
             let command = new Command_TransformLattice();
             command.editPoints = this.editPoints;
+            command.targetLines = targetLines;
 
             command.execute(env);
 
@@ -278,6 +296,7 @@ namespace ManualTracingTool {
 
     export class Command_TransformLattice extends CommandBase {
 
+        targetLines: List<VectorLine> = null;
         editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
         execute(env: ToolEnvironment) { // @override
@@ -294,6 +313,8 @@ namespace ManualTracingTool {
                 vec3.copy(editPoint.targetPoint.location, editPoint.oldLocation);
                 vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.oldLocation);
             }
+
+            this.calculateLineParameters();
         }
 
         redo(env: ToolEnvironment) { // @override
@@ -303,9 +324,24 @@ namespace ManualTracingTool {
                 vec3.copy(editPoint.targetPoint.location, editPoint.newLocation);
                 vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.newLocation);
             }
+
+            this.calculateLineParameters();
         }
 
         errorCheck() {
+
+            if (this.targetLines == null) {
+                throw ('Command_TransformLattice: line is null!');
+            }
+
+            if (this.editPoints.length == 0) {
+                throw ('Command_TransformLattice: no target point!');
+            }
+        }
+
+        private calculateLineParameters() {
+
+            Logic_Edit_Line.calculateParametersV(this.targetLines);
         }
     }
 

@@ -55,7 +55,8 @@ namespace ManualTracingTool {
         selectedToUnselected = 1,
         unselectedToSelected = 2,
         delete = 3,
-        deletePoints = 4
+        deletePoints = 4,
+        transform = 5
     }
 
     export class VectorLine {
