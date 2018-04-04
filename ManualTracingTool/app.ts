@@ -17,6 +17,7 @@ namespace ManualTracingTool {
     // ・ファイル保存、読み込み
     // ・PNG出力、jpeg出力
     // ・現在のレイヤーが変わったときにメインツールを自動で変更する。ベクターレイヤーならスクラッチツールとドローツールのどちらかを記憶、ポージングレイヤーならポーズにする
+    // ・ポージングツール以外のツールでパンしたとき３Ⅾが更新されないバグ修正
 
     // いつかやる (anytime do)
     // ・ラティス変形ツール
@@ -164,9 +165,21 @@ namespace ManualTracingTool {
 
         isLoaded = false;
 
-        // Loading
+        constructor() {
 
-        startLoading() {
+            this.modelFile.file('models.json');
+
+            this.imageResurces.push(new ImageResource().file('texture01.png'));
+            this.imageResurces.push(new ImageResource().file('system_image01.png').tex(false));
+            this.imageResurces.push(new ImageResource().file('toolbar_image01.png').tex(false));
+            this.imageResurces.push(new ImageResource().file('layerbar_image01.png').tex(false));
+
+            this.systemImage = this.imageResurces[1];
+            this.subToolImages.push(this.imageResurces[2]);
+            this.layerButtonImage = this.imageResurces[3];
+        }
+
+        initializeDevices() {
 
             this.resizeWindows();
 
@@ -184,13 +197,13 @@ namespace ManualTracingTool {
             }
 
             this.posing3dView.initialize(this.webGLRender, this.pickingWindow);
+        }
+
+        // Loading
+
+        startLoading() {
 
             // Start loading
-            this.modelFile.file('models.json');
-            this.imageResurces.push(new ImageResource().file('texture01.png'));
-            this.imageResurces.push(new ImageResource().file('system_image01.png').tex(false));
-            this.imageResurces.push(new ImageResource().file('toolbar_image01.png').tex(false));
-            this.imageResurces.push(new ImageResource().file('layerbar_image01.png').tex(false));
 
             this.loadModels(this.modelFile, './res/' + this.modelFile.fileName);
 
@@ -384,9 +397,6 @@ namespace ManualTracingTool {
         private initializeTools() {
 
             // Resoures
-            this.systemImage = this.imageResurces[1];
-            this.subToolImages.push(this.imageResurces[2]);
-            this.layerButtonImage = this.imageResurces[3];
 
             this.posing3dView.storeResources(this.modelFile, this.imageResurces);
 
@@ -2868,6 +2878,9 @@ namespace ManualTracingTool {
         _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById('webglCanvas');
         _Main.pickingWindow.canvas = document.createElement('canvas');
         //document.getElementById('footer').appendChild(_Main.pickingWindow.canvas);
+
+        _Main.initializeDevices();
+
         _Main.startLoading();
 
         setTimeout(run, 1000 / 30);
