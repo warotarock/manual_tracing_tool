@@ -354,6 +354,7 @@ namespace ManualTracingTool {
 
         mainToolID = MainToolID.none;
         subTools = new List<ToolBase>();
+        subToolImage: ImageResource = null;
         currentSubToolIndex = 0;
 
         id(mainToolID: MainToolID): MainTool {
@@ -365,6 +366,13 @@ namespace ManualTracingTool {
         subTool(tool: ToolBase): MainTool {
 
             this.subTools.push(tool);
+            return this;
+        }
+
+        subToolImg(image: ImageResource): MainTool {
+
+            this.subToolImage = image;
+
             return this;
         }
     }

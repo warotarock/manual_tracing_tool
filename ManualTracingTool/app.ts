@@ -172,11 +172,13 @@ namespace ManualTracingTool {
             this.imageResurces.push(new ImageResource().file('texture01.png'));
             this.imageResurces.push(new ImageResource().file('system_image01.png').tex(false));
             this.imageResurces.push(new ImageResource().file('toolbar_image01.png').tex(false));
+            this.imageResurces.push(new ImageResource().file('toolbar_image02.png').tex(false));
             this.imageResurces.push(new ImageResource().file('layerbar_image01.png').tex(false));
 
             this.systemImage = this.imageResurces[1];
             this.subToolImages.push(this.imageResurces[2]);
-            this.layerButtonImage = this.imageResurces[3];
+            this.subToolImages.push(this.imageResurces[3]);
+            this.layerButtonImage = this.imageResurces[4];
         }
 
         initializeDevices() {
@@ -397,7 +399,6 @@ namespace ManualTracingTool {
         private initializeTools() {
 
             // Resoures
-
             this.posing3dView.storeResources(this.modelFile, this.imageResurces);
 
             // Constructs main tools and sub tools structure
@@ -412,11 +413,13 @@ namespace ManualTracingTool {
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.scratchLine)
+                    .subToolImg(this.subToolImages[0])
                     .subTool(this.tool_ScratchLine)
             );
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.posing)
+                    .subToolImg(this.subToolImages[1])
                     .subTool(this.tool_Posing3d_LocateHead)
                     .subTool(this.tool_Posing3d_RotateHead)
                     .subTool(this.tool_Posing3d_LocateBody)
@@ -2446,12 +2449,12 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
 
-            if (context.mainToolID != MainToolID.posing) {
+            let currentMainTool = this.getCurrentMainTool();
+            let srcImage = currentMainTool.subToolImage;
+
+            if (srcImage == null) {
                 return;
             }
-
-            let currentMainTool = this.getCurrentMainTool();
-            let srcImage = this.subToolImages[0];
 
             let scale = layerWindow.subToolItemScale;
             let fullWidth = layerWindow.width - 1;
