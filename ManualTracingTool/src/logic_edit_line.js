@@ -106,6 +106,13 @@ var ManualTracingTool;
                 && rectangle.right != -999999.0
                 && rectangle.bottom != -999999.0);
         };
+        Logic_Edit_Points.clalculateSamplingDivisionCount = function (totalLength, resamplingUnitLength) {
+            var divisionCount = Math.floor(totalLength / resamplingUnitLength);
+            if ((divisionCount % 2) == 0) {
+                divisionCount = divisionCount + 1;
+            }
+            return divisionCount;
+        };
         Logic_Edit_Points.calculateSurroundingRectangle = function (result, minMaxRectangle, points, selectedOnly) {
             var left = minMaxRectangle.left;
             var top = minMaxRectangle.top;
@@ -127,29 +134,105 @@ var ManualTracingTool;
             result.right = right;
             result.bottom = bottom;
         };
+        Logic_Edit_Points.calculateSegmentTotalLength = function (points, startIndex, endIndex) {
+            var totalLength = 0.0;
+            for (var i = startIndex; i <= endIndex - 1; i++) {
+                var point1 = points[i];
+                var point2 = points[i + 1];
+                totalLength += vec3.distance(point1.location, point2.location);
+            }
+            return totalLength;
+        };
+        Logic_Edit_Points.resamplePoints = function (result, points, startIndex, endIndex, samplingUnitLength) {
+            var sampledLocationVec = Logic_Edit_Line.sampledLocation;
+            var totalLength = Logic_Edit_Points.calculateSegmentTotalLength(points, startIndex, endIndex);
+            var firstPoint = points[startIndex];
+            var lastPoint = points[endIndex];
+            var currentIndex = startIndex;
+            var currentPosition = firstPoint.totalLength;
+            var endPosition = firstPoint.totalLength + totalLength;
+            var maxSampleCount = 1 + Math.ceil(totalLength / samplingUnitLength);
+            var nextStepLength = samplingUnitLength;
+            // for first point
+            {
+                var sampledPoint = new ManualTracingTool.LinePoint();
+                vec3.copy(sampledPoint.location, firstPoint.location);
+                vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+                result.push(sampledPoint);
+            }
+            // for internal points
+            var sampledCount = 1;
+            while (currentPosition < endPosition) {
+                var currentPoint = points[currentIndex];
+                var nextPoint = points[currentIndex + 1];
+                var segmentLength = nextPoint.totalLength - currentPoint.totalLength;
+                if (segmentLength == 0.0) {
+                    currentIndex++;
+                    if (currentIndex == endIndex) {
+                        break;
+                    }
+                }
+                if (currentPosition + nextStepLength <= nextPoint.totalLength) {
+                    var localPosition = (currentPosition + nextStepLength) - currentPoint.totalLength;
+                    var positionRate = localPosition / segmentLength;
+                    vec3.lerp(sampledLocationVec, currentPoint.location, nextPoint.location, positionRate);
+                    var sampledPoint = new ManualTracingTool.LinePoint();
+                    vec3.copy(sampledPoint.location, sampledLocationVec);
+                    vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+                    result.push(sampledPoint);
+                    currentPosition = currentPosition + nextStepLength;
+                    nextStepLength = samplingUnitLength;
+                    sampledCount++;
+                    if (sampledCount >= maxSampleCount) {
+                        break;
+                    }
+                }
+                else {
+                    nextStepLength = (currentPosition + nextStepLength) - nextPoint.totalLength;
+                    currentPosition = nextPoint.totalLength;
+                    currentIndex++;
+                    if (currentIndex == endIndex) {
+                        break;
+                    }
+                }
+            }
+            // for last point
+            {
+                var sampledPoint = new ManualTracingTool.LinePoint();
+                vec3.copy(sampledPoint.location, lastPoint.location);
+                vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+                result.push(sampledPoint);
+            }
+            return result;
+        };
         return Logic_Edit_Points;
     }());
     ManualTracingTool.Logic_Edit_Points = Logic_Edit_Points;
     var Logic_Edit_Line = /** @class */ (function () {
         function Logic_Edit_Line() {
         }
-        Logic_Edit_Line.calcParameters = function (line) {
-            // Calculate rectangle area
+        Logic_Edit_Line.calculateParameters = function (line) {
+            // Calculate rectangle area and selection
             var left = 999999.0;
             var top = 999999.0;
             var right = -999999.0;
             var bottom = -999999.0;
+            var isSelected = false;
             for (var _i = 0, _a = line.points; _i < _a.length; _i++) {
                 var point = _a[_i];
                 left = Math.min(point.location[0], left);
                 top = Math.min(point.location[1], top);
                 right = Math.max(point.location[0], right);
                 bottom = Math.max(point.location[1], bottom);
+                if (point.isSelected) {
+                    isSelected = true;
+                }
             }
             line.left = left;
             line.top = top;
             line.right = right;
             line.bottom = bottom;
+            line.isSelected = isSelected;
             // Calculate point positon in length
             var totalLength = 0.0;
             for (var i = 1; i < line.points.length; i++) {
@@ -169,6 +252,12 @@ var ManualTracingTool;
                 if (point2.curvature >= Math.PI) {
                     point2.curvature = Math.PI * 2 - point2.curvature;
                 }
+            }
+        };
+        Logic_Edit_Line.calculateParametersV = function (lines) {
+            for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
+                var line = lines_1[_i];
+                Logic_Edit_Line.calculateParameters(line);
             }
         };
         Logic_Edit_Line.smooth = function (line) {
@@ -192,7 +281,7 @@ var ManualTracingTool;
                 }
             }
             Logic_Edit_Line.applyAdjustments(line);
-            Logic_Edit_Line.calcParameters(line);
+            Logic_Edit_Line.calculateParameters(line);
         };
         Logic_Edit_Line.calcBezier2d = function (result, p0, p1, p2, t) {
             var px = (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0];
@@ -211,6 +300,22 @@ var ManualTracingTool;
                 vec3.copy(point.location, point.adjustedLocation);
             }
         };
+        Logic_Edit_Line.createResampledLine = function (baseLine, samplingDivisionCount) {
+            var result = new ManualTracingTool.VectorLine();
+            var startIndex = 0;
+            var endIndex = baseLine.points.length - 1;
+            var samplingUnitLength = baseLine.totalLength / samplingDivisionCount;
+            Logic_Edit_Points.resamplePoints(result.points, baseLine.points, startIndex, endIndex, samplingUnitLength);
+            Logic_Edit_Line.calculateParameters(result);
+            return result;
+        };
+        Logic_Edit_Line.resetModifyStatus = function (lines) {
+            for (var _i = 0, lines_2 = lines; _i < lines_2.length; _i++) {
+                var line = lines_2[_i];
+                line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
+            }
+        };
+        Logic_Edit_Line.sampledLocation = vec3.fromValues(0.0, 0.0, 0.0);
         return Logic_Edit_Line;
     }());
     ManualTracingTool.Logic_Edit_Line = Logic_Edit_Line;

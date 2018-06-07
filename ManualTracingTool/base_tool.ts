@@ -95,6 +95,8 @@ namespace ManualTracingTool {
 
         mouseCursorRadius = 20.0;
 
+        resamplingUnitLength = 12.0
+
         operatorCursor = new OperatorCursor();
 
         shiftKey: boolean = false;
@@ -132,7 +134,9 @@ namespace ManualTracingTool {
         posing3DView: Posing3DView = null;
         posing3DLogic: Posing3DLogic = null;
 
-        mouseCursorRadius= 0.0;
+        mouseCursorRadius = 0.0;
+        mouseCursorLocation = vec3.fromValues(0.0, 0.0, 0.0);
+
         viewScale = 0.0;
 
         constructor(toolContext: ToolContext) {
@@ -262,6 +266,11 @@ namespace ManualTracingTool {
         cancelModalTool() {
 
             this.toolContext.mainEditor.cancelModalTool();
+        }
+
+        getView_ResamplingUnitLength(resamplingUnitLength: float) {
+
+            return resamplingUnitLength / this.viewScale;
         }
     }
 

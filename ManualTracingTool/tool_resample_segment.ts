@@ -1,6 +1,11 @@
 ﻿
 namespace ManualTracingTool {
 
+    class Tool_Resample_Segment_EditGroup {
+
+        group: VectorGroup = null;
+    }
+
     class Tool_Resample_Segment_EditLine {
 
         targetLine: VectorLine = null;
@@ -11,60 +16,144 @@ namespace ManualTracingTool {
 
     export class Tool_Resample_Segment extends ToolBase {
 
-        resamplingUnitLength = 8.0;
+        resamplingUnitLength = 1.0;
 
         keydown(e: KeyboardEvent, env: ToolEnvironment) { // @override
 
             if (e.key == 'Enter') {
 
-                this.executeCommand(env);
+                if (env.currentVectorLayer != null) {
+
+                    this.executeCommand(env);
+                }
             }
         }
 
         private executeCommand(env: ToolEnvironment) {
 
+            let command = new Command_Resample_Segment();
 
+            if (command.collectEditTargets(env.currentVectorLayer, env)) {
+
+                command.execute(env);
+
+                env.commandHistory.addCommand(command);
+
+                env.setRedrawMainWindowEditorWindow();
+            }
         }
+    }
 
-        private collectEditTargets(layer: VectorLayer): boolean {
+    export class Command_Resample_Segment extends CommandBase {
+
+        resamplingUnitLength = 8.0;
+
+        editGroups: List<Tool_Resample_Segment_EditGroup> = null;
+        editLines: List<Tool_Resample_Segment_EditLine> = null;
+
+        collectEditTargets(layer: VectorLayer, env: ToolEnvironment): boolean {
+
+            let editGroups = new List<Tool_Resample_Segment_EditGroup>();
+            let editLines = new List<Tool_Resample_Segment_EditLine>();
 
             let modifiedGroupCount = 0;
+
             for (let group of layer.groups) {
 
                 let modifiedLineCount = 0;
 
                 for (let line of group.lines) {
 
+                    if (line.isSelected) {
 
+                        let editLine = this.collectEditTargets_CreateEditLine(line);
 
+                        if (editLine != null) {
 
+                            editLines.push(editLine);
+
+                            editLine.targetLine.modifyFlag = VectorLineModifyFlagID.reampling;
+                            modifiedLineCount++;
+                        }
+                    }
                 }
 
-                if (modifiedLineCount > 0) {
+                if (modifiedLineCount == 0) {
 
-                    group.linePointModifyFlag = VectorGroupModifyFlagID.modifyLines;
+                    continue;
                 }
 
-                if (group.modifyFlag != VectorGroupModifyFlagID.none || group.linePointModifyFlag != VectorGroupModifyFlagID.none) {
+                let editGroup = new Tool_Resample_Segment_EditGroup();
+                editGroup.group = group;
+                editGroups.push(editGroup);
 
-                    modifiedGroupCount++;
+                group.linePointModifyFlag = VectorGroupModifyFlagID.modifyLines;
+                modifiedGroupCount++;
+            }
+
+            this.editGroups = editGroups;
+            this.editLines = editLines;
+
+            return (modifiedGroupCount > 0);
+        }
+
+        private collectEditTargets_ExistsSelectedSegment(line: VectorLine): boolean {
+
+            let selectedPointCount = 0;
+
+            for (let point of line.points) {
+
+                if (point.isSelected) {
+
+                    selectedPointCount++;
+
+                    if (selectedPointCount >= 2) {
+
+                        break;
+                    }
+                }
+                else {
+
+                    selectedPointCount = 0;
                 }
             }
 
-            return true;
+            return (selectedPointCount >= 2);
         }
 
-        private collectEditTargets_Line(line: VectorLine): Tool_Resample_Segment_EditLine {
+        private collectEditTargets_CreateEditLine(line: VectorLine): Tool_Resample_Segment_EditLine {
+
+            // check selected point exists
+            if (!this.collectEditTargets_ExistsSelectedSegment(line)) {
+
+                return null;
+            }
 
             let result = new Tool_Resample_Segment_EditLine();
+            result.targetLine = line;
             result.oldPointList = line.points;
             result.newPointList = new List<LinePoint>();
+
+            return result;
+        }
+
+        executeResampling(env: ToolEnvironment) {
+
+            let resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+
+            for (let editLine of this.editLines) {
+
+                this.createResampledLineToEditLine(editLine, resamplingUnitLength);
+            }
+        }
+
+        private createResampledLineToEditLine(editLine: Tool_Resample_Segment_EditLine, resamplingUnitLength: float) {
+
+            let line = editLine.targetLine;
 
             let currentIndex = 0;
             let segmentStartIndex = -1;
             let segmentEndIndex = -1;
-
-            let existsTargetSegment = false;
 
             while (currentIndex < line.points.length) {
 
@@ -82,24 +171,31 @@ namespace ManualTracingTool {
 
                         let point = line.points[i];
 
-                        segmentEndIndex = i;
-
                         if (!point.isSelected) {
+
                             break;
                         }
+
+                        segmentEndIndex = i;
                     }
 
                     // if exists selected segment, execute resampling
                     if (segmentEndIndex > segmentStartIndex) {
 
-
+                        Logic_Edit_Points.resamplePoints(
+                            editLine.newPointList
+                            , line.points
+                            , segmentStartIndex
+                            , segmentEndIndex
+                            , resamplingUnitLength
+                        );
                     }
-                    // if not exists, execute insert original point
+                    // if no segment, execute insert original point
                     else {
 
                         let point = line.points[currentIndex];
 
-                        result.newPointList.push(point);
+                        editLine.newPointList.push(point);
                     }
 
                     currentIndex = segmentEndIndex + 1;
@@ -114,12 +210,12 @@ namespace ManualTracingTool {
 
                         let point = line.points[i];
 
-                        segmentEndIndex = i;
-
                         if (point.isSelected) {
 
                             break;
                         }
+
+                        segmentEndIndex = i;
                     }
 
                     // execute insert original point
@@ -127,48 +223,61 @@ namespace ManualTracingTool {
 
                         let point = line.points[i];
 
-                        result.newPointList.push(point);
+                        editLine.newPointList.push(point);
                     }
 
                     currentIndex = segmentEndIndex + 1;
                 }
             }
-
-            return result;
         }
-    }
-
-    export class Command_Resample_Segment extends CommandBase {
-
-        targetLines: List<VectorLine> = null;
 
         execute(env: ToolEnvironment) { // @override
 
             this.errorCheck();
+
+            this.executeResampling(env);
 
             this.redo(env);
         }
 
         undo(env: ToolEnvironment) { // @override
 
+            for (let editLine of this.editLines) {
+
+                editLine.targetLine.points = editLine.oldPointList;
+            }
+
             this.calculateLineParameters();
         }
 
         redo(env: ToolEnvironment) { // @override
+
+            for (let editGroup of this.editGroups) {
+
+                Logic_VectorLayer.clearGroupModifyFlags(editGroup.group);
+            }
+
+            for (let editLine of this.editLines) {
+
+                editLine.targetLine.points = editLine.newPointList;
+            }
 
             this.calculateLineParameters();
         }
 
         errorCheck() {
 
-            if (this.targetLines == null) {
+            if (this.editLines == null) {
                 throw ('Command_TransformLattice: line is null!');
             }
         }
 
         private calculateLineParameters() {
 
-            Logic_Edit_Line.calculateParametersV(this.targetLines);
+            for (let editLine of this.editLines) {
+
+                Logic_Edit_Line.calculateParameters(editLine.targetLine);
+            }
         }
     }
 }

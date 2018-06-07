@@ -1,16 +1,16 @@
 ﻿
 namespace ManualTracingTool {
 
-    class CommandEditVectorGroup {
+    class Command_DeletePoints_EditGroup {
 
         group: VectorGroup = null;
         oldLineList: List<VectorLine> = null;
         newLineList: List<VectorLine> = null;
     }
 
-    class CommandEditVectorLine {
+    class Command_DeletePoints_EditLine {
 
-        line: VectorLine = null;
+        targetLine: VectorLine = null;
         oldPointList: List<LinePoint> = null;
         newPointList: List<LinePoint> = null;
     }
@@ -19,8 +19,8 @@ namespace ManualTracingTool {
 
         layer: VectorLayer = null;
 
-        editGroups: List<CommandEditVectorGroup> = null;
-        editLines: List<CommandEditVectorLine> = null;
+        editGroups: List<Command_DeletePoints_EditGroup> = null;
+        editLines: List<Command_DeletePoints_EditLine> = null;
 
         deletedLines: List<VectorLine> = null;
         deletedPoints: List<LinePoint> = null;
@@ -31,8 +31,9 @@ namespace ManualTracingTool {
                 return false;
             }
 
-            // Set modify flags to groups, lines and points. If a line has no points in result, delete that line. A group remains even if there is no lines.
+            // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
             let modifiedGroupCount = 0;
+
             for (let group of layer.groups) {
 
                 let deleteLineCount = 0;
@@ -92,7 +93,7 @@ namespace ManualTracingTool {
             }
 
             // Collect informations for modified lines and deleted points
-            let editLines = new List<CommandEditVectorLine>();
+            let editLines = new List<Command_DeletePoints_EditLine>();
             let deletedPoints = new List<LinePoint>();
 
             for (let group of layer.groups) {
@@ -122,8 +123,8 @@ namespace ManualTracingTool {
                         }
                     }
 
-                    let editLine = new CommandEditVectorLine();
-                    editLine.line = line;
+                    let editLine = new Command_DeletePoints_EditLine();
+                    editLine.targetLine = line;
                     editLine.oldPointList = line.points;
                     editLine.newPointList = newPointList;
 
@@ -132,7 +133,7 @@ namespace ManualTracingTool {
             }
 
             // Collect informations for modified groups and deleted lines
-            let editGroups = new List<CommandEditVectorGroup>();
+            let editGroups = new List<Command_DeletePoints_EditGroup>();
             let deletedLines = new List<VectorLine>();
 
             for (let group of layer.groups) {
@@ -164,7 +165,7 @@ namespace ManualTracingTool {
                     newLineList = group.lines;
                 }
 
-                let editGroup = new CommandEditVectorGroup();
+                let editGroup = new Command_DeletePoints_EditGroup();
                 editGroup.group = group;
                 editGroup.oldLineList = group.lines;
                 editGroup.newLineList = newLineList;
@@ -197,9 +198,9 @@ namespace ManualTracingTool {
 
             for (let editLine of this.editLines) {
 
-                editLine.line.points = editLine.oldPointList;
+                editLine.targetLine.points = editLine.oldPointList;
 
-                Logic_Edit_Line.calculateParameters(editLine.line);
+                Logic_Edit_Line.calculateParameters(editLine.targetLine);
             }
 
             for (let line of this.deletedLines) {
@@ -223,10 +224,10 @@ namespace ManualTracingTool {
 
             for (let editLine of this.editLines) {
 
-                editLine.line.points = editLine.newPointList;
-                editLine.line.modifyFlag = VectorLineModifyFlagID.none;
+                editLine.targetLine.points = editLine.newPointList;
+                editLine.targetLine.modifyFlag = VectorLineModifyFlagID.none;
 
-                Logic_Edit_Line.calculateParameters(editLine.line);
+                Logic_Edit_Line.calculateParameters(editLine.targetLine);
             }
 
             for (let line of this.deletedLines) {

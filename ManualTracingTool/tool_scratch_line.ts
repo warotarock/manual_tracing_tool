@@ -104,22 +104,41 @@ namespace ManualTracingTool {
                 this.isRightButtonEdit = false;
 
                 // Finish selectiong a line
-
-                this.lineSingleHitTester.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorRadius);
-                let hitedLine = this.lineSingleHitTester.hitedLine;
-
-                if (hitedLine != null) {
-
-                    if (env.currentVectorLine != null) {
-                        env.currentVectorLine.isEditTarget = false;
-                    }
-
-                    env.setCurrentVectorLine(hitedLine, true);
-
-                    env.setRedrawMainWindowEditorWindow();
-                }
+                this.selectLine(e.location, env);
 
                 return;
+            }
+        }
+
+        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @override
+
+            if (e.key == 'g') {
+
+                // Finish selectiong a line
+                this.selectLine(env.mouseCursorLocation, env);
+            }
+        }
+
+        selectLine(location: Vec3, env: ToolEnvironment) {
+
+            if (env.currentVectorLayer == null) {
+
+                return;
+            }
+
+            this.lineSingleHitTester.processLayer(env.currentVectorLayer, location[0], location[1], env.mouseCursorRadius);
+
+            let hitedLine = this.lineSingleHitTester.hitedLine;
+
+            if (hitedLine != null) {
+
+                if (env.currentVectorLine != null) {
+                    env.currentVectorLine.isEditTarget = false;
+                }
+
+                env.setCurrentVectorLine(hitedLine, true);
+
+                env.setRedrawMainWindowEditorWindow();
             }
         }
 
@@ -132,7 +151,7 @@ namespace ManualTracingTool {
             Logic_Edit_Line.calculateParameters(this.editLine);
 
             // Resampling
-            this.resampledLine = this.resampleLine(this.editLine);
+            this.resampledLine = this.resampleLine(this.editLine, env);
 
             let startIndex = this.searchCutoutIndex(this.resampledLine, false);
             let endIndex = this.searchCutoutIndex(this.resampledLine, true);
@@ -197,13 +216,13 @@ namespace ManualTracingTool {
             }
         }
 
-        resamplingUnitLength = 8.0;
+        resamplingUnitLength = 1.0;
         maxResamplingDivisionCount = 15;
         curveCheckPointCount = 3;
         cutoutAngle = 30 / 180.0 * Math.PI;
 
         editFalloffRadiusMin = 5.0;
-        editFalloffRadiusMax = 40.0;
+        editFalloffRadiusMax = 10.0;
         editInfluence = 0.5;
 
         editExtrudeMinRadius = 1.0;
@@ -211,9 +230,11 @@ namespace ManualTracingTool {
 
         viewScale = 1.0;
 
-        private resampleLine(baseLine: VectorLine): VectorLine {
+        private resampleLine(baseLine: VectorLine, env: ToolEnvironment): VectorLine {
 
-            let divisionCount = Logic_Edit_Line.clalculateLineDivisionCount(baseLine, this.resamplingUnitLength);
+            let resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+
+            let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(baseLine.totalLength, resamplingUnitLength);
             if (divisionCount > this.maxResamplingDivisionCount) {
 
                 divisionCount = this.maxResamplingDivisionCount;

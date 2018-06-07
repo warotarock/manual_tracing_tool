@@ -10,21 +10,21 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var CommandEditVectorGroup = /** @class */ (function () {
-        function CommandEditVectorGroup() {
+    var Command_DeletePoints_EditGroup = /** @class */ (function () {
+        function Command_DeletePoints_EditGroup() {
             this.group = null;
             this.oldLineList = null;
             this.newLineList = null;
         }
-        return CommandEditVectorGroup;
+        return Command_DeletePoints_EditGroup;
     }());
-    var CommandEditVectorLine = /** @class */ (function () {
-        function CommandEditVectorLine() {
-            this.line = null;
+    var Command_DeletePoints_EditLine = /** @class */ (function () {
+        function Command_DeletePoints_EditLine() {
+            this.targetLine = null;
             this.oldPointList = null;
             this.newPointList = null;
         }
-        return CommandEditVectorLine;
+        return Command_DeletePoints_EditLine;
     }());
     var Command_DeletePoints = /** @class */ (function (_super) {
         __extends(Command_DeletePoints, _super);
@@ -41,7 +41,7 @@ var ManualTracingTool;
             if (this.errorCheck(layer)) {
                 return false;
             }
-            // Set modify flags to groups, lines and points. If a line has no points in result, delete that line. A group remains even if there is no lines.
+            // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
             var modifiedGroupCount = 0;
             for (var _i = 0, _a = layer.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
@@ -109,8 +109,8 @@ var ManualTracingTool;
                             deletedPoints.push(point);
                         }
                     }
-                    var editLine = new CommandEditVectorLine();
-                    editLine.line = line;
+                    var editLine = new Command_DeletePoints_EditLine();
+                    editLine.targetLine = line;
                     editLine.oldPointList = line.points;
                     editLine.newPointList = newPointList;
                     editLines.push(editLine);
@@ -140,7 +140,7 @@ var ManualTracingTool;
                 else {
                     newLineList = group.lines;
                 }
-                var editGroup = new CommandEditVectorGroup();
+                var editGroup = new Command_DeletePoints_EditGroup();
                 editGroup.group = group;
                 editGroup.oldLineList = group.lines;
                 editGroup.newLineList = newLineList;
@@ -164,7 +164,8 @@ var ManualTracingTool;
             }
             for (var _b = 0, _c = this.editLines; _b < _c.length; _b++) {
                 var editLine = _c[_b];
-                editLine.line.points = editLine.oldPointList;
+                editLine.targetLine.points = editLine.oldPointList;
+                ManualTracingTool.Logic_Edit_Line.calculateParameters(editLine.targetLine);
             }
             for (var _d = 0, _e = this.deletedLines; _d < _e.length; _d++) {
                 var line = _e[_d];
@@ -183,8 +184,9 @@ var ManualTracingTool;
             }
             for (var _b = 0, _c = this.editLines; _b < _c.length; _b++) {
                 var editLine = _c[_b];
-                editLine.line.points = editLine.newPointList;
-                editLine.line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
+                editLine.targetLine.points = editLine.newPointList;
+                editLine.targetLine.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
+                ManualTracingTool.Logic_Edit_Line.calculateParameters(editLine.targetLine);
             }
             for (var _d = 0, _e = this.deletedLines; _d < _e.length; _d++) {
                 var line = _e[_d];

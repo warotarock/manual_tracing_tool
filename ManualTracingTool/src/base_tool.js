@@ -91,6 +91,7 @@ var ManualTracingTool;
             this.mainWindow = null;
             this.pickingWindow = null;
             this.mouseCursorRadius = 20.0;
+            this.resamplingUnitLength = 12.0;
             this.operatorCursor = new OperatorCursor();
             this.shiftKey = false;
             this.altKey = false;
@@ -121,6 +122,7 @@ var ManualTracingTool;
             this.posing3DView = null;
             this.posing3DLogic = null;
             this.mouseCursorRadius = 0.0;
+            this.mouseCursorLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.viewScale = 0.0;
             this.toolContext = toolContext;
         }
@@ -203,6 +205,9 @@ var ManualTracingTool;
         ToolEnvironment.prototype.cancelModalTool = function () {
             this.toolContext.mainEditor.cancelModalTool();
         };
+        ToolEnvironment.prototype.getView_ResamplingUnitLength = function (resamplingUnitLength) {
+            return resamplingUnitLength / this.viewScale;
+        };
         return ToolEnvironment;
     }());
     ManualTracingTool.ToolEnvironment = ToolEnvironment;
@@ -257,7 +262,6 @@ var ManualTracingTool;
         ToolBase.prototype.keydown = function (e, env) {
         };
         ToolBase.prototype.onDrawEditor = function (env, drawEnv) {
-            env.setRedrawEditorWindow();
         };
         return ToolBase;
     }());
@@ -284,6 +288,7 @@ var ManualTracingTool;
         function MainTool() {
             this.mainToolID = MainToolID.none;
             this.subTools = new List();
+            this.subToolImage = null;
             this.currentSubToolIndex = 0;
         }
         MainTool.prototype.id = function (mainToolID) {
@@ -292,6 +297,10 @@ var ManualTracingTool;
         };
         MainTool.prototype.subTool = function (tool) {
             this.subTools.push(tool);
+            return this;
+        };
+        MainTool.prototype.subToolImg = function (image) {
+            this.subToolImage = image;
             return this;
         };
         return MainTool;

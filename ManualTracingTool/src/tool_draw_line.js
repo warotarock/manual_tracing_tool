@@ -15,6 +15,7 @@ var ManualTracingTool;
         function Tool_DrawLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.editLine = null;
+            _this.resamplingUnitLength = 1.0;
             return _this;
         }
         Tool_DrawLine.prototype.mouseDown = function (e, env) {
@@ -49,17 +50,22 @@ var ManualTracingTool;
                 return;
             }
             this.executeCommand(env);
-            ManualTracingTool.Logic_Edit_Line.smooth(this.editLine);
             env.setRedrawMainWindow();
             env.setRedrawEditorWindow();
             this.editLine = null;
         };
         Tool_DrawLine.prototype.executeCommand = function (env) {
+            ManualTracingTool.Logic_Edit_Line.smooth(this.editLine);
+            ManualTracingTool.Logic_Edit_Line.calculateParameters(this.editLine);
+            var resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+            var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
+            var resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
             var command = new Command_AddLine();
             command.group = env.currentVectorGroup;
-            command.line = this.editLine;
+            command.line = resampledLine;
             command.execute(env);
             env.commandHistory.addCommand(command);
+            this.editLine = null;
         };
         return Tool_DrawLine;
     }(ManualTracingTool.ToolBase));

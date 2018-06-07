@@ -3,10 +3,10 @@ var ManualTracingTool;
     var Maths = /** @class */ (function () {
         function Maths() {
         }
-        Maths.clamp = function (a, b, x) {
+        Maths.clamp = function (x, a, b) {
             return (x < a ? a : (x > b ? b : x));
         };
-        Maths.lerp = function (a, b, x) {
+        Maths.lerp = function (x, a, b) {
             return a + x * (b - a);
         };
         Maths.smoothstep = function (edge0, edge1, x) {

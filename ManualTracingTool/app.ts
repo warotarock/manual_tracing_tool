@@ -6,14 +6,17 @@ namespace ManualTracingTool {
     // 今やること (current tasks)
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
     // 　編集線上に近接位置がない点への影響度のフォールオフを無くしたり、大きくしたりしてみる
-    // ・線スクラッチの点削減ツールの実現
-    // 　直線上の点は削減する
-    // 　曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
+    // ・線スクラッチの線修正ツールの編集線のサンプリングにビューのスケールを反映
+    // ・線の太さを変えられるようにしてみる
+    // ・筆圧を線の太さに影響できるようにするとどうなるか試す
+    // ・ドローツールで線の最後の点が重複している（リサンプリングで最後と同じ位置に点が追加されていると思われる）
 
     // どこかでやる必要があること (nearest future tasks)
     // ・アクティブ線、レイヤによる絞り込み処理と可視化
     // ・現在のツールに応じた全選択、全選択解除処理
-    // ・線スクラッチで点の削減ツール
+    // ・線スクラッチの点削減ツールの実現
+    // 　直線上の点は削減する
+    // 　曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
     // ・ファイル保存、読み込み
     // ・PNG出力、jpeg出力
     // ・現在のレイヤーが変わったときにメインツールを自動で変更する。ベクターレイヤーならスクラッチツールとドローツールのどちらかを記憶、ポージングレイヤーならポーズにする
@@ -117,6 +120,7 @@ namespace ManualTracingTool {
         tool_DrawLine = new Tool_DrawLine();
         tool_AddPoint = new Tool_AddPoint();
         tool_ScratchLine = new Tool_ScratchLine();
+        tool_ResampleSegment = new Tool_Resample_Segment();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
 
@@ -415,6 +419,7 @@ namespace ManualTracingTool {
                 new MainTool().id(MainToolID.scratchLine)
                     .subToolImg(this.subToolImages[0])
                     .subTool(this.tool_ScratchLine)
+                    .subTool(this.tool_ResampleSegment)
             );
 
             this.mainTools.push(
@@ -455,6 +460,10 @@ namespace ManualTracingTool {
             //this.currentTool = this.tool_AddPoint;
             //this.currentTool = this.tool_ScratchLine;
             this.currentTool = this.tool_Posing3d_LocateHead;
+
+            this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         }
 
         private setEvents() {
@@ -658,7 +667,7 @@ namespace ManualTracingTool {
             }
             else if (this.toolEnv.isSelectMode()) {
 
-                let isHitChanged = this.mousemoveHittest(this.toolMouseEvent.location[0], this.toolMouseEvent.location[1], this.toolContext.mouseCursorRadius, false);
+                let isHitChanged = this.mousemoveHittest(this.toolMouseEvent.location[0], this.toolMouseEvent.location[1], this.toolEnv.mouseCursorRadius, false);
                 if (isHitChanged) {
                     this.toolEnv.setRedrawMainWindow();
                 }
@@ -987,7 +996,7 @@ namespace ManualTracingTool {
                     this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
 
                     this.updateFooterMessage();
-                    this.toolEnv.setRedrawMainWindow()
+                    this.toolEnv.setRedrawMainWindowEditorWindow()
                     this.toolEnv.setRedrawLayerWindow()
                 }
 
@@ -1002,7 +1011,7 @@ namespace ManualTracingTool {
                     this.setCurrentSubTool(<int>ScrathLineToolSubToolID.scratchLine);
 
                     this.updateFooterMessage();
-                    this.toolEnv.setRedrawMainWindow()
+                    this.toolEnv.setRedrawMainWindowEditorWindow()
                     this.toolEnv.setRedrawLayerWindow()
                 }
 
@@ -1105,7 +1114,7 @@ namespace ManualTracingTool {
                 if (this.toolEnv.isDrawMode()) {
 
                     let rot = 10.0;
-                    if (e.key == 'r') {
+                    if (e.key == 't') {
                         rot = -rot;
                     }
 
@@ -1207,7 +1216,12 @@ namespace ManualTracingTool {
 
             if (e.key == 'g') {
 
-                if (this.toolEnv.isSelectMode()) {
+                if (this.toolEnv.isDrawMode()) {
+
+                    this.toolEnv.updateContext();
+                    this.currentTool.keydown(e, this.toolEnv);
+                }
+                else {
 
                     this.startModalTool(ModalToolID.grabMove);
                     e.preventDefault();
@@ -1242,11 +1256,8 @@ namespace ManualTracingTool {
 
             if (e.key == 'Enter') {
 
-                if (this.isModalToolRunning()) {
-
-                    this.toolEnv.updateContext();
-                    this.currentTool.keydown(e, this.toolEnv);
-                }
+                this.toolEnv.updateContext();
+                this.currentTool.keydown(e, this.toolEnv);
             }
         }
 
@@ -1517,6 +1528,8 @@ namespace ManualTracingTool {
 
             vec3.set(this.tempVec3, this.toolMouseEvent.offsetX, this.toolMouseEvent.offsetY, 0.0);
             vec3.transformMat4(this.toolMouseEvent.location, this.tempVec3, this.invView2DMatrix);
+
+            vec3.copy(this.toolEnv.mouseCursorLocation, this.toolMouseEvent.location);
         }
 
         private hundleDoubleClick(wnd: LayerWindow, offsetX: float, offsetY: float): boolean {

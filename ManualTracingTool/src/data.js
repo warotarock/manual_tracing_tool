@@ -61,6 +61,8 @@ var ManualTracingTool;
         VectorLineModifyFlagID[VectorLineModifyFlagID["unselectedToSelected"] = 2] = "unselectedToSelected";
         VectorLineModifyFlagID[VectorLineModifyFlagID["delete"] = 3] = "delete";
         VectorLineModifyFlagID[VectorLineModifyFlagID["deletePoints"] = 4] = "deletePoints";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["transform"] = 5] = "transform";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["reampling"] = 6] = "reampling";
     })(VectorLineModifyFlagID = ManualTracingTool.VectorLineModifyFlagID || (ManualTracingTool.VectorLineModifyFlagID = {}));
     var VectorLine = /** @class */ (function () {
         function VectorLine() {

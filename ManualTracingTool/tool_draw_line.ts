@@ -5,7 +5,7 @@ namespace ManualTracingTool {
 
         editLine: VectorLine = null;
 
-        resamplingUnitLength = 8.0;
+        resamplingUnitLength = 1.0;
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
@@ -68,7 +68,9 @@ namespace ManualTracingTool {
 
             Logic_Edit_Line.calculateParameters(this.editLine);
 
-            let divisionCount = Logic_Edit_Line.clalculateLineDivisionCount(this.editLine, this.resamplingUnitLength);
+            let resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+
+            let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
 
             let resampledLine = Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
 

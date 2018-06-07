@@ -13,6 +13,7 @@ var ManualTracingTool;
     var Tool_Transform_Lattice_EditPoint = /** @class */ (function () {
         function Tool_Transform_Lattice_EditPoint() {
             this.targetPoint = null;
+            this.targetLine = null;
             this.relativeLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.newLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.oldLocation = vec3.fromValues(0.0, 0.0, 0.0);
@@ -154,6 +155,7 @@ var ManualTracingTool;
                         }
                         var editPoint = new Tool_Transform_Lattice_EditPoint();
                         editPoint.targetPoint = point;
+                        editPoint.targetLine = line;
                         vec3.copy(editPoint.oldLocation, point.location);
                         vec3.copy(editPoint.newLocation, point.location);
                         var xPosition = rectangle.getHorizontalPositionInRate(point.location[0]);
@@ -191,12 +193,24 @@ var ManualTracingTool;
         Tool_Transform_Lattice.prototype.executeCommand = function (env) {
             // Commit location
             this.processLatticeTransform(this.editPoints, this.latticePoints);
+            var targetLines = new List();
             for (var _i = 0, _a = this.editPoints; _i < _a.length; _i++) {
                 var editPoint = _a[_i];
                 vec3.copy(editPoint.newLocation, editPoint.targetPoint.adjustedLocation);
             }
+            // Get target line
+            for (var _b = 0, _c = this.editPoints; _b < _c.length; _b++) {
+                var editPoint = _c[_b];
+                if (editPoint.targetLine.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.none) {
+                    targetLines.push(editPoint.targetLine);
+                    editPoint.targetLine.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.transform;
+                }
+            }
+            ManualTracingTool.Logic_Edit_Line.resetModifyStatus(targetLines);
+            // Execute the command
             var command = new Command_TransformLattice();
             command.editPoints = this.editPoints;
+            command.targetLines = targetLines;
             command.execute(env);
             env.commandHistory.addCommand(command);
             this.editPoints = null;
@@ -208,6 +222,7 @@ var ManualTracingTool;
         __extends(Command_TransformLattice, _super);
         function Command_TransformLattice() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.targetLines = null;
             _this.editPoints = null;
             return _this;
         }
@@ -221,6 +236,7 @@ var ManualTracingTool;
                 vec3.copy(editPoint.targetPoint.location, editPoint.oldLocation);
                 vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.oldLocation);
             }
+            this.calculateLineParameters();
         };
         Command_TransformLattice.prototype.redo = function (env) {
             for (var _i = 0, _a = this.editPoints; _i < _a.length; _i++) {
@@ -228,8 +244,18 @@ var ManualTracingTool;
                 vec3.copy(editPoint.targetPoint.location, editPoint.newLocation);
                 vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.newLocation);
             }
+            this.calculateLineParameters();
         };
         Command_TransformLattice.prototype.errorCheck = function () {
+            if (this.targetLines == null) {
+                throw ('Command_TransformLattice: line is null!');
+            }
+            if (this.editPoints.length == 0) {
+                throw ('Command_TransformLattice: no target point!');
+            }
+        };
+        Command_TransformLattice.prototype.calculateLineParameters = function () {
+            ManualTracingTool.Logic_Edit_Line.calculateParametersV(this.targetLines);
         };
         return Command_TransformLattice;
     }(ManualTracingTool.CommandBase));
@@ -283,4 +309,43 @@ var ManualTracingTool;
         return Tool_Transform_Lattice_Rotate;
     }(Tool_Transform_Lattice));
     ManualTracingTool.Tool_Transform_Lattice_Rotate = Tool_Transform_Lattice_Rotate;
+    var Tool_Transform_Lattice_Scale = /** @class */ (function (_super) {
+        __extends(Tool_Transform_Lattice_Scale, _super);
+        function Tool_Transform_Lattice_Scale() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.initialDistance = 0.0;
+            _this.direction = vec3.create();
+            _this.centerLocation = vec3.create();
+            _this.rotationMatrix = mat4.create();
+            _this.scaling = vec3.create();
+            return _this;
+        }
+        Tool_Transform_Lattice_Scale.prototype.prepareModalExt = function (e, env) {
+            this.initialDistance = this.calulateDistance(e, env);
+            if (this.initialDistance == 0.0) {
+                this.initialDistance = 1.0;
+            }
+        };
+        Tool_Transform_Lattice_Scale.prototype.calulateDistance = function (e, env) {
+            vec3.subtract(this.direction, e.location, env.operatorCursor.location);
+            var distance = vec3.length(this.direction);
+            return distance;
+        };
+        Tool_Transform_Lattice_Scale.prototype.processLatticeMouseMove = function (e, env) {
+            var scale = this.calulateDistance(e, env) / this.initialDistance;
+            vec3.set(this.scaling, scale, scale, 1.0);
+            vec3.copy(this.centerLocation, env.operatorCursor.location);
+            vec3.scale(this.dLocation, this.centerLocation, -1.0);
+            mat4.identity(this.rotationMatrix);
+            mat4.translate(this.rotationMatrix, this.rotationMatrix, this.centerLocation);
+            mat4.scale(this.rotationMatrix, this.rotationMatrix, this.scaling);
+            mat4.translate(this.rotationMatrix, this.rotationMatrix, this.dLocation);
+            for (var _i = 0, _a = this.latticePoints; _i < _a.length; _i++) {
+                var latticePoint = _a[_i];
+                vec3.transformMat4(latticePoint.location, latticePoint.baseLocation, this.rotationMatrix);
+            }
+        };
+        return Tool_Transform_Lattice_Scale;
+    }(Tool_Transform_Lattice));
+    ManualTracingTool.Tool_Transform_Lattice_Scale = Tool_Transform_Lattice_Scale;
 })(ManualTracingTool || (ManualTracingTool = {}));
