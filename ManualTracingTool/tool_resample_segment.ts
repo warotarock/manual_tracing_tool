@@ -139,7 +139,7 @@ namespace ManualTracingTool {
 
         executeResampling(env: ToolEnvironment) {
 
-            let resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
 
             for (let editLine of this.editLines) {
 

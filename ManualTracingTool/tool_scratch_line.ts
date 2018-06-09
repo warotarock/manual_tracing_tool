@@ -34,6 +34,18 @@ namespace ManualTracingTool {
         isLeftButtonEdit = false;
         isRightButtonEdit = false;
 
+        resamplingUnitLength = 1.0;
+        maxResamplingDivisionCount = 51;
+        curveCheckPointCount = 3;
+        cutoutAngle = 30 / 180.0 * Math.PI;
+
+        editFalloffRadiusMinRate = 0.15;
+        editFalloffRadiusMaxRate = 1.5;
+        editInfluence = 0.5;
+
+        editExtrudeMinRadiusRate = 0.05;
+        editExtrudeMaxRadiusRate = 0.6;
+
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             if (e.isLeftButtonPressing()) {
@@ -126,7 +138,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.lineSingleHitTester.processLayer(env.currentVectorLayer, location[0], location[1], env.mouseCursorRadius);
+            this.lineSingleHitTester.processLayer(env.currentVectorLayer, location[0], location[1], env.mouseCursorViewRadius);
 
             let hitedLine = this.lineSingleHitTester.hitedLine;
 
@@ -144,7 +156,7 @@ namespace ManualTracingTool {
 
         private executeCommand(env: ToolEnvironment) {
 
-            this.viewScale = env.viewScale;
+            let baseRadius = env.mouseCursorViewRadius;
 
             let targetLine = env.currentVectorLine;
 
@@ -161,12 +173,20 @@ namespace ManualTracingTool {
             Logic_Edit_Line.applyAdjustments(this.resampledLine);
 
             // Extruding line
+            let editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
+            let editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
             let forwardExtrude = true;
-            let extrudeLine = this.generateExtrudePoints(targetLine, this.resampledLine, false);
+
+            let extrudeLine = this.generateExtrudePoints(false
+                , targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
+
             if (extrudeLine == null) {
 
-                extrudeLine = this.generateExtrudePoints(targetLine, this.resampledLine, true);
+                extrudeLine = this.generateExtrudePoints(true
+                    , targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
+
                 if (extrudeLine != null) {
+
                     forwardExtrude = false;
                 }
             }
@@ -175,11 +195,15 @@ namespace ManualTracingTool {
             this.extrudeLine = extrudeLine;
 
             // Scratching
-            let candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine);
+            let editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
+            let editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
+            let candidatePointPairs = this.ganerateCandidatePoints(
+                targetLine, this.resampledLine, editFalloffRadiusMin, editFalloffRadiusMax);
 
             // For display
             this.candidateLine = new VectorLine();
             for (let pair of candidatePointPairs) {
+
                 this.candidateLine.points.push(pair.candidatePoint);
             }
 
@@ -216,23 +240,9 @@ namespace ManualTracingTool {
             }
         }
 
-        resamplingUnitLength = 1.0;
-        maxResamplingDivisionCount = 15;
-        curveCheckPointCount = 3;
-        cutoutAngle = 30 / 180.0 * Math.PI;
-
-        editFalloffRadiusMin = 5.0;
-        editFalloffRadiusMax = 10.0;
-        editInfluence = 0.5;
-
-        editExtrudeMinRadius = 1.0;
-        editExtrudeMaxRadius = 10.0;
-
-        viewScale = 1.0;
-
         private resampleLine(baseLine: VectorLine, env: ToolEnvironment): VectorLine {
 
-            let resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
 
             let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(baseLine.totalLength, resamplingUnitLength);
             if (divisionCount > this.maxResamplingDivisionCount) {
@@ -286,7 +296,7 @@ namespace ManualTracingTool {
             return cutoutIndex;
         }
 
-        private ganerateCandidatePoints(target_Line: VectorLine, editorLine: VectorLine): List<Tool_ScratchLine_CandidatePair> {
+        private ganerateCandidatePoints(target_Line: VectorLine, editorLine: VectorLine, editFalloffRadiusMin: float, editFalloffRadiusMax: float): List<Tool_ScratchLine_CandidatePair> {
 
             let result = new List<Tool_ScratchLine_CandidatePair>();
 
@@ -342,14 +352,11 @@ namespace ManualTracingTool {
                         this.nearestPoint[1]
                     );
 
-                    let editFalloffRadiusMax = this.editFalloffRadiusMax / this.viewScale;
-                    let editFalloffRadiusMin = this.editFalloffRadiusMin / this.viewScale;
-
                     //if (falloffDistance > editFalloffRadiusMax) {
                     //    continue;
                     //}
 
-                    let influenceDistance = vec3.distance(point.adjustedLocation, this.nearestPoint);
+                    let influenceDistance = vec3.distance(point.location, this.nearestPoint);
 
                     if (influenceDistance > editFalloffRadiusMax) {
                         continue;
@@ -381,35 +388,42 @@ namespace ManualTracingTool {
             return result;
         }
 
-        private generateExtrudePoints(targetLine: VectorLine, sampleLine: VectorLine, fromTargetLineTop: boolean): VectorLine {
+        private generateExtrudePoints(fromTargetLineTop: boolean, targetLine: VectorLine, sampleLine: VectorLine, editExtrudeMinRadius: float, editExtrudeMaxRadius: float): VectorLine {
 
             let startPoint: LinePoint;
             if (fromTargetLineTop) {
+
                 startPoint = targetLine.points[0];
             }
             else {
+
                 startPoint = targetLine.points[targetLine.points.length - 1];
             }
 
-            let sampleLine_NearestPointIndex = this.findNearestPointIndex_PointToPoint(sampleLine, startPoint, this.editExtrudeMinRadius, this.editExtrudeMaxRadius);
+            let sampleLine_NearestPointIndex = this.findNearestPointIndex_PointToPoint(sampleLine, startPoint, editExtrudeMinRadius, editExtrudeMaxRadius);
             if (sampleLine_NearestPointIndex == -1) {
+
                 return null;
             }
 
-            let nearPointCcount_SampleLineForward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, true, this.editExtrudeMaxRadius);
-            let nearPointCcount_SampleLineBackward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, false, this.editExtrudeMaxRadius);
+            let maxRange = editExtrudeMaxRadius;
+            let nearPointCount_SampleLineForward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, true, maxRange);
+            let nearPointCount_SampleLineBackward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, false, maxRange);
 
-            let isForwardExtrudeInSampleLine = (nearPointCcount_SampleLineForward < 0 && nearPointCcount_SampleLineBackward >= 0);
-            let isBackwardExtrudeInSampleLine = (nearPointCcount_SampleLineForward >= 0 && nearPointCcount_SampleLineBackward < 0);
+            console.log(sampleLine_NearestPointIndex + ' ' + nearPointCount_SampleLineForward + ' ' + nearPointCount_SampleLineBackward);
+
+            let isForwardExtrudeInSampleLine = (nearPointCount_SampleLineForward < 0 && nearPointCount_SampleLineBackward >= 0);
+            let isBackwardExtrudeInSampleLine = (nearPointCount_SampleLineForward >= 0 && nearPointCount_SampleLineBackward < 0);
 
             let extrudable = (isForwardExtrudeInSampleLine || isBackwardExtrudeInSampleLine);
 
             if (!extrudable) {
+
                 return null;
             }
 
             let extrudeLine = new VectorLine();
-            extrudeLine.points = this.getExtrudePoints(targetLine, sampleLine, sampleLine_NearestPointIndex, isForwardExtrudeInSampleLine, this.editExtrudeMaxRadius);
+            extrudeLine.points = this.getExtrudePoints(targetLine, sampleLine, sampleLine_NearestPointIndex, isForwardExtrudeInSampleLine, editExtrudeMaxRadius);
 
             return extrudeLine;
         }
@@ -456,7 +470,9 @@ namespace ManualTracingTool {
 
                 let distance = vec3.distance(point.location, linePoint.location);
 
-                if (distance > limitMinDistance && distance < minDistance && distance < limitMaxDistance) {
+                if (distance < minDistance
+                    && distance > limitMinDistance
+                    && distance < limitMaxDistance) {
 
                     minDistance = distance;
                     nearestPointIndex = i;
@@ -479,7 +495,8 @@ namespace ManualTracingTool {
                 let point1 = sampleLine.points[currentIndex];
                 let point2 = sampleLine.points[nextIndex];
 
-                let nearestPointIndex = this.findNearestPointIndex_LineSegmentToPoint(targetLine, point1, point2, 0.0, limitMaxDistance, true, true);
+                // find the nearest point in target-line by the sample-line's segment
+                let nearestPointIndex = this.findNearestPointIndex_LineSegmentToPoint(targetLine, point1, point2, 0.0, limitMaxDistance, true, false);
 
                 if (nearestPointIndex != -1) {
 

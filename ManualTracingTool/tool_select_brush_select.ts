@@ -73,7 +73,7 @@ namespace ManualTracingTool {
 
         private processSelection(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            this.logic_Selector.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorRadius);
+            this.logic_Selector.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorViewRadius);
         }
 
         private endSelection(env: ToolEnvironment) {

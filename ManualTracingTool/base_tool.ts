@@ -134,7 +134,7 @@ namespace ManualTracingTool {
         posing3DView: Posing3DView = null;
         posing3DLogic: Posing3DLogic = null;
 
-        mouseCursorRadius = 0.0;
+        mouseCursorViewRadius = 0.0;
         mouseCursorLocation = vec3.fromValues(0.0, 0.0, 0.0);
 
         viewScale = 0.0;
@@ -179,7 +179,7 @@ namespace ManualTracingTool {
 
             this.viewScale = this.toolContext.mainWindow.viewScale;
 
-            this.mouseCursorRadius = this.toolContext.mouseCursorRadius / this.viewScale;
+            this.mouseCursorViewRadius = this.getViewScaledLength(this.toolContext.mouseCursorRadius);
         }
 
         setRedrawMainWindow() {
@@ -268,9 +268,9 @@ namespace ManualTracingTool {
             this.toolContext.mainEditor.cancelModalTool();
         }
 
-        getView_ResamplingUnitLength(resamplingUnitLength: float) {
+        getViewScaledLength(length: float) {
 
-            return resamplingUnitLength / this.viewScale;
+            return length / this.viewScale;
         }
     }
 
