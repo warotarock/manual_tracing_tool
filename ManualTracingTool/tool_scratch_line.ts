@@ -26,7 +26,7 @@ namespace ManualTracingTool {
         forwardExtrude = false;
         extrudeLine: VectorLine = null;
 
-        nearestPoint = vec3.fromValues(0.0, 0.0, 0.0);
+        nearestPointLocation = vec3.fromValues(0.0, 0.0, 0.0);
         samplePoint = vec3.fromValues(0.0, 0.0, 0.0);
 
         lineSingleHitTester = new HitTest_Line_PointToLineByDistanceSingle();
@@ -167,7 +167,7 @@ namespace ManualTracingTool {
 
             let startIndex = this.searchCutoutIndex(this.resampledLine, false);
             let endIndex = this.searchCutoutIndex(this.resampledLine, true);
-            this.resampledLine.points = ListGetRange(this.resampledLine.points, startIndex, endIndex + 1);
+            this.resampledLine.points = ListGetRange(this.resampledLine.points, startIndex, (endIndex - startIndex) + 1);
 
             Logic_Edit_Line.smooth(this.resampledLine);
             Logic_Edit_Line.applyAdjustments(this.resampledLine);
@@ -198,7 +198,11 @@ namespace ManualTracingTool {
             let editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
             let editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
             let candidatePointPairs = this.ganerateCandidatePoints(
-                targetLine, this.resampledLine, editFalloffRadiusMin, editFalloffRadiusMax);
+                targetLine
+                , this.resampledLine
+                , editFalloffRadiusMin
+                , editFalloffRadiusMax
+            );
 
             // For display
             this.candidateLine = new VectorLine();
@@ -317,7 +321,7 @@ namespace ManualTracingTool {
                     let editPoint1 = editorLine.points[i];
                     let editPoint2 = editorLine.points[i + 1];
 
-                    let distance = Logic_Points.pointToLineSegmentDistance(
+                    let distance = Logic_Points.pointToLineSegment_SorroundingDistance(
                         editPoint1.location,
                         editPoint2.location,
                         point.location[0],
@@ -337,31 +341,56 @@ namespace ManualTracingTool {
                     let nearestLinePoint2 = editorLine.points[nearestSegmentIndex + 1];
 
                     // Calculate candidate point
-                    Logic_Points.pointToLineNearestPoint(
-                        this.nearestPoint,
+                    let nearestPoint_ResultVec = Logic_Points.pointToLine_NearestPointLocation(
+                        this.nearestPointLocation,
                         nearestLinePoint1.location,
                         nearestLinePoint2.location,
                         point.location
                     );
 
+                    if (nearestPoint_ResultVec == null) {
+
+                        continue;
+                    }
+
+                    let influenceDistance = vec3.distance(point.location, this.nearestPointLocation);
+
+                    if (influenceDistance > editFalloffRadiusMax) {
+
+                        continue;
+                    }
+
                     // Calculate edit influence
-                    let falloffDistance = Logic_Points.pointToLineSegmentDistance(
+                    let falloffDistance = Logic_Points.pointToLineSegment_SorroundingDistance(
                         nearestLinePoint1.location,
                         nearestLinePoint2.location,
-                        this.nearestPoint[0],
-                        this.nearestPoint[1]
+                        this.nearestPointLocation[0],
+                        this.nearestPointLocation[1]
                     );
 
                     //if (falloffDistance > editFalloffRadiusMax) {
                     //    continue;
                     //}
 
-                    let influenceDistance = vec3.distance(point.location, this.nearestPoint);
+                    let normPositionInEditorLineSegment = Logic_Points.pointToLineSegment_NormalizedPosition(
+                        nearestLinePoint1.location
+                        , nearestLinePoint2.location
+                        , point.location);
 
-                    if (influenceDistance > editFalloffRadiusMax) {
-                        continue;
+                    let totalLengthInEditorLine = nearestLinePoint1.totalLength + (nearestLinePoint2.totalLength - nearestLinePoint1.totalLength) * normPositionInEditorLineSegment;
+
+                    if (totalLengthInEditorLine < editFalloffRadiusMax) {
+
+                        falloffDistance += (editFalloffRadiusMax - totalLengthInEditorLine);
                     }
-                    
+
+                    if (totalLengthInEditorLine > editorLine.totalLength - editFalloffRadiusMax) {
+
+                        falloffDistance += (totalLengthInEditorLine - (editorLine.totalLength - editFalloffRadiusMax));
+                    }
+
+                    //console.log(nearestSegmentIndex + ' ' + falloffDistance.toFixed(2) + ' ' + normPositionInEditorLineSegment.toFixed(2) + ' ' + totalLengthInEditorLine.toFixed(2));
+
                     let distanceRate = Maths.smoothstep(editFalloffRadiusMin, editFalloffRadiusMax, falloffDistance);
                     let influence = 1.0 - Maths.clamp(distanceRate, 0.0, 1.0);
 
@@ -373,7 +402,7 @@ namespace ManualTracingTool {
 
                     // Create edit data
                     let candidatePoint = new LinePoint();
-                    vec3.copy(candidatePoint.location, this.nearestPoint);
+                    vec3.copy(candidatePoint.location, this.nearestPointLocation);
                     vec3.copy(candidatePoint.adjustedLocation, candidatePoint.location);
 
                     let pair = new Tool_ScratchLine_CandidatePair();
@@ -410,7 +439,7 @@ namespace ManualTracingTool {
             let nearPointCount_SampleLineForward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, true, maxRange);
             let nearPointCount_SampleLineBackward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, false, maxRange);
 
-            console.log(sampleLine_NearestPointIndex + ' ' + nearPointCount_SampleLineForward + ' ' + nearPointCount_SampleLineBackward);
+            //console.log(sampleLine_NearestPointIndex + ' ' + nearPointCount_SampleLineForward + ' ' + nearPointCount_SampleLineBackward);
 
             let isForwardExtrudeInSampleLine = (nearPointCount_SampleLineForward < 0 && nearPointCount_SampleLineBackward >= 0);
             let isBackwardExtrudeInSampleLine = (nearPointCount_SampleLineForward >= 0 && nearPointCount_SampleLineBackward < 0);

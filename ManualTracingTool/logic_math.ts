@@ -111,6 +111,8 @@ namespace ManualTracingTool {
 
         static rgbToHSV(result: Vec4, rgb: Vec4) {
 
+            // from: https://lab.syncer.jp/Web/JavaScript/Snippet/66/
+
             let r = rgb[0];
             let g = rgb[1];
             let b = rgb[2];
@@ -149,6 +151,8 @@ namespace ManualTracingTool {
         }
 
         static hsvToRGB(result: Vec4, hsv: Vec4) {
+
+            // from: https://lab.syncer.jp/Web/JavaScript/Snippet/67/
 
             let h = hsv[0] / 60.0;
             let s = hsv[1];

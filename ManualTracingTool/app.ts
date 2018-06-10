@@ -469,7 +469,7 @@ namespace ManualTracingTool {
             this.currentTool = this.tool_Posing3d_LocateHead;
 
             this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
             this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         }
 
