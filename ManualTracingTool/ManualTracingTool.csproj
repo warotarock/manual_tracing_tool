@@ -90,6 +90,7 @@
     <TypeScriptCompile Include="conversion.ts" />
     <TypeScriptCompile Include="base_command.ts" />
     <TypeScriptCompile Include="logic_edit_line.ts" />
+    <TypeScriptCompile Include="logic_color.ts" />
     <TypeScriptCompile Include="logic_math.ts" />
     <TypeScriptCompile Include="posing3d_logic.ts" />
     <TypeScriptCompile Include="logic_points.ts" />
