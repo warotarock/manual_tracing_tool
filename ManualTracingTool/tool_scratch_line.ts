@@ -372,21 +372,28 @@ namespace ManualTracingTool {
                     //    continue;
                     //}
 
-                    let normPositionInEditorLineSegment = Logic_Points.pointToLineSegment_NormalizedPosition(
-                        nearestLinePoint1.location
-                        , nearestLinePoint2.location
-                        , point.location);
+                    if (editorLine.totalLength > editFalloffRadiusMax * 2.0) {
 
-                    let totalLengthInEditorLine = nearestLinePoint1.totalLength + (nearestLinePoint2.totalLength - nearestLinePoint1.totalLength) * normPositionInEditorLineSegment;
+                        let normPositionInEditorLineSegment = Logic_Points.pointToLineSegment_NormalizedPosition(
+                            nearestLinePoint1.location
+                            , nearestLinePoint2.location
+                            , point.location);
 
-                    if (totalLengthInEditorLine < editFalloffRadiusMax) {
+                        let totalLengthInEditorLine = nearestLinePoint1.totalLength + (nearestLinePoint2.totalLength - nearestLinePoint1.totalLength) * normPositionInEditorLineSegment;
 
-                        falloffDistance += (editFalloffRadiusMax - totalLengthInEditorLine);
+                        if (totalLengthInEditorLine < editFalloffRadiusMax) {
+
+                            falloffDistance += (editFalloffRadiusMax - totalLengthInEditorLine);
+                        }
+
+                        if (totalLengthInEditorLine > editorLine.totalLength - editFalloffRadiusMax) {
+
+                            falloffDistance += (totalLengthInEditorLine - (editorLine.totalLength - editFalloffRadiusMax));
+                        }
                     }
+                    else {
 
-                    if (totalLengthInEditorLine > editorLine.totalLength - editFalloffRadiusMax) {
-
-                        falloffDistance += (totalLengthInEditorLine - (editorLine.totalLength - editFalloffRadiusMax));
+                        falloffDistance *= 2.0; // ※どうすべきか後で検討する
                     }
 
                     //console.log(nearestSegmentIndex + ' ' + falloffDistance.toFixed(2) + ' ' + normPositionInEditorLineSegment.toFixed(2) + ' ' + totalLengthInEditorLine.toFixed(2));
@@ -451,8 +458,16 @@ namespace ManualTracingTool {
                 return null;
             }
 
+            let extrudePoints = this.getExtrudePoints(targetLine, sampleLine, sampleLine_NearestPointIndex, isForwardExtrudeInSampleLine, editExtrudeMaxRadius);
+
+            if (extrudePoints == null) {
+
+                // when all points is far away from edit line
+                return null;
+            }
+
             let extrudeLine = new VectorLine();
-            extrudeLine.points = this.getExtrudePoints(targetLine, sampleLine, sampleLine_NearestPointIndex, isForwardExtrudeInSampleLine, editExtrudeMaxRadius);
+            extrudeLine.points = extrudePoints;
 
             return extrudeLine;
         }
