@@ -35,21 +35,20 @@ var ManualTracingTool;
             _this.candidateLine = null;
             _this.forwardExtrude = false;
             _this.extrudeLine = null;
-            _this.nearestPoint = vec3.fromValues(0.0, 0.0, 0.0);
+            _this.nearestPointLocation = vec3.fromValues(0.0, 0.0, 0.0);
             _this.samplePoint = vec3.fromValues(0.0, 0.0, 0.0);
             _this.lineSingleHitTester = new ManualTracingTool.HitTest_Line_PointToLineByDistanceSingle();
             _this.isLeftButtonEdit = false;
             _this.isRightButtonEdit = false;
             _this.resamplingUnitLength = 1.0;
-            _this.maxResamplingDivisionCount = 15;
+            _this.maxResamplingDivisionCount = 51;
             _this.curveCheckPointCount = 3;
             _this.cutoutAngle = 30 / 180.0 * Math.PI;
-            _this.editFalloffRadiusMin = 5.0;
-            _this.editFalloffRadiusMax = 10.0;
+            _this.editFalloffRadiusMinRate = 0.15;
+            _this.editFalloffRadiusMaxRate = 1.5;
             _this.editInfluence = 0.5;
-            _this.editExtrudeMinRadius = 1.0;
-            _this.editExtrudeMaxRadius = 10.0;
-            _this.viewScale = 1.0;
+            _this.editExtrudeMinRadiusRate = 0.05;
+            _this.editExtrudeMaxRadiusRate = 0.6;
             return _this;
         }
         Tool_ScratchLine.prototype.mouseDown = function (e, env) {
@@ -111,7 +110,7 @@ var ManualTracingTool;
             if (env.currentVectorLayer == null) {
                 return;
             }
-            this.lineSingleHitTester.processLayer(env.currentVectorLayer, location[0], location[1], env.mouseCursorRadius);
+            this.lineSingleHitTester.processLayer(env.currentVectorLayer, location[0], location[1], env.mouseCursorViewRadius);
             var hitedLine = this.lineSingleHitTester.hitedLine;
             if (hitedLine != null) {
                 if (env.currentVectorLine != null) {
@@ -122,21 +121,23 @@ var ManualTracingTool;
             }
         };
         Tool_ScratchLine.prototype.executeCommand = function (env) {
-            this.viewScale = env.viewScale;
+            var baseRadius = env.mouseCursorViewRadius;
             var targetLine = env.currentVectorLine;
             ManualTracingTool.Logic_Edit_Line.calculateParameters(this.editLine);
             // Resampling
             this.resampledLine = this.resampleLine(this.editLine, env);
             var startIndex = this.searchCutoutIndex(this.resampledLine, false);
             var endIndex = this.searchCutoutIndex(this.resampledLine, true);
-            this.resampledLine.points = ListGetRange(this.resampledLine.points, startIndex, endIndex + 1);
+            this.resampledLine.points = ListGetRange(this.resampledLine.points, startIndex, (endIndex - startIndex) + 1);
             ManualTracingTool.Logic_Edit_Line.smooth(this.resampledLine);
             ManualTracingTool.Logic_Edit_Line.applyAdjustments(this.resampledLine);
             // Extruding line
+            var editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
+            var editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
             var forwardExtrude = true;
-            var extrudeLine = this.generateExtrudePoints(targetLine, this.resampledLine, false);
+            var extrudeLine = this.generateExtrudePoints(false, targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
             if (extrudeLine == null) {
-                extrudeLine = this.generateExtrudePoints(targetLine, this.resampledLine, true);
+                extrudeLine = this.generateExtrudePoints(true, targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
                 if (extrudeLine != null) {
                     forwardExtrude = false;
                 }
@@ -144,7 +145,9 @@ var ManualTracingTool;
             this.forwardExtrude = forwardExtrude;
             this.extrudeLine = extrudeLine;
             // Scratching
-            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine);
+            var editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
+            var editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
+            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine, editFalloffRadiusMin, editFalloffRadiusMax);
             // For display
             this.candidateLine = new ManualTracingTool.VectorLine();
             for (var _i = 0, candidatePointPairs_1 = candidatePointPairs; _i < candidatePointPairs_1.length; _i++) {
@@ -176,7 +179,7 @@ var ManualTracingTool;
             }
         };
         Tool_ScratchLine.prototype.resampleLine = function (baseLine, env) {
-            var resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
             var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(baseLine.totalLength, resamplingUnitLength);
             if (divisionCount > this.maxResamplingDivisionCount) {
                 divisionCount = this.maxResamplingDivisionCount;
@@ -211,7 +214,7 @@ var ManualTracingTool;
             }
             return cutoutIndex;
         };
-        Tool_ScratchLine.prototype.ganerateCandidatePoints = function (target_Line, editorLine) {
+        Tool_ScratchLine.prototype.ganerateCandidatePoints = function (target_Line, editorLine, editFalloffRadiusMin, editFalloffRadiusMax) {
             var result = new List();
             for (var _i = 0, _a = target_Line.points; _i < _a.length; _i++) {
                 var point = _a[_i];
@@ -226,7 +229,7 @@ var ManualTracingTool;
                 for (var i = 0; i < editorLine.points.length - 1; i++) {
                     var editPoint1 = editorLine.points[i];
                     var editPoint2 = editorLine.points[i + 1];
-                    var distance = ManualTracingTool.Logic_Points.pointToLineSegmentDistance(editPoint1.location, editPoint2.location, point.location[0], point.location[1]);
+                    var distance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(editPoint1.location, editPoint2.location, point.location[0], point.location[1]);
                     if (distance < minDistance) {
                         minDistance = distance;
                         nearestSegmentIndex = i;
@@ -236,18 +239,33 @@ var ManualTracingTool;
                     var nearestLinePoint1 = editorLine.points[nearestSegmentIndex];
                     var nearestLinePoint2 = editorLine.points[nearestSegmentIndex + 1];
                     // Calculate candidate point
-                    ManualTracingTool.Logic_Points.pointToLineNearestPoint(this.nearestPoint, nearestLinePoint1.location, nearestLinePoint2.location, point.location);
-                    // Calculate edit influence
-                    var falloffDistance = ManualTracingTool.Logic_Points.pointToLineSegmentDistance(nearestLinePoint1.location, nearestLinePoint2.location, this.nearestPoint[0], this.nearestPoint[1]);
-                    var editFalloffRadiusMax = this.editFalloffRadiusMax / this.viewScale;
-                    var editFalloffRadiusMin = this.editFalloffRadiusMin / this.viewScale;
-                    //if (falloffDistance > editFalloffRadiusMax) {
-                    //    continue;
-                    //}
-                    var influenceDistance = vec3.distance(point.adjustedLocation, this.nearestPoint);
+                    var nearestPoint_ResultVec = ManualTracingTool.Logic_Points.pointToLine_NearestPointLocation(this.nearestPointLocation, nearestLinePoint1.location, nearestLinePoint2.location, point.location);
+                    if (nearestPoint_ResultVec == null) {
+                        continue;
+                    }
+                    var influenceDistance = vec3.distance(point.location, this.nearestPointLocation);
                     if (influenceDistance > editFalloffRadiusMax) {
                         continue;
                     }
+                    // Calculate edit influence
+                    var falloffDistance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(nearestLinePoint1.location, nearestLinePoint2.location, this.nearestPointLocation[0], this.nearestPointLocation[1]);
+                    //if (falloffDistance > editFalloffRadiusMax) {
+                    //    continue;
+                    //}
+                    if (editorLine.totalLength > editFalloffRadiusMax * 2.0) {
+                        var normPositionInEditorLineSegment = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(nearestLinePoint1.location, nearestLinePoint2.location, point.location);
+                        var totalLengthInEditorLine = nearestLinePoint1.totalLength + (nearestLinePoint2.totalLength - nearestLinePoint1.totalLength) * normPositionInEditorLineSegment;
+                        if (totalLengthInEditorLine < editFalloffRadiusMax) {
+                            falloffDistance += (editFalloffRadiusMax - totalLengthInEditorLine);
+                        }
+                        if (totalLengthInEditorLine > editorLine.totalLength - editFalloffRadiusMax) {
+                            falloffDistance += (totalLengthInEditorLine - (editorLine.totalLength - editFalloffRadiusMax));
+                        }
+                    }
+                    else {
+                        falloffDistance *= 2.0; // ※どうすべきか後で検討する
+                    }
+                    //console.log(nearestSegmentIndex + ' ' + falloffDistance.toFixed(2) + ' ' + normPositionInEditorLineSegment.toFixed(2) + ' ' + totalLengthInEditorLine.toFixed(2));
                     var distanceRate = ManualTracingTool.Maths.smoothstep(editFalloffRadiusMin, editFalloffRadiusMax, falloffDistance);
                     var influence = 1.0 - ManualTracingTool.Maths.clamp(distanceRate, 0.0, 1.0);
                     if (influence == 0.0) {
@@ -256,7 +274,7 @@ var ManualTracingTool;
                     influence *= this.editInfluence;
                     // Create edit data
                     var candidatePoint = new ManualTracingTool.LinePoint();
-                    vec3.copy(candidatePoint.location, this.nearestPoint);
+                    vec3.copy(candidatePoint.location, this.nearestPointLocation);
                     vec3.copy(candidatePoint.adjustedLocation, candidatePoint.location);
                     var pair = new Tool_ScratchLine_CandidatePair();
                     pair.targetPoint = point;
@@ -267,7 +285,7 @@ var ManualTracingTool;
             }
             return result;
         };
-        Tool_ScratchLine.prototype.generateExtrudePoints = function (targetLine, sampleLine, fromTargetLineTop) {
+        Tool_ScratchLine.prototype.generateExtrudePoints = function (fromTargetLineTop, targetLine, sampleLine, editExtrudeMinRadius, editExtrudeMaxRadius) {
             var startPoint;
             if (fromTargetLineTop) {
                 startPoint = targetLine.points[0];
@@ -275,20 +293,27 @@ var ManualTracingTool;
             else {
                 startPoint = targetLine.points[targetLine.points.length - 1];
             }
-            var sampleLine_NearestPointIndex = this.findNearestPointIndex_PointToPoint(sampleLine, startPoint, this.editExtrudeMinRadius, this.editExtrudeMaxRadius);
+            var sampleLine_NearestPointIndex = this.findNearestPointIndex_PointToPoint(sampleLine, startPoint, editExtrudeMinRadius, editExtrudeMaxRadius);
             if (sampleLine_NearestPointIndex == -1) {
                 return null;
             }
-            var nearPointCcount_SampleLineForward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, true, this.editExtrudeMaxRadius);
-            var nearPointCcount_SampleLineBackward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, false, this.editExtrudeMaxRadius);
-            var isForwardExtrudeInSampleLine = (nearPointCcount_SampleLineForward < 0 && nearPointCcount_SampleLineBackward >= 0);
-            var isBackwardExtrudeInSampleLine = (nearPointCcount_SampleLineForward >= 0 && nearPointCcount_SampleLineBackward < 0);
+            var maxRange = editExtrudeMaxRadius;
+            var nearPointCount_SampleLineForward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, true, maxRange);
+            var nearPointCount_SampleLineBackward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, false, maxRange);
+            //console.log(sampleLine_NearestPointIndex + ' ' + nearPointCount_SampleLineForward + ' ' + nearPointCount_SampleLineBackward);
+            var isForwardExtrudeInSampleLine = (nearPointCount_SampleLineForward < 0 && nearPointCount_SampleLineBackward >= 0);
+            var isBackwardExtrudeInSampleLine = (nearPointCount_SampleLineForward >= 0 && nearPointCount_SampleLineBackward < 0);
             var extrudable = (isForwardExtrudeInSampleLine || isBackwardExtrudeInSampleLine);
             if (!extrudable) {
                 return null;
             }
+            var extrudePoints = this.getExtrudePoints(targetLine, sampleLine, sampleLine_NearestPointIndex, isForwardExtrudeInSampleLine, editExtrudeMaxRadius);
+            if (extrudePoints == null) {
+                // when all points is far away from edit line
+                return null;
+            }
             var extrudeLine = new ManualTracingTool.VectorLine();
-            extrudeLine.points = this.getExtrudePoints(targetLine, sampleLine, sampleLine_NearestPointIndex, isForwardExtrudeInSampleLine, this.editExtrudeMaxRadius);
+            extrudeLine.points = extrudePoints;
             return extrudeLine;
         };
         Tool_ScratchLine.prototype.findNearestPointIndex_LineSegmentToPoint = function (line, point1, point2, limitMinDistance, limitMaxDistance, includeInnerSide, includeOuterSide) {
@@ -319,7 +344,9 @@ var ManualTracingTool;
             for (var i = 0; i < line.points.length - 1; i++) {
                 var linePoint = line.points[i];
                 var distance = vec3.distance(point.location, linePoint.location);
-                if (distance > limitMinDistance && distance < minDistance && distance < limitMaxDistance) {
+                if (distance < minDistance
+                    && distance > limitMinDistance
+                    && distance < limitMaxDistance) {
                     minDistance = distance;
                     nearestPointIndex = i;
                 }
@@ -334,7 +361,8 @@ var ManualTracingTool;
             while (nextIndex >= 0 && nextIndex < sampleLine.points.length) {
                 var point1 = sampleLine.points[currentIndex];
                 var point2 = sampleLine.points[nextIndex];
-                var nearestPointIndex = this.findNearestPointIndex_LineSegmentToPoint(targetLine, point1, point2, 0.0, limitMaxDistance, true, true);
+                // find the nearest point in target-line by the sample-line's segment
+                var nearestPointIndex = this.findNearestPointIndex_LineSegmentToPoint(targetLine, point1, point2, 0.0, limitMaxDistance, true, false);
                 if (nearestPointIndex != -1) {
                     nearPointCcount++;
                 }

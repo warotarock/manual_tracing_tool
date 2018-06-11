@@ -72,6 +72,10 @@ var ManualTracingTool;
         Tool_Transform_Lattice.prototype.endModal = function (env) {
         };
         Tool_Transform_Lattice.prototype.cancelModal = function (env) {
+            for (var _i = 0, _a = this.editPoints; _i < _a.length; _i++) {
+                var editPoint = _a[_i];
+                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.targetPoint.location);
+            }
             this.editPoints = null;
             env.setRedrawMainWindowEditorWindow();
         };

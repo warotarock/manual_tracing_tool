@@ -121,7 +121,7 @@ var ManualTracingTool;
             this.pickingWindow = null;
             this.posing3DView = null;
             this.posing3DLogic = null;
-            this.mouseCursorRadius = 0.0;
+            this.mouseCursorViewRadius = 0.0;
             this.mouseCursorLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.viewScale = 0.0;
             this.toolContext = toolContext;
@@ -150,7 +150,7 @@ var ManualTracingTool;
             this.posing3DView = this.toolContext.posing3DView;
             this.posing3DLogic = this.toolContext.posing3DLogic;
             this.viewScale = this.toolContext.mainWindow.viewScale;
-            this.mouseCursorRadius = this.toolContext.mouseCursorRadius / this.viewScale;
+            this.mouseCursorViewRadius = this.getViewScaledLength(this.toolContext.mouseCursorRadius);
         };
         ToolEnvironment.prototype.setRedrawMainWindow = function () {
             this.toolContext.redrawMainWindow = true;
@@ -205,8 +205,8 @@ var ManualTracingTool;
         ToolEnvironment.prototype.cancelModalTool = function () {
             this.toolContext.mainEditor.cancelModalTool();
         };
-        ToolEnvironment.prototype.getView_ResamplingUnitLength = function (resamplingUnitLength) {
-            return resamplingUnitLength / this.viewScale;
+        ToolEnvironment.prototype.getViewScaledLength = function (length) {
+            return length / this.viewScale;
         };
         return ToolEnvironment;
     }());

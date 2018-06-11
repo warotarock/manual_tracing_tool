@@ -61,7 +61,7 @@ var ManualTracingTool;
             this.selectionProcessID = SelectionProgressID.selecting;
         };
         Tool_Select_BrushSelet_LinePoint.prototype.processSelection = function (e, env) {
-            this.logic_Selector.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorRadius);
+            this.logic_Selector.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorViewRadius);
         };
         Tool_Select_BrushSelet_LinePoint.prototype.endSelection = function (env) {
             if (this.selectionProcessID != SelectionProgressID.selecting) {

@@ -57,7 +57,7 @@ var ManualTracingTool;
         Tool_DrawLine.prototype.executeCommand = function (env) {
             ManualTracingTool.Logic_Edit_Line.smooth(this.editLine);
             ManualTracingTool.Logic_Edit_Line.calculateParameters(this.editLine);
-            var resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
             var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
             var resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
             var command = new Command_AddLine();

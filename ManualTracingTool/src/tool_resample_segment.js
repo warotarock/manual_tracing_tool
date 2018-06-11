@@ -117,7 +117,7 @@ var ManualTracingTool;
             return result;
         };
         Command_Resample_Segment.prototype.executeResampling = function (env) {
-            var resamplingUnitLength = env.getView_ResamplingUnitLength(this.resamplingUnitLength);
+            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
             for (var _i = 0, _a = this.editLines; _i < _a.length; _i++) {
                 var editLine = _a[_i];
                 this.createResampledLineToEditLine(editLine, resamplingUnitLength);

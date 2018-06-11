@@ -72,7 +72,7 @@ var ManualTracingTool;
             return Math.abs(this.right - this.left);
         };
         Logic_Edit_Points_RectangleArea.prototype.getHeight = function () {
-            return Math.abs(this.bottom - this.top) + 1.0;
+            return Math.abs(this.bottom - this.top);
         };
         Logic_Edit_Points_RectangleArea.prototype.getHorizontalPositionInRate = function (x) {
             var width = this.getWidth();
