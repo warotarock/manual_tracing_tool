@@ -83,6 +83,11 @@ namespace ManualTracingTool {
 
         cancelModal(env: ToolEnvironment) { // @override
 
+            for (let editPoint of this.editPoints) {
+
+                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.targetPoint.location);
+            }
+
             this.editPoints = null;
 
             env.setRedrawMainWindowEditorWindow();
