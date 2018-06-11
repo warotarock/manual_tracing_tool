@@ -94,7 +94,7 @@ namespace ManualTracingTool {
 
         getHeight(): float {
 
-            return Math.abs(this.bottom - this.top) + 1.0;
+            return Math.abs(this.bottom - this.top);
         }
 
         getHorizontalPositionInRate(x: float) {
