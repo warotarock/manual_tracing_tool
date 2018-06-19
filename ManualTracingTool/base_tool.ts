@@ -49,6 +49,15 @@ namespace ManualTracingTool {
         cancelModalTool();
     }
 
+    export interface MainEditorDrawer {
+
+        drawMouseCursor();
+        drawEditorEditLineStroke(line: VectorLine);
+        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean);
+        drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean);
+        drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean);
+    }
+
     export class PickingWindow extends CanvasWindow {
 
         maxDepth = 4.0;
@@ -274,10 +283,43 @@ namespace ManualTracingTool {
         }
     }
 
+    export class ToolDrawingStyle {
+
+        linePointColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        testColor = vec4.fromValues(0.0, 0.7, 0.0, 1.0);
+        sampledPointColor = vec4.fromValues(0.0, 0.5, 1.0, 1.0);
+        extrutePointColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        editingLineColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
+        selectedVectorLineColor = vec4.fromValues(0.8, 0.3, 0.0, 0.5);
+
+        linePointVisualBrightnessAdjustRate = 0.3;
+
+        mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+        operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+
+        generalLinePointRadius = 2.0;
+        selectedLinePointRadius = 3.0;
+        viewZoomAdjustingSpeedRate = 3.0;
+    }
+
     export class ToolDrawingEnvironment {
 
         canvasWindow: CanvasWindow = null;
+        editorDrawer: MainEditorDrawer = null;
         render: CanvasRender = null;
+        style: ToolDrawingStyle = null;
+
+        setEnvironment(editorDrawer: MainEditorDrawer, render: CanvasRender, style: ToolDrawingStyle) {
+
+            this.editorDrawer = editorDrawer;
+            this.render = render;
+            this.style = style;
+        }
+
+        setVariables(canvasWindow: CanvasWindow) {
+
+            this.canvasWindow = canvasWindow;
+        }
     }
 
     export class ToolMouseEvent {

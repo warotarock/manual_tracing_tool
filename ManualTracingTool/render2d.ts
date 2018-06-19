@@ -74,10 +74,12 @@ namespace ManualTracingTool {
 
         private context: CanvasRenderingContext2D = null;
         private tempVec3 = vec3.create();
+        private viewScale = 1.0;
 
         setContext(canvasWindow: CanvasWindow) {
 
             this.context = canvasWindow.context;
+            this.viewScale = canvasWindow.viewScale;
 
             canvasWindow.updateViewMatrix();
 
@@ -89,6 +91,11 @@ namespace ManualTracingTool {
             canvasWindow.updateViewMatrix();
 
             this.updateContextTransform(canvasWindow);
+        }
+
+        getViewScale(): float {
+
+            return this.viewScale;
         }
 
         clearRect(left: int, top: int, width: int, height: int) {

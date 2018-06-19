@@ -19,8 +19,9 @@ namespace ManualTracingTool {
 
     export class Tool_ScratchLine extends ToolBase {
 
-        editLine: VectorLine = null;
+        enableExtrude = false;
 
+        editLine: VectorLine = null;
         resampledLine: VectorLine = null;
         candidateLine: VectorLine = null;
         forwardExtrude = false;
@@ -45,6 +46,12 @@ namespace ManualTracingTool {
 
         editExtrudeMinRadiusRate = 0.05;
         editExtrudeMaxRadiusRate = 0.6;
+
+        tool_ScratchLine_EditLine_Visible = true;
+        tool_ScratchLine_TargetLine_Visible = true;
+        tool_ScratchLine_SampledLine_Visible = false;
+        tool_ScratchLine_CandidatePoints_Visible = false;
+        tool_ScratchLine_ExtrudePoints_Visible = false;
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
@@ -131,6 +138,55 @@ namespace ManualTracingTool {
             }
         }
 
+        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
+
+            drawEnv.editorDrawer.drawMouseCursor();
+
+            if (this.tool_ScratchLine_EditLine_Visible) {
+
+                if (this.editLine != null && this.resampledLine == null) {
+
+                    drawEnv.editorDrawer.drawEditorEditLineStroke(this.editLine);
+                }
+            }
+
+            if (this.tool_ScratchLine_TargetLine_Visible) {
+
+                if (env.currentVectorLine != null && env.currentVectorLayer.layerColor != null) {
+
+                    drawEnv.editorDrawer.drawEditorVectorLinePoints(
+                        env.currentVectorLine
+                        , env.currentVectorLayer.layerColor
+                        , true
+                    );
+                }
+            }
+
+            if (this.tool_ScratchLine_SampledLine_Visible) {
+
+                if (this.resampledLine != null) {
+
+                    drawEnv.editorDrawer.drawEditorVectorLinePoints(this.resampledLine, drawEnv.style.sampledPointColor, false);
+                }
+            }
+
+            if (this.tool_ScratchLine_CandidatePoints_Visible) {
+
+                if (this.candidateLine != null) {
+
+                    drawEnv.editorDrawer.drawEditorVectorLinePoints(this.candidateLine, drawEnv.style.linePointColor, false);
+                }
+            }
+
+            if (this.tool_ScratchLine_ExtrudePoints_Visible) {
+
+                if (this.extrudeLine != null) {
+
+                    drawEnv.editorDrawer.drawEditorVectorLinePoints(this.extrudeLine, drawEnv.style.extrutePointColor, false);
+                }
+            }
+        }
+
         selectLine(location: Vec3, env: ToolEnvironment) {
 
             if (env.currentVectorLayer == null) {
@@ -173,26 +229,35 @@ namespace ManualTracingTool {
             Logic_Edit_Line.applyAdjustments(this.resampledLine);
 
             // Extruding line
-            let editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
-            let editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
-            let forwardExtrude = true;
+            if (this.enableExtrude) {
 
-            let extrudeLine = this.generateExtrudePoints(false
-                , targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
+                let editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
+                let editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
 
-            if (extrudeLine == null) {
+                let forwardExtrude = true;
 
-                extrudeLine = this.generateExtrudePoints(true
-                    , targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
+                let extrudeLine = this.generateExtrudePoints(false
+                    , targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
 
-                if (extrudeLine != null) {
+                if (extrudeLine == null) {
 
-                    forwardExtrude = false;
+                    extrudeLine = this.generateExtrudePoints(true
+                        , targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
+
+                    if (extrudeLine != null) {
+
+                        forwardExtrude = false;
+                    }
                 }
-            }
 
-            this.forwardExtrude = forwardExtrude;
-            this.extrudeLine = extrudeLine;
+                this.forwardExtrude = forwardExtrude;
+                this.extrudeLine = extrudeLine;
+            }
+            else {
+
+                this.forwardExtrude = false;
+                this.extrudeLine = null;
+            }
 
             // Scratching
             let editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
@@ -606,6 +671,11 @@ namespace ManualTracingTool {
 
             return result;
         }
+    }
+
+    export class Tool_ExtrudeLine extends Tool_ScratchLine {
+
+        enableExtrude = true;
     }
 
     class CommandEditVectorLine {

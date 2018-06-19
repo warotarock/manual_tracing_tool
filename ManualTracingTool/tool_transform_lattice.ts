@@ -138,7 +138,7 @@ namespace ManualTracingTool {
 
         }
 
-        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) {
+        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
 
             drawEnv.render.beginPath();
 

@@ -6,7 +6,6 @@ namespace ManualTracingTool {
     // 今やること (current tasks)
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
     // 　・編集線上に近接位置がない点への影響度のフォールオフを無くしたり、大きくしたりしてみる
-    // 　・線の延長を別ツールにする
     // 　・線の延長の最初の点の扱いを調整する
     // 　・スクラッチツールで途中の点が一部だけギリギリ遠いために編集の対象にならないときがあるが、それをどうにかしたい
     // ・線の太さを変えられるようにしてみる
@@ -67,8 +66,9 @@ namespace ManualTracingTool {
     // ・線の延長にビューのスケールが反映されていないらしい？
     // ・現在のツールに応じた全選択、全選択解除処理
     // ・移動ツールなどで操作をするたびに縦方向に小さくなっていくバグを直す
+    // 　・線の延長を別ツールにする
 
-    class Main implements MainEditor {
+    class Main implements MainEditor, MainEditorDrawer {
 
         // UI elements
 
@@ -124,6 +124,7 @@ namespace ManualTracingTool {
         tool_DrawLine = new Tool_DrawLine();
         tool_AddPoint = new Tool_AddPoint();
         tool_ScratchLine = new Tool_ScratchLine();
+        tool_ExtrudeLine = new Tool_ExtrudeLine();
         tool_ResampleSegment = new Tool_Resample_Segment();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
@@ -153,26 +154,14 @@ namespace ManualTracingTool {
         tempFileName = 'Manual tracing tool save data';
 
         // Setting values
-        linePointColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-        testColor = vec4.fromValues(0.0, 0.7, 0.0, 1.0);
-        sampleColor = vec4.fromValues(0.0, 0.5, 1.0, 1.0);
-        extColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-        editingLineColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
-        editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
-        selectedVectorLineColor = vec4.fromValues(0.8, 0.3, 0.0, 0.5);
-        linePointVisualBrightnessAdjustRate = 0.3;
-
-        mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
-        operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
-
-        generalLinePointRadius = 2.0;
-        selectedLinePointRadius = 3.0;
-        viewZoomAdjustingSpeedRate = 3.0;
+        drawStyle = new ToolDrawingStyle();
 
         // Work variable
         view2DMatrix = mat4.create();
         invView2DMatrix = mat4.create();
         tempVec3 = vec3.create();
+
+        editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
 
         tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
@@ -429,6 +418,7 @@ namespace ManualTracingTool {
                 new MainTool().id(MainToolID.scratchLine)
                     .subToolImg(this.subToolImages[0])
                     .subTool(this.tool_ScratchLine)
+                    .subTool(this.tool_ExtrudeLine)
                     .subTool(this.tool_ResampleSegment)
             );
 
@@ -466,13 +456,17 @@ namespace ManualTracingTool {
             this.toolEnv = new ToolEnvironment(this.toolContext);
             this.toolDrawEnv = new ToolDrawingEnvironment();
 
+            this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
+
             //this.currentTool = this.tool_DrawLine;
             //this.currentTool = this.tool_AddPoint;
             //this.currentTool = this.tool_ScratchLine;
             this.currentTool = this.tool_Posing3d_LocateHead;
 
+            // TODO: ツールを作るたびに忘れるのでなんとかしる
             this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
             this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
+            this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
             this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         }
 
@@ -1145,7 +1139,7 @@ namespace ManualTracingTool {
 
             if (e.key == 'f' || e.key == 'd') {
 
-                let addScale = 0.1 * this.viewZoomAdjustingSpeedRate;
+                let addScale = 0.1 * this.drawStyle.viewZoomAdjustingSpeedRate;
                 if (e.key == 'd') {
                     addScale = -addScale;
                 }
@@ -1838,42 +1832,42 @@ namespace ManualTracingTool {
 
                     if (this.toolEnv.isDrawMode()) {
 
-                        this.drawVectorLineStroke(canvasWindow, line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
+                        this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
                     }
                     else if (this.toolEnv.isSelectMode()) {
 
                         if (!isCurrentLayer) {
 
-                            this.drawVectorLineStroke(canvasWindow, line, this.editOtherLayerLineColor, line.strokeWidth, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, line.strokeWidth, useAdjustingLocation);
                         }
                         else {
 
                             if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
 
-                                this.drawVectorLineStroke(canvasWindow, line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
+                                this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
 
-                                this.drawVectorLinePoints(canvasWindow, line, layer.layerColor, useAdjustingLocation);
+                                this.drawVectorLinePoints(line, layer.layerColor, useAdjustingLocation);
                             }
                             else if (this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
 
-                                this.drawVectorLineStroke(canvasWindow, line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
+                                this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
 
-                                this.drawVectorLinePoints(canvasWindow, line, layer.layerColor, useAdjustingLocation);
+                                this.drawVectorLinePoints(line, layer.layerColor, useAdjustingLocation);
                             }
                             else if (this.toolContext.operationUnitID == OperationUnitID.line) {
 
                                 let color = layer.layerColor;
                                 if (line.isSelected) {
-                                    color = this.selectedVectorLineColor;
+                                    color = this.drawStyle.selectedVectorLineColor;
                                 }
 
                                 if (line.isCloseToMouse) {
 
-                                    this.drawVectorLineStroke(canvasWindow, line, color, line.strokeWidth + 2.0, useAdjustingLocation);
+                                    this.drawVectorLineStroke(line, color, line.strokeWidth + 2.0, useAdjustingLocation);
                                 }
                                 else {
 
-                                    this.drawVectorLineStroke(canvasWindow, line, color, line.strokeWidth, useAdjustingLocation);
+                                    this.drawVectorLineStroke(line, color, line.strokeWidth, useAdjustingLocation);
                                 }
 
                                 //this.drawAdjustingLinePoints(canvasWindow, line);
@@ -1884,7 +1878,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLineStroke(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) {
+        private drawVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) {
 
             if (line.points.length == 0) {
                 return;
@@ -1896,53 +1890,29 @@ namespace ManualTracingTool {
             this.drawVectorLineSegment(line, 0, line.points.length - 1, useAdjustingLocation);
         }
 
-        private drawEditLineStroke(canvasWindow: CanvasWindow, line: VectorLine) {
+        private drawVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
 
-            this.drawVectorLineStroke(
-                canvasWindow
-                , line
-                , this.editingLineColor
-                , this.getViewScaleLineWidth(canvasWindow, 3.0)
-                , false
-            );
-        }
-
-        private drawEditLinePoints(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4) {
-
-            this.canvasRender.setStrokeWidth(this.getViewScaleLineWidth(canvasWindow, 1.0));
-
-            this.canvasRender.setStrokeColorV(color);
-            this.canvasRender.setFillColorV(color);
-
-            for (let point of line.points) {
-
-                this.drawVectorLinePoint(point, color, canvasWindow.viewScale, false);
-            }
-        }
-
-        private drawVectorLinePoints(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4, useAdjustingLocation: boolean) {
-
-            this.canvasRender.setStrokeWidth(this.getViewScaleLineWidth(canvasWindow, 1.0));
+            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
 
             // make color darker or lighter than original to visible on line color
             ColorLogic.rgbToHSV(this.tempEditorLinePointColor1, color);
             if (this.tempEditorLinePointColor1[2] > 0.5) {
 
-                this.tempEditorLinePointColor1[2] -= this.linePointVisualBrightnessAdjustRate;
+                this.tempEditorLinePointColor1[2] -= this.drawStyle.linePointVisualBrightnessAdjustRate;
             }
             else {
 
-                this.tempEditorLinePointColor1[2] += this.linePointVisualBrightnessAdjustRate;
+                this.tempEditorLinePointColor1[2] += this.drawStyle.linePointVisualBrightnessAdjustRate;
             }
             ColorLogic.hsvToRGB(this.tempEditorLinePointColor2, this.tempEditorLinePointColor1);
 
             for (let point of line.points) {
 
-                this.drawVectorLinePoint(point, this.tempEditorLinePointColor2, canvasWindow.viewScale, useAdjustingLocation);
+                this.drawVectorLinePoint(point, this.tempEditorLinePointColor2, useAdjustingLocation);
             }
         }
 
-        private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) {
+        private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
 
             this.canvasRender.beginPath()
 
@@ -1974,17 +1944,19 @@ namespace ManualTracingTool {
             this.canvasRender.stroke()
         }
 
-        private drawVectorLinePoint(point: LinePoint, color: Vec4, viewScale: float, useAdjustingLocation: boolean) {
+        private drawVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) {
+
+            let viewScale = this.canvasRender.getViewScale();
 
             this.canvasRender.beginPath()
 
-            let radius = this.generalLinePointRadius / viewScale;
+            let radius = this.drawStyle.generalLinePointRadius / viewScale;
 
             if (point.isSelected) {
 
-                radius = this.selectedLinePointRadius / viewScale;
-                this.canvasRender.setStrokeColorV(this.selectedVectorLineColor);
-                this.canvasRender.setFillColorV(this.selectedVectorLineColor);
+                radius = this.drawStyle.selectedLinePointRadius / viewScale;
+                this.canvasRender.setStrokeColorV(this.drawStyle.selectedVectorLineColor);
+                this.canvasRender.setFillColorV(this.drawStyle.selectedVectorLineColor);
             }
             else {
 
@@ -2004,22 +1976,40 @@ namespace ManualTracingTool {
             this.canvasRender.fill();
         }
 
-        private getViewScaleLineWidth(canvasWindow: CanvasWindow, width: float) {
+        private drawEditLineStroke(line: VectorLine) {
 
-            return width / canvasWindow.viewScale;
+            this.drawVectorLineStroke(
+                line
+                , this.drawStyle.editingLineColor
+                , this.getCurrentViewScaleLineWidth(3.0)
+                , false
+            );
         }
 
-        private getViewScaledSize(canvasWindow: CanvasWindow, width: float) {
+        private drawEditLinePoints(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4) {
 
-            return width / canvasWindow.viewScale;
+            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
+
+            this.canvasRender.setStrokeColorV(color);
+            this.canvasRender.setFillColorV(color);
+
+            for (let point of line.points) {
+
+                this.drawVectorLinePoint(point, color, false);
+            }
+        }
+
+        private getCurrentViewScaleLineWidth(width: float) {
+
+            return width / this.canvasRender.getViewScale();
+        }
+
+        private getViewScaledSize(width: float) {
+
+            return width / this.canvasRender.getViewScale();
         }
 
         // Editor window drawing
-
-        tool_ScratchLine_EditLine_Visible = true;
-        tool_ScratchLine_TargetLine_Visible = true;
-        tool_ScratchLine_SampledLine_Visible = true;
-        tool_ScratchLine_CandidatePoints_Visible = false;
 
         private drawEditorWindow(editorWindow: CanvasWindow, mainWindow: CanvasWindow) {
 
@@ -2032,9 +2022,9 @@ namespace ManualTracingTool {
 
             if (this.toolEnv.isSelectMode()) {
 
-                this.drawOperatorCursor(editorWindow);
+                this.drawOperatorCursor();
 
-                this.drawMouseCursor(editorWindow);
+                this.drawMouseCursor();
             }
 
             if (this.toolEnv.isDrawMode()) {
@@ -2043,52 +2033,7 @@ namespace ManualTracingTool {
 
                     if (this.tool_DrawLine.editLine != null) {
 
-                        this.drawEditLineStroke(editorWindow, this.tool_DrawLine.editLine);
-                    }
-                }
-                else if (this.currentTool == this.tool_ScratchLine) {
-
-                    this.drawMouseCursor(editorWindow);
-
-                    if (this.tool_ScratchLine_EditLine_Visible) {
-
-                        if (this.tool_ScratchLine.editLine != null) {
-
-                            this.drawEditLineStroke(editorWindow, this.tool_ScratchLine.editLine);
-                        }
-                    }
-
-                    if (this.tool_ScratchLine_TargetLine_Visible) {
-
-                        if (this.toolEnv.currentVectorLine != null && this.toolEnv.currentVectorLayer.layerColor != null) {
-
-                            this.drawVectorLinePoints(editorWindow
-                                , this.toolEnv.currentVectorLine
-                                , this.toolEnv.currentVectorLayer.layerColor
-                                , true
-                            );
-                        }
-                    }
-
-                    if (this.tool_ScratchLine_SampledLine_Visible) {
-
-                        if (this.tool_ScratchLine.resampledLine != null) {
-
-                            this.drawEditLinePoints(editorWindow, this.tool_ScratchLine.resampledLine, this.sampleColor);
-                        }
-
-                        if (this.tool_ScratchLine.extrudeLine != null) {
-
-                            this.drawEditLinePoints(editorWindow, this.tool_ScratchLine.extrudeLine, this.extColor);
-                        }
-                    }
-
-                    if (this.tool_ScratchLine_CandidatePoints_Visible) {
-
-                        if (this.tool_ScratchLine.candidateLine != null) {
-
-                            this.drawEditLinePoints(editorWindow, this.tool_ScratchLine.candidateLine, this.linePointColor);
-                        }
+                        this.drawEditLineStroke(this.tool_DrawLine.editLine);
                     }
                 }
                 else if (context.mainToolID == MainToolID.posing) {
@@ -2106,49 +2051,31 @@ namespace ManualTracingTool {
                     if (this.currentTool == this.tool_Posing3d_LocateHead
                         && this.tool_Posing3d_LocateHead.editLine != null) {
 
-                        this.drawEditLineStroke(editorWindow, this.tool_Posing3d_LocateHead.editLine);
+                        this.drawEditLineStroke(this.tool_Posing3d_LocateHead.editLine);
                     }
                 }
             }
 
             if (this.currentTool != null) {
 
-                this.toolDrawEnv.canvasWindow = editorWindow;
-                this.toolDrawEnv.render = this.canvasRender;
-
                 this.toolEnv.updateContext();
+                this.toolDrawEnv.setVariables(editorWindow);
                 this.currentTool.onDrawEditor(this.toolEnv, this.toolDrawEnv);
             }
-        }
-
-        private drawMouseCursor(canvasWindow: CanvasWindow) {
-
-            this.canvasRender.beginPath();
-
-            this.canvasRender.setStrokeColorV(this.mouseCursorCircleColor);
-            this.canvasRender.setStrokeWidth(this.getViewScaleLineWidth(canvasWindow, 1.0));
-
-            this.canvasRender.circle(
-                this.toolMouseEvent.location[0]
-                , this.toolMouseEvent.location[1]
-                , this.getViewScaleLineWidth(canvasWindow, this.toolContext.mouseCursorRadius)
-            );
-
-            this.canvasRender.stroke();
         }
 
         private operatorCurosrLineDash = [2.0, 2.0];
         private operatorCurosrLineDashScaled = [0.0, 0.0];
         private operatorCurosrLineDashNone = [];
 
-        private drawOperatorCursor(canvasWindow: CanvasWindow) {
+        private drawOperatorCursor() {
 
             this.canvasRender.beginPath();
 
-            this.canvasRender.setStrokeColorV(this.operatorCursorCircleColor);
-            this.canvasRender.setStrokeWidth(this.getViewScaleLineWidth(canvasWindow, 1.0));
+            this.canvasRender.setStrokeColorV(this.drawStyle.operatorCursorCircleColor);
+            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
 
-            let viewScale = this.getViewScaledSize(canvasWindow, 1.0);
+            let viewScale = this.getViewScaledSize(1.0);
 
             this.operatorCurosrLineDashScaled[0] = this.operatorCurosrLineDash[0] * viewScale;
             this.operatorCurosrLineDashScaled[1] = this.operatorCurosrLineDash[1] * viewScale;
@@ -2173,6 +2100,44 @@ namespace ManualTracingTool {
             this.canvasRender.drawLine(centerX, centerY + clossBeginPosition, centerX, centerY + clossEndPosition);
 
             this.canvasRender.setLineDash(this.operatorCurosrLineDashNone);
+        }
+
+        // MainEditorDrawer implementations
+
+        drawMouseCursor() {
+
+            this.canvasRender.beginPath();
+
+            this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
+            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
+
+            this.canvasRender.circle(
+                this.toolMouseEvent.location[0]
+                , this.toolMouseEvent.location[1]
+                , this.getCurrentViewScaleLineWidth(this.toolContext.mouseCursorRadius)
+            );
+
+            this.canvasRender.stroke();
+        }
+
+        drawEditorEditLineStroke(line: VectorLine) { //@implements MainEditorDrawer
+
+            this.drawEditLineStroke(line);
+        }
+
+        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
+
+            this.drawVectorLineStroke(line, color, strokeWidth, useAdjustingLocation);
+        }
+
+        drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
+
+            this.drawVectorLinePoints(line, color, useAdjustingLocation);
+        }
+
+        drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
+
+            this.drawVectorLineSegment(line, startIndex, endIndex, useAdjustingLocation);
         }
 
         // WebGL window drawing
