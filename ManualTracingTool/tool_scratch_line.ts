@@ -44,8 +44,8 @@ namespace ManualTracingTool {
         editFalloffRadiusMaxRate = 1.5;
         editInfluence = 0.5;
 
-        editExtrudeMinRadiusRate = 0.05;
-        editExtrudeMaxRadiusRate = 0.6;
+        editExtrudeMinRadiusRate = 0.5;
+        editExtrudeMaxRadiusRate = 1.0;
 
         tool_ScratchLine_EditLine_Visible = true;
         tool_ScratchLine_TargetLine_Visible = true;
@@ -501,15 +501,14 @@ namespace ManualTracingTool {
                 startPoint = targetLine.points[targetLine.points.length - 1];
             }
 
-            let sampleLine_NearestPointIndex = this.findNearestPointIndex_PointToPoint(sampleLine, startPoint, editExtrudeMinRadius, editExtrudeMaxRadius);
+            let sampleLine_NearestPointIndex = this.findNearestPointIndex_PointToPoint(sampleLine, startPoint, 0.0, editExtrudeMaxRadius);
             if (sampleLine_NearestPointIndex == -1) {
 
                 return null;
             }
 
-            let maxRange = editExtrudeMaxRadius;
-            let nearPointCount_SampleLineForward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, true, maxRange);
-            let nearPointCount_SampleLineBackward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, false, maxRange);
+            let nearPointCount_SampleLineForward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, true, editExtrudeMaxRadius);
+            let nearPointCount_SampleLineBackward = this.getNearPointCount(targetLine, sampleLine, sampleLine_NearestPointIndex, false, editExtrudeMaxRadius);
 
             //console.log(sampleLine_NearestPointIndex + ' ' + nearPointCount_SampleLineForward + ' ' + nearPointCount_SampleLineBackward);
 
@@ -523,7 +522,7 @@ namespace ManualTracingTool {
                 return null;
             }
 
-            let extrudePoints = this.getExtrudePoints(targetLine, sampleLine, sampleLine_NearestPointIndex, isForwardExtrudeInSampleLine, editExtrudeMaxRadius);
+            let extrudePoints = this.getExtrudePoints(targetLine, sampleLine, sampleLine_NearestPointIndex, isForwardExtrudeInSampleLine, editExtrudeMinRadius, editExtrudeMaxRadius);
 
             if (extrudePoints == null) {
 
@@ -591,13 +590,13 @@ namespace ManualTracingTool {
             return nearestPointIndex;
         }
 
-        private getNearPointCount(targetLine: VectorLine, sampleLine: VectorLine, scanStartIndex: int, forwardSearch: boolean, limitMaxDistance: float): int {
+        private getNearPointCount(targetLine: VectorLine, sampleLine: VectorLine, searchStartIndex: int, forwardSearch: boolean, limitMaxDistance: float): int {
 
             let nearPointCcount = 0;
 
             let scanDirection = (forwardSearch ? 1 : -1);
 
-            let currentIndex = scanStartIndex;
+            let currentIndex = searchStartIndex;
             let nextIndex = currentIndex + scanDirection;
             while (nextIndex >= 0 && nextIndex < sampleLine.points.length) {
 
@@ -623,24 +622,24 @@ namespace ManualTracingTool {
             return nearPointCcount;
         }
 
-        private getExtrudePoints(targetLine: VectorLine, sampleLine: VectorLine, scanStartIndex: int, forwardSearch: boolean, limitMaxDistance: float): List<LinePoint> {
+        private getExtrudePoints(targetLine: VectorLine, sampleLine: VectorLine, searchStartIndex: int, forwardSearch: boolean, limitMinDistance: float, limitMaxDistance: float): List<LinePoint> {
 
             let scanDirection = (forwardSearch ? 1 : -1);
 
             let startIndex = -1;
 
-            let currentIndex = scanStartIndex;
+            let currentIndex = searchStartIndex;
             let nextIndex = currentIndex + scanDirection;
             while (nextIndex >= 0 && nextIndex < sampleLine.points.length) {
 
                 let point1 = sampleLine.points[currentIndex];
                 let point2 = sampleLine.points[nextIndex];
 
-                let nearestPointIndex = this.findNearestPointIndex_LineSegmentToPoint(targetLine, point1, point2, 0.0, limitMaxDistance, false, true);
+                let nearestPointIndex = this.findNearestPointIndex_LineSegmentToPoint(targetLine, point1, point2, limitMinDistance, limitMaxDistance, false, true);
 
                 if (nearestPointIndex == -1) {
 
-                    startIndex = currentIndex;
+                    startIndex = nextIndex;
                     break;
                 }
 
