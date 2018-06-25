@@ -219,7 +219,9 @@ namespace ManualTracingTool {
             {
                 let sampledPoint = new LinePoint();
                 vec3.copy(sampledPoint.location, firstPoint.location);
-                vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+                vec3.copy(sampledPoint.adjustingLocation, sampledPoint.location);
+                sampledPoint.lineWidth = firstPoint.lineWidth;
+                sampledPoint.adjustingLineWidth = sampledPoint.lineWidth;
                 result.push(sampledPoint);
             }
 
@@ -249,7 +251,10 @@ namespace ManualTracingTool {
 
                     let sampledPoint = new LinePoint();
                     vec3.copy(sampledPoint.location, sampledLocationVec);
-                    vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+                    vec3.copy(sampledPoint.adjustingLocation, sampledPoint.location);
+
+                    sampledPoint.lineWidth = Maths.lerp(positionRate, currentPoint.lineWidth, nextPoint.lineWidth);
+                    sampledPoint.adjustingLineWidth = sampledPoint.lineWidth;
 
                     result.push(sampledPoint);
 
@@ -278,7 +283,9 @@ namespace ManualTracingTool {
             {
                 let sampledPoint = new LinePoint();
                 vec3.copy(sampledPoint.location, lastPoint.location);
-                vec3.copy(sampledPoint.adjustedLocation, sampledPoint.location);
+                vec3.copy(sampledPoint.adjustingLocation, sampledPoint.location);
+                sampledPoint.lineWidth = lastPoint.lineWidth;
+                sampledPoint.adjustingLineWidth = sampledPoint.lineWidth;
                 result.push(sampledPoint);
             }
 
@@ -368,7 +375,7 @@ namespace ManualTracingTool {
             for (let i = 0; i < line.points.length; i++) {
                 let point = line.points[i];
 
-                vec3.copy(point.adjustedLocation, point.location);
+                vec3.copy(point.adjustingLocation, point.location);
                 vec3.copy(point.tempLocation, point.location);
             }
 
@@ -382,19 +389,23 @@ namespace ManualTracingTool {
                     let point3 = line.points[i + 2];
 
                     Logic_Edit_Line.calcBezier2d(
-                        point2.adjustedLocation
+                        point2.adjustingLocation
                         , point1.tempLocation
                         , point2.tempLocation
                         , point3.tempLocation
                         , 0.5
                     );
+
+                    point2.adjustingLineWidth = (point1.adjustingLineWidth + point3.adjustingLineWidth) / 2;
                 }
 
                 for (let i = 0; i + 2 < line.points.length; i++) {
 
                     let point2 = line.points[i + 1];
 
-                    vec3.copy(point2.tempLocation, point2.adjustedLocation);
+                    vec3.copy(point2.tempLocation, point2.adjustingLocation);
+
+                    point2.lineWidth = point2.adjustingLineWidth;
                 }
             }
 
@@ -424,7 +435,7 @@ namespace ManualTracingTool {
 
             for (let point of line.points) {
 
-                vec3.copy(point.location, point.adjustedLocation)
+                vec3.copy(point.location, point.adjustingLocation)
             }
         }
 

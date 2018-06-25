@@ -38,13 +38,14 @@ namespace ManualTracingTool {
     export class LinePoint {
 
         location = vec3.fromValues(0.0, 0.0, 0.0);
-        adjustedLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        lineWidth = 1.0;
         isSelected = false;
 
         // runtime
         modifyFlag = LinePointModifyFlagID.none;
-
         tempLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        adjustingLineWidth = 0.0;
         totalLength = 0.0;
         curvature = 0.0;
     }

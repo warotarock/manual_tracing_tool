@@ -101,6 +101,7 @@
     <TypeScriptCompile Include="tool_add_point.ts" />
     <TypeScriptCompile Include="render2d.ts" />
     <TypeScriptCompile Include="logic_hittest.ts" />
+    <TypeScriptCompile Include="tool_scratch_line_width.ts" />
     <TypeScriptCompile Include="tool_scratch_line.ts" />
     <TypeScriptCompile Include="tool_select_points_all.ts" />
     <TypeScriptCompile Include="tool_select_brush_select.ts" />

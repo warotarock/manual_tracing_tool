@@ -38,7 +38,7 @@ namespace ManualTracingTool {
 
             let point = new LinePoint();
             vec3.copy(point.location, e.location);
-            vec3.copy(point.adjustedLocation, e.location);
+            vec3.copy(point.adjustingLocation, e.location);
 
             this.editLine.points.push(point);
         }

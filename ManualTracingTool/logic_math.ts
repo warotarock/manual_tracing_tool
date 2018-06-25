@@ -62,6 +62,29 @@ namespace ManualTracingTool {
             return H;
         }
 
+        static pointToLine_NearestPointNormalizedPosition(P_x: float, P_y: float, A_x: float, A_y: float, B_x: float, B_y: float): float {
+
+            // from: http://www.sousakuba.com/Programming/gs_near_pos_on_line.html
+
+            let AB_x = B_x - A_x;
+            let AB_y = B_y - A_y;
+            let AP_x = P_x - A_x;
+            let AP_y = P_y - A_y;
+
+            //ABの単位ベクトルを計算
+            let len = Math.sqrt(AB_x * AB_x + AB_y * AB_y);
+            if (len <= 0.0) {
+                return null;
+            }
+            let nAB_x = AB_x / len;
+            let nAB_y = AB_y / len;
+
+            //Aから線上最近点までの距離（ABベクトルの後ろにあるときはマイナス値）
+            let dist_AX = (nAB_x * AP_x + nAB_y * AP_y);
+
+            return dist_AX;
+        }
+
         static pointToLine_NearestPoint(result: Vec3, P_x: float, P_y: float, A_x: float, A_y: float, B_x: float, B_y: float): Vec3 {
 
             // from: http://www.sousakuba.com/Programming/gs_near_pos_on_line.html
@@ -72,7 +95,7 @@ namespace ManualTracingTool {
             let AP_y = P_y - A_y;
 
             //ABの単位ベクトルを計算
-            let len = Math.sqrt((B_x - A_x) * (B_x - A_x) + (B_y - A_y) * (B_y - A_y));
+            let len = Math.sqrt(AB_x * AB_x + AB_y * AB_y);
             if (len <= 0.0) {
                 return null;
             }

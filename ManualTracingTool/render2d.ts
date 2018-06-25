@@ -70,6 +70,11 @@ namespace ManualTracingTool {
         }
     }
 
+    export enum CanvasRenderLineCap {
+
+        butt, round, square
+    }
+
     export class CanvasRender {
 
         private context: CanvasRenderingContext2D = null;
@@ -153,6 +158,11 @@ namespace ManualTracingTool {
         setGlobalAlpha(a: float) {
 
             this.context.globalAlpha = a;
+        }
+
+        setLineCap(lineCap: CanvasRenderLineCap) {
+
+            this.context.lineCap = CanvasRenderLineCap[lineCap];
         }
 
         beginPath() {

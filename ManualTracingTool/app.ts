@@ -128,6 +128,7 @@ namespace ManualTracingTool {
         tool_AddPoint = new Tool_AddPoint();
         tool_ScratchLine = new Tool_ScratchLine();
         tool_ExtrudeLine = new Tool_ExtrudeLine();
+        tool_ScratchLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
@@ -422,6 +423,7 @@ namespace ManualTracingTool {
                     .subToolImg(this.subToolImages[0])
                     .subTool(this.tool_ScratchLine)
                     .subTool(this.tool_ExtrudeLine)
+                    .subTool(this.tool_ScratchLineWidth)
                     .subTool(this.tool_ResampleSegment)
             );
 
@@ -470,6 +472,7 @@ namespace ManualTracingTool {
             this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
             this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
             this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
+            this.tool_ScratchLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
             this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         }
 
@@ -1915,20 +1918,46 @@ namespace ManualTracingTool {
             }
         }
 
+        private lineWidthAdjust(width: float) {
+
+            return Math.floor(width * 5) / 5;
+        }
+
         private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
 
+            // debug
+            for (let point of line.points) {
+
+                if (point.lineWidth == undefined) {
+
+                    point.lineWidth = 1.0;
+                    point.adjustingLineWidth = 1.0;
+                }
+
+                if (point.adjustingLocation == undefined) {
+
+                    vec3.copy(point.adjustingLocation, point.location);
+                    delete point.adjustedLocation;
+                }
+            }
+            // debug
+
+            this.canvasRender.setLineCap(CanvasRenderLineCap.round)
             this.canvasRender.beginPath()
 
             let firstPoint = line.points[startIndex];
 
             if (useAdjustingLocation) {
 
-                this.canvasRender.moveTo(firstPoint.adjustedLocation[0], firstPoint.adjustedLocation[1]);
+                this.canvasRender.moveTo(firstPoint.adjustingLocation[0], firstPoint.adjustingLocation[1]);
             }
             else {
 
                 this.canvasRender.moveTo(firstPoint.location[0], firstPoint.location[1]);
             }
+
+            let currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
+            this.canvasRender.setStrokeWidth(currentLineWidth);
 
             for (let i = startIndex + 1; i <= endIndex; i++) {
 
@@ -1936,15 +1965,34 @@ namespace ManualTracingTool {
 
                 if (useAdjustingLocation) {
 
-                    this.canvasRender.lineTo(point1.adjustedLocation[0], point1.adjustedLocation[1]);
+                    this.canvasRender.lineTo(point1.adjustingLocation[0], point1.adjustingLocation[1]);
                 }
                 else {
 
                     this.canvasRender.lineTo(point1.location[0], point1.location[1]);
                 }
+
+                if (point1.lineWidth != currentLineWidth) {
+
+                    this.canvasRender.stroke();
+                    this.canvasRender.beginPath();
+
+                    currentLineWidth = this.lineWidthAdjust(point1.lineWidth);
+                    this.canvasRender.setStrokeWidth(currentLineWidth);
+
+                    if (useAdjustingLocation) {
+
+                        this.canvasRender.moveTo(point1.adjustingLocation[0], point1.adjustingLocation[1]);
+                    }
+                    else {
+
+                        this.canvasRender.moveTo(point1.location[0], point1.location[1]);
+                    }
+                    continue;
+                }
             }
 
-            this.canvasRender.stroke()
+            this.canvasRender.stroke();
         }
 
         private drawVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) {
@@ -1969,7 +2017,7 @@ namespace ManualTracingTool {
 
             if (useAdjustingLocation) {
 
-                this.canvasRender.circle(point.adjustedLocation[0], point.adjustedLocation[1], radius);
+                this.canvasRender.circle(point.adjustingLocation[0], point.adjustingLocation[1], radius);
             }
             else {
 

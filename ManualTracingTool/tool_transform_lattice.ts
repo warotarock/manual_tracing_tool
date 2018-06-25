@@ -85,7 +85,7 @@ namespace ManualTracingTool {
 
             for (let editPoint of this.editPoints) {
 
-                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.targetPoint.location);
+                vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.targetPoint.location);
             }
 
             this.editPoints = null;
@@ -258,7 +258,7 @@ namespace ManualTracingTool {
                 vec3.lerp(this.lerpLocation1, latticePointLocationH1A, latticePointLocationH1B, editPoint.relativeLocation[0]);
                 vec3.lerp(this.lerpLocation2, latticePointLocationH2A, latticePointLocationH2B, editPoint.relativeLocation[0]);
 
-                vec3.lerp(editPoint.targetPoint.adjustedLocation, this.lerpLocation1, this.lerpLocation2, editPoint.relativeLocation[1]);
+                vec3.lerp(editPoint.targetPoint.adjustingLocation, this.lerpLocation1, this.lerpLocation2, editPoint.relativeLocation[1]);
             }
         }
 
@@ -271,7 +271,7 @@ namespace ManualTracingTool {
 
             for (let editPoint of this.editPoints) {
 
-                vec3.copy(editPoint.newLocation, editPoint.targetPoint.adjustedLocation);
+                vec3.copy(editPoint.newLocation, editPoint.targetPoint.adjustingLocation);
             }
 
             // Get target line
@@ -316,7 +316,7 @@ namespace ManualTracingTool {
             for (let editPoint of this.editPoints) {
 
                 vec3.copy(editPoint.targetPoint.location, editPoint.oldLocation);
-                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.oldLocation);
+                vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.oldLocation);
             }
 
             this.calculateLineParameters();
@@ -327,7 +327,7 @@ namespace ManualTracingTool {
             for (let editPoint of this.editPoints) {
 
                 vec3.copy(editPoint.targetPoint.location, editPoint.newLocation);
-                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.newLocation);
+                vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.newLocation);
             }
 
             this.calculateLineParameters();

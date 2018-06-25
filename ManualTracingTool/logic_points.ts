@@ -38,24 +38,13 @@ namespace ManualTracingTool {
         // Point to line segment: if targetPoint is before point1, return value is < 0.0, if targetPoint is agter point2, retuen value is > 1.0
         static pointToLineSegment_NormalizedPosition(point1: Vec3, point2: Vec3, targetPoint: Vec3): float {
 
-            let v1_x = point2[0] - point1[0];
-            let v1_y = point2[1] - point1[1];
-
-            let baseVectorX = Math.sqrt(v1_x * v1_x + v1_y * v1_y);
-
-            if (baseVectorX == 0.0) {
-                return 0.0;
-            }
-
-            let angle = Math.atan2(v1_y, v1_x);
-
-            let v0_x = targetPoint[0] - point1[0];
-            let v0_y = targetPoint[1] - point1[1];
-
-            let localX = v0_x * Math.cos(-angle) - v0_y * Math.sin(-angle);
-            let localY = v0_x * Math.sin(-angle) + v0_y * Math.cos(-angle);
-
-            return (localX / baseVectorX);
+            return Maths.pointToLine_NearestPointNormalizedPosition(
+                targetPoint[0],
+                targetPoint[1],
+                point1[0],
+                point1[1],
+                point2[0],
+                point2[1]);
         }
 
         // Point to endless line: distance calculation
