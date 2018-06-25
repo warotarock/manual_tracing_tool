@@ -38,7 +38,7 @@ var ManualTracingTool;
             }
             var point = new ManualTracingTool.LinePoint();
             vec3.copy(point.location, e.location);
-            vec3.copy(point.adjustedLocation, e.location);
+            vec3.copy(point.adjustingLocation, e.location);
             this.editLine.points.push(point);
         };
         return Tool_Posing3d_ToolBase;

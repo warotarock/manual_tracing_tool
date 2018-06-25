@@ -74,7 +74,7 @@ var ManualTracingTool;
         Tool_Transform_Lattice.prototype.cancelModal = function (env) {
             for (var _i = 0, _a = this.editPoints; _i < _a.length; _i++) {
                 var editPoint = _a[_i];
-                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.targetPoint.location);
+                vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.targetPoint.location);
             }
             this.editPoints = null;
             env.setRedrawMainWindowEditorWindow();
@@ -191,7 +191,7 @@ var ManualTracingTool;
                 var editPoint = editPoints_1[_i];
                 vec3.lerp(this.lerpLocation1, latticePointLocationH1A, latticePointLocationH1B, editPoint.relativeLocation[0]);
                 vec3.lerp(this.lerpLocation2, latticePointLocationH2A, latticePointLocationH2B, editPoint.relativeLocation[0]);
-                vec3.lerp(editPoint.targetPoint.adjustedLocation, this.lerpLocation1, this.lerpLocation2, editPoint.relativeLocation[1]);
+                vec3.lerp(editPoint.targetPoint.adjustingLocation, this.lerpLocation1, this.lerpLocation2, editPoint.relativeLocation[1]);
             }
         };
         Tool_Transform_Lattice.prototype.executeCommand = function (env) {
@@ -200,7 +200,7 @@ var ManualTracingTool;
             var targetLines = new List();
             for (var _i = 0, _a = this.editPoints; _i < _a.length; _i++) {
                 var editPoint = _a[_i];
-                vec3.copy(editPoint.newLocation, editPoint.targetPoint.adjustedLocation);
+                vec3.copy(editPoint.newLocation, editPoint.targetPoint.adjustingLocation);
             }
             // Get target line
             for (var _b = 0, _c = this.editPoints; _b < _c.length; _b++) {
@@ -238,7 +238,7 @@ var ManualTracingTool;
             for (var _i = 0, _a = this.editPoints; _i < _a.length; _i++) {
                 var editPoint = _a[_i];
                 vec3.copy(editPoint.targetPoint.location, editPoint.oldLocation);
-                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.oldLocation);
+                vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.oldLocation);
             }
             this.calculateLineParameters();
         };
@@ -246,7 +246,7 @@ var ManualTracingTool;
             for (var _i = 0, _a = this.editPoints; _i < _a.length; _i++) {
                 var editPoint = _a[_i];
                 vec3.copy(editPoint.targetPoint.location, editPoint.newLocation);
-                vec3.copy(editPoint.targetPoint.adjustedLocation, editPoint.newLocation);
+                vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.newLocation);
             }
             this.calculateLineParameters();
         };

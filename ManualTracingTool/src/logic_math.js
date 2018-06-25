@@ -42,6 +42,23 @@ var ManualTracingTool;
             var H = D / L;
             return H;
         };
+        Maths.pointToLine_NearestPointNormalizedPosition = function (P_x, P_y, A_x, A_y, B_x, B_y) {
+            // from: http://www.sousakuba.com/Programming/gs_near_pos_on_line.html
+            var AB_x = B_x - A_x;
+            var AB_y = B_y - A_y;
+            var AP_x = P_x - A_x;
+            var AP_y = P_y - A_y;
+            //ABの単位ベクトルを計算
+            var len = Math.sqrt(AB_x * AB_x + AB_y * AB_y);
+            if (len <= 0.0) {
+                return null;
+            }
+            var nAB_x = AB_x / len;
+            var nAB_y = AB_y / len;
+            //Aから線上最近点までの距離（ABベクトルの後ろにあるときはマイナス値）
+            var dist_AX = (nAB_x * AP_x + nAB_y * AP_y);
+            return dist_AX;
+        };
         Maths.pointToLine_NearestPoint = function (result, P_x, P_y, A_x, A_y, B_x, B_y) {
             // from: http://www.sousakuba.com/Programming/gs_near_pos_on_line.html
             var AB_x = B_x - A_x;
@@ -49,7 +66,7 @@ var ManualTracingTool;
             var AP_x = P_x - A_x;
             var AP_y = P_y - A_y;
             //ABの単位ベクトルを計算
-            var len = Math.sqrt((B_x - A_x) * (B_x - A_x) + (B_y - A_y) * (B_y - A_y));
+            var len = Math.sqrt(AB_x * AB_x + AB_y * AB_y);
             if (len <= 0.0) {
                 return null;
             }

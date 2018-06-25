@@ -211,11 +211,39 @@ var ManualTracingTool;
         return ToolEnvironment;
     }());
     ManualTracingTool.ToolEnvironment = ToolEnvironment;
+    var ToolDrawingStyle = /** @class */ (function () {
+        function ToolDrawingStyle() {
+            this.linePointColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+            this.testColor = vec4.fromValues(0.0, 0.7, 0.0, 1.0);
+            this.sampledPointColor = vec4.fromValues(0.0, 0.5, 1.0, 1.0);
+            this.extrutePointColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+            this.editingLineColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
+            this.selectedVectorLineColor = vec4.fromValues(0.8, 0.3, 0.0, 0.5);
+            this.linePointVisualBrightnessAdjustRate = 0.3;
+            this.mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+            this.operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+            this.generalLinePointRadius = 2.0;
+            this.selectedLinePointRadius = 3.0;
+            this.viewZoomAdjustingSpeedRate = 3.0;
+        }
+        return ToolDrawingStyle;
+    }());
+    ManualTracingTool.ToolDrawingStyle = ToolDrawingStyle;
     var ToolDrawingEnvironment = /** @class */ (function () {
         function ToolDrawingEnvironment() {
             this.canvasWindow = null;
+            this.editorDrawer = null;
             this.render = null;
+            this.style = null;
         }
+        ToolDrawingEnvironment.prototype.setEnvironment = function (editorDrawer, render, style) {
+            this.editorDrawer = editorDrawer;
+            this.render = render;
+            this.style = style;
+        };
+        ToolDrawingEnvironment.prototype.setVariables = function (canvasWindow) {
+            this.canvasWindow = canvasWindow;
+        };
         return ToolDrawingEnvironment;
     }());
     ManualTracingTool.ToolDrawingEnvironment = ToolDrawingEnvironment;

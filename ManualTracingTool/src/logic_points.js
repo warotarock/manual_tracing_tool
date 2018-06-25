@@ -22,18 +22,7 @@ var ManualTracingTool;
         };
         // Point to line segment: if targetPoint is before point1, return value is < 0.0, if targetPoint is agter point2, retuen value is > 1.0
         Logic_Points.pointToLineSegment_NormalizedPosition = function (point1, point2, targetPoint) {
-            var v1_x = point2[0] - point1[0];
-            var v1_y = point2[1] - point1[1];
-            var baseVectorX = Math.sqrt(v1_x * v1_x + v1_y * v1_y);
-            if (baseVectorX == 0.0) {
-                return 0.0;
-            }
-            var angle = Math.atan2(v1_y, v1_x);
-            var v0_x = targetPoint[0] - point1[0];
-            var v0_y = targetPoint[1] - point1[1];
-            var localX = v0_x * Math.cos(-angle) - v0_y * Math.sin(-angle);
-            var localY = v0_x * Math.sin(-angle) + v0_y * Math.cos(-angle);
-            return (localX / baseVectorX);
+            return ManualTracingTool.Maths.pointToLine_NearestPointNormalizedPosition(targetPoint[0], targetPoint[1], point1[0], point1[1], point2[0], point2[1]);
         };
         // Point to endless line: distance calculation
         Logic_Points.pointToLine_Distance = function (point1, point2, targetPoint) {

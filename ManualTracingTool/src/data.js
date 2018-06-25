@@ -43,11 +43,13 @@ var ManualTracingTool;
     var LinePoint = /** @class */ (function () {
         function LinePoint() {
             this.location = vec3.fromValues(0.0, 0.0, 0.0);
-            this.adjustedLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.lineWidth = 1.0;
             this.isSelected = false;
             // runtime
             this.modifyFlag = LinePointModifyFlagID.none;
             this.tempLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.adjustingLineWidth = 0.0;
             this.totalLength = 0.0;
             this.curvature = 0.0;
         }

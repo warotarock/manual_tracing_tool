@@ -50,19 +50,30 @@ var ManualTracingTool;
         return CanvasWindow;
     }());
     ManualTracingTool.CanvasWindow = CanvasWindow;
+    var CanvasRenderLineCap;
+    (function (CanvasRenderLineCap) {
+        CanvasRenderLineCap[CanvasRenderLineCap["butt"] = 0] = "butt";
+        CanvasRenderLineCap[CanvasRenderLineCap["round"] = 1] = "round";
+        CanvasRenderLineCap[CanvasRenderLineCap["square"] = 2] = "square";
+    })(CanvasRenderLineCap = ManualTracingTool.CanvasRenderLineCap || (ManualTracingTool.CanvasRenderLineCap = {}));
     var CanvasRender = /** @class */ (function () {
         function CanvasRender() {
             this.context = null;
             this.tempVec3 = vec3.create();
+            this.viewScale = 1.0;
         }
         CanvasRender.prototype.setContext = function (canvasWindow) {
             this.context = canvasWindow.context;
+            this.viewScale = canvasWindow.viewScale;
             canvasWindow.updateViewMatrix();
             this.updateContextTransform(canvasWindow);
         };
         CanvasRender.prototype.setTransform = function (canvasWindow) {
             canvasWindow.updateViewMatrix();
             this.updateContextTransform(canvasWindow);
+        };
+        CanvasRender.prototype.getViewScale = function () {
+            return this.viewScale;
         };
         CanvasRender.prototype.clearRect = function (left, top, width, height) {
             this.context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
@@ -95,6 +106,9 @@ var ManualTracingTool;
         };
         CanvasRender.prototype.setGlobalAlpha = function (a) {
             this.context.globalAlpha = a;
+        };
+        CanvasRender.prototype.setLineCap = function (lineCap) {
+            this.context.lineCap = CanvasRenderLineCap[lineCap];
         };
         CanvasRender.prototype.beginPath = function () {
             this.context.beginPath();
