@@ -302,6 +302,7 @@ namespace ManualTracingTool {
             this.initializeContext();
             this.initializeTools();
             this.initializeViews();
+            this.initializeModals();
 
             this.isLoaded = true;
 
@@ -401,6 +402,11 @@ namespace ManualTracingTool {
             this.collectLayerWindowButtons();
 
             this.collectLayerWindowItems();
+        }
+
+        private initializeModals() {
+
+            this.setRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, LayerTypeID.vectorLayer);
         }
 
         private initializeTools() {
@@ -588,6 +594,21 @@ namespace ManualTracingTool {
 
                 this.onModalWindowClosed();
             });
+
+            this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_ok);
+            this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_cancel);
+        }
+
+        private setEvents_ModalCloseButton(id: string) {
+
+            this.getElement(id).addEventListener('click', (e: Event) => {
+
+                this.currentModalDialogResult = id;
+
+                this.closeModal();
+
+                e.preventDefault();
+            });
         }
 
         // Continuous processes
@@ -765,71 +786,22 @@ namespace ManualTracingTool {
 
             if (hitedButton != null) {
 
-                let currentLayerWindowItem = this.findCurrentLayerLayerWindowItem();
-
-                if (currentLayerWindowItem == null) {
-
-                    return;
-                }
-
-                // Collects layer items for command
-                let currentLayer: Layer = currentLayerWindowItem.layer;
-                let currentLayerParent: Layer = currentLayerWindowItem.parentLayer;
-
-                let previousLayer: Layer = null;
-                let previousLayerParent: Layer = null;
-                if (currentLayerWindowItem.layer.type == LayerTypeID.groupLayer) {
-
-                    if (currentLayerWindowItem.previousSiblingItem != null) {
-
-                        previousLayer = currentLayerWindowItem.previousSiblingItem.layer;
-                        previousLayerParent = currentLayerWindowItem.previousSiblingItem.parentLayer;
-                    }
-                }
-                else {
-
-                    if (currentLayerWindowItem.previousItem != null) {
-
-                        previousLayer = currentLayerWindowItem.previousItem.layer;
-                        previousLayerParent = currentLayerWindowItem.previousItem.parentLayer;
-                    }
-                }
-
-                let nextLayer: Layer = null;
-                let nextLayerParent: Layer = null;
-                if (currentLayerWindowItem.layer.type == LayerTypeID.groupLayer) {
-
-                    if (currentLayerWindowItem.nextSiblingItem != null) {
-
-                        nextLayer = currentLayerWindowItem.nextSiblingItem.layer;
-                        nextLayerParent = currentLayerWindowItem.nextSiblingItem.parentLayer;
-                    }
-                }
-                else {
-
-                    if (currentLayerWindowItem.nextItem != null) {
-
-                        nextLayer = currentLayerWindowItem.nextItem.layer;
-                        nextLayerParent = currentLayerWindowItem.nextItem.parentLayer;
-                    }
-                }
-
                 // Select command
                 let layerCommand: Command_Layer_CommandBase = null;
 
-                if (hitedButton.buttonID == <int>LayerWindowButtonID.addLayer) {
+                if (hitedButton.buttonID == LayerWindowButtonID.addLayer) {
 
                     layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
                 }
-                else if (hitedButton.buttonID == <int>LayerWindowButtonID.deleteLayer) {
+                else if (hitedButton.buttonID == LayerWindowButtonID.deleteLayer) {
 
                     layerCommand = new Command_Layer_Delete();
                 }
-                else if (hitedButton.buttonID == <int>LayerWindowButtonID.moveUp) {
+                else if (hitedButton.buttonID == LayerWindowButtonID.moveUp) {
 
                     layerCommand = new Command_Layer_MoveUp();
                 }
-                else if (hitedButton.buttonID == <int>LayerWindowButtonID.moveDown) {
+                else if (hitedButton.buttonID == LayerWindowButtonID.moveDown) {
 
                     layerCommand = new Command_Layer_MoveDown();
                 }
@@ -840,21 +812,80 @@ namespace ManualTracingTool {
                 }
 
                 // Execute command
-                layerCommand.setPrameters(
-                    currentLayer
-                    , currentLayerParent
-                    , previousLayer
-                    , previousLayerParent
-                    , nextLayer
-                    , nextLayerParent
-                );
+                this.executeLayerCommand(layerCommand);
+            }
+        }
 
-                if (layerCommand.isAvailable(this.toolEnv)) {
+        private setLayerCommandParameters(layerCommand: Command_Layer_CommandBase, currentLayerWindowItem: LayerWindowItem) {
 
-                    layerCommand.execute(this.toolEnv);
+            // Collects layer items for command
+            let currentLayer: Layer = currentLayerWindowItem.layer;
+            let currentLayerParent: Layer = currentLayerWindowItem.parentLayer;
 
-                    this.toolContext.commandHistory.addCommand(layerCommand);
+            let previousLayer: Layer = null;
+            let previousLayerParent: Layer = null;
+            if (currentLayerWindowItem.layer.type == LayerTypeID.groupLayer) {
+
+                if (currentLayerWindowItem.previousSiblingItem != null) {
+
+                    previousLayer = currentLayerWindowItem.previousSiblingItem.layer;
+                    previousLayerParent = currentLayerWindowItem.previousSiblingItem.parentLayer;
                 }
+            }
+            else {
+
+                if (currentLayerWindowItem.previousItem != null) {
+
+                    previousLayer = currentLayerWindowItem.previousItem.layer;
+                    previousLayerParent = currentLayerWindowItem.previousItem.parentLayer;
+                }
+            }
+
+            let nextLayer: Layer = null;
+            let nextLayerParent: Layer = null;
+            if (currentLayerWindowItem.layer.type == LayerTypeID.groupLayer) {
+
+                if (currentLayerWindowItem.nextSiblingItem != null) {
+
+                    nextLayer = currentLayerWindowItem.nextSiblingItem.layer;
+                    nextLayerParent = currentLayerWindowItem.nextSiblingItem.parentLayer;
+                }
+            }
+            else {
+
+                if (currentLayerWindowItem.nextItem != null) {
+
+                    nextLayer = currentLayerWindowItem.nextItem.layer;
+                    nextLayerParent = currentLayerWindowItem.nextItem.parentLayer;
+                }
+            }
+
+            layerCommand.setPrameters(
+                currentLayer
+                , currentLayerParent
+                , previousLayer
+                , previousLayerParent
+                , nextLayer
+                , nextLayerParent
+            );
+        }
+
+        private executeLayerCommand(layerCommand: Command_Layer_CommandBase) {
+
+            let currentLayerWindowItem = this.findCurrentLayerLayerWindowItem();
+
+            if (currentLayerWindowItem == null) {
+
+                return;
+            }
+
+            this.setLayerCommandParameters(layerCommand, currentLayerWindowItem);
+
+            if (layerCommand.isAvailable(this.toolEnv)) {
+
+                layerCommand.execute(this.toolEnv);
+
+                this.toolContext.commandHistory.addCommand(layerCommand);
             }
         }
 
@@ -1269,6 +1300,16 @@ namespace ManualTracingTool {
                 this.toolEnv.updateContext();
                 this.currentTool.keydown(e, this.toolEnv);
             }
+
+            if (e.key == '1') {
+
+                this.openOperationOptionModal();
+            }
+
+            if (e.key == '2') {
+
+                this.openNewLayerCommandOptionModal();
+            }
         }
 
         private document_keyup(e: KeyboardEvent) {
@@ -1280,11 +1321,6 @@ namespace ManualTracingTool {
             if (e.key == ' ') {
 
                 this.mainWindow_MouseViewOperationEnd();
-            }
-
-            if (e.key == '1') {
-
-                this.openOperationOptionModal();
             }
         }
 
@@ -1601,7 +1637,8 @@ namespace ManualTracingTool {
 
         // Dialogs
 
-        currentDialogID = ModalWindowID.none;
+        currentModalDialogID: string = null;
+        currentModalDialogResult: string = null;
         layerPropertyWindow_EditLayer: Layer = null;
         layerPropertyWindow_LayerClolor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         modalOverlayOption = {
@@ -1628,9 +1665,19 @@ namespace ManualTracingTool {
             };
         }
 
+        private isModalShown(): boolean {
+
+            return (this.currentModalDialogID != null && this.currentModalDialogID != this.ID.none);
+        }
+
+        private closeModal() {
+
+            Custombox.modal.closeAll();
+        }
+
         private openLayerPropertyModal(layer: Layer, layerWindowItem: LayerWindowItem) {
 
-            if (this.currentDialogID != ModalWindowID.none) {
+            if (this.isModalShown()) {
                 return;
             }
 
@@ -1640,11 +1687,12 @@ namespace ManualTracingTool {
             // layer color
             this.setInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
 
-            this.currentDialogID = ModalWindowID.layerPropertyModal;
             this.layerPropertyWindow_EditLayer = layer;
 
+            this.currentModalDialogID = this.ID.layerPropertyModal;
+
             var modal: any = new Custombox.modal(
-                this.createModalOptionObject(this.ID.layerPropertyModal)
+                this.createModalOptionObject(this.currentModalDialogID)
             );
 
             modal.open();
@@ -1652,16 +1700,34 @@ namespace ManualTracingTool {
 
         private openOperationOptionModal() {
 
-            if (this.currentDialogID != ModalWindowID.none) {
+            if (this.isModalShown()) {
                 return;
             }
 
-            this.currentDialogID = ModalWindowID.operationOprionModal;
-
             this.setRadioElementIntValue(this.ID.operationOptionModal_operationUnit, this.toolContext.operationUnitID);
 
+            this.currentModalDialogID = this.ID.operationOptionModal;
+
             var modal: any = new Custombox.modal(
-                this.createModalOptionObject(this.ID.operationOptionModal)
+                this.createModalOptionObject(this.currentModalDialogID)
+            );
+
+            modal.open();
+        }
+
+        private openNewLayerCommandOptionModal() {
+
+            if (this.isModalShown()) {
+                return;
+            }
+
+            let layerTypeID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, LayerTypeID.vectorLayer);
+
+
+            this.currentModalDialogID = this.ID.newLayerCommandOptionModal;
+
+            var modal: any = new Custombox.modal(
+                this.createModalOptionObject(this.currentModalDialogID)
             );
 
             modal.open();
@@ -1669,7 +1735,7 @@ namespace ManualTracingTool {
 
         private onModalWindowClosed() {
 
-            if (this.currentDialogID == ModalWindowID.layerPropertyModal) {
+            if (this.currentModalDialogID == this.ID.layerPropertyModal) {
 
                 let layer = this.layerPropertyWindow_EditLayer;
 
@@ -1687,16 +1753,52 @@ namespace ManualTracingTool {
 
                 this.layerPropertyWindow_EditLayer = null;
             }
-            if (this.currentDialogID == ModalWindowID.operationOprionModal) {
+            else if (this.currentModalDialogID == this.ID.operationOptionModal) {
 
-                this.toolContext.operationUnitID = <OperationUnitID>(
-                    this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, <int>(OperationUnitID.linePoint))
-                );
+                this.toolContext.operationUnitID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, OperationUnitID.linePoint);
 
                 this.setCurrentSelectionTool(this.toolContext.operationUnitID);
             }
+            else if (this.currentModalDialogID == this.ID.newLayerCommandOptionModal) {
 
-            this.currentDialogID = ModalWindowID.none;
+                if (this.currentModalDialogResult == this.ID.newLayerCommandOptionModal_ok) {
+
+                    var layerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, LayerTypeID.vectorLayer);
+
+                    // Select command
+
+                    let layerCommand: Command_Layer_CommandBase = null;
+
+                    if (layerType == LayerTypeID.vectorLayer) {
+
+                        layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
+                    }
+                    else if (layerType == LayerTypeID.groupLayer) {
+
+                        layerCommand = new Command_Layer_AddGroupLayerToCurrentPosition();
+                    }
+                    else if (layerType == LayerTypeID.posingLayer) {
+
+                        layerCommand = new Command_Layer_AddPosingLayerToCurrentPosition();
+                    }
+                    else if (layerType == LayerTypeID.fileReferenceLayer) {
+
+                        layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
+                    }
+
+                    if (layerCommand == null) {
+
+                        return;
+                    }
+
+                    // Execute command
+
+                    this.executeLayerCommand(layerCommand);
+                }
+            }
+
+            this.currentModalDialogID = this.ID.none;
+            this.currentModalDialogResult = this.ID.none;
 
             this.toolEnv.setRedrawMainWindowEditorWindow();
             this.toolEnv.setRedrawLayerWindow();
@@ -1936,6 +2038,7 @@ namespace ManualTracingTool {
 
                 if (point.adjustingLocation == undefined) {
 
+                    point.adjustingLocation = vec3.create();
                     vec3.copy(point.adjustingLocation, point.location);
                     delete point.adjustedLocation;
                 }
@@ -2730,7 +2833,7 @@ namespace ManualTracingTool {
             }
         }
 
-        getRadioElementIntValue(elementName: string, defaultValue: int): int {
+        getRadioElementIntValue<T>(elementName: string, defaultValue: T): T {
 
             let value = defaultValue;
 
@@ -2741,7 +2844,7 @@ namespace ManualTracingTool {
 
                 if (radio.checked) {
 
-                    value = <int>(Number(radio.value));
+                    value = <any>(Number(radio.value));
                 }
             }
 
@@ -2893,13 +2996,6 @@ namespace ManualTracingTool {
 
     }
 
-    enum ModalWindowID {
-
-        none = 0,
-        layerPropertyModal = 1,
-        operationOprionModal = 2,
-    }
-
     class HTMLElementID {
 
         menu_btnDrawTool = 'menu_btnDrawTool';
@@ -2910,12 +3006,19 @@ namespace ManualTracingTool {
         unselectedMainButton = 'unselectedMainButton';
         selectedMainButton = 'selectedMainButton';
 
+        none = 'none';
+
         layerPropertyModal = '#layerPropertyModal';
         layerPropertyModal_layerName = 'layerPropertyModal.layerName';
         layerPropertyModal_layerColor = 'layerPropertyModal.layerColor';
 
         operationOptionModal = '#operationOptionModal';
         operationOptionModal_operationUnit = 'operationOptionModal.operationUnit'
+
+        newLayerCommandOptionModal = '#newLayerCommandOptionModal';
+        newLayerCommandOptionModal_layerType = 'newLayerCommandOptionModal.layerType';
+        newLayerCommandOptionModal_ok = 'newLayerCommandOptionModal.ok';
+        newLayerCommandOptionModal_cancel = 'newLayerCommandOptionModal.cancel';
     }
 
     enum DrawLineToolSubToolID {

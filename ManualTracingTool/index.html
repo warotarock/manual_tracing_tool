@@ -173,6 +173,13 @@
             border: none;
         }
 
+        div.OKCalcelButtons {
+
+            text-align: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+
         .layerPropertyModal {
             width: 400px;
             height: 200px;
@@ -208,6 +215,26 @@
             .operationOptionModal div {
                 margin-bottom: 15px;
             }
+
+        .newLayerCommandOptionModal {
+            width: 400px;
+            height: 200px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            display: none;
+            padding: 20px;
+            margin-top: -60%;
+        }
+
+            .newLayerCommandOptionModal input {
+                margin-left: 15px;
+                margin-top: 10px;
+            }
+
+            .newLayerCommandOptionModal div {
+                margin-bottom: 15px;
+            }
     </style>
 </head>
 <body>
@@ -228,20 +255,21 @@
             <canvas id="layerCanvas"></canvas>
         </div>
     </main>
-    <footer id="footer">
-    </footer>
+    <footer id="footer"></footer>
     <div id="layerPropertyModal" class="layerPropertyModal">
         <form>
+            レイヤー<br />
             <label>
-                Name
+                名前
                 <input type="text" id="layerPropertyModal.layerName" />
             </label><br />
             <label>
-                Layer color
+                レイヤー色
                 <input type="color" id="layerPropertyModal.layerColor">
             </label><br />
         </form>
     </div>
+
     <div id="operationOptionModal" class="operationOptionModal">
         <form>
             <div>
@@ -278,6 +306,36 @@
                     <input type="checkbox" name="operationOptionModal.selectedPointOnly" value="1">
                     選択中の点のみ
                 </label><br />
+            </div>
+        </form>
+    </div>
+
+    <div id="newLayerCommandOptionModal" class="newLayerCommandOptionModal">
+        <form>
+            <div>
+                レイヤーの種類<br />
+                <label>
+                    <input type="radio" name="newLayerCommandOptionModal.layerType" value="2">
+                    ベクター線
+                </label>
+                <label>
+                    <input type="radio" name="newLayerCommandOptionModal.layerType" value="4">
+                    画像ファイル
+                </label>
+                <label>
+                    <input type="radio" name="newLayerCommandOptionModal.layerType" value="5">
+                    ３Dポーズ
+                </label>
+                <br />
+                <label>
+                    <input type="radio" name="newLayerCommandOptionModal.layerType" value="3">
+                    グループ
+                </label>
+                <br />
+                <div class="OKCalcelButtons">
+                    <input type="button" id="newLayerCommandOptionModal.ok" value="　　作成　　">
+                    <input type="button" id="newLayerCommandOptionModal.cancel" value="キャンセル">
+                </div>
             </div>
         </form>
     </div>

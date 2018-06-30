@@ -92,7 +92,20 @@ namespace ManualTracingTool {
             parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
         }
 
-        protected executeLayerInsert(parentLayer: Layer, insertIndex: int, childLayer: Layer) {
+        protected executeLayerInsertToCurrent(childLayer: Layer) {
+
+            let parentLayer: Layer;
+            let insertIndex: int;
+            if (this.currentLayer.type == LayerTypeID.groupLayer) {
+
+                parentLayer = this.currentLayer;
+                insertIndex = 0;
+            }
+            else {
+
+                parentLayer = this.currentLayerParent;
+                insertIndex = this.currentLayerIndex;
+            }
 
             this.insertTo_ParentLayer = parentLayer;
 
@@ -186,14 +199,70 @@ namespace ManualTracingTool {
             this.newLayer = new VectorLayer();
             this.newLayer.name = 'new layer';
 
-            if (this.currentLayer.type == LayerTypeID.groupLayer) {
+            let group = new VectorGroup();
+            this.newLayer.groups.push(group);
 
-                this.executeLayerInsert(this.currentLayer, 0, this.newLayer);
-            }
-            else {
+            this.executeLayerInsertToCurrent(this.newLayer);
 
-                this.executeLayerInsert(this.currentLayerParent, this.currentLayerIndex, this.newLayer);
+            env.setCurrentLayer(this.newLayer);
+        }
+    }
+
+    export class Command_Layer_AddGroupLayerToCurrentPosition extends Command_Layer_CommandBase {
+
+        newLayer: GroupLayer = null;
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            if (this.currentLayerParent == null) {
+
+                return false;
             }
+
+            if (!this.isContainerLayer(this.currentLayerParent)) {
+
+                return false;
+            }
+
+            return true;
+        }
+
+        executeCommand(env: ToolEnvironment) { // @override
+
+            this.newLayer = new GroupLayer();
+            this.newLayer.name = 'new group';
+
+            this.executeLayerInsertToCurrent(this.newLayer);
+
+            env.setCurrentLayer(this.newLayer);
+        }
+    }
+
+    export class Command_Layer_AddPosingLayerToCurrentPosition extends Command_Layer_CommandBase {
+
+        newLayer: PosingLayer = null;
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            if (this.currentLayerParent == null) {
+
+                return false;
+            }
+
+            if (!this.isContainerLayer(this.currentLayerParent)) {
+
+                return false;
+            }
+
+            return true;
+        }
+
+        executeCommand(env: ToolEnvironment) { // @override
+
+            this.newLayer = new PosingLayer();
+            this.newLayer.name = 'new posing';
+
+            this.executeLayerInsertToCurrent(this.newLayer);
 
             env.setCurrentLayer(this.newLayer);
         }
