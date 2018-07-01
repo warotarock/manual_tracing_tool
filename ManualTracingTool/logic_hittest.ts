@@ -84,6 +84,11 @@ namespace ManualTracingTool {
 
         protected hitTest(layer: Layer, x: float, y: float, minDistance: float) {
 
+            if (layer.type != LayerTypeID.vectorLayer) {
+
+                return;
+            }
+
             let vectorLayer = <VectorLayer>layer;
 
             this.beforeHitTestToLayer(vectorLayer);

@@ -18,6 +18,13 @@ namespace ManualTracingTool {
 
         resamplingUnitLength = 1.0;
 
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.currentVectorLayer != null
+            );
+        }
+
         keydown(e: KeyboardEvent, env: ToolEnvironment) { // @override
 
             if (e.key == 'Enter') {

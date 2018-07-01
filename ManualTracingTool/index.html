@@ -33,6 +33,7 @@
     <script src="./src/tool_select_brush_select.js"></script>
     <script src="./src/tool_select_points_all.js"></script>
     <script src="./src/tool_transform_lattice.js"></script>
+    <script src="./src/tool_edit_image_file_ref.js"></script>
     <script src="./src/tool_posing3d.js"></script>
     <script src="./src/posing3d_logic.js"></script>
     <script src="./src/posing3d_view.js"></script>
@@ -174,9 +175,25 @@
         }
 
         div.OKCalcelButtons {
-
             text-align: center;
             margin-top: 20px;
+            width: 100%;
+        }
+
+        .openFileDialogModal {
+            width: 400px;
+            height: 100px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            display: none;
+            padding: 20px;
+        }
+
+        .openFileDialogModal_file {
+            background-color: #ddd;
+            margin-left: 5px;
+            margin-top: 5px;
             width: 100%;
         }
 
@@ -256,6 +273,20 @@
         </div>
     </main>
     <footer id="footer"></footer>
+
+    <div id="openFileDialogModal" class="openFileDialogModal">
+        <form>
+            <label>
+                <input type="file" class="openFileDialogModal_file" id="openFileDialogModal.file"/>
+            </label>
+            <br />
+            <div class="OKCalcelButtons">
+                <input type="button" id="openFileDialogModal.ok" value="ロード">
+                <input type="button" id="openFileDialogModal.cancel" value="キャンセル">
+            </div>
+        </form>
+    </div>
+
     <div id="layerPropertyModal" class="layerPropertyModal">
         <form>
             レイヤー<br />

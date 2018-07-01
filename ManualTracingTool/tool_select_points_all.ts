@@ -5,6 +5,11 @@ namespace ManualTracingTool {
 
         execute(env: ToolEnvironment) {
 
+            if (env.currentVectorLayer == null) {
+
+                return;
+            }
+
             let existsSelectedPoints = this.isSelectedAnyPoint(env);
 
             let selectionInfo: VectorLayerEditorSelectionInfo;

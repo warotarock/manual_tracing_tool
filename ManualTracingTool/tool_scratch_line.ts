@@ -55,6 +55,13 @@ namespace ManualTracingTool {
         tool_ScratchLine_CandidatePoints_Visible = false;
         tool_ScratchLine_ExtrudePoints_Visible = false;
 
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.currentVectorLayer != null
+            );
+        }
+
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             if (e.isLeftButtonPressing()) {

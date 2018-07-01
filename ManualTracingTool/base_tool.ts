@@ -47,6 +47,7 @@ namespace ManualTracingTool {
         setCurrentLayer(layer: Layer);
         endModalTool();
         cancelModalTool();
+        openFileDialog();
     }
 
     export interface MainEditorDrawer {
@@ -90,6 +91,8 @@ namespace ManualTracingTool {
         currentPosingLayer: PosingLayer = null;
         currentPosingModel: PosingModel = null;
         currentPosingData: PosingData = null;
+
+        currentImageFileReferenceLayer: ImageFileReferenceLayer = null;
 
         redrawMainWindow = false;
         redrawEditorWindow = false;
@@ -137,6 +140,8 @@ namespace ManualTracingTool {
         currentPosingModel: PosingModel = null;
         currentPosingData: PosingData = null;
 
+        currentImageFileReferenceLayer: ImageFileReferenceLayer = null;
+
         mainWindow: CanvasWindow = null;
         pickingWindow: PickingWindow = null;
 
@@ -180,6 +185,8 @@ namespace ManualTracingTool {
             this.currentPosingLayer = this.toolContext.currentPosingLayer;
             this.currentPosingModel = this.toolContext.currentPosingModel;
             this.currentPosingData = this.toolContext.currentPosingData;
+
+            this.currentImageFileReferenceLayer = this.toolContext.currentImageFileReferenceLayer;
 
             this.mainWindow = this.toolContext.mainWindow;
             this.pickingWindow = this.toolContext.pickingWindow;
@@ -275,6 +282,11 @@ namespace ManualTracingTool {
         cancelModalTool() {
 
             this.toolContext.mainEditor.cancelModalTool();
+        }
+
+        openFileDialog() {
+
+            this.toolContext.mainEditor.openFileDialog();
         }
 
         getViewScaledLength(length: float) {
@@ -378,6 +390,9 @@ namespace ManualTracingTool {
         }
 
         onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @virtual
+        }
+
+        onOpenFile(filePath: string, env: ToolEnvironment) { // @virtual
         }
     }
 

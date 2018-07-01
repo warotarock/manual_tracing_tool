@@ -15,6 +15,11 @@ namespace ManualTracingTool {
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
+            if (env.currentVectorLayer == null) {
+
+                return;
+            }
+
             if (e.isLeftButtonPressing()) {
 
                 this.startSelection(e, env);
@@ -27,6 +32,13 @@ namespace ManualTracingTool {
 
         mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
+            if (env.currentVectorLayer == null) {
+
+                // redraw cursor
+                env.setRedrawEditorWindow();
+                return;
+            }
+
             if (this.selectionProcessID == SelectionProgressID.selecting) {
 
                 if (e.isLeftButtonPressing()) {
@@ -36,10 +48,16 @@ namespace ManualTracingTool {
                 }
             }
 
+            // redraw cursor
             env.setRedrawEditorWindow();
         }
 
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            if (env.currentVectorLayer == null) {
+
+                return;
+            }
 
             if (this.selectionProcessID == SelectionProgressID.selecting) {
 

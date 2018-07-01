@@ -172,7 +172,7 @@ namespace ManualTracingTool {
 
         helpText = 'マウスで円を描いてみてください。頭の配置が決まります。<br />次の操作に移るには画面右のパネルの「頭の向き」をクリックします。';
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -258,7 +258,7 @@ namespace ManualTracingTool {
 
         inputSideOptionCount = 1;
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -323,7 +323,7 @@ namespace ManualTracingTool {
 
         inputSideOptionCount = 1;
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -386,7 +386,7 @@ namespace ManualTracingTool {
 
         inputSideOptionCount = 1;
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -468,7 +468,7 @@ namespace ManualTracingTool {
 
         inputSideOptionCount = 1;
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -531,7 +531,7 @@ namespace ManualTracingTool {
 
         inputSideOptionCount = 1;
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -665,7 +665,7 @@ namespace ManualTracingTool {
 
         helpText = '手首のあたりの位置を指定して下腕を配置します。';
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -691,7 +691,7 @@ namespace ManualTracingTool {
 
         helpText = '手首のあたりの位置を指定して下腕を配置します。';
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -717,7 +717,7 @@ namespace ManualTracingTool {
 
         helpText = '足首のあたりの位置を指定して下脚を配置します。';
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null
@@ -743,7 +743,7 @@ namespace ManualTracingTool {
 
         helpText = '足首のあたりの位置を指定して下脚を配置します。';
 
-        isAvailable(env: ToolEnvironment): boolean {
+        isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
                 env.currentPosingData != null

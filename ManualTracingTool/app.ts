@@ -129,6 +129,9 @@ namespace ManualTracingTool {
         tool_LineBrushSelect = new Tool_Select_BrushSelet_Line();
         tool_SelectAllPoints = new Tool_Select_All_LinePoint();
 
+        // File reference layer tools
+        tool_EditImageFileReference = new Tool_EditImageFileReference();
+
         // Transform tools
         tool_Transform_Lattice_GrabMove = new Tool_Transform_Lattice_GrabMove();
         tool_Transform_Lattice_Rotate = new Tool_Transform_Lattice_Rotate();
@@ -280,22 +283,25 @@ namespace ManualTracingTool {
 
                 // Create an image resource
 
-                let imageFileReferenceLayer = <ImageFileReferenceLayer>layer;
+                let ifrLayer = <ImageFileReferenceLayer>layer;
 
-                if (imageFileReferenceLayer.imageResource == null) {
+                if (ifrLayer.imageResource == null) {
 
-                    imageFileReferenceLayer.imageResource = new ImageResource();
+                    ifrLayer.imageResource = new ImageResource();
                 }
 
                 // Load an image file
 
-                let imageResource = imageFileReferenceLayer.imageResource;
+                if (!StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
 
-                imageResource.fileName = imageFileReferenceLayer.imageFilePath;
+                    let imageResource = ifrLayer.imageResource;
 
-                this.loadTexture(imageResource, imageResource.fileName);
+                    imageResource.fileName = ifrLayer.imageFilePath;
 
-                loadingDocumentImageResources.push(imageResource);
+                    this.loadTexture(imageResource, imageResource.fileName);
+
+                    loadingDocumentImageResources.push(imageResource);
+                }
             }
 
             for (let chldLayer of layer.childLayers) {
@@ -513,6 +519,7 @@ namespace ManualTracingTool {
                 new MainTool().id(MainToolID.drawLine)
                     .subToolImg(this.subToolImages[0])
                     .subTool(this.tool_DrawLine)
+                    .subTool(this.tool_EditImageFileReference)
             );
 
             this.mainTools.push(
@@ -685,6 +692,9 @@ namespace ManualTracingTool {
 
                 this.onModalWindowClosed();
             });
+
+            this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_ok);
+            this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_cancel);
 
             this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_ok);
             this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_cancel);
@@ -1401,6 +1411,12 @@ namespace ManualTracingTool {
 
                 this.openNewLayerCommandOptionModal();
             }
+
+            if (e.key == 'o') {
+
+                this.toolEnv.updateContext();
+                this.currentTool.keydown(e, this.toolEnv);
+            }
         }
 
         private document_keyup(e: KeyboardEvent) {
@@ -1497,6 +1513,7 @@ namespace ManualTracingTool {
             }
             else {
 
+                this.toolContext.currentVectorLayer = null;
                 this.toolContext.currentVectorGroup = null;
             }
 
@@ -1510,6 +1527,17 @@ namespace ManualTracingTool {
             else {
 
                 this.toolContext.currentPosingData = null;
+            }
+
+            if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                let imageFileReferenceLayer = <ImageFileReferenceLayer>layer;
+
+                this.toolContext.currentImageFileReferenceLayer = imageFileReferenceLayer;
+            }
+            else {
+
+                this.toolContext.currentImageFileReferenceLayer = null;
             }
 
             for (let item of this.layerWindowItems) {
@@ -1571,6 +1599,11 @@ namespace ManualTracingTool {
         private isModalToolRunning(): boolean {
 
             return (this.currentModalTool != null);
+        }
+
+        public openFileDialog() { //@implements MainEditor
+
+            this.openFileDialogModal();
         }
 
         // View operations
@@ -1814,8 +1847,22 @@ namespace ManualTracingTool {
 
             let layerTypeID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, LayerTypeID.vectorLayer);
 
-
             this.currentModalDialogID = this.ID.newLayerCommandOptionModal;
+
+            var modal: any = new Custombox.modal(
+                this.createModalOptionObject(this.currentModalDialogID)
+            );
+
+            modal.open();
+        }
+
+        private openFileDialogModal() {
+
+            if (this.isModalShown()) {
+                return;
+            }
+
+            this.currentModalDialogID = this.ID.openFileDialogModal;
 
             var modal: any = new Custombox.modal(
                 this.createModalOptionObject(this.currentModalDialogID)
@@ -1874,7 +1921,7 @@ namespace ManualTracingTool {
                     }
                     else if (layerType == LayerTypeID.imageFileReferenceLayer) {
 
-                        layerCommand = new Command_Layer_AddImageFileReferenceLayerToCurrentPosition ();
+                        layerCommand = new Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
                     }
 
                     if (layerCommand == null) {
@@ -1885,6 +1932,16 @@ namespace ManualTracingTool {
                     // Execute command
 
                     this.executeLayerCommand(layerCommand);
+                }
+            }
+            else if (this.currentModalDialogID == this.ID.openFileDialogModal) {
+
+                this.toolEnv.updateContext();
+
+                if (this.currentTool != null) {
+
+                    let filePath = this.getInputElementFilePath(this.ID.openFileDialogModal_file);
+                    this.currentTool.onOpenFile(filePath, this.toolEnv);
                 }
             }
 
@@ -2887,7 +2944,10 @@ namespace ManualTracingTool {
             }
             else {
 
-                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorLayer, x, y, minDistance);
+                if (this.toolEnv.currentVectorLayer != null) {
+
+                    this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorLayer, x, y, minDistance);
+                }
             }
 
             this.hittest_Line_IsCloseTo.endProcess();
@@ -2969,6 +3029,20 @@ namespace ManualTracingTool {
             ColorLogic.hex2StringToRGB(result, colorText);
 
             return result;
+        }
+
+        getInputElementFilePath(id: string): string {
+
+            let element = <HTMLInputElement>(document.getElementById(id));
+
+            if (element.files.length == 0) {
+
+                return null;
+            }
+
+            let file: any = element.files[0];
+
+            return file.path;
         }
     }
 
@@ -3098,6 +3172,11 @@ namespace ManualTracingTool {
         selectedMainButton = 'selectedMainButton';
 
         none = 'none';
+
+        openFileDialogModal = '#openFileDialogModal';
+        openFileDialogModal_file = 'openFileDialogModal.file';
+        openFileDialogModal_ok = 'openFileDialogModal.ok';
+        openFileDialogModal_cancel = 'openFileDialogModal.cancel';
 
         layerPropertyModal = '#layerPropertyModal';
         layerPropertyModal_layerName = 'layerPropertyModal.layerName';

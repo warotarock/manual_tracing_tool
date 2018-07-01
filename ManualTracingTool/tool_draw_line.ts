@@ -7,6 +7,13 @@ namespace ManualTracingTool {
 
         resamplingUnitLength = 1.0;
 
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.currentVectorLayer != null
+            );
+        }
+
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             if (!e.isLeftButtonPressing()) {
