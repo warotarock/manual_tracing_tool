@@ -9,7 +9,7 @@ namespace ManualTracingTool {
         rootLayer = 1,
         vectorLayer = 2,
         groupLayer = 3,
-        fileReferenceLayer = 4,
+        imageFileReferenceLayer = 4,
         posingLayer = 5,
     }
 
@@ -112,6 +112,18 @@ namespace ManualTracingTool {
     export class GroupLayer extends Layer {
 
         type = LayerTypeID.groupLayer;
+    }
+
+    // Image file reference layer
+    export class ImageFileReferenceLayer extends Layer {
+
+        type = LayerTypeID.imageFileReferenceLayer;
+
+        imageFilePath: string = null;
+
+        // runtime
+
+        imageResource: ImageResource = null;
     }
 
     // Posing

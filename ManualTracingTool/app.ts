@@ -71,7 +71,18 @@ namespace ManualTracingTool {
     // 　・編集線上に近接位置がない点への影響度のフォールオフを無くしたり、大きくしたりしてみる
     // 　・線の延長の最初の点の扱いを調整する
 
+    enum MainProcessStateID {
+
+        none = 0,
+        SystemResourceLoading = 1,
+        InitialDocumentLoading = 2,
+        Running = 3,
+        DocumentLoading = 4
+    }
+
     class Main implements MainEditor, MainEditorDrawer {
+
+        mainProcessState = MainProcessStateID.none;
 
         // UI elements
 
@@ -157,6 +168,8 @@ namespace ManualTracingTool {
         document: DocumentData = null;
         tempFileName = 'Manual tracing tool save data';
 
+        loadingDocumentImageResources: List<ImageResource> = null;
+
         // Setting values
         drawStyle = new ToolDrawingStyle();
 
@@ -170,8 +183,6 @@ namespace ManualTracingTool {
         tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 
-        isLoaded = false;
-
         constructor() {
 
             this.modelFile.file('models.json');
@@ -180,15 +191,26 @@ namespace ManualTracingTool {
             this.imageResurces.push(new ImageResource().file('system_image01.png').tex(false));
             this.imageResurces.push(new ImageResource().file('toolbar_image01.png').tex(false));
             this.imageResurces.push(new ImageResource().file('toolbar_image02.png').tex(false));
+            this.imageResurces.push(new ImageResource().file('toolbar_image03.png').tex(false));
             this.imageResurces.push(new ImageResource().file('layerbar_image01.png').tex(false));
 
             this.systemImage = this.imageResurces[1];
             this.subToolImages.push(this.imageResurces[2]);
             this.subToolImages.push(this.imageResurces[3]);
-            this.layerButtonImage = this.imageResurces[4];
+            this.subToolImages.push(this.imageResurces[4]);
+            this.layerButtonImage = this.imageResurces[5];
         }
 
-        initializeDevices() {
+        onLoad() {
+
+            this.initializeDevices();
+
+            this.startLoadingSystemResources();
+
+            this.mainProcessState = MainProcessStateID.SystemResourceLoading;
+        }
+
+        private initializeDevices() {
 
             this.resizeWindows();
 
@@ -210,7 +232,7 @@ namespace ManualTracingTool {
 
         // Loading
 
-        startLoading() {
+        private startLoadingSystemResources() {
 
             // Start loading
 
@@ -222,7 +244,7 @@ namespace ManualTracingTool {
             }
         }
 
-        processLoading() {
+        processLoadingSystemResources() {
 
             if (!this.modelFile.loaded) {
                 return;
@@ -236,7 +258,76 @@ namespace ManualTracingTool {
             }
 
             // Loading finished
-            this.start();
+            this.document = this.loadInitialDocumentData();
+            this.startLoadingDocumentResources(this.document);
+
+            _Main.mainProcessState = MainProcessStateID.InitialDocumentLoading;
+        }
+
+        private startLoadingDocumentResources(document: DocumentData) {
+
+            this.loadingDocumentImageResources = new List<ImageResource>();
+
+            for (let layer of document.rootLayer.childLayers) {
+
+                this.startLoadingDocumentResourcesRecursive(layer, this.loadingDocumentImageResources);
+            }
+        }
+
+        private startLoadingDocumentResourcesRecursive(layer: Layer, loadingDocumentImageResources: List<ImageResource>) {
+
+            if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                // Create an image resource
+
+                let imageFileReferenceLayer = <ImageFileReferenceLayer>layer;
+
+                if (imageFileReferenceLayer.imageResource == null) {
+
+                    imageFileReferenceLayer.imageResource = new ImageResource();
+                }
+
+                // Load an image file
+
+                let imageResource = imageFileReferenceLayer.imageResource;
+
+                imageResource.fileName = imageFileReferenceLayer.imageFilePath;
+
+                this.loadTexture(imageResource, imageResource.fileName);
+
+                loadingDocumentImageResources.push(imageResource);
+            }
+
+            for (let chldLayer of layer.childLayers) {
+
+                this.startLoadingDocumentResourcesRecursive(chldLayer, loadingDocumentImageResources);
+            }
+        }
+
+        processLoadingDocumentResources() {
+
+            for (let imageResource of this.loadingDocumentImageResources) {
+
+                if (!imageResource.loaded) {
+                    return;
+                }
+            }
+
+            // Loading finished
+            if (this.mainProcessState == MainProcessStateID.InitialDocumentLoading) {
+
+                this.start();
+            }
+            else {
+
+                this.mainProcessState = MainProcessStateID.Running;
+            }
+        }
+
+        private isWhileLoading(): boolean {
+
+            return (this.mainProcessState == MainProcessStateID.SystemResourceLoading
+                || this.mainProcessState == MainProcessStateID.DocumentLoading);
         }
 
         loadTexture(imageResource: ImageResource, url: string) {
@@ -296,15 +387,14 @@ namespace ManualTracingTool {
 
         // Starting ups
 
-        start() {
+        private start() {
 
-            this.initializeDocument();
             this.initializeContext();
             this.initializeTools();
             this.initializeViews();
             this.initializeModals();
 
-            this.isLoaded = true;
+            this.mainProcessState = MainProcessStateID.Running;
 
             this.setCurrentMainTool(MainToolID.drawLine);
             //this.setCurrentMainTool(MainToolID.posing);
@@ -329,16 +419,16 @@ namespace ManualTracingTool {
             this.setEvents();
         }
 
-        private initializeDocument() {
+        private loadInitialDocumentData(): DocumentData {
 
             let saveData = window.localStorage.getItem(this.tempFileName);
             if (saveData) {
 
-                this.document = JSON.parse(saveData);
-                return;
+                let document= JSON.parse(saveData);
+                return document;
             }
 
-            this.document = new DocumentData();
+            let document = new DocumentData();
 
             let rootLayer = this.document.rootLayer;
             rootLayer.type = LayerTypeID.rootLayer;
@@ -421,12 +511,13 @@ namespace ManualTracingTool {
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.drawLine)
-                .subTool(this.tool_DrawLine)
+                    .subToolImg(this.subToolImages[0])
+                    .subTool(this.tool_DrawLine)
             );
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.scratchLine)
-                    .subToolImg(this.subToolImages[0])
+                    .subToolImg(this.subToolImages[1])
                     .subTool(this.tool_ScratchLine)
                     .subTool(this.tool_ExtrudeLine)
                     .subTool(this.tool_ScratchLineWidth)
@@ -435,7 +526,7 @@ namespace ManualTracingTool {
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.posing)
-                    .subToolImg(this.subToolImages[1])
+                    .subToolImg(this.subToolImages[2])
                     .subTool(this.tool_Posing3d_LocateHead)
                     .subTool(this.tool_Posing3d_RotateHead)
                     .subTool(this.tool_Posing3d_LocateBody)
@@ -621,7 +712,7 @@ namespace ManualTracingTool {
 
         private mainWindow_mousedown() {
 
-            if (!this.isLoaded) {
+            if (!this.mainProcessState) {
                 return;
             }
 
@@ -677,7 +768,7 @@ namespace ManualTracingTool {
 
         private mainWindow_mousemove() {
 
-            if (!this.isLoaded) {
+            if (this.isWhileLoading()) {
                 return;
             }
 
@@ -723,7 +814,7 @@ namespace ManualTracingTool {
 
         private mainWindow_mouseup() {
 
-            if (!this.isLoaded) {
+            if (this.isWhileLoading()) {
                 return;
             }
 
@@ -746,7 +837,7 @@ namespace ManualTracingTool {
 
         private layerWindow_mousedown() {
 
-            if (!this.isLoaded) {
+            if (this.isWhileLoading()) {
                 return;
             }
 
@@ -982,7 +1073,7 @@ namespace ManualTracingTool {
 
         private editorWindow_mousewheel() {
 
-            if (!this.isLoaded) {
+            if (this.isWhileLoading()) {
                 return;
             }
 
@@ -999,7 +1090,7 @@ namespace ManualTracingTool {
 
         private document_keydown(e: KeyboardEvent) {
 
-            if (!this.isLoaded) {
+            if (this.isWhileLoading()) {
                 return;
             }
 
@@ -1493,7 +1584,7 @@ namespace ManualTracingTool {
 
             this.resizeCanvasToParent(this.layerWindow);
 
-            if (this.isLoaded) {
+            if (this.isWhileLoading()) {
 
                 this.caluculateLayerWindowLayout(this.layerWindow);
             }
@@ -1781,9 +1872,9 @@ namespace ManualTracingTool {
 
                         layerCommand = new Command_Layer_AddPosingLayerToCurrentPosition();
                     }
-                    else if (layerType == LayerTypeID.fileReferenceLayer) {
+                    else if (layerType == LayerTypeID.imageFileReferenceLayer) {
 
-                        layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
+                        layerCommand = new Command_Layer_AddImageFileReferenceLayerToCurrentPosition ();
                     }
 
                     if (layerCommand == null) {
@@ -3053,21 +3144,26 @@ namespace ManualTracingTool {
         _Main.pickingWindow.canvas = document.createElement('canvas');
         //document.getElementById('footer').appendChild(_Main.pickingWindow.canvas);
 
-        _Main.initializeDevices();
-
-        _Main.startLoading();
+        _Main.onLoad();
 
         setTimeout(run, 1000 / 30);
     };
 
     function run() {
 
-        if (_Main.isLoaded) {
+        if (_Main.mainProcessState == MainProcessStateID.Running) {
+
             _Main.run();
             _Main.draw();
         }
-        else {
-            _Main.processLoading();
+        else if (_Main.mainProcessState == MainProcessStateID.SystemResourceLoading) {
+
+            _Main.processLoadingSystemResources();
+        }
+        else if (_Main.mainProcessState == MainProcessStateID.DocumentLoading
+            || _Main.mainProcessState == MainProcessStateID.InitialDocumentLoading) {
+
+            _Main.processLoadingDocumentResources();
         }
 
         setTimeout(run, 1000 / 60);

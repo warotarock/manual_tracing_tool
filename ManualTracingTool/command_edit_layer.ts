@@ -107,6 +107,11 @@ namespace ManualTracingTool {
                 insertIndex = this.currentLayerIndex;
             }
 
+            this.executeLayerInsert(parentLayer, insertIndex, childLayer);
+        }
+
+        protected executeLayerInsert(parentLayer: Layer, insertIndex: int, childLayer: Layer) {
+
             this.insertTo_ParentLayer = parentLayer;
 
             this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
@@ -231,6 +236,36 @@ namespace ManualTracingTool {
 
             this.newLayer = new GroupLayer();
             this.newLayer.name = 'new group';
+
+            this.executeLayerInsertToCurrent(this.newLayer);
+
+            env.setCurrentLayer(this.newLayer);
+        }
+    }
+
+    export class Command_Layer_AddImageFileReferenceLayerToCurrentPosition extends Command_Layer_CommandBase {
+
+        newLayer: ImageFileReferenceLayer = null;
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            if (this.currentLayerParent == null) {
+
+                return false;
+            }
+
+            if (!this.isContainerLayer(this.currentLayerParent)) {
+
+                return false;
+            }
+
+            return true;
+        }
+
+        executeCommand(env: ToolEnvironment) { // @override
+
+            this.newLayer = new ImageFileReferenceLayer();
+            this.newLayer.name = 'new file';
 
             this.executeLayerInsertToCurrent(this.newLayer);
 
