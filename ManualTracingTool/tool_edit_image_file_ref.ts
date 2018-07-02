@@ -23,6 +23,13 @@ namespace ManualTracingTool {
         }
 
         onOpenFile(filePath: string, env: ToolEnvironment) { // @override
+
+            if (env.currentImageFileReferenceLayer != null) {
+
+                env.currentImageFileReferenceLayer.imageFilePath = filePath;
+
+                env.startLoadingCurrentDocumentResources();
+            }
         }
 
         private executeCommand(env: ToolEnvironment) {

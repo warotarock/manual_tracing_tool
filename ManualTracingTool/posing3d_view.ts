@@ -8,7 +8,7 @@ namespace ManualTracingTool {
         image = new RenderImage();
         loaded = false;
 
-        isGLTexture = true;
+        isGLTexture = false;
 
         file(fileName: string): ImageResource {
 

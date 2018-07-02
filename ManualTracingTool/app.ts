@@ -190,12 +190,12 @@ namespace ManualTracingTool {
 
             this.modelFile.file('models.json');
 
-            this.imageResurces.push(new ImageResource().file('texture01.png'));
-            this.imageResurces.push(new ImageResource().file('system_image01.png').tex(false));
-            this.imageResurces.push(new ImageResource().file('toolbar_image01.png').tex(false));
-            this.imageResurces.push(new ImageResource().file('toolbar_image02.png').tex(false));
-            this.imageResurces.push(new ImageResource().file('toolbar_image03.png').tex(false));
-            this.imageResurces.push(new ImageResource().file('layerbar_image01.png').tex(false));
+            this.imageResurces.push(new ImageResource().file('texture01.png').tex(true));
+            this.imageResurces.push(new ImageResource().file('system_image01.png'));
+            this.imageResurces.push(new ImageResource().file('toolbar_image01.png'));
+            this.imageResurces.push(new ImageResource().file('toolbar_image02.png'));
+            this.imageResurces.push(new ImageResource().file('toolbar_image03.png'));
+            this.imageResurces.push(new ImageResource().file('layerbar_image01.png'));
 
             this.systemImage = this.imageResurces[1];
             this.subToolImages.push(this.imageResurces[2]);
@@ -262,12 +262,13 @@ namespace ManualTracingTool {
 
             // Loading finished
             this.document = this.loadInitialDocumentData();
+            this.fixLoadedDocumentData(this.document);
             this.startLoadingDocumentResources(this.document);
 
             _Main.mainProcessState = MainProcessStateID.InitialDocumentLoading;
         }
 
-        private startLoadingDocumentResources(document: DocumentData) {
+        startLoadingDocumentResources(document: DocumentData) {
 
             this.loadingDocumentImageResources = new List<ImageResource>();
 
@@ -275,6 +276,13 @@ namespace ManualTracingTool {
 
                 this.startLoadingDocumentResourcesRecursive(layer, this.loadingDocumentImageResources);
             }
+        }
+
+        startLoadingDocumentResourcesProcess(document: DocumentData) { // @implement
+
+            this.startLoadingDocumentResources(document);
+
+            _Main.mainProcessState = MainProcessStateID.DocumentLoading;
         }
 
         private startLoadingDocumentResourcesRecursive(layer: Layer, loadingDocumentImageResources: List<ImageResource>) {
@@ -292,9 +300,9 @@ namespace ManualTracingTool {
 
                 // Load an image file
 
-                if (!StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
+                let imageResource = ifrLayer.imageResource;
 
-                    let imageResource = ifrLayer.imageResource;
+                if (!imageResource.loaded && !StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
 
                     imageResource.fileName = ifrLayer.imageFilePath;
 
@@ -327,6 +335,8 @@ namespace ManualTracingTool {
             else {
 
                 this.mainProcessState = MainProcessStateID.Running;
+
+                this.toolEnv.setRedrawAllWindows();
             }
         }
 
@@ -419,8 +429,7 @@ namespace ManualTracingTool {
 
             this.updateFooterMessage();
 
-            this.toolEnv.setRedrawMainWindowEditorWindow();
-            this.toolEnv.setRedrawLayerWindow();
+            this.toolEnv.setRedrawAllWindows();
 
             this.setEvents();
         }
@@ -471,6 +480,55 @@ namespace ManualTracingTool {
                 let layer1 = new PosingLayer();
                 layer1.name = 'posing1'
                 rootLayer.childLayers.push(layer1);
+            }
+        }
+
+        private fixLoadedDocumentData(document: DocumentData) {
+
+            this.fixLoadedDocumentData_LayerRecursive(document.rootLayer);
+        }
+
+        private fixLoadedDocumentData_LayerRecursive(layer: Layer) {
+
+            if (layer.type == LayerTypeID.vectorLayer) {
+
+                let vectorLayer = <VectorLayer>layer;
+
+                for (let group of vectorLayer.groups) {
+
+                    for (let line of group.lines) {
+
+                        for (let point of line.points) {
+
+                            // debug
+                            if (point.lineWidth == undefined) {
+
+                                point.lineWidth = 1.0;
+                                point.adjustingLineWidth = 1.0;
+                            }
+
+                            if (point.adjustingLocation == undefined) {
+
+                                point.adjustingLocation = vec3.create();
+                                vec3.copy(point.adjustingLocation, point.location);
+                                delete point.adjustedLocation;
+                            }
+                            // debug
+                        }
+                    }
+                }
+            }
+
+            else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                let ifrLayer = <ImageFileReferenceLayer>layer;
+
+                ifrLayer.imageResource = null;
+            }
+
+            for (let childLayer of layer.childLayers) {
+
+                this.fixLoadedDocumentData_LayerRecursive(childLayer);
             }
         }
 
@@ -2037,11 +2095,11 @@ namespace ManualTracingTool {
             for (let i = this.document.rootLayer.childLayers.length - 1; i >= 0; i--) {
                 let layer = this.document.rootLayer.childLayers[i];
 
-                this.drawLayerRecursive(canvasWindow, layer)
+                this.drawLayerRecursive(layer)
             }
         }
 
-        private drawLayerRecursive(canvasWindow: CanvasWindow, layer: Layer) {
+        private drawLayerRecursive(layer: Layer) {
 
             if (!layer.isVisible) {
 
@@ -2051,23 +2109,28 @@ namespace ManualTracingTool {
             if (layer.type == LayerTypeID.vectorLayer) {
 
                 let vectorLayer = <VectorLayer>layer;
-                this.drawVectorLayer(canvasWindow, vectorLayer);
+                this.drawVectorLayer(vectorLayer);
             }
             else if (layer.type == LayerTypeID.groupLayer) {
 
                 for (let i = layer.childLayers.length - 1; i >= 0; i--) {
                     let childLayer = layer.childLayers[i];
 
-                    this.drawLayerRecursive(canvasWindow, childLayer);
+                    this.drawLayerRecursive(childLayer);
                 }
             }
             else if (layer.type == LayerTypeID.posingLayer) {
 
                 // No drawing
             }
+            else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                let ifrLayer = <ImageFileReferenceLayer>layer;
+                this.drawImageFileReferenceLayer(ifrLayer);
+            }
         }
 
-        private drawVectorLayer(canvasWindow: CanvasWindow, layer: VectorLayer) {
+        private drawVectorLayer(layer: VectorLayer) {
 
             let context = this.toolContext;
 
@@ -2174,24 +2237,6 @@ namespace ManualTracingTool {
         }
 
         private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
-
-            // debug
-            for (let point of line.points) {
-
-                if (point.lineWidth == undefined) {
-
-                    point.lineWidth = 1.0;
-                    point.adjustingLineWidth = 1.0;
-                }
-
-                if (point.adjustingLocation == undefined) {
-
-                    point.adjustingLocation = vec3.create();
-                    vec3.copy(point.adjustingLocation, point.location);
-                    delete point.adjustedLocation;
-                }
-            }
-            // debug
 
             this.canvasRender.setLineCap(CanvasRenderLineCap.round)
             this.canvasRender.beginPath()
@@ -2309,6 +2354,25 @@ namespace ManualTracingTool {
         private getViewScaledSize(width: float) {
 
             return width / this.canvasRender.getViewScale();
+        }
+
+        private drawImageFileReferenceLayer(layer: ImageFileReferenceLayer) {
+
+            if (layer.imageResource == null
+                || layer.imageResource.image == null
+                || layer.imageResource.image.imageData == null) {
+
+                return;
+            }
+
+            let image = layer.imageResource.image.imageData;
+
+            this.canvasRender.drawImage(image
+                , 0.0, 0.0
+                , image.width, image.height
+                , 0.0, 0.0
+                , image.width, image.height
+            );
         }
 
         // Editor window drawing

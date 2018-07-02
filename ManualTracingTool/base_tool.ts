@@ -48,6 +48,7 @@ namespace ManualTracingTool {
         endModalTool();
         cancelModalTool();
         openFileDialog();
+        startLoadingDocumentResourcesProcess(document: DocumentData);
     }
 
     export interface MainEditorDrawer {
@@ -226,6 +227,12 @@ namespace ManualTracingTool {
             this.setRedrawWebGLWindow();
         }
 
+        setRedrawAllWindows() {
+
+            this.setRedrawMainWindowEditorWindow();
+            this.setUpadateLayerWindowItems();
+        }
+
         setRedrawWebGLWindow() {
 
             this.toolContext.redrawWebGLWindow = true;
@@ -287,6 +294,11 @@ namespace ManualTracingTool {
         openFileDialog() {
 
             this.toolContext.mainEditor.openFileDialog();
+        }
+
+        startLoadingCurrentDocumentResources() {
+
+            this.toolContext.mainEditor.startLoadingDocumentResourcesProcess(this.toolContext.document);
         }
 
         getViewScaledLength(length: float) {
