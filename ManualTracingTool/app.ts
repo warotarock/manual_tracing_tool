@@ -75,9 +75,11 @@ namespace ManualTracingTool {
 
         none = 0,
         SystemResourceLoading = 1,
-        InitialDocumentLoading = 2,
-        Running = 3,
-        DocumentLoading = 4
+        InitialDocumentJSONLoading = 2,
+        InitialDocumentResourceLoading = 3,
+        Running = 4,
+        DocumentResourceLoading = 5,
+        DocumentJSONLoading = 6
     }
 
     class Main implements MainEditor, MainEditorDrawer {
@@ -169,7 +171,8 @@ namespace ManualTracingTool {
 
         // Document data
         document: DocumentData = null;
-        tempFileName = 'Manual tracing tool save data';
+        lastFileKey = 'Manual tracing tool last used file url';
+        tempFileNameKey = 'Manual tracing tool save data';
 
         loadingDocumentImageResources: List<ImageResource> = null;
 
@@ -261,11 +264,64 @@ namespace ManualTracingTool {
             }
 
             // Loading finished
-            this.document = this.loadInitialDocumentData();
-            this.fixLoadedDocumentData(this.document);
-            this.startLoadingDocumentResources(this.document);
+            let lastURL = window.localStorage.getItem(this.lastFileKey);
+            if (StringIsNullOrEmpty(lastURL)) {
 
-            _Main.mainProcessState = MainProcessStateID.InitialDocumentLoading;
+                this.document = this.createTestDocumentData();
+            }
+            else {
+
+                this.document = new DocumentData();
+                this.startLoadingDocumentJSON(this.document, lastURL);
+            }
+
+            _Main.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+        }
+
+        startLoadingDocumentJSON(document: DocumentData, url: string) {
+
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', url);
+            xhr.responseType = 'json';
+
+            xhr.addEventListener('load',
+                (e: Event) => {
+
+                    let data: any;
+                    if (xhr.responseType == 'json') {
+                        data = xhr.response;
+                    }
+                    else {
+                        data = JSON.parse(xhr.response);
+                    }
+
+                    document.documentFrame = data.documentFrame;
+                    document.rootLayer = data.rootLayer;
+
+                    document.loaded = true;
+                }
+            );
+
+            xhr.send();
+        }
+
+        processLoadingDocumentJSON() {
+
+            if (!this.document.loaded) {
+                return;
+            }
+
+            this.fixLoadedDocumentData(this.document);
+
+            this.startLoadingDocumentResources(this.document);
+            _Main.mainProcessState = MainProcessStateID.InitialDocumentResourceLoading;
+        }
+
+        startLoadingDocumentResourcesProcess(document: DocumentData) { // @implements MainEditor
+
+            this.startLoadingDocumentResources(document);
+
+            _Main.mainProcessState = MainProcessStateID.DocumentResourceLoading;
         }
 
         startLoadingDocumentResources(document: DocumentData) {
@@ -276,13 +332,6 @@ namespace ManualTracingTool {
 
                 this.startLoadingDocumentResourcesRecursive(layer, this.loadingDocumentImageResources);
             }
-        }
-
-        startLoadingDocumentResourcesProcess(document: DocumentData) { // @implement
-
-            this.startLoadingDocumentResources(document);
-
-            _Main.mainProcessState = MainProcessStateID.DocumentLoading;
         }
 
         private startLoadingDocumentResourcesRecursive(layer: Layer, loadingDocumentImageResources: List<ImageResource>) {
@@ -328,7 +377,7 @@ namespace ManualTracingTool {
             }
 
             // Loading finished
-            if (this.mainProcessState == MainProcessStateID.InitialDocumentLoading) {
+            if (this.mainProcessState == MainProcessStateID.InitialDocumentResourceLoading) {
 
                 this.start();
             }
@@ -343,7 +392,7 @@ namespace ManualTracingTool {
         private isWhileLoading(): boolean {
 
             return (this.mainProcessState == MainProcessStateID.SystemResourceLoading
-                || this.mainProcessState == MainProcessStateID.DocumentLoading);
+                || this.mainProcessState == MainProcessStateID.DocumentResourceLoading);
         }
 
         loadTexture(imageResource: ImageResource, url: string) {
@@ -434,12 +483,14 @@ namespace ManualTracingTool {
             this.setEvents();
         }
 
-        private loadInitialDocumentData(): DocumentData {
+        private createTestDocumentData(): DocumentData {
 
-            let saveData = window.localStorage.getItem(this.tempFileName);
+            let saveData = window.localStorage.getItem(this.tempFileNameKey);
             if (saveData) {
 
-                let document= JSON.parse(saveData);
+                let document = JSON.parse(saveData);
+                document.loaded = true;
+
                 return document;
             }
 
@@ -481,6 +532,8 @@ namespace ManualTracingTool {
                 layer1.name = 'posing1'
                 rootLayer.childLayers.push(layer1);
             }
+
+            document.loaded = true;
         }
 
         private fixLoadedDocumentData(document: DocumentData) {
@@ -511,14 +564,13 @@ namespace ManualTracingTool {
 
                                 point.adjustingLocation = vec3.create();
                                 vec3.copy(point.adjustingLocation, point.location);
-                                delete point.adjustedLocation;
+                                delete point["adjustedLocation"];
                             }
                             // debug
                         }
                     }
                 }
             }
-
             else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
 
                 let ifrLayer = <ImageFileReferenceLayer>layer;
@@ -1289,7 +1341,7 @@ namespace ManualTracingTool {
 
                 if (this.toolEnv.isCtrlKeyPressing()) {
 
-                    window.localStorage.setItem(this.tempFileName, JSON.stringify(this.document));
+                    window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(this.document));
 
                     e.preventDefault();
                     return;
@@ -1415,6 +1467,9 @@ namespace ManualTracingTool {
             }
 
             if (e.key == 'g') {
+
+                // TODO: 画像ファイル参照レイヤーのときはそれを操作するモーダルツールを起動するように作る
+                //とりあえずはレイヤーの種類に応じて切り替わることにする
 
                 if (this.toolEnv.isDrawMode()) {
 
@@ -3303,8 +3358,12 @@ namespace ManualTracingTool {
 
             _Main.processLoadingSystemResources();
         }
-        else if (_Main.mainProcessState == MainProcessStateID.DocumentLoading
-            || _Main.mainProcessState == MainProcessStateID.InitialDocumentLoading) {
+        else if (_Main.mainProcessState == MainProcessStateID.InitialDocumentJSONLoading) {
+
+            _Main.processLoadingDocumentJSON();
+        }
+        else if (_Main.mainProcessState == MainProcessStateID.DocumentResourceLoading
+            || _Main.mainProcessState == MainProcessStateID.InitialDocumentResourceLoading) {
 
             _Main.processLoadingDocumentResources();
         }

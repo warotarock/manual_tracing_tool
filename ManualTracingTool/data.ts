@@ -264,6 +264,8 @@ namespace ManualTracingTool {
 
     export class DocumentData {
 
+        loaded = false;
+
         rootLayer = new Layer();
         documentFrame = [0.0, 0.0, 1024.0, 1024.0];
     }
