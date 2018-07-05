@@ -193,12 +193,11 @@ namespace ManualTracingTool {
 
     export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
 
-        dLocation = vec3.create();
-        lerpLocation1 = vec3.create();
-        lerpLocation2 = vec3.create();
-        lerpLocation3 = vec3.create();
+        private lerpLocation1 = vec3.create();
+        private lerpLocation2 = vec3.create();
+        private lerpLocation3 = vec3.create();
 
-        editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
+        protected editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
         protected clearEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
@@ -343,7 +342,7 @@ namespace ManualTracingTool {
             Logic_Edit_Line.resetModifyStatus(targetLines);
 
             // Execute the command
-            let command = new Command_TransformLattice();
+            let command = new Command_TransformLattice_LinePoint();
             command.editPoints = this.editPoints;
             command.targetLines = targetLines;
 
@@ -355,7 +354,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Command_TransformLattice extends CommandBase {
+    export class Command_TransformLattice_LinePoint extends CommandBase {
 
         targetLines: List<VectorLine> = null;
         editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
@@ -406,28 +405,31 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Transform_Lattice_GrabMove extends Tool_Transform_Lattice_LinePoint {
+    export class Tool_Transform_Lattice_Calcer_GrabMove {
 
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+        private dLocation = vec3.create();
 
-            vec3.subtract(this.dLocation, e.location, this.mouseAnchorLocation);
+        processLatticePointMouseMove(latticePoints: List<LatticePoint>, mouseAnchorLocation: Vec3, e: ToolMouseEvent) {
 
-            for (let latticePoint of this.latticePoints) {
+            vec3.subtract(this.dLocation, e.location, mouseAnchorLocation);
+
+            for (let latticePoint of latticePoints) {
 
                 vec3.add(latticePoint.location, latticePoint.baseLocation, this.dLocation);
             }
         }
     }
 
-    export class Tool_Transform_Lattice_Rotate extends Tool_Transform_Lattice_LinePoint {
+    export class Tool_Transform_Lattice_Calcer_Rotate {
 
-        initialAngle = 0.0;
+        private initialAngle = 0.0;
 
-        direction = vec3.create();
-        centerLocation = vec3.create();
-        rotationMatrix = mat4.create();
+        private dLocation = vec3.create();
+        private direction = vec3.create();
+        private centerLocation = vec3.create();
+        private rotationMatrix = mat4.create();
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) {
 
             this.initialAngle = this.calulateInputAngle(e, env);
         }
@@ -440,7 +442,7 @@ namespace ManualTracingTool {
             return angle;
         }
 
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+        processLatticePointMouseMove(latticePoints: List<LatticePoint>, e: ToolMouseEvent, env: ToolEnvironment) {
 
             let angle = this.calulateInputAngle(e, env) - this.initialAngle;
 
@@ -452,24 +454,25 @@ namespace ManualTracingTool {
             mat4.rotateZ(this.rotationMatrix, this.rotationMatrix, angle);
             mat4.translate(this.rotationMatrix, this.rotationMatrix, this.dLocation);
 
-            for (let latticePoint of this.latticePoints) {
+            for (let latticePoint of latticePoints) {
 
                 vec3.transformMat4(latticePoint.location, latticePoint.baseLocation, this.rotationMatrix);
             }
         }
     }
 
-    export class Tool_Transform_Lattice_Scale extends Tool_Transform_Lattice_LinePoint {
+    export class Tool_Transform_Lattice_Calcer_Scale {
 
-        initialDistance = 0.0;
+        private initialDistance = 0.0;
 
-        direction = vec3.create();
-        centerLocation = vec3.create();
-        rotationMatrix = mat4.create();
+        private dLocation = vec3.create();
+        private direction = vec3.create();
+        private centerLocation = vec3.create();
+        private rotationMatrix = mat4.create();
 
-        scaling = vec3.create();
+        private scaling = vec3.create();
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) {
 
             this.initialDistance = this.calulateDistance(e, env);
 
@@ -479,7 +482,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private calulateDistance(e: ToolMouseEvent, env: ToolEnvironment): float {
+        calulateDistance(e: ToolMouseEvent, env: ToolEnvironment): float {
 
             vec3.subtract(this.direction, e.location, env.operatorCursor.location);
 
@@ -488,7 +491,7 @@ namespace ManualTracingTool {
             return distance;
         }
 
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+        processLatticePointMouseMove(latticePoints: List<LatticePoint>, e: ToolMouseEvent, env: ToolEnvironment) {
 
             let scale = this.calulateDistance(e, env) / this.initialDistance;
             vec3.set(this.scaling, scale, scale, 1.0);
@@ -501,10 +504,50 @@ namespace ManualTracingTool {
             mat4.scale(this.rotationMatrix, this.rotationMatrix, this.scaling);
             mat4.translate(this.rotationMatrix, this.rotationMatrix, this.dLocation);
 
-            for (let latticePoint of this.latticePoints) {
+            for (let latticePoint of latticePoints) {
 
                 vec3.transformMat4(latticePoint.location, latticePoint.baseLocation, this.rotationMatrix);
             }
+        }
+    }
+
+    export class Tool_Transform_Lattice_GrabMove extends Tool_Transform_Lattice_LinePoint {
+
+        calcer = new Tool_Transform_Lattice_Calcer_GrabMove();
+
+        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e);
+        }
+    }
+
+    export class Tool_Transform_Lattice_Rotate extends Tool_Transform_Lattice_LinePoint {
+
+        calcer = new Tool_Transform_Lattice_Calcer_Rotate();
+
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+
+            this.calcer.prepareModalExt(e, env);
+        }
+
+        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+
+            this.calcer.processLatticePointMouseMove(this.latticePoints, e, env);
+        }
+    }
+
+    export class Tool_Transform_Lattice_Scale extends Tool_Transform_Lattice_LinePoint {
+
+        calcer = new Tool_Transform_Lattice_Calcer_Scale();
+
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+
+            this.calcer.prepareModalExt(e, env);
+        }
+
+        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+
+            this.calcer.processLatticePointMouseMove(this.latticePoints, e, env);
         }
     }
 }
