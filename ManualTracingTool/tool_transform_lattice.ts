@@ -25,18 +25,11 @@ namespace ManualTracingTool {
 
         mouseAnchorLocation = vec3.create();
 
-        dLocation = vec3.create();
-        lerpLocation1 = vec3.create();
-        lerpLocation2 = vec3.create();
-        lerpLocation3 = vec3.create();
-
-        editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
-
         prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
-            this.editPoints = null;
+            this.clearEditData(e, env);
 
-            if (env.currentVectorLayer == null) {
+            if (!this.checkTarget(e, env)) {
 
                 return false;
             }
@@ -61,15 +54,59 @@ namespace ManualTracingTool {
             this.setLatticePoints(this.rectangleArea);
 
             // Create edit info
-            this.editPoints = this.createEditInfo(this.rectangleArea, env);
+            this.createEditData(e, env);
 
             this.prepareModalExt(e, env);
 
             return true;
         }
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        protected clearEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        }
 
+        protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @virtual
+
+            return false;
+        }
+
+        protected calculateSurroundingRectangle(result: Logic_Edit_Points_RectangleArea, env: ToolEnvironment): boolean { // @virtual
+
+            Logic_Edit_Points.setMinMaxToRectangleArea(result);
+
+            // Do anything for operation
+
+            let available = Logic_Edit_Points.existsRectangleArea(result);
+
+            return available;
+        }
+
+        private createLatticePoints(count: int) {
+
+            this.latticePoints = new List<LatticePoint>();
+
+            for (let i = 0; i < count; i++) {
+
+                this.latticePoints.push(new LatticePoint());
+            }
+        }
+
+        private setLatticePoints(rectangle: Logic_Edit_Points_RectangleArea) {
+
+            vec3.set(this.latticePoints[0].baseLocation, rectangle.left, rectangle.top, 0.0);
+            vec3.set(this.latticePoints[1].baseLocation, rectangle.right, rectangle.top, 0.0);
+            vec3.set(this.latticePoints[2].baseLocation, rectangle.right, rectangle.bottom, 0.0);
+            vec3.set(this.latticePoints[3].baseLocation, rectangle.left, rectangle.bottom, 0.0);
+
+            for (let latticePoint of this.latticePoints) {
+
+                vec3.copy(latticePoint.location, latticePoint.baseLocation);
+            }
+        }
+
+        protected createEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        }
+
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
         startModal(env: ToolEnvironment) { // @override
@@ -79,18 +116,33 @@ namespace ManualTracingTool {
 
         endModal(env: ToolEnvironment) { // @override
 
+            env.setRedrawMainWindowEditorWindow();
         }
 
         cancelModal(env: ToolEnvironment) { // @override
 
-            for (let editPoint of this.editPoints) {
+            env.setRedrawMainWindowEditorWindow();
+        }
 
-                vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.targetPoint.location);
-            }
+        mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            this.editPoints = null;
+            // Move lattice points
+
+            this.processLatticePointMouseMove(e, env);
+
+            // Transform edit data
+
+            this.processLatticeTransform(env);
 
             env.setRedrawMainWindowEditorWindow();
+        }
+
+        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+
+        }
+
+        protected processLatticeTransform(env: ToolEnvironment) { // @virtual
+
         }
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
@@ -117,25 +169,7 @@ namespace ManualTracingTool {
             }
         }
 
-        mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            if (this.editPoints == null) {
-                return;
-            }
-
-            // Move lattice points
-
-            this.processLatticeMouseMove(e, env);
-
-            // Move line points adjusting location
-
-            this.processLatticeTransform(this.editPoints, this.latticePoints);
-
-            env.setRedrawMainWindowEditorWindow();
-        }
-
-        mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
+        protected executeCommand(env: ToolEnvironment) { // @virtual
         }
 
         onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
@@ -155,31 +189,33 @@ namespace ManualTracingTool {
 
             drawEnv.render.stroke();
         }
+    }
 
-        private createLatticePoints(count: int) {
+    export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
 
-            this.latticePoints = new List<LatticePoint>();
+        dLocation = vec3.create();
+        lerpLocation1 = vec3.create();
+        lerpLocation2 = vec3.create();
+        lerpLocation3 = vec3.create();
 
-            for (let i = 0; i < count; i++) {
+        editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
-                this.latticePoints.push(new LatticePoint());
-            }
+        protected clearEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            this.editPoints = null;
         }
 
-        private setLatticePoints(rectangle: Logic_Edit_Points_RectangleArea) {
+        protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
-            vec3.set(this.latticePoints[0].baseLocation, rectangle.left, rectangle.top, 0.0);
-            vec3.set(this.latticePoints[1].baseLocation, rectangle.right, rectangle.top, 0.0);
-            vec3.set(this.latticePoints[2].baseLocation, rectangle.right, rectangle.bottom, 0.0);
-            vec3.set(this.latticePoints[3].baseLocation, rectangle.left, rectangle.bottom, 0.0);
+            if (env.currentVectorLayer == null) {
 
-            for (let latticePoint of this.latticePoints) {
-
-                vec3.copy(latticePoint.location, latticePoint.baseLocation);
+                return false;
             }
+
+            return true;
         }
 
-        private calculateSurroundingRectangle(result: Logic_Edit_Points_RectangleArea, env: ToolEnvironment): boolean {
+        protected calculateSurroundingRectangle(result: Logic_Edit_Points_RectangleArea, env: ToolEnvironment): boolean { // @override
 
             Logic_Edit_Points.setMinMaxToRectangleArea(result);
 
@@ -193,14 +229,14 @@ namespace ManualTracingTool {
                 }
             }
 
-            let available = Logic_Edit_Points.existsRectangleArea(this.rectangleArea);
+            let available = Logic_Edit_Points.existsRectangleArea(result);
 
             return available;
         }
 
-        private createEditInfo(rectangle: Logic_Edit_Points_RectangleArea, env: ToolEnvironment): List<Tool_Transform_Lattice_EditPoint> {
+        protected createEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            let result = new List<Tool_Transform_Lattice_EditPoint>();
+            let editPoints = new List<Tool_Transform_Lattice_EditPoint>();
 
             for (let group of env.currentVectorLayer.groups) {
 
@@ -220,23 +256,43 @@ namespace ManualTracingTool {
                         vec3.copy(editPoint.oldLocation, point.location);
                         vec3.copy(editPoint.newLocation, point.location);
 
-                        let xPosition = rectangle.getHorizontalPositionInRate(point.location[0]);
-                        let yPosition = rectangle.getVerticalPositionInRate(point.location[1]);
+                        let xPosition = this.rectangleArea.getHorizontalPositionInRate(point.location[0]);
+                        let yPosition = this.rectangleArea.getVerticalPositionInRate(point.location[1]);
                         vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
 
-                        result.push(editPoint);
+                        editPoints.push(editPoint);
                     }
                 }
             }
 
-            return result;
+            this.editPoints = editPoints;
         }
 
-        protected processLatticeMouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        cancelModal(env: ToolEnvironment) { // @override
+
+            for (let editPoint of this.editPoints) {
+
+                vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.targetPoint.location);
+            }
+
+            this.editPoints = null;
+
+            env.setRedrawMainWindowEditorWindow();
+        }
+
+        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
         }
 
-        private processLatticeTransform(editPoints: List<Tool_Transform_Lattice_EditPoint>, latticePoints: List<LatticePoint>) {
+        protected processLatticeTransform(env: ToolEnvironment) { // @override
+
+            if (this.editPoints == null) {
+                return;
+            }
+
+            let editPoints = this.editPoints;
+
+            let latticePoints = this.latticePoints;
 
             //            lerpLocation1
             // (0)-------+-------(1)
@@ -262,10 +318,10 @@ namespace ManualTracingTool {
             }
         }
 
-        private executeCommand(env: ToolEnvironment) {
+        protected executeCommand(env: ToolEnvironment) { // @override
 
             // Commit location
-            this.processLatticeTransform(this.editPoints, this.latticePoints);
+            this.processLatticeTransform(env);
 
             let targetLines = new List<VectorLine>();
 
@@ -350,9 +406,9 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Transform_Lattice_GrabMove extends Tool_Transform_Lattice {
+    export class Tool_Transform_Lattice_GrabMove extends Tool_Transform_Lattice_LinePoint {
 
-        protected processLatticeMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
 
             vec3.subtract(this.dLocation, e.location, this.mouseAnchorLocation);
 
@@ -363,7 +419,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Transform_Lattice_Rotate extends Tool_Transform_Lattice {
+    export class Tool_Transform_Lattice_Rotate extends Tool_Transform_Lattice_LinePoint {
 
         initialAngle = 0.0;
 
@@ -384,7 +440,7 @@ namespace ManualTracingTool {
             return angle;
         }
 
-        protected processLatticeMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
 
             let angle = this.calulateInputAngle(e, env) - this.initialAngle;
 
@@ -403,7 +459,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Transform_Lattice_Scale extends Tool_Transform_Lattice {
+    export class Tool_Transform_Lattice_Scale extends Tool_Transform_Lattice_LinePoint {
 
         initialDistance = 0.0;
 
@@ -432,7 +488,7 @@ namespace ManualTracingTool {
             return distance;
         }
 
-        protected processLatticeMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
+        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
 
             let scale = this.calulateDistance(e, env) / this.initialDistance;
             vec3.set(this.scaling, scale, scale, 1.0);
