@@ -210,9 +210,13 @@
         }
 
             .layerPropertyModal input {
-                margin-left: 5px;
-                margin-top: 5px;
+                margin-left: 15px;
+                margin-top: 15px;
             }
+
+        #layerPropertyModal_layerAlpha {
+            width: 300px;
+        }
 
         .operationOptionModal {
             width: 400px;
@@ -278,26 +282,32 @@
     <div id="openFileDialogModal" class="openFileDialogModal">
         <form>
             <label>
-                <input type="file" class="openFileDialogModal_file" id="openFileDialogModal.file"/>
+                <input type="file" class="openFileDialogModal_file" id="openFileDialogModal_file"/>
             </label>
             <br />
             <div class="OKCalcelButtons">
-                <input type="button" id="openFileDialogModal.ok" value="ロード">
-                <input type="button" id="openFileDialogModal.cancel" value="キャンセル">
+                <input type="button" id="openFileDialogModal_ok" value="ロード">
+                <input type="button" id="openFileDialogModal_cancel" value="キャンセル">
             </div>
         </form>
     </div>
 
     <div id="layerPropertyModal" class="layerPropertyModal">
         <form>
-            レイヤー<br />
+            <label id="layerPropertyModal_layerTypeName">
+                レイヤー
+            </label><br />
             <label>
                 名前
-                <input type="text" id="layerPropertyModal.layerName" />
+                <input type="text" id="layerPropertyModal_layerName" />
             </label><br />
             <label>
                 レイヤー色
-                <input type="color" id="layerPropertyModal.layerColor">
+                <input type="color" id="layerPropertyModal_layerColor">
+            </label><br />
+            <label>
+                不透明度
+                <input type="range" id="layerPropertyModal_layerAlpha" min="0" max="500">
             </label><br />
         </form>
     </div>
@@ -307,19 +317,19 @@
             <div>
                 編集単位<br />
                 <label>
-                    <input type="radio" name="operationOptionModal.operationUnit" value="1">
+                    <input type="radio" name="operationOptionModal_operationUnit" value="1">
                     点
                 </label>
                 <label>
-                    <input type="radio" name="operationOptionModal.operationUnit" value="2">
+                    <input type="radio" name="operationOptionModal_operationUnit" value="2">
                     辺
                 </label>
                 <label>
-                    <input type="radio" name="operationOptionModal.operationUnit" value="3">
+                    <input type="radio" name="operationOptionModal_operationUnit" value="3">
                     線
                 </label>
                 <label>
-                    <input type="radio" name="operationOptionModal.operationUnit" value="4">
+                    <input type="radio" name="operationOptionModal_operationUnit" value="4">
                     レイヤー
                 </label>
                 <br />
@@ -327,15 +337,15 @@
             <div>
                 絞り込み<br />
                 <label>
-                    <input type="checkbox" name="operationOptionModal.activeLineOnly" value="1">
+                    <input type="checkbox" name="operationOptionModal_activeLineOnly" value="1">
                     アクティブな線の点のみ
                 </label><br />
                 <label>
-                    <input type="checkbox" name="operationOptionModal.activeLayerOnly" value="1">
+                    <input type="checkbox" name="operationOptionModal_activeLayerOnly" value="1">
                     アクティブなレイヤーのみ
                 </label><br />
                 <label>
-                    <input type="checkbox" name="operationOptionModal.selectedPointOnly" value="1">
+                    <input type="checkbox" name="operationOptionModal_selectedPointOnly" value="1">
                     選択中の点のみ
                 </label><br />
             </div>
@@ -347,26 +357,26 @@
             <div>
                 レイヤーの種類<br />
                 <label>
-                    <input type="radio" name="newLayerCommandOptionModal.layerType" value="2">
-                    ベクター線
+                    <input type="radio" name="newLayerCommandOptionModal_layerType" value="2">
+                    ベクター線画
                 </label>
                 <label>
-                    <input type="radio" name="newLayerCommandOptionModal.layerType" value="4">
+                    <input type="radio" name="newLayerCommandOptionModal_layerType" value="4">
                     画像ファイル
                 </label>
                 <label>
-                    <input type="radio" name="newLayerCommandOptionModal.layerType" value="5">
+                    <input type="radio" name="newLayerCommandOptionModal_layerType" value="5">
                     ３Dポーズ
                 </label>
                 <br />
                 <label>
-                    <input type="radio" name="newLayerCommandOptionModal.layerType" value="3">
+                    <input type="radio" name="newLayerCommandOptionModal_layerType" value="3">
                     グループ
                 </label>
                 <br />
                 <div class="OKCalcelButtons">
-                    <input type="button" id="newLayerCommandOptionModal.ok" value="　　作成　　">
-                    <input type="button" id="newLayerCommandOptionModal.cancel" value="キャンセル">
+                    <input type="button" id="newLayerCommandOptionModal_ok" value="　　作成　　">
+                    <input type="button" id="newLayerCommandOptionModal_cancel" value="キャンセル">
                 </div>
             </div>
         </form>

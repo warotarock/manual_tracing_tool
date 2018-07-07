@@ -99,6 +99,15 @@ namespace ManualTracingTool {
 
         ID = new HTMLElementID();
 
+        layerTypeNameDictionary: List<string> = [
+            'none',
+            'root',
+            'ベクター線画 レイヤー',
+            'グループ レイヤー',
+            '画像ファイル レイヤー',
+            '３Dポーズ レイヤー'
+        ];
+
         // Resources
 
         systemImage: ImageResource = null;
@@ -1990,11 +1999,18 @@ namespace ManualTracingTool {
                 return;
             }
 
+            // layer type name
+            let layerTypeName = this.layerTypeNameDictionary[<int>layer.type];
+            this.setElementText(this.ID.layerPropertyModal_layerTypeName, layerTypeName);
+
             // name
             this.setInputElementText(this.ID.layerPropertyModal_layerName, layer.name);
 
             // layer color
             this.setInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
+
+            // layer alpha
+            this.setInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, layer.layerColor[3], 0.0, 1.0);
 
             this.layerPropertyWindow_EditLayer = layer;
 
@@ -2073,6 +2089,9 @@ namespace ManualTracingTool {
                 // layer color
                 this.getInputElementColor(this.ID.layerPropertyModal_layerColor, this.layerPropertyWindow_LayerClolor);
                 vec4.copy(layer.layerColor, this.layerPropertyWindow_LayerClolor);
+
+                // layer alpha
+                layer.layerColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, 0.0, 1.0);
 
                 this.layerPropertyWindow_EditLayer = null;
             }
@@ -2514,6 +2533,8 @@ namespace ManualTracingTool {
 
             this.canvasRender.setLocalTransForm(this.tempMat4);
 
+            this.canvasRender.setGlobalAlpha(layer.layerColor[3]);
+
             this.canvasRender.drawImage(image
                 , 0.0, 0.0
                 , image.width, image.height
@@ -2522,6 +2543,7 @@ namespace ManualTracingTool {
             );
 
             this.canvasRender.cancelLocalTransForm();
+            this.canvasRender.setGlobalAlpha(1.0);
         }
 
         // Editor window drawing
@@ -3178,6 +3200,15 @@ namespace ManualTracingTool {
             return document.getElementById(id);
         }
 
+        setElementText(id: string, text: string): HTMLElement {
+
+            let element = <HTMLInputElement>(document.getElementById(id));
+
+            element.innerText = text;
+
+            return element;
+        }
+
         setInputElementText(id: string, text: string): HTMLElement {
 
             let element = <HTMLInputElement>(document.getElementById(id));
@@ -3185,6 +3216,24 @@ namespace ManualTracingTool {
             element.value = text;
 
             return element;
+        }
+
+        setInputElementRangeValue(id: string, value: float, min: float, max: float): HTMLElement {
+
+            let element = <HTMLInputElement>(document.getElementById(id));
+
+            element.value = (value / max * Number(element.max)).toString();
+
+            return element;
+        }
+
+        getInputElementRangeValue(id: string, min: int, max: int): float {
+
+            let element = <HTMLInputElement>(document.getElementById(id));
+
+            let value = Number(element.value) / Number(element.max) * max;
+
+            return value;
         }
 
         setRadioElementIntValue(elementName: string, value: int) {
@@ -3390,21 +3439,23 @@ namespace ManualTracingTool {
         none = 'none';
 
         openFileDialogModal = '#openFileDialogModal';
-        openFileDialogModal_file = 'openFileDialogModal.file';
-        openFileDialogModal_ok = 'openFileDialogModal.ok';
-        openFileDialogModal_cancel = 'openFileDialogModal.cancel';
+        openFileDialogModal_file = 'openFileDialogModal_file';
+        openFileDialogModal_ok = 'openFileDialogModal_ok';
+        openFileDialogModal_cancel = 'openFileDialogModal_cancel';
 
         layerPropertyModal = '#layerPropertyModal';
-        layerPropertyModal_layerName = 'layerPropertyModal.layerName';
-        layerPropertyModal_layerColor = 'layerPropertyModal.layerColor';
+        layerPropertyModal_layerTypeName = 'layerPropertyModal_layerTypeName';
+        layerPropertyModal_layerName = 'layerPropertyModal_layerName';
+        layerPropertyModal_layerColor = 'layerPropertyModal_layerColor';
+        layerPropertyModal_layerAlpha = 'layerPropertyModal_layerAlpha';
 
         operationOptionModal = '#operationOptionModal';
-        operationOptionModal_operationUnit = 'operationOptionModal.operationUnit'
+        operationOptionModal_operationUnit = 'operationOptionModal_operationUnit'
 
         newLayerCommandOptionModal = '#newLayerCommandOptionModal';
-        newLayerCommandOptionModal_layerType = 'newLayerCommandOptionModal.layerType';
-        newLayerCommandOptionModal_ok = 'newLayerCommandOptionModal.ok';
-        newLayerCommandOptionModal_cancel = 'newLayerCommandOptionModal.cancel';
+        newLayerCommandOptionModal_layerType = 'newLayerCommandOptionModal_layerType';
+        newLayerCommandOptionModal_ok = 'newLayerCommandOptionModal_ok';
+        newLayerCommandOptionModal_cancel = 'newLayerCommandOptionModal_cancel';
     }
 
     enum DrawLineToolSubToolID {
