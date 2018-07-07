@@ -78,7 +78,9 @@ namespace ManualTracingTool {
     export class CanvasRender {
 
         private context: CanvasRenderingContext2D = null;
+        private currentTransform = mat4.create();
         private tempVec3 = vec3.create();
+        private tempMat = mat4.create();
         private viewScale = 1.0;
 
         setContext(canvasWindow: CanvasWindow) {
@@ -88,14 +90,7 @@ namespace ManualTracingTool {
 
             canvasWindow.updateViewMatrix();
 
-            this.updateContextTransform(canvasWindow);
-        }
-
-        setTransform(canvasWindow: CanvasWindow) {
-
-            canvasWindow.updateViewMatrix();
-
-            this.updateContextTransform(canvasWindow);
+            this.updateContextTransformByWindow(canvasWindow);
         }
 
         getViewScale(): float {
@@ -103,21 +98,45 @@ namespace ManualTracingTool {
             return this.viewScale;
         }
 
+        setTransform(canvasWindow: CanvasWindow) {
+
+            canvasWindow.updateViewMatrix();
+
+            this.updateContextTransformByWindow(canvasWindow);
+        }
+
+        setLocalTransForm(matrix: Mat4) {
+
+            mat4.multiply(this.tempMat, this.currentTransform, matrix);
+
+            this.updateContextTransform(this.tempMat);
+        }
+
+        cancelLocalTransForm() {
+
+            this.updateContextTransform(this.currentTransform);
+        }
+
+        private updateContextTransformByWindow(canvasWindow: CanvasWindow) {
+
+            mat4.copy(this.currentTransform, canvasWindow.transformMatrix);
+
+            this.updateContextTransform(canvasWindow.transformMatrix);
+        }
+
+        private updateContextTransform(matrix: Mat4) {
+
+            this.context.setTransform(
+                matrix[0], matrix[1],
+                matrix[4], matrix[5],
+                matrix[12], matrix[13]);
+        }
+
         clearRect(left: int, top: int, width: int, height: int) {
 
             this.context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
 
             this.context.clearRect(left, top, width, height);
-        }
-
-        private updateContextTransform(canvasWindow: CanvasWindow) {
-
-            let mat = canvasWindow.transformMatrix;
-
-            this.context.setTransform(
-                mat[0], mat[1],
-                mat[4], mat[5],
-                mat[12], mat[13]);
         }
 
         setFillColor(r: float, g: float, b: float, a: float) {

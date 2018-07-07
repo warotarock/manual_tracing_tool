@@ -110,6 +110,7 @@
     <TypeScriptCompile Include="data.ts" />
     <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="tool_resample_segment.ts" />
+    <TypeScriptCompile Include="tool_transform_line_point.ts" />
     <TypeScriptCompile Include="tool_transform_lattice.ts" />
     <TypeScriptCompile Include="typings\glmatrix\gl-matrix.d.ts" />
   </ItemGroup>

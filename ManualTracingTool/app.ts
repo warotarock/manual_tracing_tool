@@ -122,7 +122,8 @@ namespace ManualTracingTool {
         // Modal tools
         currentModalTool: ModalToolBase = null;
         modalBeforeTool: ToolBase = null;
-        modalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
+        vectorLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
+        imageFileReferenceLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
 
         // Selection tools
         selectionTools = List<ToolBase>(<int>OperationUnitID.countOfID);
@@ -133,6 +134,9 @@ namespace ManualTracingTool {
 
         // File reference layer tools
         tool_EditImageFileReference = new Tool_EditImageFileReference();
+        tool_Transform_ReferenceImage_GrabMove = new Tool_Transform_ReferenceImage_GrabMove();
+        tool_Transform_ReferenceImage_Rotate = new Tool_Transform_ReferenceImage_Rotate();
+        tool_Transform_ReferenceImage_Scale = new Tool_Transform_ReferenceImage_Scale();
 
         // Transform tools
         tool_Transform_Lattice_GrabMove = new Tool_Transform_Lattice_GrabMove();
@@ -183,6 +187,7 @@ namespace ManualTracingTool {
         view2DMatrix = mat4.create();
         invView2DMatrix = mat4.create();
         tempVec3 = vec3.create();
+        tempMat4 = mat4.create();
 
         editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
 
@@ -551,22 +556,28 @@ namespace ManualTracingTool {
 
                     for (let line of group.lines) {
 
+                        line.modifyFlag = VectorLineModifyFlagID.none;
+
                         for (let point of line.points) {
 
-                            // debug
+                            point.modifyFlag = LinePointModifyFlagID.none;
+
+                            point.adjustingLocation = vec3.create();
+                            vec3.copy(point.adjustingLocation, point.location);
+
+                            point.tempLocation = vec3.create();
+
+                            point.adjustingLineWidth = point.lineWidth;
+
                             if (point.lineWidth == undefined) {
 
                                 point.lineWidth = 1.0;
-                                point.adjustingLineWidth = 1.0;
                             }
 
-                            if (point.adjustingLocation == undefined) {
+                            if (point["adjustedLocation"] != undefined) {
 
-                                point.adjustingLocation = vec3.create();
-                                vec3.copy(point.adjustingLocation, point.location);
                                 delete point["adjustedLocation"];
                             }
-                            // debug
                         }
                     }
                 }
@@ -576,11 +587,62 @@ namespace ManualTracingTool {
                 let ifrLayer = <ImageFileReferenceLayer>layer;
 
                 ifrLayer.imageResource = null;
+
+                ifrLayer.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
+                ifrLayer.adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
+                ifrLayer.adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
+
+                if (ifrLayer.location == undefined) {
+
+                    ifrLayer.location = vec3.fromValues(0.0, 0.0, 0.0);
+                    ifrLayer.rotation = vec3.fromValues(0.0, 0.0, 0.0);
+                    ifrLayer.scale = vec3.fromValues(1.0, 1.0, 1.0);
+                }
             }
 
             for (let childLayer of layer.childLayers) {
 
                 this.fixLoadedDocumentData_LayerRecursive(childLayer);
+            }
+        }
+
+        private fixSaveDocumentData(document: DocumentData) {
+
+            this.fixSaveDocumentData_LayerRecursive(document.rootLayer);
+        }
+
+        private fixSaveDocumentData_LayerRecursive(layer: Layer) {
+
+            if (layer.type == LayerTypeID.vectorLayer) {
+
+                let vectorLayer = <VectorLayer>layer;
+
+                for (let group of vectorLayer.groups) {
+
+                    for (let line of group.lines) {
+
+                        for (let point of line.points) {
+
+                            delete point.adjustingLocation;
+                            delete point.tempLocation;
+                            delete point.adjustingLineWidth;
+                        }
+                    }
+                }
+            }
+            else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                let ifrLayer = <ImageFileReferenceLayer>layer;
+
+                delete ifrLayer.imageResource;
+                delete ifrLayer.adjustingLocation;
+                delete ifrLayer.adjustingRotation;
+                delete ifrLayer.adjustingScale;
+            }
+
+            for (let childLayer of layer.childLayers) {
+
+                this.fixSaveDocumentData_LayerRecursive(childLayer);
             }
         }
 
@@ -660,10 +722,15 @@ namespace ManualTracingTool {
             );
 
             // Modal tools
-            this.modalTools[<int>ModalToolID.none] = null;
-            this.modalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
-            this.modalTools[<int>ModalToolID.ratate] = this.tool_Transform_Lattice_Rotate;
-            this.modalTools[<int>ModalToolID.scale] = this.tool_Transform_Lattice_Scale;
+            this.vectorLayer_ModalTools[<int>ModalToolID.none] = null;
+            this.vectorLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
+            this.vectorLayer_ModalTools[<int>ModalToolID.ratate] = this.tool_Transform_Lattice_Rotate;
+            this.vectorLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_Lattice_Scale;
+
+            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.none] = null;
+            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_ReferenceImage_GrabMove;
+            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.ratate] = this.tool_Transform_ReferenceImage_Rotate;
+            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_ReferenceImage_Scale;
 
             // Selection tools
             this.selectionTools[<int>OperationUnitID.none] = null;
@@ -863,7 +930,7 @@ namespace ManualTracingTool {
                 this.mainWindow_MouseViewOperationEnd();
             }
 
-            if (this.toolEnv.isSelectMode() && this.toolEnv.isCtrlKeyPressing()) {
+            if (this.toolEnv.needsDrawOperatorCursor() && this.toolEnv.isCtrlKeyPressing()) {
 
                 vec3.copy(this.toolContext.operatorCursor.location, this.toolMouseEvent.location);
                 this.toolEnv.setRedrawEditorWindow();
@@ -1134,10 +1201,7 @@ namespace ManualTracingTool {
 
                         this.setCurrentLayer(selectedLayer);
 
-                        if (this.toolEnv.isSelectMode()) {
-
-                            this.toolEnv.setRedrawMainWindowEditorWindow();
-                        }
+                        this.toolEnv.setRedrawMainWindowEditorWindow();
                     }
                 }
             }
@@ -1220,6 +1284,8 @@ namespace ManualTracingTool {
             this.toolContext.altKey = e.altKey;
             this.toolContext.ctrlKey = e.ctrlKey;
 
+            this.toolEnv.updateContext();
+
             if (e.key == 'Tab') {
 
                 // Change mode
@@ -1294,8 +1360,6 @@ namespace ManualTracingTool {
 
             if (e.key == 'z') {
 
-                this.toolEnv.updateContext();
-
                 this.toolContext.commandHistory.undo(this.toolEnv);
 
                 this.toolEnv.setRedrawMainWindow();
@@ -1304,8 +1368,6 @@ namespace ManualTracingTool {
             }
 
             if (e.key == 'y') {
-
-                this.toolEnv.updateContext();
 
                 this.toolContext.commandHistory.redo(this.toolEnv);
 
@@ -1324,7 +1386,6 @@ namespace ManualTracingTool {
                         let command = new Command_DeletePoints();
                         if (command.collectEditTargets(<VectorLayer>(this.toolContext.currentLayer))) {
 
-                            this.toolEnv.updateContext();
                             command.execute(this.toolEnv);
                             this.toolContext.commandHistory.addCommand(command);
 
@@ -1341,7 +1402,10 @@ namespace ManualTracingTool {
 
                 if (this.toolEnv.isCtrlKeyPressing()) {
 
-                    window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(this.document));
+                    let copy = JSON.parse(JSON.stringify(this.document));
+                    this.fixSaveDocumentData(copy);
+
+                    window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(copy));
 
                     e.preventDefault();
                     return;
@@ -1460,45 +1524,41 @@ namespace ManualTracingTool {
 
                 if (this.toolEnv.isSelectMode()) {
 
-                    this.toolEnv.updateContext();
                     this.tool_SelectAllPoints.execute(this.toolEnv);
                     e.preventDefault();
                 }
             }
 
-            if (e.key == 'g') {
+            if (e.key == 'g' || e.key == 'r' || e.key == 's') {
 
-                // TODO: 画像ファイル参照レイヤーのときはそれを操作するモーダルツールを起動するように作る
-                //とりあえずはレイヤーの種類に応じて切り替わることにする
+                let modalToolID = ModalToolID.grabMove;
+
+                if (e.key == 'r') {
+
+                    modalToolID = ModalToolID.ratate;
+                }
+                else if (e.key == 's') {
+
+                    modalToolID = ModalToolID.scale;
+                }
 
                 if (this.toolEnv.isDrawMode()) {
 
-                    this.toolEnv.updateContext();
-                    this.currentTool.keydown(e, this.toolEnv);
+                    if (this.toolEnv.isCurrentLayerVectorLayer()) {
+
+                        this.currentTool.keydown(e, this.toolEnv);
+                    }
+                    else if (this.toolEnv.isCurrentLayerImageFileReferenceLayer()) {
+
+                        this.startModalTool(modalToolID);
+                    }
                 }
                 else {
 
-                    this.startModalTool(ModalToolID.grabMove);
-                    e.preventDefault();
+                    this.startModalTool(modalToolID);
                 }
-            }
 
-            if (e.key == 'r') {
-
-                if (this.toolEnv.isSelectMode()) {
-
-                    this.startModalTool(ModalToolID.ratate);
-                    e.preventDefault();
-                }
-            }
-
-            if (e.key == 's') {
-
-                if (this.toolEnv.isSelectMode()) {
-
-                    this.startModalTool(ModalToolID.scale);
-                    e.preventDefault();
-                }
+                e.preventDefault();
             }
 
             if (e.key == 'Escape') {
@@ -1511,7 +1571,6 @@ namespace ManualTracingTool {
 
             if (e.key == 'Enter') {
 
-                this.toolEnv.updateContext();
                 this.currentTool.keydown(e, this.toolEnv);
             }
 
@@ -1527,7 +1586,6 @@ namespace ManualTracingTool {
 
             if (e.key == 'o') {
 
-                this.toolEnv.updateContext();
                 this.currentTool.keydown(e, this.toolEnv);
             }
         }
@@ -1663,12 +1721,26 @@ namespace ManualTracingTool {
 
         private startModalTool(modalToolID: ModalToolID) {
 
-            let modalTool = this.modalTools[<int>modalToolID];
+            let modalTool: ModalToolBase = null;
 
-            this.toolEnv.updateContext();
+            if (this.toolEnv.isCurrentLayerVectorLayer()) {
+
+                modalTool = this.vectorLayer_ModalTools[<int>modalToolID];
+            }
+            else if (this.toolEnv.isCurrentLayerImageFileReferenceLayer()) {
+
+                modalTool = this.imageFileReferenceLayer_ModalTools[<int>modalToolID];
+            }
+
+            if (modalTool == null) {
+
+                return;
+            }
+
             let available = modalTool.prepareModal(this.toolMouseEvent, this.toolEnv);
 
             if (!available) {
+
                 return;
             }
 
@@ -2051,10 +2123,17 @@ namespace ManualTracingTool {
 
                 this.toolEnv.updateContext();
 
-                if (this.currentTool != null) {
+                if (this.currentModalDialogResult == this.ID.openFileDialogModal_ok) {
 
-                    let filePath = this.getInputElementFilePath(this.ID.openFileDialogModal_file);
-                    this.currentTool.onOpenFile(filePath, this.toolEnv);
+                    if (this.currentTool != null) {
+
+                        let filePath = this.getInputElementFilePath(this.ID.openFileDialogModal_file);
+
+                        if (!StringIsNullOrEmpty(filePath)) {
+
+                            this.currentTool.onOpenFile(filePath, this.toolEnv);
+                        }
+                    }
                 }
             }
 
@@ -2422,12 +2501,27 @@ namespace ManualTracingTool {
 
             let image = layer.imageResource.image.imageData;
 
+            let isModal = this.isModalToolRunning();
+
+            let location = (isModal ? layer.adjustingLocation : layer.location);
+            let rotation = (isModal ? layer.adjustingRotation[0] : layer.rotation[0]);
+            let scale = (isModal ? layer.adjustingScale : layer.scale);
+
+            mat4.identity(this.tempMat4);
+            mat4.translate(this.tempMat4, this.tempMat4, location);
+            mat4.rotateZ(this.tempMat4, this.tempMat4, rotation);
+            mat4.scale(this.tempMat4, this.tempMat4, scale);
+
+            this.canvasRender.setLocalTransForm(this.tempMat4);
+
             this.canvasRender.drawImage(image
                 , 0.0, 0.0
                 , image.width, image.height
                 , 0.0, 0.0
                 , image.width, image.height
             );
+
+            this.canvasRender.cancelLocalTransForm();
         }
 
         // Editor window drawing
@@ -2441,9 +2535,12 @@ namespace ManualTracingTool {
 
             this.canvasRender.setContext(editorWindow);
 
-            if (this.toolEnv.isSelectMode()) {
+            if (this.toolEnv.needsDrawOperatorCursor()) {
 
                 this.drawOperatorCursor();
+            }
+
+            if (this.toolEnv.isSelectMode()) {
 
                 this.drawMouseCursor();
             }

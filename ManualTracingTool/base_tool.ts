@@ -268,6 +268,21 @@ namespace ManualTracingTool {
             return (this.toolContext.editMode == EditModeID.selectMode);
         }
 
+        isCurrentLayerVectorLayer(): boolean {
+
+            return (this.currentVectorLayer != null);
+        }
+
+        isCurrentLayerImageFileReferenceLayer(): boolean {
+
+            return (this.currentImageFileReferenceLayer != null);
+        }
+
+        needsDrawOperatorCursor(): boolean {
+
+            return (this.isSelectMode() || this.isCurrentLayerImageFileReferenceLayer());
+        }
+
         setCurrentLayer(layer: Layer) {
 
             this.toolContext.mainEditor.setCurrentLayer(layer);
@@ -320,6 +335,8 @@ namespace ManualTracingTool {
 
         mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
         operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+
+        modalToolSelectedAreaLineColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
 
         generalLinePointRadius = 2.0;
         selectedLinePointRadius = 3.0;

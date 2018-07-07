@@ -121,9 +121,17 @@ namespace ManualTracingTool {
 
         imageFilePath: string = null;
 
+        location = vec3.fromValues(0.0, 0.0, 0.0);
+        rotation = vec3.fromValues(0.0, 0.0, 0.0);
+        scale = vec3.fromValues(1.0, 1.0, 1.0);
+
         // runtime
 
         imageResource: ImageResource = null;
+
+        adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
+        adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
     }
 
     // Posing
