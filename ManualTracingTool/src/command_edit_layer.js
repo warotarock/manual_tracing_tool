@@ -75,6 +75,19 @@ var ManualTracingTool;
             this.insertTo_Layer_NewChildLayerList[swapIndex2] = swapItem;
             parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
         };
+        Command_Layer_CommandBase.prototype.executeLayerInsertToCurrent = function (childLayer) {
+            var parentLayer;
+            var insertIndex;
+            if (this.currentLayer.type == ManualTracingTool.LayerTypeID.groupLayer) {
+                parentLayer = this.currentLayer;
+                insertIndex = 0;
+            }
+            else {
+                parentLayer = this.currentLayerParent;
+                insertIndex = this.currentLayerIndex;
+            }
+            this.executeLayerInsert(parentLayer, insertIndex, childLayer);
+        };
         Command_Layer_CommandBase.prototype.executeLayerInsert = function (parentLayer, insertIndex, childLayer) {
             this.insertTo_ParentLayer = parentLayer;
             this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
@@ -138,17 +151,89 @@ var ManualTracingTool;
         Command_Layer_AddVectorLayerToCurrentPosition.prototype.executeCommand = function (env) {
             this.newLayer = new ManualTracingTool.VectorLayer();
             this.newLayer.name = 'new layer';
-            if (this.currentLayer.type == ManualTracingTool.LayerTypeID.groupLayer) {
-                this.executeLayerInsert(this.currentLayer, 0, this.newLayer);
-            }
-            else {
-                this.executeLayerInsert(this.currentLayerParent, this.currentLayerIndex, this.newLayer);
-            }
+            var group = new ManualTracingTool.VectorGroup();
+            this.newLayer.groups.push(group);
+            this.executeLayerInsertToCurrent(this.newLayer);
             env.setCurrentLayer(this.newLayer);
         };
         return Command_Layer_AddVectorLayerToCurrentPosition;
     }(Command_Layer_CommandBase));
     ManualTracingTool.Command_Layer_AddVectorLayerToCurrentPosition = Command_Layer_AddVectorLayerToCurrentPosition;
+    var Command_Layer_AddGroupLayerToCurrentPosition = /** @class */ (function (_super) {
+        __extends(Command_Layer_AddGroupLayerToCurrentPosition, _super);
+        function Command_Layer_AddGroupLayerToCurrentPosition() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.newLayer = null;
+            return _this;
+        }
+        Command_Layer_AddGroupLayerToCurrentPosition.prototype.isAvailable = function (env) {
+            if (this.currentLayerParent == null) {
+                return false;
+            }
+            if (!this.isContainerLayer(this.currentLayerParent)) {
+                return false;
+            }
+            return true;
+        };
+        Command_Layer_AddGroupLayerToCurrentPosition.prototype.executeCommand = function (env) {
+            this.newLayer = new ManualTracingTool.GroupLayer();
+            this.newLayer.name = 'new group';
+            this.executeLayerInsertToCurrent(this.newLayer);
+            env.setCurrentLayer(this.newLayer);
+        };
+        return Command_Layer_AddGroupLayerToCurrentPosition;
+    }(Command_Layer_CommandBase));
+    ManualTracingTool.Command_Layer_AddGroupLayerToCurrentPosition = Command_Layer_AddGroupLayerToCurrentPosition;
+    var Command_Layer_AddImageFileReferenceLayerToCurrentPosition = /** @class */ (function (_super) {
+        __extends(Command_Layer_AddImageFileReferenceLayerToCurrentPosition, _super);
+        function Command_Layer_AddImageFileReferenceLayerToCurrentPosition() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.newLayer = null;
+            return _this;
+        }
+        Command_Layer_AddImageFileReferenceLayerToCurrentPosition.prototype.isAvailable = function (env) {
+            if (this.currentLayerParent == null) {
+                return false;
+            }
+            if (!this.isContainerLayer(this.currentLayerParent)) {
+                return false;
+            }
+            return true;
+        };
+        Command_Layer_AddImageFileReferenceLayerToCurrentPosition.prototype.executeCommand = function (env) {
+            this.newLayer = new ManualTracingTool.ImageFileReferenceLayer();
+            this.newLayer.name = 'new file';
+            this.executeLayerInsertToCurrent(this.newLayer);
+            env.setCurrentLayer(this.newLayer);
+        };
+        return Command_Layer_AddImageFileReferenceLayerToCurrentPosition;
+    }(Command_Layer_CommandBase));
+    ManualTracingTool.Command_Layer_AddImageFileReferenceLayerToCurrentPosition = Command_Layer_AddImageFileReferenceLayerToCurrentPosition;
+    var Command_Layer_AddPosingLayerToCurrentPosition = /** @class */ (function (_super) {
+        __extends(Command_Layer_AddPosingLayerToCurrentPosition, _super);
+        function Command_Layer_AddPosingLayerToCurrentPosition() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.newLayer = null;
+            return _this;
+        }
+        Command_Layer_AddPosingLayerToCurrentPosition.prototype.isAvailable = function (env) {
+            if (this.currentLayerParent == null) {
+                return false;
+            }
+            if (!this.isContainerLayer(this.currentLayerParent)) {
+                return false;
+            }
+            return true;
+        };
+        Command_Layer_AddPosingLayerToCurrentPosition.prototype.executeCommand = function (env) {
+            this.newLayer = new ManualTracingTool.PosingLayer();
+            this.newLayer.name = 'new posing';
+            this.executeLayerInsertToCurrent(this.newLayer);
+            env.setCurrentLayer(this.newLayer);
+        };
+        return Command_Layer_AddPosingLayerToCurrentPosition;
+    }(Command_Layer_CommandBase));
+    ManualTracingTool.Command_Layer_AddPosingLayerToCurrentPosition = Command_Layer_AddPosingLayerToCurrentPosition;
     var Command_Layer_Delete = /** @class */ (function (_super) {
         __extends(Command_Layer_Delete, _super);
         function Command_Layer_Delete() {

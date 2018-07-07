@@ -60,6 +60,9 @@ var ManualTracingTool;
             _this.tool_ScratchLine_ExtrudePoints_Visible = false;
             return _this;
         }
+        Tool_ScratchLine.prototype.isAvailable = function (env) {
+            return (env.currentVectorLayer != null);
+        };
         Tool_ScratchLine.prototype.mouseDown = function (e, env) {
             if (e.isLeftButtonPressing()) {
                 this.editLine = new ManualTracingTool.VectorLine();

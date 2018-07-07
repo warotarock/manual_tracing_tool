@@ -18,6 +18,9 @@ var ManualTracingTool;
             _this.resamplingUnitLength = 1.0;
             return _this;
         }
+        Tool_DrawLine.prototype.isAvailable = function (env) {
+            return (env.currentVectorLayer != null);
+        };
         Tool_DrawLine.prototype.mouseDown = function (e, env) {
             if (!e.isLeftButtonPressing()) {
                 return;

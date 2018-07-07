@@ -58,6 +58,9 @@ var ManualTracingTool;
             this.afterHitTest();
         };
         HitTest_LinePointBase.prototype.hitTest = function (layer, x, y, minDistance) {
+            if (layer.type != ManualTracingTool.LayerTypeID.vectorLayer) {
+                return;
+            }
             var vectorLayer = layer;
             this.beforeHitTestToLayer(vectorLayer);
             for (var _i = 0, _a = vectorLayer.groups; _i < _a.length; _i++) {

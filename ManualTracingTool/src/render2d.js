@@ -59,29 +59,41 @@ var ManualTracingTool;
     var CanvasRender = /** @class */ (function () {
         function CanvasRender() {
             this.context = null;
+            this.currentTransform = mat4.create();
             this.tempVec3 = vec3.create();
+            this.tempMat = mat4.create();
             this.viewScale = 1.0;
         }
         CanvasRender.prototype.setContext = function (canvasWindow) {
             this.context = canvasWindow.context;
             this.viewScale = canvasWindow.viewScale;
             canvasWindow.updateViewMatrix();
-            this.updateContextTransform(canvasWindow);
-        };
-        CanvasRender.prototype.setTransform = function (canvasWindow) {
-            canvasWindow.updateViewMatrix();
-            this.updateContextTransform(canvasWindow);
+            this.updateContextTransformByWindow(canvasWindow);
         };
         CanvasRender.prototype.getViewScale = function () {
             return this.viewScale;
         };
+        CanvasRender.prototype.setTransform = function (canvasWindow) {
+            canvasWindow.updateViewMatrix();
+            this.updateContextTransformByWindow(canvasWindow);
+        };
+        CanvasRender.prototype.setLocalTransForm = function (matrix) {
+            mat4.multiply(this.tempMat, this.currentTransform, matrix);
+            this.updateContextTransform(this.tempMat);
+        };
+        CanvasRender.prototype.cancelLocalTransForm = function () {
+            this.updateContextTransform(this.currentTransform);
+        };
+        CanvasRender.prototype.updateContextTransformByWindow = function (canvasWindow) {
+            mat4.copy(this.currentTransform, canvasWindow.transformMatrix);
+            this.updateContextTransform(canvasWindow.transformMatrix);
+        };
+        CanvasRender.prototype.updateContextTransform = function (matrix) {
+            this.context.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
+        };
         CanvasRender.prototype.clearRect = function (left, top, width, height) {
             this.context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
             this.context.clearRect(left, top, width, height);
-        };
-        CanvasRender.prototype.updateContextTransform = function (canvasWindow) {
-            var mat = canvasWindow.transformMatrix;
-            this.context.setTransform(mat[0], mat[1], mat[4], mat[5], mat[12], mat[13]);
         };
         CanvasRender.prototype.setFillColor = function (r, g, b, a) {
             this.context.fillStyle = 'rgb(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ')';

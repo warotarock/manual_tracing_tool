@@ -17,7 +17,7 @@ var ManualTracingTool;
         LayerTypeID[LayerTypeID["rootLayer"] = 1] = "rootLayer";
         LayerTypeID[LayerTypeID["vectorLayer"] = 2] = "vectorLayer";
         LayerTypeID[LayerTypeID["groupLayer"] = 3] = "groupLayer";
-        LayerTypeID[LayerTypeID["fileReferenceLayer"] = 4] = "fileReferenceLayer";
+        LayerTypeID[LayerTypeID["imageFileReferenceLayer"] = 4] = "imageFileReferenceLayer";
         LayerTypeID[LayerTypeID["posingLayer"] = 5] = "posingLayer";
     })(LayerTypeID = ManualTracingTool.LayerTypeID || (ManualTracingTool.LayerTypeID = {}));
     var Layer = /** @class */ (function () {
@@ -124,6 +124,26 @@ var ManualTracingTool;
         return GroupLayer;
     }(Layer));
     ManualTracingTool.GroupLayer = GroupLayer;
+    // Image file reference layer
+    var ImageFileReferenceLayer = /** @class */ (function (_super) {
+        __extends(ImageFileReferenceLayer, _super);
+        function ImageFileReferenceLayer() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.type = LayerTypeID.imageFileReferenceLayer;
+            _this.imageFilePath = null;
+            _this.location = vec3.fromValues(0.0, 0.0, 0.0);
+            _this.rotation = vec3.fromValues(0.0, 0.0, 0.0);
+            _this.scale = vec3.fromValues(1.0, 1.0, 1.0);
+            // runtime
+            _this.imageResource = null;
+            _this.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            _this.adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
+            _this.adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
+            return _this;
+        }
+        return ImageFileReferenceLayer;
+    }(Layer));
+    ManualTracingTool.ImageFileReferenceLayer = ImageFileReferenceLayer;
     // Posing
     var PosingModel = /** @class */ (function () {
         function PosingModel() {
@@ -281,6 +301,7 @@ var ManualTracingTool;
     // Document
     var DocumentData = /** @class */ (function () {
         function DocumentData() {
+            this.loaded = false;
             this.rootLayer = new Layer();
             this.documentFrame = [0.0, 0.0, 1024.0, 1024.0];
         }

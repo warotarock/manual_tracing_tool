@@ -16,7 +16,7 @@ var ManualTracingTool;
             this.fileName = null;
             this.image = new RenderImage();
             this.loaded = false;
-            this.isGLTexture = true;
+            this.isGLTexture = false;
         }
         ImageResource.prototype.file = function (fileName) {
             this.fileName = fileName;

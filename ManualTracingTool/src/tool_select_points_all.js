@@ -16,6 +16,9 @@ var ManualTracingTool;
             return _super !== null && _super.apply(this, arguments) || this;
         }
         Tool_Select_All_LinePoint.prototype.execute = function (env) {
+            if (env.currentVectorLayer == null) {
+                return;
+            }
             var existsSelectedPoints = this.isSelectedAnyPoint(env);
             var selectionInfo;
             if (existsSelectedPoints) {

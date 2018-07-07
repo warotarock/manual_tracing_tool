@@ -31,6 +31,9 @@ var ManualTracingTool;
             _this.resamplingUnitLength = 1.0;
             return _this;
         }
+        Tool_Resample_Segment.prototype.isAvailable = function (env) {
+            return (env.currentVectorLayer != null);
+        };
         Tool_Resample_Segment.prototype.keydown = function (e, env) {
             if (e.key == 'Enter') {
                 if (env.currentVectorLayer != null) {

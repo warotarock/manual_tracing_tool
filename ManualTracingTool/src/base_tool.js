@@ -81,6 +81,7 @@ var ManualTracingTool;
             this.currentPosingLayer = null;
             this.currentPosingModel = null;
             this.currentPosingData = null;
+            this.currentImageFileReferenceLayer = null;
             this.redrawMainWindow = false;
             this.redrawEditorWindow = false;
             this.redrawLayerWindow = false;
@@ -117,6 +118,7 @@ var ManualTracingTool;
             this.currentPosingLayer = null;
             this.currentPosingModel = null;
             this.currentPosingData = null;
+            this.currentImageFileReferenceLayer = null;
             this.mainWindow = null;
             this.pickingWindow = null;
             this.posing3DView = null;
@@ -145,6 +147,7 @@ var ManualTracingTool;
             this.currentPosingLayer = this.toolContext.currentPosingLayer;
             this.currentPosingModel = this.toolContext.currentPosingModel;
             this.currentPosingData = this.toolContext.currentPosingData;
+            this.currentImageFileReferenceLayer = this.toolContext.currentImageFileReferenceLayer;
             this.mainWindow = this.toolContext.mainWindow;
             this.pickingWindow = this.toolContext.pickingWindow;
             this.posing3DView = this.toolContext.posing3DView;
@@ -170,6 +173,10 @@ var ManualTracingTool;
             this.setRedrawEditorWindow();
             this.setRedrawWebGLWindow();
         };
+        ToolEnvironment.prototype.setRedrawAllWindows = function () {
+            this.setRedrawMainWindowEditorWindow();
+            this.setUpadateLayerWindowItems();
+        };
         ToolEnvironment.prototype.setRedrawWebGLWindow = function () {
             this.toolContext.redrawWebGLWindow = true;
         };
@@ -191,6 +198,15 @@ var ManualTracingTool;
         ToolEnvironment.prototype.isSelectMode = function () {
             return (this.toolContext.editMode == EditModeID.selectMode);
         };
+        ToolEnvironment.prototype.isCurrentLayerVectorLayer = function () {
+            return (this.currentVectorLayer != null);
+        };
+        ToolEnvironment.prototype.isCurrentLayerImageFileReferenceLayer = function () {
+            return (this.currentImageFileReferenceLayer != null);
+        };
+        ToolEnvironment.prototype.needsDrawOperatorCursor = function () {
+            return (this.isSelectMode() || this.isCurrentLayerImageFileReferenceLayer());
+        };
         ToolEnvironment.prototype.setCurrentLayer = function (layer) {
             this.toolContext.mainEditor.setCurrentLayer(layer);
         };
@@ -204,6 +220,12 @@ var ManualTracingTool;
         };
         ToolEnvironment.prototype.cancelModalTool = function () {
             this.toolContext.mainEditor.cancelModalTool();
+        };
+        ToolEnvironment.prototype.openFileDialog = function () {
+            this.toolContext.mainEditor.openFileDialog();
+        };
+        ToolEnvironment.prototype.startLoadingCurrentDocumentResources = function () {
+            this.toolContext.mainEditor.startLoadingDocumentResourcesProcess(this.toolContext.document);
         };
         ToolEnvironment.prototype.getViewScaledLength = function (length) {
             return length / this.viewScale;
@@ -222,6 +244,7 @@ var ManualTracingTool;
             this.linePointVisualBrightnessAdjustRate = 0.3;
             this.mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
             this.operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+            this.modalToolSelectedAreaLineColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
             this.generalLinePointRadius = 2.0;
             this.selectedLinePointRadius = 3.0;
             this.viewZoomAdjustingSpeedRate = 3.0;
@@ -290,6 +313,8 @@ var ManualTracingTool;
         ToolBase.prototype.keydown = function (e, env) {
         };
         ToolBase.prototype.onDrawEditor = function (env, drawEnv) {
+        };
+        ToolBase.prototype.onOpenFile = function (filePath, env) {
         };
         return ToolBase;
     }());

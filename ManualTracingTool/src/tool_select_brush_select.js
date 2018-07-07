@@ -24,6 +24,9 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Select_BrushSelet_LinePoint.prototype.mouseDown = function (e, env) {
+            if (env.currentVectorLayer == null) {
+                return;
+            }
             if (e.isLeftButtonPressing()) {
                 this.startSelection(e, env);
                 this.processSelection(e, env);
@@ -32,15 +35,24 @@ var ManualTracingTool;
             }
         };
         Tool_Select_BrushSelet_LinePoint.prototype.mouseMove = function (e, env) {
+            if (env.currentVectorLayer == null) {
+                // redraw cursor
+                env.setRedrawEditorWindow();
+                return;
+            }
             if (this.selectionProcessID == SelectionProgressID.selecting) {
                 if (e.isLeftButtonPressing()) {
                     this.processSelection(e, env);
                     env.setRedrawMainWindow();
                 }
             }
+            // redraw cursor
             env.setRedrawEditorWindow();
         };
         Tool_Select_BrushSelet_LinePoint.prototype.mouseUp = function (e, env) {
+            if (env.currentVectorLayer == null) {
+                return;
+            }
             if (this.selectionProcessID == SelectionProgressID.selecting) {
                 this.endSelection(env);
                 env.setRedrawMainWindow();
