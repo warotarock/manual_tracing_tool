@@ -1,13 +1,28 @@
 
 declare var Custombox: any;
+declare var require: any;
+
+let fs = (typeof (require) != 'undefined') ? require('fs') : {
+    writeFile(fileName, text) {
+        window.localStorage.setItem('Manual tracing tool save data', text);
+    }
+};
 
 namespace ManualTracingTool {
 
     // 今やること (current tasks)
+    // ・PNG出力、jpeg出力
+    // 　・出力する範囲を設定するツールを実装する
+    // 　・出力用のCanvasを用意し、出力サイズにサイズを変更し、画像ファイルを保存する
+    // 　・出力先のフォルダをローカルストレージの設定で決め、ドキュメントの設定のファイル名で保存する
+    // 　・出力ファイル名を指定するダイアログを実装する。ついでに出力範囲の値指定も同じダイアログでできるようにする
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
     // 　・スクラッチツールで途中の点が一部だけギリギリ遠いために編集の対象にならないときがあるが、それをどうにかしたい
+    // 　・影響範囲が感覚と合わないのでどうにかしたい
+    // ・リサンプリングツールで線の太さがビューのスケールに応じて変わってしまっている？
     // ・線の太さを変えられるツールを追加
     // 　・基本の線の太さ、筆圧での最小最大幅（割合）を設定できるようにする。設定ダイアログに追加。
+    // 　・近傍の線の太さをスムージングする機能
     // 　・線を何度もなぞって太くするツール追加→編集線の方向に太さを足すという考え方→編集線への距離が近いほど、その距離に等しい分の太さを足す。足した太さ分だけ点の位置を編集線の方向に移動する。
     // 　・線を何度もなぞって細くするツール追加→編集線で削るという考え方をする→逆のようで微妙に違うかも
     // ・筆圧を線の太さに影響できるようにするとどうなるか試す
@@ -15,8 +30,6 @@ namespace ManualTracingTool {
 
     // どこかでやる必要があること (nearest future tasks)
     // ・アクティブ線、レイヤによる絞り込み処理と可視化
-    // ・ファイル保存、読み込み
-    // ・PNG出力、jpeg出力
     // ・現在のレイヤーが変わったときにメインツールを自動で変更する。ベクターレイヤーならスクラッチツールとドローツールのどちらかを記憶、ポージングレイヤーならポーズにする
 
     // 既知のバグ (remaining bugs)
@@ -70,6 +83,8 @@ namespace ManualTracingTool {
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
     // 　・編集線上に近接位置がない点への影響度のフォールオフを無くしたり、大きくしたりしてみる
     // 　・線の延長の最初の点の扱いを調整する
+    // ・ファイル保存、読み込み
+    // 　・ローカルストレージの設定のファイルに書き込む
 
     enum MainProcessStateID {
 
@@ -184,8 +199,9 @@ namespace ManualTracingTool {
 
         // Document data
         document: DocumentData = null;
-        lastFileKey = 'Manual tracing tool last used file url';
         tempFileNameKey = 'Manual tracing tool save data';
+        lastFilePathKey = 'Manual tracing tool last used file url';
+        refFileBasePathKey = 'Manual tracing tool reference base path';
 
         loadingDocumentImageResources: List<ImageResource> = null;
 
@@ -278,7 +294,11 @@ namespace ManualTracingTool {
             }
 
             // Loading finished
-            let lastURL = window.localStorage.getItem(this.lastFileKey);
+
+            // Start loading document data
+
+            let lastURL = window.localStorage.getItem(this.lastFilePathKey);
+
             if (StringIsNullOrEmpty(lastURL)) {
 
                 this.document = this.createTestDocumentData();
@@ -367,7 +387,9 @@ namespace ManualTracingTool {
 
                 if (!imageResource.loaded && !StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
 
-                    imageResource.fileName = ifrLayer.imageFilePath;
+                    let refFileBasePath = window.localStorage.getItem(this.refFileBasePathKey);
+
+                    imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
 
                     this.loadTexture(imageResource, imageResource.fileName);
 
@@ -462,6 +484,31 @@ namespace ManualTracingTool {
             );
 
             xhr.send();
+        }
+
+        // Saving 
+
+        saveDocument() {
+
+            let lastFilePath = window.localStorage.getItem(this.lastFilePathKey);
+
+            let copy = JSON.parse(JSON.stringify(this.document));
+            this.fixSaveDocumentData(copy);
+
+            let saveToLocalStrage = false;
+
+            if (saveToLocalStrage) {
+
+                window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(copy));
+            }
+            else {
+
+                fs.writeFile(lastFilePath, JSON.stringify(copy), function (error) {
+                    if (error != null) {
+                        alert('error : ' + error);
+                    }
+                });
+            }
         }
 
         // Starting ups
@@ -1287,6 +1334,10 @@ namespace ManualTracingTool {
                 return;
             }
 
+            if (this.isModalShown()) {
+                return;
+            }
+
             let context = this.toolContext;
 
             this.toolContext.shiftKey = e.shiftKey;
@@ -1411,10 +1462,7 @@ namespace ManualTracingTool {
 
                 if (this.toolEnv.isCtrlKeyPressing()) {
 
-                    let copy = JSON.parse(JSON.stringify(this.document));
-                    this.fixSaveDocumentData(copy);
-
-                    window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(copy));
+                    this.saveDocument();
 
                     e.preventDefault();
                     return;
@@ -1604,6 +1652,10 @@ namespace ManualTracingTool {
             this.toolContext.shiftKey = e.shiftKey;
             this.toolContext.altKey = e.altKey;
             this.toolContext.ctrlKey = e.ctrlKey;
+
+            if (this.isModalShown()) {
+                return;
+            }
 
             if (e.key == ' ') {
 
