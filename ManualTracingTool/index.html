@@ -35,6 +35,7 @@
     <script src="./src/tool_transform_lattice.js"></script>
     <script src="./src/tool_transform_line_point.js"></script>
     <script src="./src/tool_edit_image_file_ref.js"></script>
+    <script src="./src/tool_edit_document_frame.js"></script>
     <script src="./src/tool_posing3d.js"></script>
     <script src="./src/posing3d_logic.js"></script>
     <script src="./src/posing3d_view.js"></script>
@@ -181,6 +182,10 @@
             width: 100%;
         }
 
+        input[type=number] {
+            text-align: right;
+        }
+
         .openFileDialogModal {
             width: 400px;
             height: 100px;
@@ -257,6 +262,26 @@
             .newLayerCommandOptionModal div {
                 margin-bottom: 15px;
             }
+
+        .documentSettingModal {
+            width: 400px;
+            height: 200px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            display: none;
+            padding: 20px;
+            margin-top: -60%;
+        }
+
+            .documentSettingModal input {
+                margin-left: 15px;
+                margin-top: 10px;
+            }
+
+        .documentSettingModal_Location {
+            width: 100px;
+        }
     </style>
 </head>
 <body>
@@ -281,7 +306,7 @@
 
     <div id="openFileDialogModal" class="openFileDialogModal">
         <label>
-            <input type="file" class="openFileDialogModal_file" id="openFileDialogModal_file"/>
+            <input type="file" class="openFileDialogModal_file" id="openFileDialogModal_file" />
         </label>
         <br />
         <div class="OKCalcelButtons">
@@ -373,5 +398,26 @@
             </div>
         </div>
     </div>
+
+    <div id="documentSettingModal" class="documentSettingModal">
+        <div>
+            エクスポート範囲<br />
+            <label>
+                左上
+                <input type="number" id="documentSettingModal_FrameLeft" class="documentSettingModal_Location" step="1" />
+            </label>
+            <label>
+                <input type="number" id="documentSettingModal_FrameTop" class="documentSettingModal_Location" step="1" />
+            </label><br />
+            <label>
+                右下
+                <input type="number" id="documentSettingModal_FrameRight" class="documentSettingModal_Location" step="1" />
+            </label>
+            <label>
+                <input type="number" id="documentSettingModal_FrameBottom" class="documentSettingModal_Location" step="1" />
+            </label><br />
+        </div>
+    </div>
+
 </body>
 </html>

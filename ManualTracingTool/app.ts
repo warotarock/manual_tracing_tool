@@ -149,6 +149,9 @@ namespace ManualTracingTool {
         vectorLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
         imageFileReferenceLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
 
+        // Document setting tools
+        tool_EditDocumentFrame = new Tool_EditDocumentFrame();
+
         // Selection tools
         selectionTools = List<ToolBase>(<int>OperationUnitID.countOfID);
         tool_LinePointBrushSelect = new Tool_Select_BrushSelet_LinePoint();
@@ -748,6 +751,7 @@ namespace ManualTracingTool {
                     .subToolImg(this.subToolImages[0])
                     .subTool(this.tool_DrawLine)
                     .subTool(this.tool_EditImageFileReference)
+                    .subTool(this.tool_EditDocumentFrame)
             );
 
             this.mainTools.push(
@@ -1638,6 +1642,11 @@ namespace ManualTracingTool {
 
             if (e.key == '2') {
 
+                this.openDocumentSettingModal();
+            }
+
+            if (e.key == '3') {
+
                 this.openNewLayerCommandOptionModal();
             }
 
@@ -2045,6 +2054,17 @@ namespace ManualTracingTool {
             Custombox.modal.closeAll();
         }
 
+        private openModal(modalID: string) {
+
+            this.currentModalDialogID = modalID;
+
+            var modal: any = new Custombox.modal(
+                this.createModalOptionObject(this.currentModalDialogID)
+            );
+
+            modal.open();
+        }
+
         private openLayerPropertyModal(layer: Layer, layerWindowItem: LayerWindowItem) {
 
             if (this.isModalShown()) {
@@ -2066,13 +2086,7 @@ namespace ManualTracingTool {
 
             this.layerPropertyWindow_EditLayer = layer;
 
-            this.currentModalDialogID = this.ID.layerPropertyModal;
-
-            var modal: any = new Custombox.modal(
-                this.createModalOptionObject(this.currentModalDialogID)
-            );
-
-            modal.open();
+            this.openModal(this.ID.layerPropertyModal);
         }
 
         private openOperationOptionModal() {
@@ -2083,13 +2097,7 @@ namespace ManualTracingTool {
 
             this.setRadioElementIntValue(this.ID.operationOptionModal_operationUnit, this.toolContext.operationUnitID);
 
-            this.currentModalDialogID = this.ID.operationOptionModal;
-
-            var modal: any = new Custombox.modal(
-                this.createModalOptionObject(this.currentModalDialogID)
-            );
-
-            modal.open();
+            this.openModal(this.ID.operationOptionModal);
         }
 
         private openNewLayerCommandOptionModal() {
@@ -2098,15 +2106,8 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let layerTypeID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, LayerTypeID.vectorLayer);
+            this.openModal(this.ID.newLayerCommandOptionModal);
 
-            this.currentModalDialogID = this.ID.newLayerCommandOptionModal;
-
-            var modal: any = new Custombox.modal(
-                this.createModalOptionObject(this.currentModalDialogID)
-            );
-
-            modal.open();
         }
 
         private openFileDialogModal() {
@@ -2115,13 +2116,21 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.currentModalDialogID = this.ID.openFileDialogModal;
+            this.openModal(this.ID.openFileDialogModal);
+        }
 
-            var modal: any = new Custombox.modal(
-                this.createModalOptionObject(this.currentModalDialogID)
-            );
+        private openDocumentSettingModal() {
 
-            modal.open();
+            if (this.isModalShown()) {
+                return;
+            }
+
+            this.setInputElementNumber(this.ID.documentSettingModal_FrameLeft, this.document.documentFrame[0]);
+            this.setInputElementNumber(this.ID.documentSettingModal_FrameTop, this.document.documentFrame[1]);
+            this.setInputElementNumber(this.ID.documentSettingModal_FrameRight, this.document.documentFrame[2]);
+            this.setInputElementNumber(this.ID.documentSettingModal_FrameBottom, this.document.documentFrame[3]);
+
+            this.openModal(this.ID.documentSettingModal);
         }
 
         private onModalWindowClosed() {
@@ -2206,6 +2215,13 @@ namespace ManualTracingTool {
                         }
                     }
                 }
+            }
+            else if (this.currentModalDialogID == this.ID.documentSettingModal) {
+
+                this.document.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft);
+                this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop);
+                this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight);
+                this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom);
             }
 
             this.currentModalDialogID = this.ID.none;
@@ -3270,6 +3286,29 @@ namespace ManualTracingTool {
             return element;
         }
 
+        getInputElementText(id: string): string {
+
+            let element = <HTMLInputElement>(document.getElementById(id));
+
+            return element.value;
+        }
+
+        setInputElementNumber(id: string, value: float): HTMLElement {
+
+            let element = <HTMLInputElement>(document.getElementById(id));
+
+            element.value = value.toString();
+
+            return element;
+        }
+
+        getInputElementNumber(id: string): float {
+
+            let element = <HTMLInputElement>(document.getElementById(id));
+
+            return Number(element.value);
+        }
+
         setInputElementRangeValue(id: string, value: float, min: float, max: float): HTMLElement {
 
             let element = <HTMLInputElement>(document.getElementById(id));
@@ -3317,13 +3356,6 @@ namespace ManualTracingTool {
             }
 
             return value;
-        }
-
-        getInputElementText(id: string): string {
-
-            let element = <HTMLInputElement>(document.getElementById(id));
-
-            return element.value;
         }
 
         setInputElementColor(id: string, color: Vec4): Vec4 {
@@ -3508,6 +3540,12 @@ namespace ManualTracingTool {
         newLayerCommandOptionModal_layerType = 'newLayerCommandOptionModal_layerType';
         newLayerCommandOptionModal_ok = 'newLayerCommandOptionModal_ok';
         newLayerCommandOptionModal_cancel = 'newLayerCommandOptionModal_cancel';
+
+        documentSettingModal = '#documentSettingModal';
+        documentSettingModal_FrameLeft = 'documentSettingModal_FrameLeft';
+        documentSettingModal_FrameTop = 'documentSettingModal_FrameTop';
+        documentSettingModal_FrameRight = 'documentSettingModal_FrameRight';
+        documentSettingModal_FrameBottom = 'documentSettingModal_FrameBottom';
     }
 
     enum DrawLineToolSubToolID {

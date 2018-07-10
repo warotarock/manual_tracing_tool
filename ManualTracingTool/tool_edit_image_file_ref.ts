@@ -95,10 +95,6 @@ namespace ManualTracingTool {
 
         dLocation = vec3.create();
 
-        protected clearEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-        }
-
         protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
             if (env.currentImageFileReferenceLayer == null) {

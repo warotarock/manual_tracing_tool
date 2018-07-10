@@ -275,6 +275,6 @@ namespace ManualTracingTool {
         loaded = false;
 
         rootLayer = new Layer();
-        documentFrame = [0.0, 0.0, 1024.0, 1024.0];
+        documentFrame = vec4.fromValues(-512.0, -512.0, 512.0, 512.0);
     }
 }

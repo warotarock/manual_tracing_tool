@@ -63,7 +63,7 @@ namespace ManualTracingTool {
             return available;
         }
 
-        private createLatticePoints(count: int) {
+        protected createLatticePoints(count: int) {
 
             this.latticePoints = new List<LatticePoint>();
 
@@ -165,6 +165,17 @@ namespace ManualTracingTool {
         }
 
         onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
+
+            if (this.latticePoints == null) {
+
+                this.createLatticePoints(this.latticePointCount);
+                this.prepareLatticePoints(env);
+            }
+
+            this.drawLatticeLine(env, drawEnv);
+        }
+
+        protected drawLatticeLine(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) {
 
             drawEnv.render.setStrokeColorV(drawEnv.style.modalToolSelectedAreaLineColor);
             drawEnv.render.setStrokeWidth(env.getViewScaledLength(1.0));
