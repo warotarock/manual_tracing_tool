@@ -1,6 +1,7 @@
 
 declare var Custombox: any;
 declare var require: any;
+declare var Buffer: any;
 
 let fs = (typeof (require) != 'undefined') ? require('fs') : {
     writeFile(fileName, text) {
@@ -12,7 +13,6 @@ namespace ManualTracingTool {
 
     // 今やること (current tasks)
     // ・PNG出力、jpeg出力
-    // 　・出力する範囲を設定するツールを実装する
     // 　・出力用のCanvasを用意し、出力サイズにサイズを変更し、画像ファイルを保存する
     // 　・出力先のフォルダをローカルストレージの設定で決め、ドキュメントの設定のファイル名で保存する
     // 　・出力ファイル名を指定するダイアログを実装する。ついでに出力範囲の値指定も同じダイアログでできるようにする
@@ -39,6 +39,7 @@ namespace ManualTracingTool {
 
     // いつかやる (anytime tasks)
     // ・ラティス変形ツール
+    // ・アンカーの表示/非表示をツールで切り替えるようにする
     // ・レイヤーカラーをどこかに表示する
     // ・レイヤーカラーとレイヤーの透明度の関係を考え直す
     // ・レイヤー削除時に削除前に次に表示されていたレイヤーを選択する
@@ -85,6 +86,7 @@ namespace ManualTracingTool {
     // 　・線の延長の最初の点の扱いを調整する
     // ・ファイル保存、読み込み
     // 　・ローカルストレージの設定のファイルに書き込む
+    // 　・出力する範囲を設定するツールを実装する
 
     enum MainProcessStateID {
 
@@ -108,6 +110,8 @@ namespace ManualTracingTool {
         layerWindow = new LayerWindow();
         webglWindow = new CanvasWindow();
         pickingWindow = new PickingWindow();
+
+        renderingWindow = new CanvasWindow();
 
         canvasRender = new CanvasRender();
         webGLRender = new WebGLRender();
@@ -205,6 +209,7 @@ namespace ManualTracingTool {
         tempFileNameKey = 'Manual tracing tool save data';
         lastFilePathKey = 'Manual tracing tool last used file url';
         refFileBasePathKey = 'Manual tracing tool reference base path';
+        exportPathKey = 'Manual tracing tool export path';
 
         loadingDocumentImageResources: List<ImageResource> = null;
 
@@ -257,6 +262,8 @@ namespace ManualTracingTool {
             this.editorWindow.context = this.editorWindow.canvas.getContext('2d');
             this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
             this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
+
+            this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
 
             this.canvasRender.setContext(this.layerWindow);
             this.canvasRender.setFontSize(18.0);
@@ -1650,6 +1657,11 @@ namespace ManualTracingTool {
                 this.openNewLayerCommandOptionModal();
             }
 
+            if (e.key == '\\') {
+
+                this.openExportImageFileModal();
+            }
+
             if (e.key == 'o') {
 
                 this.currentTool.keydown(e, this.toolEnv);
@@ -2133,6 +2145,17 @@ namespace ManualTracingTool {
             this.openModal(this.ID.documentSettingModal);
         }
 
+        private openExportImageFileModal() {
+
+            if (this.isModalShown()) {
+                return;
+            }
+
+            this.setRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
+
+            this.openModal(this.ID.exportImageFileModal);
+        }
+
         private onModalWindowClosed() {
 
             if (this.currentModalDialogID == this.ID.layerPropertyModal) {
@@ -2222,6 +2245,52 @@ namespace ManualTracingTool {
                 this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop);
                 this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight);
                 this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom);
+            }
+            else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
+
+                let imageWidth = Math.floor(this.document.documentFrame[2] - this.document.documentFrame[0] + 1);
+                let imageHeight = Math.floor(this.document.documentFrame[3] - this.document.documentFrame[1] + 1);
+
+                if (imageWidth > 0 && imageHeight > 0) {
+
+                    let canvas = this.renderingWindow.canvas;
+                    canvas.width = imageWidth;
+                    canvas.height = imageHeight;
+
+                    this.renderingWindow.width = imageWidth;
+                    this.renderingWindow.height = imageHeight;
+                    this.renderingWindow.viewLocation[0] = 0.0;
+                    this.renderingWindow.viewLocation[1] = 0.0;
+                    this.renderingWindow.viewScale = 1.0;
+                    this.renderingWindow.viewRotation = 0.0;
+                    this.renderingWindow.centerLocationRate[0] = 0.5;
+                    this.renderingWindow.centerLocationRate[1] = 0.5;
+                    this.clearWindow(this.renderingWindow);
+                    this.drawMainWindow(this.renderingWindow);
+
+                    let exportPath = window.localStorage.getItem(this.exportPathKey);
+                    let fileName = 'test';
+                    let imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
+                    let extText = '.png';
+                    if (imageType == 2) {
+                        extText = '.jpg';
+                    }
+                    let fileFullPath = exportPath + '/' + fileName + extText;
+
+                    let imageTypeText = 'image/png';
+                    if (imageType == 2) {
+                        imageTypeText = 'image/jpeg';
+                    }
+                    var dataUrl = canvas.toDataURL(imageTypeText, 0.9);
+                    var data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+                    var buf = new Buffer(data, 'base64');
+
+                    fs.writeFile(fileFullPath, buf, (error) => {
+                        if (error) {
+                            alert(error);
+                        }
+                    });
+                }
             }
 
             this.currentModalDialogID = this.ID.none;
@@ -3512,6 +3581,8 @@ namespace ManualTracingTool {
 
     class HTMLElementID {
 
+        none = 'none';
+
         menu_btnDrawTool = 'menu_btnDrawTool';
         menu_btnScratchTool = 'menu_btnScratchTool';
         menu_btnPoseTool = 'menu_btnPoseTool';
@@ -3519,8 +3590,6 @@ namespace ManualTracingTool {
 
         unselectedMainButton = 'unselectedMainButton';
         selectedMainButton = 'selectedMainButton';
-
-        none = 'none';
 
         openFileDialogModal = '#openFileDialogModal';
         openFileDialogModal_file = 'openFileDialogModal_file';
@@ -3546,6 +3615,9 @@ namespace ManualTracingTool {
         documentSettingModal_FrameTop = 'documentSettingModal_FrameTop';
         documentSettingModal_FrameRight = 'documentSettingModal_FrameRight';
         documentSettingModal_FrameBottom = 'documentSettingModal_FrameBottom';
+
+        exportImageFileModal = '#exportImageFileModal';
+        exportImageFileModal_imageFileType = 'exportImageFileModal_imageFileType';
     }
 
     enum DrawLineToolSubToolID {
@@ -3578,6 +3650,7 @@ namespace ManualTracingTool {
         _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById('layerCanvas');
         _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById('webglCanvas');
         _Main.pickingWindow.canvas = document.createElement('canvas');
+        _Main.renderingWindow.canvas = document.createElement('canvas');
         //document.getElementById('footer').appendChild(_Main.pickingWindow.canvas);
 
         _Main.onLoad();

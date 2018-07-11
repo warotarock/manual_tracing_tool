@@ -118,6 +118,11 @@
             background: #fff;
         }
 
+        #renderTargetCanvas {
+            position: absolute;
+            display: none;
+        }
+
         main {
             position: absolute;
             left: 2%;
@@ -282,6 +287,17 @@
         .documentSettingModal_Location {
             width: 100px;
         }
+
+        .exportImageFileModal {
+            width: 400px;
+            height: 200px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            display: none;
+            padding: 20px;
+            margin-top: -60%;
+        }
     </style>
 </head>
 <body>
@@ -302,6 +318,9 @@
             <canvas id="layerCanvas"></canvas>
         </div>
     </main>
+
+    <canvas id="renderTargetCanvas"></canvas>
+
     <footer id="footer"></footer>
 
     <div id="openFileDialogModal" class="openFileDialogModal">
@@ -416,6 +435,21 @@
             <label>
                 <input type="number" id="documentSettingModal_FrameBottom" class="documentSettingModal_Location" step="1" />
             </label><br />
+        </div>
+    </div>
+
+    <div id="exportImageFileModal" class="exportImageFileModal">
+        <div>
+            画像形式<br />
+            <label>
+                <input type="radio" name="exportImageFileModal_imageFileType" value="1">
+                png
+            </label>
+            <label>
+                <input type="radio" name="exportImageFileModal_imageFileType" value="2">
+                jpeg
+            </label>
+            <br />
         </div>
     </div>
 
