@@ -44,6 +44,7 @@ namespace ManualTracingTool {
 
         editFalloffRadiusMinRate = 0.15;
         editFalloffRadiusMaxRate = 1.5;
+        editFalloffNormaldistanceRate = 2.0;
         editInfluence = 0.5;
 
         editExtrudeMinRadiusRate = 0.5;
@@ -433,9 +434,9 @@ namespace ManualTracingTool {
                         continue;
                     }
 
-                    let influenceDistance = vec3.distance(point.location, this.nearestPointLocation);
+                    let normalDistance = vec3.distance(point.location, this.nearestPointLocation);
 
-                    if (influenceDistance > editFalloffRadiusMax) {
+                    if (normalDistance > editFalloffRadiusMax * this.editFalloffNormaldistanceRate) {
 
                         continue;
                     }
@@ -460,6 +461,7 @@ namespace ManualTracingTool {
 
                     let influence = this.calculateCandidatePointInfluence(
                         editorLine.totalLength
+                        , normalDistance
                         , sorroundingDistance
                         , totalLengthInEditorLine
                         , normPositionInEditorLineSegment
@@ -668,7 +670,7 @@ namespace ManualTracingTool {
             return result;
         }
 
-        protected calculateCandidatePointInfluence(editorLine_TotalLength: float, sorroundingDistance: float, totalLengthInEditorLine: float, normPositionInEditorLineSegment: float, editFalloffRadiusMin: float, editFalloffRadiusMax: float): float { // @virtual
+        protected calculateCandidatePointInfluence(editorLine_TotalLength: float, normalDistance: float, sorroundingDistance: float, totalLengthInEditorLine: float, normPositionInEditorLineSegment: float, editFalloffRadiusMin: float, editFalloffRadiusMax: float): float { // @virtual
 
             let falloffDistance = sorroundingDistance;
 
