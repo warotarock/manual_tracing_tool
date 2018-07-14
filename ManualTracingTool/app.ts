@@ -664,6 +664,10 @@ namespace ManualTracingTool {
                     ifrLayer.rotation = vec3.fromValues(0.0, 0.0, 0.0);
                     ifrLayer.scale = vec3.fromValues(1.0, 1.0, 1.0);
                 }
+
+                vec3.copy(ifrLayer.adjustingLocation, ifrLayer.location);
+                vec3.copy(ifrLayer.adjustingRotation, ifrLayer.rotation);
+                vec3.copy(ifrLayer.adjustingScale, ifrLayer.scale);
             }
 
             for (let childLayer of layer.childLayers) {
