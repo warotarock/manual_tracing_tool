@@ -377,6 +377,7 @@ namespace ManualTracingTool {
 
                 vec3.copy(point.adjustingLocation, point.location);
                 vec3.copy(point.tempLocation, point.location);
+                point.adjustingLineWidth = point.lineWidth ;
             }
 
             let iteration = 2;
@@ -404,8 +405,6 @@ namespace ManualTracingTool {
                     let point2 = line.points[i + 1];
 
                     vec3.copy(point2.tempLocation, point2.adjustingLocation);
-
-                    point2.lineWidth = point2.adjustingLineWidth;
                 }
             }
 
@@ -435,7 +434,8 @@ namespace ManualTracingTool {
 
             for (let point of line.points) {
 
-                vec3.copy(point.location, point.adjustingLocation)
+                vec3.copy(point.location, point.adjustingLocation);
+                point.lineWidth = point.adjustingLineWidth;
             }
         }
 
