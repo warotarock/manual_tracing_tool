@@ -230,7 +230,7 @@
 
         .operationOptionModal {
             width: 400px;
-            height: 200px;
+            height: 250px;
             background-color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             border-radius: 10px;
@@ -247,6 +247,10 @@
             .operationOptionModal div {
                 margin-bottom: 15px;
             }
+
+        .operationOptionModal_LineWidth {
+            width: 100px;
+        }
 
         .newLayerCommandOptionModal {
             width: 400px;
@@ -353,6 +357,13 @@
     </div>
 
     <div id="operationOptionModal" class="operationOptionModal">
+        <div>
+            <label>
+                線の太さ
+                <input type="number" id="operationOptionModal_LineWidth" class="operationOptionModal_LineWidth" step="1" />
+            </label>
+            <br />
+        </div>
         <div>
             編集単位<br />
             <label>

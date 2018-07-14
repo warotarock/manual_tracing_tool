@@ -2107,6 +2107,8 @@ namespace ManualTracingTool {
                 return;
             }
 
+            this.setInputElementNumber(this.ID.operationOptionModal_LineWidth, this.toolContext.drawLineBaseWidth);
+
             this.setRadioElementIntValue(this.ID.operationOptionModal_operationUnit, this.toolContext.operationUnitID);
 
             this.openModal(this.ID.operationOptionModal);
@@ -2180,6 +2182,8 @@ namespace ManualTracingTool {
                 this.layerPropertyWindow_EditLayer = null;
             }
             else if (this.currentModalDialogID == this.ID.operationOptionModal) {
+
+                this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth);
 
                 this.toolContext.operationUnitID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, OperationUnitID.linePoint);
 
@@ -3603,6 +3607,7 @@ namespace ManualTracingTool {
         layerPropertyModal_layerAlpha = 'layerPropertyModal_layerAlpha';
 
         operationOptionModal = '#operationOptionModal';
+        operationOptionModal_LineWidth = 'operationOptionModal_LineWidth'
         operationOptionModal_operationUnit = 'operationOptionModal_operationUnit'
 
         newLayerCommandOptionModal = '#newLayerCommandOptionModal';

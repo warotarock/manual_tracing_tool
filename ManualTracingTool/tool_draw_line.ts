@@ -26,13 +26,14 @@ namespace ManualTracingTool {
 
             this.editLine = new VectorLine();
 
-            this.addPointToEditLine(e);
+            this.addPointToEditLine(e, env);
         }
 
-        private addPointToEditLine(e: ToolMouseEvent) {
+        private addPointToEditLine(e: ToolMouseEvent, env: ToolEnvironment) {
 
             let point = new LinePoint();
             vec3.copy(point.location, e.location);
+            point.lineWidth = env.drawLineBaseWidth;
 
             this.editLine.points.push(point);
         }
@@ -43,7 +44,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.addPointToEditLine(e);
+            this.addPointToEditLine(e, env);
 
             env.setRedrawEditorWindow();
         }
