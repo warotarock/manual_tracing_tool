@@ -101,11 +101,28 @@ namespace ManualTracingTool {
         linePointModifyFlag = VectorGroupModifyFlagID.none;
     }
 
+    export enum DrawLineTypeID {
+
+        none = 1,
+        solid = 2,
+    }
+
+    export enum FillAreaTypeID {
+
+        none = 1,
+        byFillColor = 2,
+    }
+
     export class VectorLayer extends Layer {
 
         type = LayerTypeID.vectorLayer;
 
         groups = new List<VectorGroup>();
+
+        drawLineType = DrawLineTypeID.solid;
+
+        fillAreaType = FillAreaTypeID.none;
+        fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     }
 
     // Group layer

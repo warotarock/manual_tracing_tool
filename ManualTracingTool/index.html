@@ -210,13 +210,13 @@
 
         .layerPropertyModal {
             width: 400px;
-            height: 200px;
+            height: 380px;
             background-color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             border-radius: 10px;
             display: none;
             padding: 20px;
-            margin-bottom: -60%;
+            margin-bottom: -50%;
         }
 
             .layerPropertyModal input {
@@ -224,8 +224,16 @@
                 margin-top: 15px;
             }
 
+            .layerPropertyModal div {
+                margin-top: 15px;
+            }
+
         #layerPropertyModal_layerAlpha {
-            width: 300px;
+            width: 200px;
+        }
+
+        #layerPropertyModal_fillColorAlpha {
+            width: 200px;
         }
 
         .operationOptionModal {
@@ -349,10 +357,40 @@
         <label>
             レイヤー色
             <input type="color" id="layerPropertyModal_layerColor">
-        </label><br />
+        </label>
         <label>
-            不透明度
             <input type="range" id="layerPropertyModal_layerAlpha" min="0" max="500">
+        </label><br />
+        <div>
+            線の種類<br />
+            <label>
+                <input type="radio" name="layerPropertyModal_drawLineType" value="1">
+                なし
+            </label>
+            <label>
+                <input type="radio" name="layerPropertyModal_drawLineType" value="2">
+                通常
+            </label>
+            <br />
+        </div>
+        <div>
+            塗りつぶし<br />
+            <label>
+                <input type="radio" name="layerPropertyModal_fillAreaType" value="1">
+                なし
+            </label>
+            <label>
+                <input type="radio" name="layerPropertyModal_fillAreaType" value="2">
+                塗りつぶし色
+            </label>
+            <br />
+        </div>
+        <label>
+            塗りつぶし色
+            <input type="color" id="layerPropertyModal_fillColor">
+        </label>
+        <label>
+            <input type="range" id="layerPropertyModal_fillColorAlpha" min="0" max="500">
         </label><br />
     </div>
 

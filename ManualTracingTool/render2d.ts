@@ -141,7 +141,7 @@ namespace ManualTracingTool {
 
         setFillColor(r: float, g: float, b: float, a: float) {
 
-            this.context.fillStyle = 'rgb(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ')';
+            this.context.fillStyle = 'rgba(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ',' + (a).toFixed(2) + ')';
         }
 
         setFillColorV(color: Vec4) {

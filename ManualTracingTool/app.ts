@@ -12,6 +12,9 @@ let fs = (typeof (require) != 'undefined') ? require('fs') : {
 namespace ManualTracingTool {
 
     // 今やること (current tasks)
+    // ・レイヤーに線と塗りつぶしの描画オプションを実装する
+
+    // どこかでやる必要があること (nearest future tasks)
     // ・PNG出力、jpeg出力
     // 　・出力倍率を指定できるようにする、ドキュメントに記録する
     // 　・出力先のフォルダをローカルストレージの設定で決め、ドキュメントの設定のファイル名で保存する
@@ -21,12 +24,10 @@ namespace ManualTracingTool {
     // ・線の太さを変えられるツールを追加
     // 　・固定の太さで上書きする機能、選択中の点に上書きする
     // 　・筆圧を線の太さに影響できるようにするとどうなるか試す
-    // ・ドローツールで線の最後の点が重複している（リサンプリングで最後と同じ位置に点が追加されている？）
-
-    // どこかでやる必要があること (nearest future tasks)
     // ・線の太さに変化がある線を品質よく描画する
     // ・アクティブ線、レイヤによる絞り込み処理と可視化
     // ・現在のレイヤーが変わったときにメインツールを自動で変更する。ベクターレイヤーならスクラッチツールとドローツールのどちらかを記憶、ポージングレイヤーならポーズにする
+    // ・ドローツールで線の最後の点が重複している（リサンプリングで最後と同じ位置に点が追加されている？）
 
     // 既知のバグ (remaining bugs)
     // ・現在のレイヤーが移動したときにカーソルが変な位置に出る
@@ -226,6 +227,8 @@ namespace ManualTracingTool {
         view2DMatrix = mat4.create();
         invView2DMatrix = mat4.create();
         tempVec3 = vec3.create();
+        tempVec4 = vec4.create();
+        tempColor4 = vec4.create();
         tempMat4 = mat4.create();
 
         editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
@@ -624,6 +627,18 @@ namespace ManualTracingTool {
 
                 let vectorLayer = <VectorLayer>layer;
 
+                if (vectorLayer.drawLineType == undefined) {
+                    vectorLayer.drawLineType = DrawLineTypeID.solid;
+                }
+
+                if (vectorLayer.fillAreaType == undefined) {
+                    vectorLayer.fillAreaType = FillAreaTypeID.none;
+                }
+
+                if (vectorLayer.fillColor == undefined) {
+                    vectorLayer.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+                }
+
                 for (let group of vectorLayer.groups) {
 
                     for (let line of group.lines) {
@@ -642,12 +657,10 @@ namespace ManualTracingTool {
                             point.adjustingLineWidth = point.lineWidth;
 
                             if (point.lineWidth == undefined) {
-
                                 point.lineWidth = 1.0;
                             }
 
                             if (point["adjustedLocation"] != undefined) {
-
                                 delete point["adjustedLocation"];
                             }
                         }
@@ -1659,10 +1672,16 @@ namespace ManualTracingTool {
 
             if (e.key == '2') {
 
-                this.openDocumentSettingModal();
+                let layerItem = this.findCurrentLayerLayerWindowItem();
+                this.openLayerPropertyModal(layerItem.layer, layerItem);
             }
 
             if (e.key == '3') {
+
+                this.openDocumentSettingModal();
+            }
+
+            if (e.key == '4') {
 
                 this.openNewLayerCommandOptionModal();
             }
@@ -2041,7 +2060,6 @@ namespace ManualTracingTool {
         currentModalDialogID: string = null;
         currentModalDialogResult: string = null;
         layerPropertyWindow_EditLayer: Layer = null;
-        layerPropertyWindow_LayerClolor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         modalOverlayOption = {
             speedIn: 0,
             speedOut: 100,
@@ -2093,18 +2111,31 @@ namespace ManualTracingTool {
                 return;
             }
 
-            // layer type name
+            // common layer properties
+
             let layerTypeName = this.layerTypeNameDictionary[<int>layer.type];
             this.setElementText(this.ID.layerPropertyModal_layerTypeName, layerTypeName);
 
-            // name
             this.setInputElementText(this.ID.layerPropertyModal_layerName, layer.name);
 
-            // layer color
             this.setInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
 
-            // layer alpha
             this.setInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, layer.layerColor[3], 0.0, 1.0);
+
+            // for each layer type properties
+
+            if (layer.type == LayerTypeID.vectorLayer) {
+
+                let vectorLayer = <VectorLayer>layer;
+
+                this.setInputElementColor(this.ID.layerPropertyModal_fillColor, vectorLayer.fillColor);
+
+                this.setInputElementRangeValue(this.ID.layerPropertyModal_fillColorAlpha, vectorLayer.fillColor[3], 0.0, 1.0);
+
+                this.setRadioElementIntValue(this.ID.layerPropertyModal_drawLineType, vectorLayer.drawLineType);
+
+                this.setRadioElementIntValue(this.ID.layerPropertyModal_fillAreaType, vectorLayer.fillAreaType);
+            }
 
             this.layerPropertyWindow_EditLayer = layer;
 
@@ -2131,7 +2162,6 @@ namespace ManualTracingTool {
             }
 
             this.openModal(this.ID.newLayerCommandOptionModal);
-
         }
 
         private openFileDialogModal() {
@@ -2174,7 +2204,8 @@ namespace ManualTracingTool {
 
                 let layer = this.layerPropertyWindow_EditLayer;
 
-                // name
+                // common layer properties
+
                 let layerName = this.getInputElementText(this.ID.layerPropertyModal_layerName);
 
                 if (!StringIsNullOrEmpty(layerName)) {
@@ -2182,12 +2213,20 @@ namespace ManualTracingTool {
                     layer.name = layerName;
                 }
 
-                // layer color
-                this.getInputElementColor(this.ID.layerPropertyModal_layerColor, this.layerPropertyWindow_LayerClolor);
-                vec4.copy(layer.layerColor, this.layerPropertyWindow_LayerClolor);
-
-                // layer alpha
+                this.getInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
                 layer.layerColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, 0.0, 1.0);
+
+                if (layer.type == LayerTypeID.vectorLayer) {
+
+                    let vectorLayer = <VectorLayer>layer;
+
+                    this.getInputElementColor(this.ID.layerPropertyModal_fillColor, vectorLayer.fillColor);
+                    vectorLayer.fillColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_fillColorAlpha, 0.0, 1.0);
+
+                    vectorLayer.drawLineType = this.getRadioElementIntValue(this.ID.layerPropertyModal_drawLineType, DrawLineTypeID.solid);
+
+                    vectorLayer.fillAreaType = this.getRadioElementIntValue(this.ID.layerPropertyModal_fillAreaType, FillAreaTypeID.byFillColor);
+                }
 
                 this.layerPropertyWindow_EditLayer = null;
             }
@@ -2449,13 +2488,20 @@ namespace ManualTracingTool {
 
                 for (let line of group.lines) {
 
-                    if (line.points.length == 0) {
-                        continue;
+                    if (layer.fillAreaType == FillAreaTypeID.byFillColor) {
+
+                        this.drawVectorLineFill(line, layer.fillColor, line.strokeWidth, useAdjustingLocation);
                     }
+                }
+
+                for (let line of group.lines) {
 
                     if (this.toolEnv.isDrawMode()) {
 
-                        this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
+                        if (layer.drawLineType == DrawLineTypeID.solid) {
+
+                            this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
+                        }
                     }
                     else if (this.toolEnv.isSelectMode()) {
 
@@ -2465,13 +2511,8 @@ namespace ManualTracingTool {
                         }
                         else {
 
-                            if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
-
-                                this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
-
-                                this.drawVectorLinePoints(line, layer.layerColor, useAdjustingLocation);
-                            }
-                            else if (this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
+                            if (this.toolContext.operationUnitID == OperationUnitID.linePoint
+                                || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
 
                                 this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
 
@@ -2515,6 +2556,10 @@ namespace ManualTracingTool {
 
         private drawVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
 
+            if (line.points.length == 0) {
+                return;
+            }
+
             this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
 
             // make color darker or lighter than original to visible on line color
@@ -2538,6 +2583,47 @@ namespace ManualTracingTool {
         private lineWidthAdjust(width: float) {
 
             return Math.floor(width * 5) / 5;
+        }
+
+        private drawVectorLineFill(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) {
+
+            if (line.points.length <= 1) {
+                return;
+            }
+
+            this.canvasRender.setLineCap(CanvasRenderLineCap.round)
+            this.canvasRender.beginPath()
+            this.canvasRender.setFillColorV(color);
+
+            let firstPoint = line.points[0];
+
+            if (useAdjustingLocation) {
+
+                this.canvasRender.moveTo(firstPoint.adjustingLocation[0], firstPoint.adjustingLocation[1]);
+            }
+            else {
+
+                this.canvasRender.moveTo(firstPoint.location[0], firstPoint.location[1]);
+            }
+
+            let currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
+            this.canvasRender.setStrokeWidth(currentLineWidth);
+
+            for (let i = 1; i < line.points.length; i++) {
+
+                let point1 = line.points[i];
+
+                if (useAdjustingLocation) {
+
+                    this.canvasRender.lineTo(point1.adjustingLocation[0], point1.adjustingLocation[1]);
+                }
+                else {
+
+                    this.canvasRender.lineTo(point1.location[0], point1.location[1]);
+                }
+            }
+
+            this.canvasRender.fill();
         }
 
         private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
@@ -3615,6 +3701,10 @@ namespace ManualTracingTool {
         layerPropertyModal_layerName = 'layerPropertyModal_layerName';
         layerPropertyModal_layerColor = 'layerPropertyModal_layerColor';
         layerPropertyModal_layerAlpha = 'layerPropertyModal_layerAlpha';
+        layerPropertyModal_drawLineType = 'layerPropertyModal_drawLineType';
+        layerPropertyModal_fillColor = 'layerPropertyModal_fillColor';
+        layerPropertyModal_fillColorAlpha = 'layerPropertyModal_fillColorAlpha';
+        layerPropertyModal_fillAreaType = 'layerPropertyModal_fillAreaType';
 
         operationOptionModal = '#operationOptionModal';
         operationOptionModal_LineWidth = 'operationOptionModal_LineWidth'
