@@ -576,7 +576,7 @@ namespace ManualTracingTool {
 
             let document = new DocumentData();
 
-            let rootLayer = this.document.rootLayer;
+            let rootLayer = document.rootLayer;
             rootLayer.type = LayerTypeID.rootLayer;
 
             {
@@ -614,6 +614,8 @@ namespace ManualTracingTool {
             }
 
             document.loaded = true;
+
+            return document;
         }
 
         private fixLoadedDocumentData(document: DocumentData) {

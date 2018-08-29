@@ -461,7 +461,7 @@ var ManualTracingTool;
                 return document_1;
             }
             var document = new ManualTracingTool.DocumentData();
-            var rootLayer = this.document.rootLayer;
+            var rootLayer = document.rootLayer;
             rootLayer.type = ManualTracingTool.LayerTypeID.rootLayer;
             {
                 var layer1 = new ManualTracingTool.VectorLayer();
@@ -493,6 +493,7 @@ var ManualTracingTool;
                 rootLayer.childLayers.push(layer1);
             }
             document.loaded = true;
+            return document;
         };
         Main.prototype.fixLoadedDocumentData = function (document) {
             this.fixLoadedDocumentData_LayerRecursive(document.rootLayer);
