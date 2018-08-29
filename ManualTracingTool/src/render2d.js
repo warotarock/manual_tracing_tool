@@ -96,7 +96,7 @@ var ManualTracingTool;
             this.context.clearRect(left, top, width, height);
         };
         CanvasRender.prototype.setFillColor = function (r, g, b, a) {
-            this.context.fillStyle = 'rgb(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ')';
+            this.context.fillStyle = 'rgba(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ',' + (a).toFixed(2) + ')';
         };
         CanvasRender.prototype.setFillColorV = function (color) {
             this.setFillColor(color[0], color[1], color[2], color[3]);

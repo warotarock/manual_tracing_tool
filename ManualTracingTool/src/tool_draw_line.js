@@ -29,18 +29,19 @@ var ManualTracingTool;
                 return;
             }
             this.editLine = new ManualTracingTool.VectorLine();
-            this.addPointToEditLine(e);
+            this.addPointToEditLine(e, env);
         };
-        Tool_DrawLine.prototype.addPointToEditLine = function (e) {
+        Tool_DrawLine.prototype.addPointToEditLine = function (e, env) {
             var point = new ManualTracingTool.LinePoint();
             vec3.copy(point.location, e.location);
+            point.lineWidth = env.drawLineBaseWidth;
             this.editLine.points.push(point);
         };
         Tool_DrawLine.prototype.mouseMove = function (e, env) {
             if (this.editLine == null) {
                 return;
             }
-            this.addPointToEditLine(e);
+            this.addPointToEditLine(e, env);
             env.setRedrawEditorWindow();
         };
         Tool_DrawLine.prototype.mouseUp = function (e, env) {

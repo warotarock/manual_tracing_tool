@@ -120,6 +120,13 @@ var ManualTracingTool;
         Tool_Transform_Lattice.prototype.executeCommand = function (env) {
         };
         Tool_Transform_Lattice.prototype.onDrawEditor = function (env, drawEnv) {
+            if (this.latticePoints == null) {
+                this.createLatticePoints(this.latticePointCount);
+                this.prepareLatticePoints(env);
+            }
+            this.drawLatticeLine(env, drawEnv);
+        };
+        Tool_Transform_Lattice.prototype.drawLatticeLine = function (env, drawEnv) {
             drawEnv.render.setStrokeColorV(drawEnv.style.modalToolSelectedAreaLineColor);
             drawEnv.render.setStrokeWidth(env.getViewScaledLength(1.0));
             drawEnv.render.beginPath();

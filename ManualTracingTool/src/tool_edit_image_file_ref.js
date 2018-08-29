@@ -87,8 +87,6 @@ var ManualTracingTool;
             _this.dLocation = vec3.create();
             return _this;
         }
-        Tool_Transform_ReferenceImage.prototype.clearEditData = function (e, env) {
-        };
         Tool_Transform_ReferenceImage.prototype.checkTarget = function (e, env) {
             if (env.currentImageFileReferenceLayer == null) {
                 return false;

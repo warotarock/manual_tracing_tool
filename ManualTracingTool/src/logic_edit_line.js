@@ -272,6 +272,7 @@ var ManualTracingTool;
                 var point = line.points[i];
                 vec3.copy(point.adjustingLocation, point.location);
                 vec3.copy(point.tempLocation, point.location);
+                point.adjustingLineWidth = point.lineWidth;
             }
             var iteration = 2;
             for (var count = 0; count < iteration; count++) {
@@ -285,7 +286,6 @@ var ManualTracingTool;
                 for (var i = 0; i + 2 < line.points.length; i++) {
                     var point2 = line.points[i + 1];
                     vec3.copy(point2.tempLocation, point2.adjustingLocation);
-                    point2.lineWidth = point2.adjustingLineWidth;
                 }
             }
             Logic_Edit_Line.applyAdjustments(line);
@@ -306,6 +306,7 @@ var ManualTracingTool;
             for (var _i = 0, _a = line.points; _i < _a.length; _i++) {
                 var point = _a[_i];
                 vec3.copy(point.location, point.adjustingLocation);
+                point.lineWidth = point.adjustingLineWidth;
             }
         };
         Logic_Edit_Line.createResampledLine = function (baseLine, samplingDivisionCount) {

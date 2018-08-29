@@ -102,12 +102,25 @@ var ManualTracingTool;
         return VectorGroup;
     }());
     ManualTracingTool.VectorGroup = VectorGroup;
+    var DrawLineTypeID;
+    (function (DrawLineTypeID) {
+        DrawLineTypeID[DrawLineTypeID["none"] = 1] = "none";
+        DrawLineTypeID[DrawLineTypeID["solid"] = 2] = "solid";
+    })(DrawLineTypeID = ManualTracingTool.DrawLineTypeID || (ManualTracingTool.DrawLineTypeID = {}));
+    var FillAreaTypeID;
+    (function (FillAreaTypeID) {
+        FillAreaTypeID[FillAreaTypeID["none"] = 1] = "none";
+        FillAreaTypeID[FillAreaTypeID["byFillColor"] = 2] = "byFillColor";
+    })(FillAreaTypeID = ManualTracingTool.FillAreaTypeID || (ManualTracingTool.FillAreaTypeID = {}));
     var VectorLayer = /** @class */ (function (_super) {
         __extends(VectorLayer, _super);
         function VectorLayer() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.type = LayerTypeID.vectorLayer;
             _this.groups = new List();
+            _this.drawLineType = DrawLineTypeID.solid;
+            _this.fillAreaType = FillAreaTypeID.none;
+            _this.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             return _this;
         }
         return VectorLayer;
@@ -303,7 +316,7 @@ var ManualTracingTool;
         function DocumentData() {
             this.loaded = false;
             this.rootLayer = new Layer();
-            this.documentFrame = [0.0, 0.0, 1024.0, 1024.0];
+            this.documentFrame = vec4.fromValues(-512.0, -512.0, 512.0, 512.0);
         }
         return DocumentData;
     }());
