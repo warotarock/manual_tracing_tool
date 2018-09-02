@@ -1,6 +1,13 @@
 ﻿
 namespace ManualTracingTool {
 
+    // Color
+
+    export class PalletColor {
+
+        color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+    }
+
     // Base layer class
 
     export enum LayerTypeID {
@@ -26,7 +33,6 @@ namespace ManualTracingTool {
     }
 
     // Vector layer
-
     export enum LinePointModifyFlagID {
 
         none = 0,
@@ -104,13 +110,15 @@ namespace ManualTracingTool {
     export enum DrawLineTypeID {
 
         none = 1,
-        solid = 2,
+        layerColor = 2,
+        palletColor = 3,
     }
 
     export enum FillAreaTypeID {
 
         none = 1,
-        byFillColor = 2,
+        fillColor = 2,
+        palletColor = 3,
     }
 
     export class VectorLayer extends Layer {
@@ -119,10 +127,13 @@ namespace ManualTracingTool {
 
         groups = new List<VectorGroup>();
 
-        drawLineType = DrawLineTypeID.solid;
+        drawLineType = DrawLineTypeID.layerColor;
 
         fillAreaType = FillAreaTypeID.none;
         fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+
+        line_PalletColorIndex = 0;
+        fill_PalletColorIndex = 0;
     }
 
     // Group layer
@@ -287,11 +298,57 @@ namespace ManualTracingTool {
 
     // Document
 
+    let defaultColors: List<Vec4> = [
+
+        vec4.fromValues(0.0, 0.0, 0.0, 1.0),
+        vec4.fromValues(1.0, 1.0, 1.0, 1.0),
+        vec4.fromValues(0.5, 0.0, 0.0, 1.0),
+        vec4.fromValues(0.0, 0.5, 0.0, 1.0),
+        vec4.fromValues(0.3, 0.3, 0.8, 1.0),
+
+        // Anime skin standard
+        vec4.fromValues(250 / 255.0, 221 / 255.0, 189 / 255.0, 1.0),
+        vec4.fromValues(220 / 255.0, 167 / 255.0, 125 / 255.0, 1.0),
+
+        // Anime skin cool
+        vec4.fromValues(249 / 255.0, 239 / 255.0, 229 / 255.0, 1.0),
+        vec4.fromValues(216 / 255.0, 177 / 255.0, 170 / 255.0, 1.0),
+        vec4.fromValues(198 / 255.0, 155 / 255.0, 148 / 255.0, 1.0),
+    ];
+
     export class DocumentData {
 
         loaded = false;
 
         rootLayer = new Layer();
         documentFrame = vec4.fromValues(-512.0, -512.0, 512.0, 512.0);
+
+        static maxPalletColors = 25;
+        palletColos = new List<PalletColor>();
+
+        // This class must be created by this function for JSON.parse
+        constructor() {
+
+            DocumentData.initializeDefaultPalletColors(this);
+        }
+
+        static initializeDefaultPalletColors(documentData: DocumentData) {
+
+            documentData.palletColos = new List<PalletColor>();
+
+            for (let color of defaultColors) {
+
+                let palletColor = new PalletColor();
+                vec4.copy(palletColor.color, color);
+                documentData.palletColos.push(palletColor);
+            }
+
+            while (documentData.palletColos.length < DocumentData.maxPalletColors) {
+
+                let palletColor = new PalletColor();
+                vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
+                documentData.palletColos.push(palletColor);
+            }
+        }
     }
 }

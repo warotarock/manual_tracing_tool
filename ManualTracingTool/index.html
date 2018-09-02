@@ -191,42 +191,78 @@
             text-align: right;
         }
 
-        .openFileDialogModal {
+        .modalDialogWindow {
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            display: none;
+            padding: 20px;
+        }
+
+        .modalDialogWindow.openFileDialogModal {
             width: 400px;
             height: 100px;
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            display: none;
-            padding: 20px;
         }
 
-        .openFileDialogModal_file {
-            background-color: #ddd;
-            margin-left: 5px;
-            margin-top: 5px;
-            width: 100%;
-        }
+            .modalDialogWindow.openFileDialogModal_file {
+                background-color: #ddd;
+                margin-left: 5px;
+                margin-top: 5px;
+                width: 100%;
+            }
 
-        .layerPropertyModal {
+        .modalDialogWindow.layerPropertyModal {
             width: 400px;
-            height: 380px;
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            display: none;
-            padding: 20px;
+            height: 340px;
             margin-bottom: -50%;
         }
 
-            .layerPropertyModal input {
+            .modalDialogWindow.layerPropertyModal input {
                 margin-left: 15px;
                 margin-top: 15px;
             }
 
-            .layerPropertyModal div {
+            .modalDialogWindow.layerPropertyModal div {
                 margin-top: 15px;
             }
+
+        .modalDialogWindow.palletColorModal {
+            width: 500px;
+            height: 340px;
+            margin-bottom: -50%;
+        }
+
+            .modalDialogWindow.palletColorModal input {
+                margin-left: 15px;
+                margin-top: 15px;
+            }
+
+        #palletColorModal_colors {
+            margin-top: 10px;
+        }
+
+            #palletColorModal_colors div.colorItem {
+                width: 80px;
+                height: 30px;
+                margin-left: 10px;
+                margin-top: 10px;
+                float: left;
+                /*border-style: solid;*/
+            }
+
+                #palletColorModal_colors div.colorItem input[type="radio"] {
+                    margin-left: 0px;
+                    margin-top: 0px;
+                    width: 30px;
+                    height: 20px;
+                }
+
+                #palletColorModal_colors div.colorItem input[type="color"] {
+                    margin-left: 0px;
+                    margin-top: 0px;
+                    width: 30px;
+                    height: 30px;
+                }
 
         #layerPropertyModal_layerAlpha {
             width: 200px;
@@ -236,71 +272,56 @@
             width: 200px;
         }
 
-        .operationOptionModal {
+        .modalDialogWindow.operationOptionModal {
             width: 400px;
             height: 250px;
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            display: none;
-            padding: 20px;
             margin-top: -60%;
         }
 
-            .operationOptionModal input {
+            .modalDialogWindow.operationOptionModal input {
                 margin-left: 15px;
                 margin-top: 10px;
             }
 
-            .operationOptionModal div {
+            .modalDialogWindow.operationOptionModal div {
                 margin-bottom: 15px;
             }
 
-        .operationOptionModal_LineWidth {
-            width: 100px;
-        }
+            .modalDialogWindow.operationOptionModal div label input.lineWidth {
+                width: 50px;
+            }
 
-        .newLayerCommandOptionModal {
+        .modalDialogWindow.newLayerCommandOptionModal {
             width: 400px;
             height: 200px;
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            display: none;
-            padding: 20px;
             margin-top: -60%;
         }
 
-            .newLayerCommandOptionModal input {
+            .modalDialogWindow.newLayerCommandOptionModal input {
                 margin-left: 15px;
                 margin-top: 10px;
             }
 
-            .newLayerCommandOptionModal div {
+            .modalDialogWindow.newLayerCommandOptionModal div {
                 margin-bottom: 15px;
             }
 
-        .documentSettingModal {
+        .modalDialogWindow.documentSettingModal {
             width: 400px;
             height: 200px;
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            display: none;
-            padding: 20px;
             margin-top: -60%;
         }
 
-            .documentSettingModal input {
+            .modalDialogWindow.documentSettingModal input {
                 margin-left: 15px;
                 margin-top: 10px;
             }
 
-        .documentSettingModal_Location {
-            width: 100px;
-        }
+            .modalDialogWindow.documentSettingModal div label input.location {
+                width: 60px;
+            }
 
-        .exportImageFileModal {
+        .modalDialogWindow.exportImageFileModal {
             width: 400px;
             height: 200px;
             background-color: #fff;
@@ -335,7 +356,7 @@
 
     <footer id="footer"></footer>
 
-    <div id="openFileDialogModal" class="openFileDialogModal">
+    <div id="openFileDialogModal" class="modalDialogWindow openFileDialogModal">
         <label>
             <input type="file" class="openFileDialogModal_file" id="openFileDialogModal_file" />
         </label>
@@ -346,7 +367,7 @@
         </div>
     </div>
 
-    <div id="layerPropertyModal" class="layerPropertyModal">
+    <div id="layerPropertyModal" class="modalDialogWindow layerPropertyModal">
         <label id="layerPropertyModal_layerTypeName">
             レイヤー
         </label><br />
@@ -355,21 +376,32 @@
             <input type="text" id="layerPropertyModal_layerName" />
         </label><br />
         <label>
-            レイヤー色
+            レイヤー色　
             <input type="color" id="layerPropertyModal_layerColor">
         </label>
         <label>
             <input type="range" id="layerPropertyModal_layerAlpha" min="0" max="500">
         </label><br />
+        <label>
+            塗りつぶし色
+            <input type="color" id="layerPropertyModal_fillColor">
+        </label>
+        <label>
+            <input type="range" id="layerPropertyModal_fillColorAlpha" min="0" max="500">
+        </label><br />
         <div>
-            線の種類<br />
+            線<br />
             <label>
                 <input type="radio" name="layerPropertyModal_drawLineType" value="1">
                 なし
             </label>
             <label>
                 <input type="radio" name="layerPropertyModal_drawLineType" value="2">
-                通常
+                レイヤー色
+            </label>
+            <label>
+                <input type="radio" name="layerPropertyModal_drawLineType" value="3">
+                パレット
             </label>
             <br />
         </div>
@@ -383,22 +415,37 @@
                 <input type="radio" name="layerPropertyModal_fillAreaType" value="2">
                 塗りつぶし色
             </label>
+            <label>
+                <input type="radio" name="layerPropertyModal_fillAreaType" value="3">
+                パレット
+            </label>
             <br />
         </div>
-        <label>
-            塗りつぶし色
-            <input type="color" id="layerPropertyModal_fillColor">
-        </label>
-        <label>
-            <input type="range" id="layerPropertyModal_fillColorAlpha" min="0" max="500">
-        </label><br />
     </div>
 
-    <div id="operationOptionModal" class="operationOptionModal">
+    <div id="palletColorModal" class="modalDialogWindow palletColorModal">
+        <label id="palletColorModal_targetName">
+            線色/塗りつぶし色
+        </label>
+        <label>
+            <input type="color" id="palletColorModal_currentColor">
+        </label>
+        <label>
+            <input type="range" id="palletColorModal_currentAlpha" min="0" max="500">
+        </label><br />
+        <div id="palletColorModal_colors">
+            <!--<div>
+                <input type="radio" name="palletColorModal_colorIndex">
+                <input type="color">
+            </div>-->
+        </div>
+    </div>
+
+    <div id="operationOptionModal" class="modalDialogWindow operationOptionModal">
         <div>
             <label>
                 線の太さ
-                <input type="number" id="operationOptionModal_LineWidth" class="operationOptionModal_LineWidth" step="1" />
+                <input type="number" id="operationOptionModal_LineWidth" class="lineWidth" step="1" />
             </label>
             <br />
         </div>
@@ -439,7 +486,7 @@
         </div>
     </div>
 
-    <div id="newLayerCommandOptionModal" class="newLayerCommandOptionModal">
+    <div id="newLayerCommandOptionModal" class="modalDialogWindow newLayerCommandOptionModal">
         <div>
             レイヤーの種類<br />
             <label>
@@ -467,27 +514,27 @@
         </div>
     </div>
 
-    <div id="documentSettingModal" class="documentSettingModal">
+    <div id="documentSettingModal" class="modalDialogWindow documentSettingModal">
         <div>
             エクスポート範囲<br />
             <label>
                 左上
-                <input type="number" id="documentSettingModal_FrameLeft" class="documentSettingModal_Location" step="1" />
+                <input type="number" id="documentSettingModal_FrameLeft" class="location" step="1" />
             </label>
             <label>
-                <input type="number" id="documentSettingModal_FrameTop" class="documentSettingModal_Location" step="1" />
+                <input type="number" id="documentSettingModal_FrameTop" class="location" step="1" />
             </label><br />
             <label>
                 右下
-                <input type="number" id="documentSettingModal_FrameRight" class="documentSettingModal_Location" step="1" />
+                <input type="number" id="documentSettingModal_FrameRight" class="location" step="1" />
             </label>
             <label>
-                <input type="number" id="documentSettingModal_FrameBottom" class="documentSettingModal_Location" step="1" />
+                <input type="number" id="documentSettingModal_FrameBottom" class="location" step="1" />
             </label><br />
         </div>
     </div>
 
-    <div id="exportImageFileModal" class="exportImageFileModal">
+    <div id="exportImageFileModal" class="modalDialogWindow exportImageFileModal">
         <div>
             画像形式<br />
             <label>
