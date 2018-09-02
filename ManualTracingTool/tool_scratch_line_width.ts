@@ -11,6 +11,8 @@ namespace ManualTracingTool {
 
     export class Tool_ScratchLineWidth extends ManualTracingTool.Tool_ScratchLine {
 
+        helpText = '線の太くします。SHIFTキーで線を細くします。最大は描画の線の太さ、最小は0.1です。';
+
         enableExtrude = false;
 
         protected executeCommand(env: ToolEnvironment) { // @override
@@ -54,7 +56,7 @@ namespace ManualTracingTool {
                     }
                     else {
 
-                        editPoint.pair.candidatePoint.lineWidth = 3.0;
+                        editPoint.pair.candidatePoint.lineWidth = env.drawLineBaseWidth;
                     }
 
                     command.editPoints.push(editPoint);
