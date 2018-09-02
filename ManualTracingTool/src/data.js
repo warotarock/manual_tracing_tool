@@ -10,6 +10,14 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
+    // Color
+    var PalletColor = /** @class */ (function () {
+        function PalletColor() {
+            this.color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        }
+        return PalletColor;
+    }());
+    ManualTracingTool.PalletColor = PalletColor;
     // Base layer class
     var LayerTypeID;
     (function (LayerTypeID) {
@@ -105,12 +113,14 @@ var ManualTracingTool;
     var DrawLineTypeID;
     (function (DrawLineTypeID) {
         DrawLineTypeID[DrawLineTypeID["none"] = 1] = "none";
-        DrawLineTypeID[DrawLineTypeID["solid"] = 2] = "solid";
+        DrawLineTypeID[DrawLineTypeID["layerColor"] = 2] = "layerColor";
+        DrawLineTypeID[DrawLineTypeID["palletColor"] = 3] = "palletColor";
     })(DrawLineTypeID = ManualTracingTool.DrawLineTypeID || (ManualTracingTool.DrawLineTypeID = {}));
     var FillAreaTypeID;
     (function (FillAreaTypeID) {
         FillAreaTypeID[FillAreaTypeID["none"] = 1] = "none";
-        FillAreaTypeID[FillAreaTypeID["byFillColor"] = 2] = "byFillColor";
+        FillAreaTypeID[FillAreaTypeID["fillColor"] = 2] = "fillColor";
+        FillAreaTypeID[FillAreaTypeID["palletColor"] = 3] = "palletColor";
     })(FillAreaTypeID = ManualTracingTool.FillAreaTypeID || (ManualTracingTool.FillAreaTypeID = {}));
     var VectorLayer = /** @class */ (function (_super) {
         __extends(VectorLayer, _super);
@@ -118,9 +128,11 @@ var ManualTracingTool;
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.type = LayerTypeID.vectorLayer;
             _this.groups = new List();
-            _this.drawLineType = DrawLineTypeID.solid;
+            _this.drawLineType = DrawLineTypeID.layerColor;
             _this.fillAreaType = FillAreaTypeID.none;
             _this.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            _this.line_PalletColorIndex = 0;
+            _this.fill_PalletColorIndex = 0;
             return _this;
         }
         return VectorLayer;
@@ -312,12 +324,44 @@ var ManualTracingTool;
     }(Layer));
     ManualTracingTool.PosingLayer = PosingLayer;
     // Document
+    var defaultColors = [
+        vec4.fromValues(0.0, 0.0, 0.0, 1.0),
+        vec4.fromValues(1.0, 1.0, 1.0, 1.0),
+        vec4.fromValues(0.5, 0.0, 0.0, 1.0),
+        vec4.fromValues(0.0, 0.5, 0.0, 1.0),
+        vec4.fromValues(0.3, 0.3, 0.8, 1.0),
+        // Anime skin standard
+        vec4.fromValues(250 / 255.0, 221 / 255.0, 189 / 255.0, 1.0),
+        vec4.fromValues(220 / 255.0, 167 / 255.0, 125 / 255.0, 1.0),
+        // Anime skin cool
+        vec4.fromValues(249 / 255.0, 239 / 255.0, 229 / 255.0, 1.0),
+        vec4.fromValues(216 / 255.0, 177 / 255.0, 170 / 255.0, 1.0),
+        vec4.fromValues(198 / 255.0, 155 / 255.0, 148 / 255.0, 1.0),
+    ];
     var DocumentData = /** @class */ (function () {
+        // This class must be created by this function for JSON.parse
         function DocumentData() {
             this.loaded = false;
             this.rootLayer = new Layer();
             this.documentFrame = vec4.fromValues(-512.0, -512.0, 512.0, 512.0);
+            this.palletColos = new List();
+            DocumentData.initializeDefaultPalletColors(this);
         }
+        DocumentData.initializeDefaultPalletColors = function (documentData) {
+            documentData.palletColos = new List();
+            for (var _i = 0, defaultColors_1 = defaultColors; _i < defaultColors_1.length; _i++) {
+                var color = defaultColors_1[_i];
+                var palletColor = new PalletColor();
+                vec4.copy(palletColor.color, color);
+                documentData.palletColos.push(palletColor);
+            }
+            while (documentData.palletColos.length < DocumentData.maxPalletColors) {
+                var palletColor = new PalletColor();
+                vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
+                documentData.palletColos.push(palletColor);
+            }
+        };
+        DocumentData.maxPalletColors = 25;
         return DocumentData;
     }());
     ManualTracingTool.DocumentData = DocumentData;

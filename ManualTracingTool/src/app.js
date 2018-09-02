@@ -16,7 +16,9 @@ var fs = (typeof (require) != 'undefined') ? require('fs') : {
 var ManualTracingTool;
 (function (ManualTracingTool) {
     // 今やること (current tasks)
-    // ・レイヤーに線と塗りつぶしの描画オプションを実装する
+    // ・パレット機能の実装
+    // 　・線色と塗りつぶし色それぞれパレット色モードを選択できるようにする
+    // 　・パレット編集ダイアログを実装する。２５色最初から生成されていて、そこから選ぶ。
     // どこかでやる必要があること (nearest future tasks)
     // ・PNG出力、jpeg出力
     // 　・出力倍率を指定できるようにする、ドキュメントに記録する
@@ -60,6 +62,7 @@ var ManualTracingTool;
     // 　曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
     // ・レイヤーを選択変更したときレイヤーに応じたコンテキストの状態になるようにする
     // 終わったもの (done)
+    // ・レイヤーに線と塗りつぶしの描画オプションを実装する
     // ・頂点ごとの全選択、全選択解除
     // ・変形ツール
     //   平行移動、回転、拡大縮小
@@ -209,7 +212,9 @@ var ManualTracingTool;
             // Dialogs
             this.currentModalDialogID = null;
             this.currentModalDialogResult = null;
+            this.currentModalDialog_DocumentData = null;
             this.layerPropertyWindow_EditLayer = null;
+            this.palletColorWindow_Mode = OpenPalletColorModalMode.LineColor;
             this.modalOverlayOption = {
                 speedIn: 0,
                 speedOut: 100,
@@ -291,7 +296,7 @@ var ManualTracingTool;
             // Start loading document data
             var lastURL = window.localStorage.getItem(this.lastFilePathKey);
             if (StringIsNullOrEmpty(lastURL)) {
-                this.document = this.createTestDocumentData();
+                this.document = this.createDefaultDocumentData();
             }
             else {
                 this.document = new ManualTracingTool.DocumentData();
@@ -311,8 +316,9 @@ var ManualTracingTool;
                 else {
                     data = JSON.parse(xhr.response);
                 }
-                document.documentFrame = data.documentFrame;
                 document.rootLayer = data.rootLayer;
+                document.documentFrame = data.documentFrame;
+                document.palletColos = data.palletColos;
                 document.loaded = true;
             });
             xhr.send();
@@ -453,7 +459,7 @@ var ManualTracingTool;
             this.toolEnv.setRedrawAllWindows();
             this.setEvents();
         };
-        Main.prototype.createTestDocumentData = function () {
+        Main.prototype.createDefaultDocumentData = function () {
             var saveData = window.localStorage.getItem(this.tempFileNameKey);
             if (saveData) {
                 var document_1 = JSON.parse(saveData);
@@ -496,19 +502,28 @@ var ManualTracingTool;
             return document;
         };
         Main.prototype.fixLoadedDocumentData = function (document) {
+            if (document.palletColos == undefined) {
+                ManualTracingTool.DocumentData.initializeDefaultPalletColors(document);
+            }
             this.fixLoadedDocumentData_LayerRecursive(document.rootLayer);
         };
         Main.prototype.fixLoadedDocumentData_LayerRecursive = function (layer) {
             if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
                 var vectorLayer = layer;
                 if (vectorLayer.drawLineType == undefined) {
-                    vectorLayer.drawLineType = ManualTracingTool.DrawLineTypeID.solid;
+                    vectorLayer.drawLineType = ManualTracingTool.DrawLineTypeID.layerColor;
                 }
                 if (vectorLayer.fillAreaType == undefined) {
                     vectorLayer.fillAreaType = ManualTracingTool.FillAreaTypeID.none;
                 }
                 if (vectorLayer.fillColor == undefined) {
                     vectorLayer.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+                }
+                if (vectorLayer.line_PalletColorIndex == undefined) {
+                    vectorLayer.line_PalletColorIndex = 0;
+                }
+                if (vectorLayer.fill_PalletColorIndex == undefined) {
+                    vectorLayer.fill_PalletColorIndex = 1;
                 }
                 for (var _i = 0, _a = vectorLayer.groups; _i < _a.length; _i++) {
                     var group = _a[_i];
@@ -747,6 +762,32 @@ var ManualTracingTool;
             this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_cancel);
             this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_ok);
             this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_cancel);
+            this.getElement(this.ID.palletColorModal_currentColor).addEventListener('change', function (e) {
+                _this.onPalletColorModal_CurrentColorChanged();
+            });
+            this.getElement(this.ID.palletColorModal_currentAlpha).addEventListener('change', function (e) {
+                _this.onPalletColorModal_CurrentColorChanged();
+            });
+            var _loop_1 = function (palletColorIndex) {
+                {
+                    var id = this_1.ID.palletColorModal_colorValue + palletColorIndex;
+                    var colorButton = this_1.getElement(id);
+                    colorButton.addEventListener('change', function (e) {
+                        _this.onPalletColorModal_ColorChanged(palletColorIndex);
+                    });
+                }
+                {
+                    var id = this_1.ID.palletColorModal_colorIndex + palletColorIndex;
+                    var radioButton = this_1.getElement(id);
+                    radioButton.addEventListener('click', function (e) {
+                        _this.onPalletColorModal_ColorIndexChanged();
+                    });
+                }
+            };
+            var this_1 = this;
+            for (var palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
+                _loop_1(palletColorIndex);
+            }
         };
         Main.prototype.setEvents_ModalCloseButton = function (id) {
             var _this = this;
@@ -1217,17 +1258,25 @@ var ManualTracingTool;
                 this.currentTool.keydown(e, this.toolEnv);
             }
             if (e.key == '1') {
-                this.openOperationOptionModal();
-            }
-            if (e.key == '2') {
                 var layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openLayerPropertyModal(layerItem.layer, layerItem);
             }
+            if (e.key == '2') {
+                var layerItem = this.findCurrentLayerLayerWindowItem();
+                this.openPalletColorModal(OpenPalletColorModalMode.LineColor, this.toolContext.document, layerItem.layer);
+            }
             if (e.key == '3') {
-                this.openDocumentSettingModal();
+                var layerItem = this.findCurrentLayerLayerWindowItem();
+                this.openPalletColorModal(OpenPalletColorModalMode.FillColor, this.toolContext.document, layerItem.layer);
             }
             if (e.key == '4') {
+                this.openDocumentSettingModal();
+            }
+            if (e.key == '5') {
                 this.openNewLayerCommandOptionModal();
+            }
+            if (e.key == '^') {
+                this.openOperationOptionModal();
             }
             if (e.key == '\\') {
                 this.openExportImageFileModal();
@@ -1516,6 +1565,122 @@ var ManualTracingTool;
             this.layerPropertyWindow_EditLayer = layer;
             this.openModal(this.ID.layerPropertyModal);
         };
+        Main.prototype.openPalletColorModal = function (mode, documentData, layer) {
+            if (this.isModalShown()) {
+                return;
+            }
+            if (layer.type != ManualTracingTool.LayerTypeID.vectorLayer) {
+                return;
+            }
+            var vectorLayer = layer;
+            var targetName;
+            var palletColorIndex;
+            if (mode == OpenPalletColorModalMode.LineColor) {
+                targetName = '線色';
+                palletColorIndex = vectorLayer.line_PalletColorIndex;
+            }
+            else {
+                targetName = '塗りつぶし色';
+                palletColorIndex = vectorLayer.fill_PalletColorIndex;
+            }
+            this.setElementText(this.ID.palletColorModal_targetName, targetName);
+            this.setRadioElementIntValue(this.ID.palletColorModal_colorIndex, palletColorIndex);
+            this.palletColorWindow_Mode = mode;
+            this.currentModalDialog_DocumentData = documentData;
+            this.layerPropertyWindow_EditLayer = layer;
+            this.displayPalletColorModalColors(documentData, vectorLayer);
+            this.openModal(this.ID.palletColorModal);
+        };
+        Main.prototype.displayPalletColorModalColors = function (documentData, vectorLayer) {
+            {
+                var palletColorIndex = void 0;
+                if (this.palletColorWindow_Mode == OpenPalletColorModalMode.LineColor) {
+                    palletColorIndex = vectorLayer.line_PalletColorIndex;
+                }
+                else {
+                    palletColorIndex = vectorLayer.fill_PalletColorIndex;
+                }
+                var palletColor = documentData.palletColos[palletColorIndex];
+                this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
+                this.setInputElementRangeValue(this.ID.palletColorModal_currentAlpha, palletColor.color[3], 0.0, 1.0);
+            }
+            for (var i = 0; i < documentData.palletColos.length; i++) {
+                var palletColor = documentData.palletColos[i];
+                var id = this.ID.palletColorModal_colorValue + i;
+                this.setInputElementColor(id, palletColor.color);
+            }
+        };
+        Main.prototype.onPalletColorModal_ColorIndexChanged = function () {
+            if (this.layerPropertyWindow_EditLayer == null) {
+                return;
+            }
+            var documentData = this.currentModalDialog_DocumentData;
+            var vectorLayer = this.layerPropertyWindow_EditLayer;
+            var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
+            ;
+            if (this.palletColorWindow_Mode == OpenPalletColorModalMode.LineColor) {
+                vectorLayer.line_PalletColorIndex = palletColorIndex;
+            }
+            else {
+                vectorLayer.fill_PalletColorIndex = palletColorIndex;
+            }
+            //let palletColor = documentData.palletColos[palletColorIndex];
+            //this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
+            //this.setInputElementRangeValue(this.ID.palletColorModal_currentAlpha, palletColor.color[3], 0.0, 1.0);
+            this.displayPalletColorModalColors(documentData, vectorLayer);
+            this.toolEnv.setRedrawMainWindow();
+        };
+        Main.prototype.onPalletColorModal_CurrentColorChanged = function () {
+            if (this.layerPropertyWindow_EditLayer == null) {
+                return;
+            }
+            var documentData = this.currentModalDialog_DocumentData;
+            var vectorLayer = this.layerPropertyWindow_EditLayer;
+            var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
+            var palletColor = documentData.palletColos[palletColorIndex];
+            this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
+            palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
+            this.displayPalletColorModalColors(documentData, vectorLayer);
+            this.toolEnv.setRedrawMainWindow();
+        };
+        Main.prototype.onPalletColorModal_ColorChanged = function (palletColorIndex) {
+            if (this.layerPropertyWindow_EditLayer == null) {
+                return;
+            }
+            var documentData = this.currentModalDialog_DocumentData;
+            var vectorLayer = this.layerPropertyWindow_EditLayer;
+            var palletColor = documentData.palletColos[palletColorIndex];
+            this.getInputElementColor(this.ID.palletColorModal_colorValue + palletColorIndex, palletColor.color);
+            this.displayPalletColorModalColors(documentData, vectorLayer);
+            this.toolEnv.setRedrawMainWindow();
+        };
+        Main.prototype.onClosedPalletColorModal = function () {
+            var documentData = this.currentModalDialog_DocumentData;
+            var vectorLayer = this.layerPropertyWindow_EditLayer;
+            var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
+            ;
+            if (this.palletColorWindow_Mode == OpenPalletColorModalMode.LineColor) {
+                vectorLayer.line_PalletColorIndex = palletColorIndex;
+            }
+            else {
+                vectorLayer.fill_PalletColorIndex = palletColorIndex;
+            }
+            var updateOnClose = false;
+            if (updateOnClose) {
+                {
+                    var palletColor = documentData.palletColos[palletColorIndex];
+                    this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
+                    palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
+                }
+                for (var i = 0; i < documentData.palletColos.length; i++) {
+                    var palletColor = documentData.palletColos[i];
+                    var id = this.ID.palletColorModal_colorValue + i;
+                    this.getInputElementColor(id, palletColor.color);
+                }
+            }
+            this.currentModalDialog_DocumentData = null;
+            this.layerPropertyWindow_EditLayer = null;
+        };
         Main.prototype.openOperationOptionModal = function () {
             if (this.isModalShown()) {
                 return;
@@ -1567,10 +1732,13 @@ var ManualTracingTool;
                     var vectorLayer = layer;
                     this.getInputElementColor(this.ID.layerPropertyModal_fillColor, vectorLayer.fillColor);
                     vectorLayer.fillColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_fillColorAlpha, 0.0, 1.0);
-                    vectorLayer.drawLineType = this.getRadioElementIntValue(this.ID.layerPropertyModal_drawLineType, ManualTracingTool.DrawLineTypeID.solid);
-                    vectorLayer.fillAreaType = this.getRadioElementIntValue(this.ID.layerPropertyModal_fillAreaType, ManualTracingTool.FillAreaTypeID.byFillColor);
+                    vectorLayer.drawLineType = this.getRadioElementIntValue(this.ID.layerPropertyModal_drawLineType, ManualTracingTool.DrawLineTypeID.layerColor);
+                    vectorLayer.fillAreaType = this.getRadioElementIntValue(this.ID.layerPropertyModal_fillAreaType, ManualTracingTool.FillAreaTypeID.fillColor);
                 }
                 this.layerPropertyWindow_EditLayer = null;
+            }
+            else if (this.currentModalDialogID == this.ID.palletColorModal) {
+                this.onClosedPalletColorModal();
             }
             else if (this.currentModalDialogID == this.ID.operationOptionModal) {
                 this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth);
@@ -1710,21 +1878,21 @@ var ManualTracingTool;
             this.canvasRender.setContext(canvasWindow);
             for (var i = this.document.rootLayer.childLayers.length - 1; i >= 0; i--) {
                 var layer = this.document.rootLayer.childLayers[i];
-                this.drawLayerRecursive(layer);
+                this.drawLayerRecursive(layer, this.document);
             }
         };
-        Main.prototype.drawLayerRecursive = function (layer) {
+        Main.prototype.drawLayerRecursive = function (layer, documentData) {
             if (!layer.isVisible) {
                 return;
             }
             if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
                 var vectorLayer = layer;
-                this.drawVectorLayer(vectorLayer);
+                this.drawVectorLayer(vectorLayer, documentData);
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.groupLayer) {
                 for (var i = layer.childLayers.length - 1; i >= 0; i--) {
                     var childLayer = layer.childLayers[i];
-                    this.drawLayerRecursive(childLayer);
+                    this.drawLayerRecursive(childLayer, documentData);
                 }
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.posingLayer) {
@@ -1735,25 +1903,51 @@ var ManualTracingTool;
                 this.drawImageFileReferenceLayer(ifrLayer);
             }
         };
-        Main.prototype.drawVectorLayer = function (layer) {
+        Main.prototype.drawVectorLayer = function (layer, documentData) {
             var context = this.toolContext;
             var isCurrentLayer = (layer == context.currentVectorLayer);
-            vec4.copy(this.editOtherLayerLineColor, layer.layerColor);
+            var lineColor;
+            if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.layerColor) {
+                lineColor = layer.layerColor;
+            }
+            else if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.palletColor) {
+                var palletColor = documentData.palletColos[layer.line_PalletColorIndex];
+                lineColor = palletColor.color;
+            }
+            else {
+                lineColor = layer.layerColor;
+            }
+            var fillColor;
+            if (layer.fillAreaType == ManualTracingTool.FillAreaTypeID.fillColor) {
+                fillColor = layer.fillColor;
+            }
+            else if (layer.fillAreaType == ManualTracingTool.FillAreaTypeID.palletColor) {
+                var palletColor = documentData.palletColos[layer.fill_PalletColorIndex];
+                fillColor = palletColor.color;
+            }
+            else {
+                fillColor = layer.fillColor;
+            }
+            vec4.copy(this.editOtherLayerLineColor, lineColor);
             this.editOtherLayerLineColor[3] *= 0.3;
             var useAdjustingLocation = this.isModalToolRunning();
             for (var _i = 0, _a = layer.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];
-                    if (layer.fillAreaType == ManualTracingTool.FillAreaTypeID.byFillColor) {
-                        this.drawVectorLineFill(line, layer.fillColor, line.strokeWidth, useAdjustingLocation);
+                    if (layer.fillAreaType != ManualTracingTool.FillAreaTypeID.none) {
+                        this.drawVectorLineFill(line, fillColor, line.strokeWidth, useAdjustingLocation);
                     }
                 }
                 for (var _d = 0, _e = group.lines; _d < _e.length; _d++) {
                     var line = _e[_d];
                     if (this.toolEnv.isDrawMode()) {
-                        if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.solid) {
-                            this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
+                        if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.layerColor) {
+                            this.drawVectorLineStroke(line, lineColor, line.strokeWidth, useAdjustingLocation);
+                        }
+                        else if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.palletColor) {
+                            var palletColor = documentData.palletColos[layer.line_PalletColorIndex];
+                            this.drawVectorLineStroke(line, palletColor.color, line.strokeWidth, useAdjustingLocation);
                         }
                     }
                     else if (this.toolEnv.isSelectMode()) {
@@ -1763,11 +1957,11 @@ var ManualTracingTool;
                         else {
                             if (this.toolContext.operationUnitID == ManualTracingTool.OperationUnitID.linePoint
                                 || this.toolContext.operationUnitID == ManualTracingTool.OperationUnitID.lineSegment) {
-                                this.drawVectorLineStroke(line, layer.layerColor, line.strokeWidth, useAdjustingLocation);
-                                this.drawVectorLinePoints(line, layer.layerColor, useAdjustingLocation);
+                                this.drawVectorLineStroke(line, lineColor, line.strokeWidth, useAdjustingLocation);
+                                this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
                             }
                             else if (this.toolContext.operationUnitID == ManualTracingTool.OperationUnitID.line) {
-                                var color = layer.layerColor;
+                                var color = lineColor;
                                 if (line.isSelected) {
                                     color = this.drawStyle.selectedVectorLineColor;
                                 }
@@ -2561,6 +2755,14 @@ var ManualTracingTool;
             this.layerPropertyModal_fillColor = 'layerPropertyModal_fillColor';
             this.layerPropertyModal_fillColorAlpha = 'layerPropertyModal_fillColorAlpha';
             this.layerPropertyModal_fillAreaType = 'layerPropertyModal_fillAreaType';
+            this.palletColorModal = '#palletColorModal';
+            this.palletColorModal_targetName = 'palletColorModal_targetName';
+            this.palletColorModal_currentColor = 'palletColorModal_currentColor';
+            this.palletColorModal_currentAlpha = 'palletColorModal_currentAlpha';
+            this.palletColorModal_colors = 'palletColorModal_colors';
+            this.palletColorModal_colorItemStyle = 'colorItem';
+            this.palletColorModal_colorIndex = 'palletColorModal_colorIndex';
+            this.palletColorModal_colorValue = 'palletColorModal_colorValue';
             this.operationOptionModal = '#operationOptionModal';
             this.operationOptionModal_LineWidth = 'operationOptionModal_LineWidth';
             this.operationOptionModal_operationUnit = 'operationOptionModal_operationUnit';
@@ -2578,6 +2780,11 @@ var ManualTracingTool;
         }
         return HTMLElementID;
     }());
+    var OpenPalletColorModalMode;
+    (function (OpenPalletColorModalMode) {
+        OpenPalletColorModalMode[OpenPalletColorModalMode["LineColor"] = 1] = "LineColor";
+        OpenPalletColorModalMode[OpenPalletColorModalMode["FillColor"] = 2] = "FillColor";
+    })(OpenPalletColorModalMode || (OpenPalletColorModalMode = {}));
     var DrawLineToolSubToolID;
     (function (DrawLineToolSubToolID) {
         DrawLineToolSubToolID[DrawLineToolSubToolID["drawLine"] = 0] = "drawLine";
@@ -2605,6 +2812,23 @@ var ManualTracingTool;
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
         //document.getElementById('footer').appendChild(_Main.pickingWindow.canvas);
+        var layerColorModal_colors = document.getElementById(_Main.ID.palletColorModal_colors);
+        for (var palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
+            var colorItemDiv = document.createElement('div');
+            colorItemDiv.classList.add(_Main.ID.palletColorModal_colorItemStyle);
+            layerColorModal_colors.appendChild(colorItemDiv);
+            var radioInput = document.createElement('input');
+            radioInput.type = 'radio';
+            radioInput.id = _Main.ID.palletColorModal_colorIndex + palletColorIndex;
+            radioInput.name = _Main.ID.palletColorModal_colorIndex;
+            radioInput.value = palletColorIndex.toString();
+            colorItemDiv.appendChild(radioInput);
+            var colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.id = _Main.ID.palletColorModal_colorValue + palletColorIndex;
+            colorInput.classList.add(_Main.ID.palletColorModal_colorItemStyle);
+            colorItemDiv.appendChild(colorInput);
+        }
         _Main.onLoad();
         setTimeout(run, 1000 / 30);
     };

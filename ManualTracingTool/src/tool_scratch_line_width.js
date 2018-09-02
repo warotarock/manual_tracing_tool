@@ -22,6 +22,7 @@ var ManualTracingTool;
         __extends(Tool_ScratchLineWidth, _super);
         function Tool_ScratchLineWidth() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.helpText = '線の太くします。SHIFTキーで線を細くします。最大は描画の線の太さ、最小は0.1です。';
             _this.enableExtrude = false;
             return _this;
         }
@@ -50,7 +51,7 @@ var ManualTracingTool;
                         editPoint.pair.candidatePoint.lineWidth = 0.1;
                     }
                     else {
-                        editPoint.pair.candidatePoint.lineWidth = 3.0;
+                        editPoint.pair.candidatePoint.lineWidth = env.drawLineBaseWidth;
                     }
                     command.editPoints.push(editPoint);
                 }
