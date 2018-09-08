@@ -862,37 +862,34 @@ namespace ManualTracingTool {
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.drawLine)
-                    .subToolImg(this.subToolImages[0])
-                    .subTool(this.tool_DrawLine)
-                    .subTool(this.tool_EditImageFileReference)
-                    .subTool(this.tool_EditDocumentFrame)
+                    .subTool(this.tool_DrawLine, this.subToolImages[0], 0)
+                    .subTool(this.tool_ScratchLine, this.subToolImages[1], 0)
+                    .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 1)
+                    .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 2)
+                    .subTool(this.tool_ResampleSegment, this.subToolImages[1], 3)
             );
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.scratchLine)
-                    .subToolImg(this.subToolImages[1])
-                    .subTool(this.tool_ScratchLine)
-                    .subTool(this.tool_ExtrudeLine)
-                    .subTool(this.tool_ScratchLineWidth)
-                    .subTool(this.tool_ResampleSegment)
+                    .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
+                    .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
             );
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.posing)
-                    .subToolImg(this.subToolImages[2])
-                    .subTool(this.tool_Posing3d_LocateHead)
-                    .subTool(this.tool_Posing3d_RotateHead)
-                    .subTool(this.tool_Posing3d_LocateBody)
-                    .subTool(this.tool_Posing3d_RatateBody)
-                    .subTool(this.tool_Posing3d_LocateRightArm1)
-                    .subTool(this.tool_Posing3d_LocateRightArm2)
-                    .subTool(this.tool_Posing3d_LocateLeftArm1)
-                    .subTool(this.tool_Posing3d_LocateLeftArm2)
-                    .subTool(this.tool_Posing3d_LocateRightLeg1)
-                    .subTool(this.tool_Posing3d_LocateRightLeg2)
-                    .subTool(this.tool_Posing3d_LocateLeftLeg1)
-                    .subTool(this.tool_Posing3d_LocateLeftLeg2)
-                    .subTool(this.tool_Posing3d_TwistHead)
+                    .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
+                    .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
+                    .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
+                    .subTool(this.tool_Posing3d_RatateBody, this.subToolImages[2], 3)
+                    .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
+                    .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
+                    .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 6)
+                    .subTool(this.tool_Posing3d_LocateLeftArm2, this.subToolImages[2], 7)
+                    .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 8)
+                    .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 9)
+                    .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 10)
+                    .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 11)
+                    .subTool(this.tool_Posing3d_TwistHead, this.subToolImages[2], 12)
             );
 
             // Modal tools
@@ -3600,11 +3597,6 @@ namespace ManualTracingTool {
             let context = this.toolContext;
 
             let currentMainTool = this.getCurrentMainTool();
-            let srcImage = currentMainTool.subToolImage;
-
-            if (srcImage == null) {
-                return;
-            }
 
             let scale = layerWindow.subToolItemScale;
             let fullWidth = layerWindow.width - 1;
@@ -3616,8 +3608,13 @@ namespace ManualTracingTool {
             for (let viewItem of this.subToolViewItems) {
 
                 let tool = viewItem.tool;
+                let srcImage = tool.toolBarImage;
 
-                let srcY = viewItem.toolIndex * unitHeight;
+                if (srcImage == null) {
+                    continue;
+                }
+
+                let srcY = tool.toolBarImageIndex * unitHeight;
                 let dstY = viewItem.top;
 
                 // Draw subtool image

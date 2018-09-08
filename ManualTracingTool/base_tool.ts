@@ -411,6 +411,9 @@ namespace ManualTracingTool {
 
         helpText = '';
 
+        toolBarImage: ImageResource = null;
+        toolBarImageIndex = 0;
+
         isAvailable(env: ToolEnvironment): boolean { // @virtual
 
             return true;
@@ -459,7 +462,6 @@ namespace ManualTracingTool {
 
         mainToolID = MainToolID.none;
         subTools = new List<ToolBase>();
-        subToolImage: ImageResource = null;
         currentSubToolIndex = 0;
 
         id(mainToolID: MainToolID): MainTool {
@@ -468,16 +470,12 @@ namespace ManualTracingTool {
             return this;
         }
 
-        subTool(tool: ToolBase): MainTool {
+        subTool(tool: ToolBase, toolBarImage: ImageResource, toolBarImageIndex: int): MainTool {
+
+            tool.toolBarImage = toolBarImage;
+            tool.toolBarImageIndex = toolBarImageIndex;
 
             this.subTools.push(tool);
-            return this;
-        }
-
-        subToolImg(image: ImageResource): MainTool {
-
-            this.subToolImage = image;
-
             return this;
         }
     }

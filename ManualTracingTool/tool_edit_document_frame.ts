@@ -3,7 +3,7 @@ namespace ManualTracingTool {
 
     export class Tool_EditDocumentFrame extends Tool_Transform_Lattice {
 
-        helpText = '2キーで設定ダイアログを開きます。';
+        helpText = '4キーで設定ダイアログを開きます。';
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
