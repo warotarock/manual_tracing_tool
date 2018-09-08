@@ -123,10 +123,11 @@ var ManualTracingTool;
             this.layerTypeNameDictionary = [
                 'none',
                 'root',
-                'ベクター線画 レイヤー',
+                'ベクター レイヤー',
                 'グループ レイヤー',
                 '画像ファイル レイヤー',
-                '３Dポーズ レイヤー'
+                '３Dポーズ レイヤー',
+                'ベクター参照 レイヤー'
             ];
             // Resources
             this.systemImage = null;
@@ -327,7 +328,9 @@ var ManualTracingTool;
             if (!this.document.loaded) {
                 return;
             }
-            this.fixLoadedDocumentData(this.document);
+            var info = new ManualTracingTool.DocumentDataSaveInfo();
+            this.fixLoadedDocumentData_CollectLayers_Recursive(this.document.rootLayer, info);
+            this.fixLoadedDocumentData(this.document, info);
             this.startLoadingDocumentResources(this.document);
             _Main.mainProcessState = MainProcessStateID.InitialDocumentResourceLoading;
         };
@@ -425,8 +428,11 @@ var ManualTracingTool;
         // Saving 
         Main.prototype.saveDocument = function () {
             var lastFilePath = window.localStorage.getItem(this.lastFilePathKey);
+            var info = new ManualTracingTool.DocumentDataSaveInfo();
+            this.fixSaveDocumentData_SetID_Recursive(this.document.rootLayer, info);
+            this.fixSaveDocumentData_CopyID_Recursive(this.document.rootLayer, info);
             var copy = JSON.parse(JSON.stringify(this.document));
-            this.fixSaveDocumentData(copy);
+            this.fixSaveDocumentData(copy, info);
             var saveToLocalStrage = false;
             if (saveToLocalStrage) {
                 window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(copy));
@@ -474,7 +480,7 @@ var ManualTracingTool;
                 layer1.name = 'layer1';
                 rootLayer.childLayers.push(layer1);
                 var group1 = new ManualTracingTool.VectorGroup();
-                layer1.groups.push(group1);
+                layer1.geometry.groups.push(group1);
             }
             {
                 var layer1 = new ManualTracingTool.GroupLayer();
@@ -484,14 +490,14 @@ var ManualTracingTool;
                 layer2.name = 'child1';
                 layer1.childLayers.push(layer2);
                 var group2 = new ManualTracingTool.VectorGroup();
-                layer2.groups.push(group2);
+                layer2.geometry.groups.push(group2);
             }
             {
                 var layer1 = new ManualTracingTool.VectorLayer();
                 layer1.name = 'background';
                 rootLayer.childLayers.push(layer1);
                 var group1 = new ManualTracingTool.VectorGroup();
-                layer1.groups.push(group1);
+                layer1.geometry.groups.push(group1);
             }
             {
                 var layer1 = new ManualTracingTool.PosingLayer();
@@ -501,13 +507,20 @@ var ManualTracingTool;
             document.loaded = true;
             return document;
         };
-        Main.prototype.fixLoadedDocumentData = function (document) {
+        Main.prototype.fixLoadedDocumentData = function (document, info) {
             if (document.palletColos == undefined) {
                 ManualTracingTool.DocumentData.initializeDefaultPalletColors(document);
             }
-            this.fixLoadedDocumentData_LayerRecursive(document.rootLayer);
+            this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
         };
-        Main.prototype.fixLoadedDocumentData_LayerRecursive = function (layer) {
+        Main.prototype.fixLoadedDocumentData_CollectLayers_Recursive = function (layer, info) {
+            info.collectLayer(layer);
+            for (var _i = 0, _a = layer.childLayers; _i < _a.length; _i++) {
+                var childLayer = _a[_i];
+                this.fixLoadedDocumentData_CollectLayers_Recursive(childLayer, info);
+            }
+        };
+        Main.prototype.fixLoadedDocumentData_FixLayer_Recursive = function (layer, info) {
             if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
                 var vectorLayer = layer;
                 if (vectorLayer.drawLineType == undefined) {
@@ -525,7 +538,12 @@ var ManualTracingTool;
                 if (vectorLayer.fill_PalletColorIndex == undefined) {
                     vectorLayer.fill_PalletColorIndex = 1;
                 }
-                for (var _i = 0, _a = vectorLayer.groups; _i < _a.length; _i++) {
+                if (vectorLayer.geometry == undefined && vectorLayer['groups'] != undefined) {
+                    vectorLayer.geometry = new ManualTracingTool.VectorLayerGeometry();
+                    vectorLayer.geometry.groups = vectorLayer['groups'];
+                    delete vectorLayer['groups'];
+                }
+                for (var _i = 0, _a = vectorLayer.geometry.groups; _i < _a.length; _i++) {
                     var group = _a[_i];
                     for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                         var line = _c[_b];
@@ -540,12 +558,18 @@ var ManualTracingTool;
                             if (point.lineWidth == undefined) {
                                 point.lineWidth = 1.0;
                             }
-                            if (point["adjustedLocation"] != undefined) {
-                                delete point["adjustedLocation"];
+                            if (point['adjustedLocation'] != undefined) {
+                                delete point['adjustedLocation'];
                             }
                         }
                     }
                 }
+            }
+            else if (layer.type == ManualTracingTool.LayerTypeID.vectorLayerReferenceLayer) {
+                var vRefLayer = layer;
+                vRefLayer.referenceLayer = info.layerDictionary[vRefLayer.referenceLayerID];
+                vRefLayer.geometry = vRefLayer.referenceLayer.geometry;
+                delete vRefLayer.referenceLayerID;
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
                 var ifrLayer = layer;
@@ -564,16 +588,33 @@ var ManualTracingTool;
             }
             for (var _f = 0, _g = layer.childLayers; _f < _g.length; _f++) {
                 var childLayer = _g[_f];
-                this.fixLoadedDocumentData_LayerRecursive(childLayer);
+                this.fixLoadedDocumentData_FixLayer_Recursive(childLayer, info);
             }
         };
-        Main.prototype.fixSaveDocumentData = function (document) {
-            this.fixSaveDocumentData_LayerRecursive(document.rootLayer);
+        Main.prototype.fixSaveDocumentData = function (document, info) {
+            this.fixSaveDocumentData_FixLayer_Recursive(document.rootLayer, info);
         };
-        Main.prototype.fixSaveDocumentData_LayerRecursive = function (layer) {
+        Main.prototype.fixSaveDocumentData_SetID_Recursive = function (layer, info) {
+            info.addLayer(layer);
+            for (var _i = 0, _a = layer.childLayers; _i < _a.length; _i++) {
+                var childLayer = _a[_i];
+                this.fixSaveDocumentData_SetID_Recursive(childLayer, info);
+            }
+        };
+        Main.prototype.fixSaveDocumentData_CopyID_Recursive = function (layer, info) {
+            if (layer.type == ManualTracingTool.LayerTypeID.vectorLayerReferenceLayer) {
+                var vRefLayer = layer;
+                vRefLayer.referenceLayerID = vRefLayer.referenceLayer.ID;
+            }
+            for (var _i = 0, _a = layer.childLayers; _i < _a.length; _i++) {
+                var childLayer = _a[_i];
+                this.fixSaveDocumentData_CopyID_Recursive(childLayer, info);
+            }
+        };
+        Main.prototype.fixSaveDocumentData_FixLayer_Recursive = function (layer, info) {
             if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
                 var vectorLayer = layer;
-                for (var _i = 0, _a = vectorLayer.groups; _i < _a.length; _i++) {
+                for (var _i = 0, _a = vectorLayer.geometry.groups; _i < _a.length; _i++) {
                     var group = _a[_i];
                     for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                         var line = _c[_b];
@@ -586,6 +627,11 @@ var ManualTracingTool;
                     }
                 }
             }
+            else if (layer.type == ManualTracingTool.LayerTypeID.vectorLayerReferenceLayer) {
+                var vRefLayer = layer;
+                delete vRefLayer.geometry;
+                delete vRefLayer.referenceLayer;
+            }
             else if (layer.type == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
                 var ifrLayer = layer;
                 delete ifrLayer.imageResource;
@@ -595,7 +641,7 @@ var ManualTracingTool;
             }
             for (var _f = 0, _g = layer.childLayers; _f < _g.length; _f++) {
                 var childLayer = _g[_f];
-                this.fixSaveDocumentData_LayerRecursive(childLayer);
+                this.fixSaveDocumentData_FixLayer_Recursive(childLayer, info);
             }
         };
         Main.prototype.initializeContext = function () {
@@ -623,31 +669,28 @@ var ManualTracingTool;
             // Constructs main tools and sub tools structure
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.none));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.drawLine)
-                .subToolImg(this.subToolImages[0])
-                .subTool(this.tool_DrawLine)
-                .subTool(this.tool_EditImageFileReference)
-                .subTool(this.tool_EditDocumentFrame));
+                .subTool(this.tool_DrawLine, this.subToolImages[0], 0)
+                .subTool(this.tool_ScratchLine, this.subToolImages[1], 0)
+                .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 1)
+                .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 2)
+                .subTool(this.tool_ResampleSegment, this.subToolImages[1], 3));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.scratchLine)
-                .subToolImg(this.subToolImages[1])
-                .subTool(this.tool_ScratchLine)
-                .subTool(this.tool_ExtrudeLine)
-                .subTool(this.tool_ScratchLineWidth)
-                .subTool(this.tool_ResampleSegment));
+                .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
+                .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.posing)
-                .subToolImg(this.subToolImages[2])
-                .subTool(this.tool_Posing3d_LocateHead)
-                .subTool(this.tool_Posing3d_RotateHead)
-                .subTool(this.tool_Posing3d_LocateBody)
-                .subTool(this.tool_Posing3d_RatateBody)
-                .subTool(this.tool_Posing3d_LocateRightArm1)
-                .subTool(this.tool_Posing3d_LocateRightArm2)
-                .subTool(this.tool_Posing3d_LocateLeftArm1)
-                .subTool(this.tool_Posing3d_LocateLeftArm2)
-                .subTool(this.tool_Posing3d_LocateRightLeg1)
-                .subTool(this.tool_Posing3d_LocateRightLeg2)
-                .subTool(this.tool_Posing3d_LocateLeftLeg1)
-                .subTool(this.tool_Posing3d_LocateLeftLeg2)
-                .subTool(this.tool_Posing3d_TwistHead));
+                .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
+                .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
+                .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
+                .subTool(this.tool_Posing3d_RatateBody, this.subToolImages[2], 3)
+                .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
+                .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
+                .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 6)
+                .subTool(this.tool_Posing3d_LocateLeftArm2, this.subToolImages[2], 7)
+                .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 8)
+                .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 9)
+                .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 10)
+                .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 11)
+                .subTool(this.tool_Posing3d_TwistHead, this.subToolImages[2], 12));
             // Modal tools
             this.vectorLayer_ModalTools[ModalToolID.none] = null;
             this.vectorLayer_ModalTools[ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
@@ -915,7 +958,7 @@ var ManualTracingTool;
                 // Select command
                 var layerCommand = null;
                 if (hitedButton.buttonID == LayerWindowButtonID.addLayer) {
-                    layerCommand = new ManualTracingTool.Command_Layer_AddVectorLayerToCurrentPosition();
+                    this.openNewLayerCommandOptionModal();
                 }
                 else if (hitedButton.buttonID == LayerWindowButtonID.deleteLayer) {
                     layerCommand = new ManualTracingTool.Command_Layer_Delete();
@@ -1340,10 +1383,10 @@ var ManualTracingTool;
         };
         Main.prototype.setCurrentLayer = function (layer) {
             this.toolContext.currentLayer = layer;
-            if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
+            if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
                 var vectorLayer = layer;
                 this.toolContext.currentVectorLayer = vectorLayer;
-                this.toolContext.currentVectorGroup = vectorLayer.groups[0];
+                this.toolContext.currentVectorGroup = vectorLayer.geometry.groups[0];
             }
             else {
                 this.toolContext.currentVectorLayer = null;
@@ -1555,7 +1598,7 @@ var ManualTracingTool;
             this.setInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
             this.setInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, layer.layerColor[3], 0.0, 1.0);
             // for each layer type properties
-            if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
+            if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
                 var vectorLayer = layer;
                 this.setInputElementColor(this.ID.layerPropertyModal_fillColor, vectorLayer.fillColor);
                 this.setInputElementRangeValue(this.ID.layerPropertyModal_fillColorAlpha, vectorLayer.fillColor[3], 0.0, 1.0);
@@ -1569,7 +1612,7 @@ var ManualTracingTool;
             if (this.isModalShown()) {
                 return;
             }
-            if (layer.type != ManualTracingTool.LayerTypeID.vectorLayer) {
+            if (!ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
                 return;
             }
             var vectorLayer = layer;
@@ -1695,6 +1738,34 @@ var ManualTracingTool;
             }
             this.openModal(this.ID.newLayerCommandOptionModal);
         };
+        Main.prototype.onNewLayerCommandOptionModal = function () {
+            if (this.currentModalDialogResult != this.ID.newLayerCommandOptionModal_ok) {
+                return;
+            }
+            var layerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, ManualTracingTool.LayerTypeID.vectorLayer);
+            // Select command
+            var layerCommand = null;
+            if (layerType == ManualTracingTool.LayerTypeID.vectorLayer) {
+                layerCommand = new ManualTracingTool.Command_Layer_AddVectorLayerToCurrentPosition();
+            }
+            else if (layerType == ManualTracingTool.LayerTypeID.vectorLayerReferenceLayer) {
+                layerCommand = new ManualTracingTool.Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition();
+            }
+            else if (layerType == ManualTracingTool.LayerTypeID.groupLayer) {
+                layerCommand = new ManualTracingTool.Command_Layer_AddGroupLayerToCurrentPosition();
+            }
+            else if (layerType == ManualTracingTool.LayerTypeID.posingLayer) {
+                layerCommand = new ManualTracingTool.Command_Layer_AddPosingLayerToCurrentPosition();
+            }
+            else if (layerType == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
+                layerCommand = new ManualTracingTool.Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
+            }
+            if (layerCommand == null) {
+                return;
+            }
+            // Execute command
+            this.executeLayerCommand(layerCommand);
+        };
         Main.prototype.openFileDialogModal = function () {
             if (this.isModalShown()) {
                 return;
@@ -1728,7 +1799,7 @@ var ManualTracingTool;
                 }
                 this.getInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
                 layer.layerColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, 0.0, 1.0);
-                if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
+                if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
                     var vectorLayer = layer;
                     this.getInputElementColor(this.ID.layerPropertyModal_fillColor, vectorLayer.fillColor);
                     vectorLayer.fillColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_fillColorAlpha, 0.0, 1.0);
@@ -1746,28 +1817,7 @@ var ManualTracingTool;
                 this.setCurrentSelectionTool(this.toolContext.operationUnitID);
             }
             else if (this.currentModalDialogID == this.ID.newLayerCommandOptionModal) {
-                if (this.currentModalDialogResult == this.ID.newLayerCommandOptionModal_ok) {
-                    var layerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, ManualTracingTool.LayerTypeID.vectorLayer);
-                    // Select command
-                    var layerCommand = null;
-                    if (layerType == ManualTracingTool.LayerTypeID.vectorLayer) {
-                        layerCommand = new ManualTracingTool.Command_Layer_AddVectorLayerToCurrentPosition();
-                    }
-                    else if (layerType == ManualTracingTool.LayerTypeID.groupLayer) {
-                        layerCommand = new ManualTracingTool.Command_Layer_AddGroupLayerToCurrentPosition();
-                    }
-                    else if (layerType == ManualTracingTool.LayerTypeID.posingLayer) {
-                        layerCommand = new ManualTracingTool.Command_Layer_AddPosingLayerToCurrentPosition();
-                    }
-                    else if (layerType == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
-                        layerCommand = new ManualTracingTool.Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
-                    }
-                    if (layerCommand == null) {
-                        return;
-                    }
-                    // Execute command
-                    this.executeLayerCommand(layerCommand);
-                }
+                this.onNewLayerCommandOptionModal();
             }
             else if (this.currentModalDialogID == this.ID.openFileDialogModal) {
                 this.toolEnv.updateContext();
@@ -1887,7 +1937,12 @@ var ManualTracingTool;
             }
             if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
                 var vectorLayer = layer;
-                this.drawVectorLayer(vectorLayer, documentData);
+                this.drawVectorLayer(vectorLayer, vectorLayer.geometry, documentData);
+            }
+            else if (layer.type == ManualTracingTool.LayerTypeID.vectorLayerReferenceLayer) {
+                var vectorLayerReferenceLayer = layer;
+                var referenceLayer = vectorLayerReferenceLayer.referenceLayer;
+                this.drawVectorLayer(vectorLayerReferenceLayer, referenceLayer.geometry, documentData);
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.groupLayer) {
                 for (var i = layer.childLayers.length - 1; i >= 0; i--) {
@@ -1903,9 +1958,10 @@ var ManualTracingTool;
                 this.drawImageFileReferenceLayer(ifrLayer);
             }
         };
-        Main.prototype.drawVectorLayer = function (layer, documentData) {
+        Main.prototype.drawVectorLayer = function (layer, geometry, documentData) {
             var context = this.toolContext;
             var isCurrentLayer = (layer == context.currentVectorLayer);
+            // color setting
             var lineColor;
             if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.layerColor) {
                 lineColor = layer.layerColor;
@@ -1931,7 +1987,8 @@ var ManualTracingTool;
             vec4.copy(this.editOtherLayerLineColor, lineColor);
             this.editOtherLayerLineColor[3] *= 0.3;
             var useAdjustingLocation = this.isModalToolRunning();
-            for (var _i = 0, _a = layer.groups; _i < _a.length; _i++) {
+            // drawing geometry
+            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];
@@ -2417,10 +2474,6 @@ var ManualTracingTool;
         Main.prototype.drawLayerWindow_SubTools = function (layerWindow) {
             var context = this.toolContext;
             var currentMainTool = this.getCurrentMainTool();
-            var srcImage = currentMainTool.subToolImage;
-            if (srcImage == null) {
-                return;
-            }
             var scale = layerWindow.subToolItemScale;
             var fullWidth = layerWindow.width - 1;
             var unitWidth = layerWindow.subToolItemUnitWidth;
@@ -2429,7 +2482,11 @@ var ManualTracingTool;
             for (var _i = 0, _a = this.subToolViewItems; _i < _a.length; _i++) {
                 var viewItem = _a[_i];
                 var tool = viewItem.tool;
-                var srcY = viewItem.toolIndex * unitHeight;
+                var srcImage = tool.toolBarImage;
+                if (srcImage == null) {
+                    continue;
+                }
+                var srcY = tool.toolBarImageIndex * unitHeight;
                 var dstY = viewItem.top;
                 // Draw subtool image
                 if (tool == this.currentTool) {

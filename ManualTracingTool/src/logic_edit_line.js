@@ -4,7 +4,7 @@ var ManualTracingTool;
         function Logic_VectorLayer() {
         }
         Logic_VectorLayer.clearLayerModifyFlags = function (layer) {
-            for (var _i = 0, _a = layer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 this.clearGroupModifyFlags(group);
             }
@@ -25,7 +25,7 @@ var ManualTracingTool;
             }
         };
         Logic_VectorLayer.fillLayerDeleteFlags = function (layer, forceDelete) {
-            for (var _i = 0, _a = layer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 this.fillGroupDeleteFlags(group, forceDelete);
             }

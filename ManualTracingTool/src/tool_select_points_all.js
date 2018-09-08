@@ -34,7 +34,7 @@ var ManualTracingTool;
         };
         Tool_Select_All_LinePoint.prototype.isSelectedAnyPoint = function (env) {
             var isSelected = false;
-            for (var _i = 0, _a = env.currentVectorLayer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = env.currentVectorLayer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];
@@ -55,7 +55,7 @@ var ManualTracingTool;
         };
         Tool_Select_All_LinePoint.prototype.createSelectionInfo_SelectAll = function (env) {
             var selectionInfo = new ManualTracingTool.VectorLayerEditorSelectionInfo();
-            for (var _i = 0, _a = env.currentVectorLayer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = env.currentVectorLayer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];
@@ -71,7 +71,7 @@ var ManualTracingTool;
         };
         Tool_Select_All_LinePoint.prototype.createSelectionInfo_ClearAllSelection = function (env) {
             var selectionInfo = new ManualTracingTool.VectorLayerEditorSelectionInfo();
-            for (var _i = 0, _a = env.currentVectorLayer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = env.currentVectorLayer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];

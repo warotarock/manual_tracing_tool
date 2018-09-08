@@ -44,7 +44,7 @@ var ManualTracingTool;
             var rect = this.rectangleArea;
             ManualTracingTool.Logic_Edit_Points.setMinMaxToRectangleArea(rect);
             var selectedOnly = true;
-            for (var _i = 0, _a = env.currentVectorLayer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = env.currentVectorLayer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];
@@ -57,7 +57,7 @@ var ManualTracingTool;
         };
         Tool_Transform_Lattice_LinePoint.prototype.createEditData = function (e, env) {
             var editPoints = new List();
-            for (var _i = 0, _a = env.currentVectorLayer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = env.currentVectorLayer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];

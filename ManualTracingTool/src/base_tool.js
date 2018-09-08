@@ -305,6 +305,8 @@ var ManualTracingTool;
     var ToolBase = /** @class */ (function () {
         function ToolBase() {
             this.helpText = '';
+            this.toolBarImage = null;
+            this.toolBarImageIndex = 0;
         }
         ToolBase.prototype.isAvailable = function (env) {
             return true;
@@ -346,19 +348,16 @@ var ManualTracingTool;
         function MainTool() {
             this.mainToolID = MainToolID.none;
             this.subTools = new List();
-            this.subToolImage = null;
             this.currentSubToolIndex = 0;
         }
         MainTool.prototype.id = function (mainToolID) {
             this.mainToolID = mainToolID;
             return this;
         };
-        MainTool.prototype.subTool = function (tool) {
+        MainTool.prototype.subTool = function (tool, toolBarImage, toolBarImageIndex) {
+            tool.toolBarImage = toolBarImage;
+            tool.toolBarImageIndex = toolBarImageIndex;
             this.subTools.push(tool);
-            return this;
-        };
-        MainTool.prototype.subToolImg = function (image) {
-            this.subToolImage = image;
             return this;
         };
         return MainTool;

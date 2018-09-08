@@ -27,6 +27,7 @@ var ManualTracingTool;
         LayerTypeID[LayerTypeID["groupLayer"] = 3] = "groupLayer";
         LayerTypeID[LayerTypeID["imageFileReferenceLayer"] = 4] = "imageFileReferenceLayer";
         LayerTypeID[LayerTypeID["posingLayer"] = 5] = "posingLayer";
+        LayerTypeID[LayerTypeID["vectorLayerReferenceLayer"] = 6] = "vectorLayerReferenceLayer";
     })(LayerTypeID = ManualTracingTool.LayerTypeID || (ManualTracingTool.LayerTypeID = {}));
     var Layer = /** @class */ (function () {
         function Layer() {
@@ -110,6 +111,13 @@ var ManualTracingTool;
         return VectorGroup;
     }());
     ManualTracingTool.VectorGroup = VectorGroup;
+    var VectorLayerGeometry = /** @class */ (function () {
+        function VectorLayerGeometry() {
+            this.groups = new List();
+        }
+        return VectorLayerGeometry;
+    }());
+    ManualTracingTool.VectorLayerGeometry = VectorLayerGeometry;
     var DrawLineTypeID;
     (function (DrawLineTypeID) {
         DrawLineTypeID[DrawLineTypeID["none"] = 1] = "none";
@@ -127,7 +135,7 @@ var ManualTracingTool;
         function VectorLayer() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.type = LayerTypeID.vectorLayer;
-            _this.groups = new List();
+            _this.geometry = new VectorLayerGeometry();
             _this.drawLineType = DrawLineTypeID.layerColor;
             _this.fillAreaType = FillAreaTypeID.none;
             _this.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
@@ -135,9 +143,24 @@ var ManualTracingTool;
             _this.fill_PalletColorIndex = 0;
             return _this;
         }
+        VectorLayer.isVectorLayer = function (layer) {
+            return (layer.type == LayerTypeID.vectorLayer
+                || layer.type == LayerTypeID.vectorLayerReferenceLayer);
+        };
         return VectorLayer;
     }(Layer));
     ManualTracingTool.VectorLayer = VectorLayer;
+    var VectorLayerReferenceLayer = /** @class */ (function (_super) {
+        __extends(VectorLayerReferenceLayer, _super);
+        function VectorLayerReferenceLayer() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.type = LayerTypeID.vectorLayerReferenceLayer;
+            _this.referenceLayer = null;
+            return _this;
+        }
+        return VectorLayerReferenceLayer;
+    }(VectorLayer));
+    ManualTracingTool.VectorLayerReferenceLayer = VectorLayerReferenceLayer;
     // Group layer
     var GroupLayer = /** @class */ (function (_super) {
         __extends(GroupLayer, _super);
@@ -365,4 +388,25 @@ var ManualTracingTool;
         return DocumentData;
     }());
     ManualTracingTool.DocumentData = DocumentData;
+    var DocumentDataSaveInfo = /** @class */ (function () {
+        function DocumentDataSaveInfo() {
+            this.layers = new List();
+            this.layerID = 0;
+            this.layerDictionary = new Dictionary();
+        }
+        DocumentDataSaveInfo.prototype.addLayer = function (layer) {
+            layer.ID = this.layerID;
+            this.layers.push(layer);
+            this.layerID++;
+        };
+        DocumentDataSaveInfo.prototype.collectLayer = function (layer) {
+            if (layer.ID == undefined) {
+                return;
+            }
+            this.layerDictionary[layer.ID] = layer;
+            delete layer.ID;
+        };
+        return DocumentDataSaveInfo;
+    }());
+    ManualTracingTool.DocumentDataSaveInfo = DocumentDataSaveInfo;
 })(ManualTracingTool || (ManualTracingTool = {}));

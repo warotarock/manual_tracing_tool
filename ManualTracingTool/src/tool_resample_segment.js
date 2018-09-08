@@ -65,7 +65,7 @@ var ManualTracingTool;
             var editGroups = new List();
             var editLines = new List();
             var modifiedGroupCount = 0;
-            for (var _i = 0, _a = layer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 var modifiedLineCount = 0;
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {

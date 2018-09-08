@@ -14,7 +14,7 @@ var ManualTracingTool;
         __extends(Tool_EditDocumentFrame, _super);
         function Tool_EditDocumentFrame() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.helpText = '2キーで設定ダイアログを開きます。';
+            _this.helpText = '4キーで設定ダイアログを開きます。';
             return _this;
         }
         Tool_EditDocumentFrame.prototype.isAvailable = function (env) {

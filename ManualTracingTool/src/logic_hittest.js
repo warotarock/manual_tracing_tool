@@ -63,7 +63,7 @@ var ManualTracingTool;
             }
             var vectorLayer = layer;
             this.beforeHitTestToLayer(vectorLayer);
-            for (var _i = 0, _a = vectorLayer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = vectorLayer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 this.beforeHitTestToGroup(vectorLayer, group);
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {

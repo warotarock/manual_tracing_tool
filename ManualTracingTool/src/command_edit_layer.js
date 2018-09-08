@@ -152,13 +152,43 @@ var ManualTracingTool;
             this.newLayer = new ManualTracingTool.VectorLayer();
             this.newLayer.name = 'new layer';
             var group = new ManualTracingTool.VectorGroup();
-            this.newLayer.groups.push(group);
+            this.newLayer.geometry.groups.push(group);
             this.executeLayerInsertToCurrent(this.newLayer);
             env.setCurrentLayer(this.newLayer);
         };
         return Command_Layer_AddVectorLayerToCurrentPosition;
     }(Command_Layer_CommandBase));
     ManualTracingTool.Command_Layer_AddVectorLayerToCurrentPosition = Command_Layer_AddVectorLayerToCurrentPosition;
+    var Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition = /** @class */ (function (_super) {
+        __extends(Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition, _super);
+        function Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.newLayer = null;
+            return _this;
+        }
+        Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition.prototype.isAvailable = function (env) {
+            if (this.currentLayerParent == null) {
+                return false;
+            }
+            if (!this.isContainerLayer(this.currentLayerParent)) {
+                return false;
+            }
+            if (this.currentLayer == null || this.currentLayer.type != ManualTracingTool.LayerTypeID.vectorLayer) {
+                return false;
+            }
+            return true;
+        };
+        Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition.prototype.executeCommand = function (env) {
+            this.newLayer = new ManualTracingTool.VectorLayerReferenceLayer();
+            this.newLayer.name = 'new ref layer';
+            this.newLayer.referenceLayer = (this.currentLayer);
+            this.newLayer.geometry = this.newLayer.referenceLayer.geometry;
+            this.executeLayerInsertToCurrent(this.newLayer);
+            env.setCurrentLayer(this.newLayer);
+        };
+        return Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition;
+    }(Command_Layer_CommandBase));
+    ManualTracingTool.Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition = Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition;
     var Command_Layer_AddGroupLayerToCurrentPosition = /** @class */ (function (_super) {
         __extends(Command_Layer_AddGroupLayerToCurrentPosition, _super);
         function Command_Layer_AddGroupLayerToCurrentPosition() {

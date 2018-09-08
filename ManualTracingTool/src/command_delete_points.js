@@ -43,7 +43,7 @@ var ManualTracingTool;
             }
             // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
             var modifiedGroupCount = 0;
-            for (var _i = 0, _a = layer.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 var deleteLineCount = 0;
                 var modifiedLineCount = 0;
@@ -88,7 +88,7 @@ var ManualTracingTool;
             // Collect informations for modified lines and deleted points
             var editLines = new List();
             var deletedPoints = new List();
-            for (var _f = 0, _g = layer.groups; _f < _g.length; _f++) {
+            for (var _f = 0, _g = layer.geometry.groups; _f < _g.length; _f++) {
                 var group = _g[_f];
                 if (group.linePointModifyFlag == ManualTracingTool.VectorGroupModifyFlagID.none) {
                     continue;
@@ -119,7 +119,7 @@ var ManualTracingTool;
             // Collect informations for modified groups and deleted lines
             var editGroups = new List();
             var deletedLines = new List();
-            for (var _m = 0, _o = layer.groups; _m < _o.length; _m++) {
+            for (var _m = 0, _o = layer.geometry.groups; _m < _o.length; _m++) {
                 var group = _o[_m];
                 if (group.modifyFlag == ManualTracingTool.VectorGroupModifyFlagID.none) {
                     continue;
