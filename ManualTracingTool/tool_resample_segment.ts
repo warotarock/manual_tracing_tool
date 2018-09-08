@@ -65,7 +65,7 @@ namespace ManualTracingTool {
 
             let modifiedGroupCount = 0;
 
-            for (let group of layer.groups) {
+            for (let group of layer.geometry.groups) {
 
                 let modifiedLineCount = 0;
 

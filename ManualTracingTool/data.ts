@@ -18,6 +18,7 @@ namespace ManualTracingTool {
         groupLayer = 3,
         imageFileReferenceLayer = 4,
         posingLayer = 5,
+        vectorLayerReferenceLayer = 6,
     }
 
     export class Layer {
@@ -30,6 +31,9 @@ namespace ManualTracingTool {
         childLayers = List<Layer>();
 
         layerColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+
+        // file only
+        ID: int;
     }
 
     // Vector layer
@@ -107,6 +111,11 @@ namespace ManualTracingTool {
         linePointModifyFlag = VectorGroupModifyFlagID.none;
     }
 
+    export class VectorLayerGeometry {
+
+        groups = new List<VectorGroup>();
+    }
+
     export enum DrawLineTypeID {
 
         none = 1,
@@ -125,7 +134,7 @@ namespace ManualTracingTool {
 
         type = LayerTypeID.vectorLayer;
 
-        groups = new List<VectorGroup>();
+        geometry = new VectorLayerGeometry();
 
         drawLineType = DrawLineTypeID.layerColor;
 
@@ -134,6 +143,22 @@ namespace ManualTracingTool {
 
         line_PalletColorIndex = 0;
         fill_PalletColorIndex = 0;
+
+        static isVectorLayer(layer: Layer): boolean {
+
+            return (layer.type == LayerTypeID.vectorLayer
+                || layer.type == LayerTypeID.vectorLayerReferenceLayer);
+        }
+    }
+
+    export class VectorLayerReferenceLayer extends VectorLayer {
+
+        type = LayerTypeID.vectorLayerReferenceLayer;
+
+        referenceLayer: VectorLayer = null;
+
+        // file only
+        referenceLayerID: int;
     }
 
     // Group layer
@@ -349,6 +374,35 @@ namespace ManualTracingTool {
                 vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
                 documentData.palletColos.push(palletColor);
             }
+        }
+    }
+
+    export class DocumentDataSaveInfo {
+
+        layers = new List<Layer>();
+        layerID = 0;
+
+        layerDictionary = new Dictionary<Layer>();
+
+        addLayer(layer: Layer) {
+
+            layer.ID = this.layerID;
+
+            this.layers.push(layer);
+
+            this.layerID++;
+        }
+
+        collectLayer(layer: Layer) {
+
+            if (layer.ID == undefined) {
+
+                return;
+            }
+
+            this.layerDictionary[layer.ID] = layer;
+
+            delete layer.ID;
         }
     }
 }

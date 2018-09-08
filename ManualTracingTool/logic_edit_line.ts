@@ -5,7 +5,7 @@ namespace ManualTracingTool {
 
         static clearLayerModifyFlags(layer: VectorLayer) {
 
-            for (let group of layer.groups) {
+            for (let group of layer.geometry.groups) {
 
                 this.clearGroupModifyFlags(group);
             }
@@ -34,7 +34,7 @@ namespace ManualTracingTool {
 
         static fillLayerDeleteFlags(layer: VectorLayer, forceDelete: boolean) {
 
-            for (let group of layer.groups) {
+            for (let group of layer.geometry.groups) {
 
                 this.fillGroupDeleteFlags(group, forceDelete);
             }

@@ -44,7 +44,7 @@ namespace ManualTracingTool {
 
             let selectedOnly = true;
 
-            for (let group of env.currentVectorLayer.groups) {
+            for (let group of env.currentVectorLayer.geometry.groups) {
 
                 for (let line of group.lines) {
 
@@ -63,7 +63,7 @@ namespace ManualTracingTool {
 
             let editPoints = new List<Tool_Transform_Lattice_EditPoint>();
 
-            for (let group of env.currentVectorLayer.groups) {
+            for (let group of env.currentVectorLayer.geometry.groups) {
 
                 for (let line of group.lines) {
 

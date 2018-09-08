@@ -131,10 +131,11 @@ namespace ManualTracingTool {
         layerTypeNameDictionary: List<string> = [
             'none',
             'root',
-            'ベクター線画 レイヤー',
+            'ベクター レイヤー',
             'グループ レイヤー',
             '画像ファイル レイヤー',
-            '３Dポーズ レイヤー'
+            '３Dポーズ レイヤー',
+            'ベクター参照 レイヤー'
         ];
 
         // Resources
@@ -368,7 +369,9 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.fixLoadedDocumentData(this.document);
+            let info = new DocumentDataSaveInfo();
+            this.fixLoadedDocumentData_CollectLayers_Recursive(this.document.rootLayer, info);
+            this.fixLoadedDocumentData(this.document, info);
 
             this.startLoadingDocumentResources(this.document);
             _Main.mainProcessState = MainProcessStateID.InitialDocumentResourceLoading;
@@ -515,8 +518,12 @@ namespace ManualTracingTool {
 
             let lastFilePath = window.localStorage.getItem(this.lastFilePathKey);
 
+            let info = new DocumentDataSaveInfo();
+            this.fixSaveDocumentData_SetID_Recursive(this.document.rootLayer, info);
+            this.fixSaveDocumentData_CopyID_Recursive(this.document.rootLayer, info);
+
             let copy = JSON.parse(JSON.stringify(this.document));
-            this.fixSaveDocumentData(copy);
+            this.fixSaveDocumentData(copy, info);
 
             let saveToLocalStrage = false;
 
@@ -588,7 +595,7 @@ namespace ManualTracingTool {
                 layer1.name = 'layer1'
                 rootLayer.childLayers.push(layer1);
                 let group1 = new VectorGroup();
-                layer1.groups.push(group1);
+                layer1.geometry.groups.push(group1);
             }
 
             {
@@ -600,7 +607,7 @@ namespace ManualTracingTool {
                 layer2.name = 'child1'
                 layer1.childLayers.push(layer2);
                 let group2 = new VectorGroup();
-                layer2.groups.push(group2);
+                layer2.geometry.groups.push(group2);
             }
 
             {
@@ -608,7 +615,7 @@ namespace ManualTracingTool {
                 layer1.name = 'background'
                 rootLayer.childLayers.push(layer1);
                 let group1 = new VectorGroup();
-                layer1.groups.push(group1);
+                layer1.geometry.groups.push(group1);
             }
 
             {
@@ -622,16 +629,26 @@ namespace ManualTracingTool {
             return document;
         }
 
-        private fixLoadedDocumentData(document: DocumentData) {
+        private fixLoadedDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
 
             if (document.palletColos == undefined) {
                 DocumentData.initializeDefaultPalletColors(document);
             }
 
-            this.fixLoadedDocumentData_LayerRecursive(document.rootLayer);
+            this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
         }
 
-        private fixLoadedDocumentData_LayerRecursive(layer: Layer) {
+        private fixLoadedDocumentData_CollectLayers_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
+
+            info.collectLayer(layer);
+
+            for (let childLayer of layer.childLayers) {
+
+                this.fixLoadedDocumentData_CollectLayers_Recursive(childLayer, info);
+            }
+        }
+
+        private fixLoadedDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
 
             if (layer.type == LayerTypeID.vectorLayer) {
 
@@ -657,7 +674,15 @@ namespace ManualTracingTool {
                     vectorLayer.fill_PalletColorIndex = 1;
                 }
 
-                for (let group of vectorLayer.groups) {
+                if (vectorLayer.geometry == undefined && vectorLayer['groups'] != undefined) {
+
+                    vectorLayer.geometry = new VectorLayerGeometry();
+                    vectorLayer.geometry.groups = vectorLayer['groups'];
+
+                    delete vectorLayer['groups'];
+                }
+
+                for (let group of vectorLayer.geometry.groups) {
 
                     for (let line of group.lines) {
 
@@ -678,12 +703,21 @@ namespace ManualTracingTool {
                                 point.lineWidth = 1.0;
                             }
 
-                            if (point["adjustedLocation"] != undefined) {
-                                delete point["adjustedLocation"];
+                            if (point['adjustedLocation'] != undefined) {
+                                delete point['adjustedLocation'];
                             }
                         }
                     }
                 }
+            }
+            else if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
+
+                let vRefLayer = <VectorLayerReferenceLayer>layer;
+
+                vRefLayer.referenceLayer = <VectorLayer>info.layerDictionary[vRefLayer.referenceLayerID];
+                vRefLayer.geometry = vRefLayer.referenceLayer.geometry;
+
+                delete vRefLayer.referenceLayerID;
             }
             else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
 
@@ -709,22 +743,47 @@ namespace ManualTracingTool {
 
             for (let childLayer of layer.childLayers) {
 
-                this.fixLoadedDocumentData_LayerRecursive(childLayer);
+                this.fixLoadedDocumentData_FixLayer_Recursive(childLayer, info);
             }
         }
 
-        private fixSaveDocumentData(document: DocumentData) {
+        private fixSaveDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
 
-            this.fixSaveDocumentData_LayerRecursive(document.rootLayer);
+            this.fixSaveDocumentData_FixLayer_Recursive(document.rootLayer, info);
         }
 
-        private fixSaveDocumentData_LayerRecursive(layer: Layer) {
+        private fixSaveDocumentData_SetID_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
+
+            info.addLayer(layer);
+
+            for (let childLayer of layer.childLayers) {
+
+                this.fixSaveDocumentData_SetID_Recursive(childLayer, info);
+            }
+        }
+
+        private fixSaveDocumentData_CopyID_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
+
+            if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
+
+                let vRefLayer = <VectorLayerReferenceLayer>layer;
+
+                vRefLayer.referenceLayerID = vRefLayer.referenceLayer.ID;
+            }
+
+            for (let childLayer of layer.childLayers) {
+
+                this.fixSaveDocumentData_CopyID_Recursive(childLayer, info);
+            }
+        }
+
+        private fixSaveDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
 
             if (layer.type == LayerTypeID.vectorLayer) {
 
                 let vectorLayer = <VectorLayer>layer;
 
-                for (let group of vectorLayer.groups) {
+                for (let group of vectorLayer.geometry.groups) {
 
                     for (let line of group.lines) {
 
@@ -736,6 +795,13 @@ namespace ManualTracingTool {
                         }
                     }
                 }
+            }
+            else if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
+
+                let vRefLayer = <VectorLayerReferenceLayer>layer;
+
+                delete vRefLayer.geometry;
+                delete vRefLayer.referenceLayer;
             }
             else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
 
@@ -749,7 +815,7 @@ namespace ManualTracingTool {
 
             for (let childLayer of layer.childLayers) {
 
-                this.fixSaveDocumentData_LayerRecursive(childLayer);
+                this.fixSaveDocumentData_FixLayer_Recursive(childLayer, info);
             }
         }
 
@@ -1210,7 +1276,7 @@ namespace ManualTracingTool {
 
                 if (hitedButton.buttonID == LayerWindowButtonID.addLayer) {
 
-                    layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
+                    this.openNewLayerCommandOptionModal();
                 }
                 else if (hitedButton.buttonID == LayerWindowButtonID.deleteLayer) {
 
@@ -1851,12 +1917,12 @@ namespace ManualTracingTool {
 
             this.toolContext.currentLayer = layer;
 
-            if (layer.type == LayerTypeID.vectorLayer) {
+            if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
 
                 this.toolContext.currentVectorLayer = vectorLayer;
-                this.toolContext.currentVectorGroup = vectorLayer.groups[0];
+                this.toolContext.currentVectorGroup = vectorLayer.geometry.groups[0];
             }
             else {
 
@@ -2191,7 +2257,7 @@ namespace ManualTracingTool {
 
             // for each layer type properties
 
-            if (layer.type == LayerTypeID.vectorLayer) {
+            if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
 
@@ -2215,7 +2281,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (layer.type != LayerTypeID.vectorLayer) {
+            if (!VectorLayer.isVectorLayer(layer)) {
                 return;
             }
 
@@ -2402,6 +2468,50 @@ namespace ManualTracingTool {
             this.openModal(this.ID.newLayerCommandOptionModal);
         }
 
+        private onNewLayerCommandOptionModal() {
+
+            if (this.currentModalDialogResult != this.ID.newLayerCommandOptionModal_ok) {
+
+                return;
+            }
+
+            var layerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, LayerTypeID.vectorLayer);
+
+            // Select command
+
+            let layerCommand: Command_Layer_CommandBase = null;
+
+            if (layerType == LayerTypeID.vectorLayer) {
+
+                layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
+            }
+            else if (layerType == LayerTypeID.vectorLayerReferenceLayer) {
+
+                layerCommand = new Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition();
+            }
+            else if (layerType == LayerTypeID.groupLayer) {
+
+                layerCommand = new Command_Layer_AddGroupLayerToCurrentPosition();
+            }
+            else if (layerType == LayerTypeID.posingLayer) {
+
+                layerCommand = new Command_Layer_AddPosingLayerToCurrentPosition();
+            }
+            else if (layerType == LayerTypeID.imageFileReferenceLayer) {
+
+                layerCommand = new Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
+            }
+
+            if (layerCommand == null) {
+
+                return;
+            }
+
+            // Execute command
+
+            this.executeLayerCommand(layerCommand);
+        }
+
         private openFileDialogModal() {
 
             if (this.isModalShown()) {
@@ -2454,7 +2564,7 @@ namespace ManualTracingTool {
                 this.getInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
                 layer.layerColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, 0.0, 1.0);
 
-                if (layer.type == LayerTypeID.vectorLayer) {
+                if (VectorLayer.isVectorLayer(layer)) {
 
                     let vectorLayer = <VectorLayer>layer;
 
@@ -2482,40 +2592,7 @@ namespace ManualTracingTool {
             }
             else if (this.currentModalDialogID == this.ID.newLayerCommandOptionModal) {
 
-                if (this.currentModalDialogResult == this.ID.newLayerCommandOptionModal_ok) {
-
-                    var layerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, LayerTypeID.vectorLayer);
-
-                    // Select command
-
-                    let layerCommand: Command_Layer_CommandBase = null;
-
-                    if (layerType == LayerTypeID.vectorLayer) {
-
-                        layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
-                    }
-                    else if (layerType == LayerTypeID.groupLayer) {
-
-                        layerCommand = new Command_Layer_AddGroupLayerToCurrentPosition();
-                    }
-                    else if (layerType == LayerTypeID.posingLayer) {
-
-                        layerCommand = new Command_Layer_AddPosingLayerToCurrentPosition();
-                    }
-                    else if (layerType == LayerTypeID.imageFileReferenceLayer) {
-
-                        layerCommand = new Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
-                    }
-
-                    if (layerCommand == null) {
-
-                        return;
-                    }
-
-                    // Execute command
-
-                    this.executeLayerCommand(layerCommand);
-                }
+                this.onNewLayerCommandOptionModal();
             }
             else if (this.currentModalDialogID == this.ID.openFileDialogModal) {
 
@@ -2694,7 +2771,13 @@ namespace ManualTracingTool {
             if (layer.type == LayerTypeID.vectorLayer) {
 
                 let vectorLayer = <VectorLayer>layer;
-                this.drawVectorLayer(vectorLayer, documentData);
+                this.drawVectorLayer(vectorLayer, vectorLayer.geometry, documentData);
+            }
+            else if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
+
+                let vectorLayerReferenceLayer = <VectorLayerReferenceLayer>layer;
+                let referenceLayer = vectorLayerReferenceLayer.referenceLayer;
+                this.drawVectorLayer(vectorLayerReferenceLayer, referenceLayer.geometry, documentData);
             }
             else if (layer.type == LayerTypeID.groupLayer) {
 
@@ -2715,11 +2798,13 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLayer(layer: VectorLayer, documentData: DocumentData) {
+        private drawVectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData) {
 
             let context = this.toolContext;
 
             let isCurrentLayer = (layer == context.currentVectorLayer);
+
+            // color setting
 
             let lineColor: Vec4;
             if (layer.drawLineType == DrawLineTypeID.layerColor) {
@@ -2756,7 +2841,9 @@ namespace ManualTracingTool {
 
             let useAdjustingLocation = this.isModalToolRunning();
 
-            for (let group of layer.groups) {
+            // drawing geometry
+
+            for (let group of geometry.groups) {
 
                 for (let line of group.lines) {
 

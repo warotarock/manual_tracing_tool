@@ -205,7 +205,45 @@ namespace ManualTracingTool {
             this.newLayer.name = 'new layer';
 
             let group = new VectorGroup();
-            this.newLayer.groups.push(group);
+            this.newLayer.geometry.groups.push(group);
+
+            this.executeLayerInsertToCurrent(this.newLayer);
+
+            env.setCurrentLayer(this.newLayer);
+        }
+    }
+
+    export class Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition extends Command_Layer_CommandBase {
+
+        newLayer: VectorLayerReferenceLayer = null;
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            if (this.currentLayerParent == null) {
+
+                return false;
+            }
+
+            if (!this.isContainerLayer(this.currentLayerParent)) {
+
+                return false;
+            }
+
+            if (this.currentLayer == null || this.currentLayer.type != LayerTypeID.vectorLayer) {
+
+                return false;
+            }
+
+            return true;
+        }
+
+        executeCommand(env: ToolEnvironment) { // @override
+
+            this.newLayer = new VectorLayerReferenceLayer();
+            this.newLayer.name = 'new ref layer';
+
+            this.newLayer.referenceLayer = <VectorLayer>(this.currentLayer);
+            this.newLayer.geometry = this.newLayer.referenceLayer.geometry;
 
             this.executeLayerInsertToCurrent(this.newLayer);
 

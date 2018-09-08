@@ -34,7 +34,7 @@ namespace ManualTracingTool {
             // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
             let modifiedGroupCount = 0;
 
-            for (let group of layer.groups) {
+            for (let group of layer.geometry.groups) {
 
                 let deleteLineCount = 0;
                 let modifiedLineCount = 0;
@@ -96,7 +96,7 @@ namespace ManualTracingTool {
             let editLines = new List<Command_DeletePoints_EditLine>();
             let deletedPoints = new List<LinePoint>();
 
-            for (let group of layer.groups) {
+            for (let group of layer.geometry.groups) {
 
                 if (group.linePointModifyFlag == VectorGroupModifyFlagID.none) {
                     continue;
@@ -136,7 +136,7 @@ namespace ManualTracingTool {
             let editGroups = new List<Command_DeletePoints_EditGroup>();
             let deletedLines = new List<VectorLine>();
 
-            for (let group of layer.groups) {
+            for (let group of layer.geometry.groups) {
 
                 if (group.modifyFlag == VectorGroupModifyFlagID.none) {
                     continue;

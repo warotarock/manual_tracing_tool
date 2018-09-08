@@ -93,7 +93,7 @@ namespace ManualTracingTool {
 
             this.beforeHitTestToLayer(vectorLayer);
 
-            for (let group of vectorLayer.groups) {
+            for (let group of vectorLayer.geometry.groups) {
 
                 this.beforeHitTestToGroup(vectorLayer, group);
 
