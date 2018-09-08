@@ -427,7 +427,11 @@ var ManualTracingTool;
         };
         // Saving 
         Main.prototype.saveDocument = function () {
-            var lastFilePath = window.localStorage.getItem(this.lastFilePathKey);
+            var filePath = this.getInputElementText(this.ID.fileName);
+            if (StringIsNullOrEmpty(filePath)) {
+                alert('ファイル名が指定されていません。');
+                return;
+            }
             var info = new ManualTracingTool.DocumentDataSaveInfo();
             this.fixSaveDocumentData_SetID_Recursive(this.document.rootLayer, info);
             this.fixSaveDocumentData_CopyID_Recursive(this.document.rootLayer, info);
@@ -438,12 +442,13 @@ var ManualTracingTool;
                 window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(copy));
             }
             else {
-                fs.writeFile(lastFilePath, JSON.stringify(copy), function (error) {
+                fs.writeFile(filePath, JSON.stringify(copy), function (error) {
                     if (error != null) {
                         alert('error : ' + error);
                     }
                 });
             }
+            window.localStorage.setItem(this.lastFilePathKey, filePath);
         };
         // Starting ups
         Main.prototype.start = function () {
@@ -463,6 +468,7 @@ var ManualTracingTool;
             this.updateHeaderButtons();
             this.updateFooterMessage();
             this.toolEnv.setRedrawAllWindows();
+            this.updateHdeaderDocumentFileName();
             this.setEvents();
         };
         Main.prototype.createDefaultDocumentData = function () {
@@ -1099,6 +1105,9 @@ var ManualTracingTool;
             if (this.isModalShown()) {
                 return;
             }
+            if (document.activeElement.id == this.ID.fileName) {
+                return;
+            }
             var context = this.toolContext;
             this.toolContext.shiftKey = e.shiftKey;
             this.toolContext.altKey = e.altKey;
@@ -1116,6 +1125,12 @@ var ManualTracingTool;
                 this.updateFooterMessage();
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 return e.preventDefault();
+            }
+            if (e.key == 'n' && this.toolEnv.isCtrlKeyPressing()) {
+                this.document = this.createDefaultDocumentData();
+                this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
+                this.toolEnv.setRedrawAllWindows();
+                return;
             }
             if (e.key == 'b') {
                 if (this.toolEnv.isDrawMode()) {
@@ -1333,6 +1348,9 @@ var ManualTracingTool;
             this.toolContext.altKey = e.altKey;
             this.toolContext.ctrlKey = e.ctrlKey;
             if (this.isModalShown()) {
+                return;
+            }
+            if (document.activeElement.id == this.ID.fileName) {
                 return;
             }
             if (e.key == ' ') {
@@ -2545,6 +2563,10 @@ var ManualTracingTool;
                 element.classList.add(this.ID.unselectedMainButton);
             }
         };
+        Main.prototype.updateHdeaderDocumentFileName = function () {
+            var filePath = window.localStorage.getItem(this.lastFilePathKey);
+            this.setInputElementText(this.ID.fileName, filePath);
+        };
         Main.prototype.updateFooterMessage = function () {
             var context = this.toolContext;
             var modeText = '';
@@ -2793,6 +2815,7 @@ var ManualTracingTool;
     var HTMLElementID = /** @class */ (function () {
         function HTMLElementID() {
             this.none = 'none';
+            this.fileName = 'fileName';
             this.menu_btnDrawTool = 'menu_btnDrawTool';
             this.menu_btnScratchTool = 'menu_btnScratchTool';
             this.menu_btnPoseTool = 'menu_btnPoseTool';

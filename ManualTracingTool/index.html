@@ -69,13 +69,21 @@
         }
 
         div.systemButton {
-            width: 30px;
+            width: 140px;
             height: 30px;
             float: left;
             border: solid;
             border-width: 1px;
             margin-top: 5px;
             cursor: default;
+            padding-top: 1px;
+            padding-left: 1px;
+            padding-right: 5px;
+        }
+
+        #fileName {
+            width: 100%;
+            height: 23px;
         }
 
         div.mainMenuButton {
@@ -335,7 +343,7 @@
 </head>
 <body>
     <header>
-        <div class="systemButton" id="menu_btnSystem"></div>
+        <div class="systemButton" id="menu_btnSystem"><input type="text" id="fileName" /></div>
         <div class="mainMenuButton" id="menu_btnDrawTool">Scratch line</div>
         <div class="mainMenuButton" id="menu_btnPoseTool">Posing</div>
         <div class="mainMenuButton" id="menu_btnScratchTool">Misc</div>
