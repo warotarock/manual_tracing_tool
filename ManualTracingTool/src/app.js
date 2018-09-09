@@ -502,23 +502,23 @@ var ManualTracingTool;
                 var group1 = new ManualTracingTool.VectorGroup();
                 layer1.geometry.groups.push(group1);
             }
-            {
-                var layer1 = new ManualTracingTool.GroupLayer();
-                layer1.name = 'group1';
-                rootLayer.childLayers.push(layer1);
-                var layer2 = new ManualTracingTool.VectorLayer();
-                layer2.name = 'child1';
-                layer1.childLayers.push(layer2);
-                var group2 = new ManualTracingTool.VectorGroup();
-                layer2.geometry.groups.push(group2);
-            }
-            {
-                var layer1 = new ManualTracingTool.VectorLayer();
-                layer1.name = 'background';
-                rootLayer.childLayers.push(layer1);
-                var group1 = new ManualTracingTool.VectorGroup();
-                layer1.geometry.groups.push(group1);
-            }
+            //{
+            //    let layer1 = new GroupLayer();
+            //    layer1.name = 'group1'
+            //    rootLayer.childLayers.push(layer1);
+            //    let layer2 = new VectorLayer();
+            //    layer2.name = 'child1'
+            //    layer1.childLayers.push(layer2);
+            //    let group2 = new VectorGroup();
+            //    layer2.geometry.groups.push(group2);
+            //}
+            //{
+            //    let layer1 = new VectorLayer();
+            //    layer1.name = 'background'
+            //    rootLayer.childLayers.push(layer1);
+            //    let group1 = new VectorGroup();
+            //    layer1.geometry.groups.push(group1);
+            //}
             {
                 var layer1 = new ManualTracingTool.PosingLayer();
                 layer1.name = 'posing1';
@@ -782,9 +782,35 @@ var ManualTracingTool;
                 _this.layerWindow_mousedown(_this.subWindowToolMouseEvent);
                 e.preventDefault();
             });
+            this.layerWindow.canvas.addEventListener('touchstart', function (e) {
+                _this.getTouchInfo(_this.subWindowToolMouseEvent, e, true, false, _this.layerWindow);
+                _this.layerWindow_mousedown(_this.subWindowToolMouseEvent);
+                e.preventDefault();
+            });
+            this.layerWindow.canvas.addEventListener('touchmove', function (e) {
+                _this.getTouchInfo(_this.subWindowToolMouseEvent, e, false, false, _this.layerWindow);
+                e.preventDefault();
+            });
+            this.layerWindow.canvas.addEventListener('touchend', function (e) {
+                _this.getTouchInfo(_this.subWindowToolMouseEvent, e, false, true, _this.layerWindow);
+                e.preventDefault();
+            });
             this.subtoolWindow.canvas.addEventListener('mousedown', function (e) {
                 _this.getMouseInfo(_this.subWindowToolMouseEvent, e, false, _this.subtoolWindow);
                 _this.subtoolWindow_mousedown(_this.subWindowToolMouseEvent);
+                e.preventDefault();
+            });
+            this.subtoolWindow.canvas.addEventListener('touchstart', function (e) {
+                _this.getTouchInfo(_this.subWindowToolMouseEvent, e, true, false, _this.subtoolWindow);
+                _this.subtoolWindow_mousedown(_this.subWindowToolMouseEvent);
+                e.preventDefault();
+            });
+            this.subtoolWindow.canvas.addEventListener('touchmove', function (e) {
+                _this.getTouchInfo(_this.subWindowToolMouseEvent, e, false, false, _this.subtoolWindow);
+                e.preventDefault();
+            });
+            this.subtoolWindow.canvas.addEventListener('touchend', function (e) {
+                _this.getTouchInfo(_this.subWindowToolMouseEvent, e, false, true, _this.subtoolWindow);
                 e.preventDefault();
             });
             document.addEventListener('keydown', function (e) {
@@ -1148,6 +1174,7 @@ var ManualTracingTool;
             }
             if (e.key == 'n' && this.toolEnv.isCtrlKeyPressing()) {
                 this.document = this.createDefaultDocumentData();
+                this.toolContext.document = this.document;
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
                 this.toolEnv.setRedrawAllWindows();
                 return;
@@ -1545,7 +1572,7 @@ var ManualTracingTool;
                 return;
             }
             if (touchDown) {
-                toolMouseEvent.button = 1;
+                toolMouseEvent.button = 0;
                 toolMouseEvent.buttons = 1;
             }
             if (touchUp) {

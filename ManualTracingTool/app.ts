@@ -620,25 +620,25 @@ namespace ManualTracingTool {
                 layer1.geometry.groups.push(group1);
             }
 
-            {
-                let layer1 = new GroupLayer();
-                layer1.name = 'group1'
-                rootLayer.childLayers.push(layer1);
+            //{
+            //    let layer1 = new GroupLayer();
+            //    layer1.name = 'group1'
+            //    rootLayer.childLayers.push(layer1);
 
-                let layer2 = new VectorLayer();
-                layer2.name = 'child1'
-                layer1.childLayers.push(layer2);
-                let group2 = new VectorGroup();
-                layer2.geometry.groups.push(group2);
-            }
+            //    let layer2 = new VectorLayer();
+            //    layer2.name = 'child1'
+            //    layer1.childLayers.push(layer2);
+            //    let group2 = new VectorGroup();
+            //    layer2.geometry.groups.push(group2);
+            //}
 
-            {
-                let layer1 = new VectorLayer();
-                layer1.name = 'background'
-                rootLayer.childLayers.push(layer1);
-                let group1 = new VectorGroup();
-                layer1.geometry.groups.push(group1);
-            }
+            //{
+            //    let layer1 = new VectorLayer();
+            //    layer1.name = 'background'
+            //    rootLayer.childLayers.push(layer1);
+            //    let group1 = new VectorGroup();
+            //    layer1.geometry.groups.push(group1);
+            //}
 
             {
                 let layer1 = new PosingLayer();
@@ -1008,10 +1008,48 @@ namespace ManualTracingTool {
                 e.preventDefault();
             });
 
+            this.layerWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+
+                this.getTouchInfo(this.subWindowToolMouseEvent, e, true, false, this.layerWindow);
+                this.layerWindow_mousedown(this.subWindowToolMouseEvent);
+                e.preventDefault();
+            });
+
+            this.layerWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+
+                this.getTouchInfo(this.subWindowToolMouseEvent, e, false, false, this.layerWindow);
+                e.preventDefault();
+            });
+
+            this.layerWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
+
+                this.getTouchInfo(this.subWindowToolMouseEvent, e, false, true, this.layerWindow);
+                e.preventDefault();
+            });
+
             this.subtoolWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
 
                 this.getMouseInfo(this.subWindowToolMouseEvent, e, false, this.subtoolWindow);
                 this.subtoolWindow_mousedown(this.subWindowToolMouseEvent);
+                e.preventDefault();
+            });
+
+            this.subtoolWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+
+                this.getTouchInfo(this.subWindowToolMouseEvent, e, true, false, this.subtoolWindow);
+                this.subtoolWindow_mousedown(this.subWindowToolMouseEvent);
+                e.preventDefault();
+            });
+
+            this.subtoolWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+
+                this.getTouchInfo(this.subWindowToolMouseEvent, e, false, false, this.subtoolWindow);
+                e.preventDefault();
+            });
+
+            this.subtoolWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
+
+                this.getTouchInfo(this.subWindowToolMouseEvent, e, false, true, this.subtoolWindow);
                 e.preventDefault();
             });
 
@@ -1552,6 +1590,7 @@ namespace ManualTracingTool {
             if (e.key == 'n' && this.toolEnv.isCtrlKeyPressing()) {
 
                 this.document = this.createDefaultDocumentData();
+                this.toolContext.document = this.document;
 
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
 
@@ -2152,7 +2191,7 @@ namespace ManualTracingTool {
             }
 
             if (touchDown) {
-                toolMouseEvent.button = 1;
+                toolMouseEvent.button = 0;
                 toolMouseEvent.buttons = 1;
             }
             if (touchUp) {
