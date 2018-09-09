@@ -288,16 +288,27 @@ var ManualTracingTool;
             this.mouseMovedVector = [0.0, 0.0, 0.0];
         }
         ToolMouseEvent.prototype.isLeftButtonPressing = function () {
-            return (this.buttons == 1);
+            return (this.button == 0 && this.buttons != 0);
         };
         ToolMouseEvent.prototype.isRightButtonPressing = function () {
-            return (this.buttons == 2);
+            return (this.button == 2 && this.buttons != 0);
+        };
+        ToolMouseEvent.prototype.isCenterButtonPressing = function () {
+            return (this.button == 1 && this.buttons != 0);
         };
         ToolMouseEvent.prototype.isLeftButtonReleased = function () {
-            return (this.button == 0);
+            return (this.buttons == 0);
         };
         ToolMouseEvent.prototype.isRightButtonReleased = function () {
-            return (this.button == 2);
+            return (this.buttons == 0);
+        };
+        ToolMouseEvent.prototype.isCenterButtonReleased = function () {
+            return (this.buttons == 0);
+        };
+        ToolMouseEvent.prototype.startMouseDragging = function () {
+            this.isMouseDragging = true;
+            vec3.copy(this.mouseDownLocation, this.location);
+            vec3.set(this.mouseMovedVector, 0.0, 0.0, 0.0);
         };
         return ToolMouseEvent;
     }());

@@ -388,22 +388,40 @@ namespace ManualTracingTool {
 
         isLeftButtonPressing(): boolean {
 
-            return (this.buttons == 1);
+            return (this.button == 0 && this.buttons != 0);
         }
 
         isRightButtonPressing(): boolean {
 
-            return (this.buttons == 2);
+            return (this.button == 2 && this.buttons != 0);
+        }
+
+        isCenterButtonPressing(): boolean {
+
+            return (this.button == 1 && this.buttons != 0);
         }
 
         isLeftButtonReleased(): boolean {
 
-            return (this.button == 0);
+            return (this.buttons == 0);
         }
 
         isRightButtonReleased(): boolean {
 
-            return (this.button == 2);
+            return (this.buttons == 0);
+        }
+
+        isCenterButtonReleased(): boolean {
+
+            return (this.buttons == 0);
+        }
+
+        startMouseDragging() {
+
+            this.isMouseDragging = true;
+
+            vec3.copy(this.mouseDownLocation, this.location);
+            vec3.set(this.mouseMovedVector, 0.0, 0.0, 0.0);
         }
     }
 

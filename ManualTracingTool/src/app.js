@@ -15,10 +15,24 @@ var fs = (typeof (require) != 'undefined') ? require('fs') : {
 };
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    // 今やること (current tasks)
-    // ・パレット機能の実装
-    // 　・線色と塗りつぶし色それぞれパレット色モードを選択できるようにする
-    // 　・パレット編集ダイアログを実装する。２５色最初から生成されていて、そこから選ぶ。
+    // これからやろうと思っていること (current tasks)
+    // ・ツールの整理
+    // 　・ポージングツールのツールが表示しきれていないのでサブツールウィンドウをスクロール可能にする
+    // ・描画ツールの追加
+    // 　・消しゴムツール（線の点をブラシ選択の要領で削除できる）
+    // 　・線の非表示ツール（線の幅を0にして描画のみしないようにできる）
+    // 　・消しゴム＋線の非表示ツール
+    // ・ポージングツールの整備
+    // 　・ポージングツール以外のツールでパンしたとき３Ⅾを更新する
+    // 　・複数のポージングレイヤーの描画
+    // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
+    // 　・モデルを切り替えられるようにする（数種類でよい）
+    // ・アニメーション機能
+    // 　・ドキュメントにキーフレーム情報を追加
+    // 　・レイヤーのジオメトリにキーフレーム情報を追加
+    // 　・キーフレームウィンドウを追加
+    // 　　・キーフレームを追加、削除できるようにする
+    // 　　・アニメーションの再生機能
     // どこかでやる必要があること (nearest future tasks)
     // ・PNG出力、jpeg出力
     // 　・出力倍率を指定できるようにする、ドキュメントに記録する
@@ -43,16 +57,9 @@ var ManualTracingTool;
     // ・レイヤーカラーをどこかに表示する
     // ・レイヤーカラーとレイヤーの透明度の関係を考え直す
     // ・レイヤー削除時に削除前に次に表示されていたレイヤーを選択する
-    // ・塗りつぶし
-    // ・複数のポージングレイヤーの描画
     // ・ポージングレイヤーの表示/非表示、透明度
-    // ・ポージングで入力後にキャラの拡大縮小を可能にする
     // ・ポージングで頭の角度の入力で画面の回転に対応する
     // ・Logic_VectorLayerをどこかよいファイルに移動する
-    // ・線の太さを変えられるツールを追加
-    // 　・近傍の線の太さをスムージングする機能
-    // 　・線を何度もなぞって太くするツール追加→編集線の方向に太さを足すという考え方→編集線への距離が近いほど、その距離に等しい分の太さを足す。足した太さ分だけ点の位置を編集線の方向に移動する。
-    // 　・線を何度もなぞって細くするツール追加→編集線で削るという考え方をする→逆のようで微妙に違うかも
     // ・線の複製
     // ・グループの複製
     // ・レイヤーの複製
@@ -62,6 +69,9 @@ var ManualTracingTool;
     // 　曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
     // ・レイヤーを選択変更したときレイヤーに応じたコンテキストの状態になるようにする
     // 終わったもの (done)
+    // ・パレット機能の実装
+    // 　・線色と塗りつぶし色それぞれパレット色モードを選択できるようにする
+    // 　・パレット編集ダイアログを実装する。２５色最初から生成されていて、そこから選ぶ。
     // ・レイヤーに線と塗りつぶしの描画オプションを実装する
     // ・頂点ごとの全選択、全選択解除
     // ・変形ツール
@@ -113,9 +123,10 @@ var ManualTracingTool;
             // UI elements
             this.mainWindow = new ManualTracingTool.CanvasWindow();
             this.editorWindow = new ManualTracingTool.CanvasWindow();
-            this.layerWindow = new LayerWindow();
             this.webglWindow = new ManualTracingTool.CanvasWindow();
             this.pickingWindow = new ManualTracingTool.PickingWindow();
+            this.layerWindow = new LayerWindow();
+            this.subtoolWindow = new SubtoolWindow();
             this.renderingWindow = new ManualTracingTool.CanvasWindow();
             this.canvasRender = new ManualTracingTool.CanvasRender();
             this.webGLRender = new WebGLRender();
@@ -138,6 +149,7 @@ var ManualTracingTool;
             this.toolEnv = null;
             this.toolDrawEnv = null;
             this.toolMouseEvent = new ManualTracingTool.ToolMouseEvent();
+            this.subWindowToolMouseEvent = new ManualTracingTool.ToolMouseEvent();
             this.mainTools = new List();
             this.currentTool = null;
             this.currentSelectTool = null;
@@ -237,6 +249,7 @@ var ManualTracingTool;
             this.subToolViewItems = null;
             this.layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             this.layerWindowItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
+            // Subtool window drawing
             this.subToolItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
             this.subToolItemSeperatorLineColor = vec4.fromValues(0.0, 0.0, 0.0, 0.5);
             // Footer window drawing
@@ -264,8 +277,9 @@ var ManualTracingTool;
             this.resizeWindows();
             this.mainWindow.context = this.mainWindow.canvas.getContext('2d');
             this.editorWindow.context = this.editorWindow.canvas.getContext('2d');
-            this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
             this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
+            this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
+            this.subtoolWindow.context = this.subtoolWindow.canvas.getContext('2d');
             this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
             this.canvasRender.setContext(this.layerWindow);
             this.canvasRender.setFontSize(18.0);
@@ -729,43 +743,48 @@ var ManualTracingTool;
         Main.prototype.setEvents = function () {
             var _this = this;
             this.editorWindow.canvas.addEventListener('mousedown', function (e) {
-                _this.getMouseInfo(e, false, _this.mainWindow);
-                _this.mainWindow_mousedown();
+                _this.getMouseInfo(_this.toolMouseEvent, e, false, _this.mainWindow);
+                _this.mainWindow_mousedown(_this.toolMouseEvent);
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mousemove', function (e) {
-                _this.getMouseInfo(e, false, _this.mainWindow);
-                _this.mainWindow_mousemove();
+                _this.getMouseInfo(_this.toolMouseEvent, e, false, _this.mainWindow);
+                _this.mainWindow_mousemove(_this.toolMouseEvent);
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mouseup', function (e) {
-                _this.getMouseInfo(e, true, _this.mainWindow);
-                _this.mainWindow_mouseup();
+                _this.getMouseInfo(_this.toolMouseEvent, e, true, _this.mainWindow);
+                _this.mainWindow_mouseup(_this.toolMouseEvent);
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchstart', function (e) {
-                _this.getTouchInfo(e, true, false, _this.mainWindow);
-                _this.mainWindow_mousedown();
+                _this.getTouchInfo(_this.toolMouseEvent, e, true, false, _this.mainWindow);
+                _this.mainWindow_mousedown(_this.toolMouseEvent);
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchmove', function (e) {
-                _this.getTouchInfo(e, false, false, _this.mainWindow);
-                _this.mainWindow_mousemove();
+                _this.getTouchInfo(_this.toolMouseEvent, e, false, false, _this.mainWindow);
+                _this.mainWindow_mousemove(_this.toolMouseEvent);
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchend', function (e) {
-                _this.getTouchInfo(e, false, true, _this.mainWindow);
-                _this.mainWindow_mouseup();
+                _this.getTouchInfo(_this.toolMouseEvent, e, false, true, _this.mainWindow);
+                _this.mainWindow_mouseup(_this.toolMouseEvent);
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mousewheel', function (e) {
-                _this.getWheelInfo(e);
-                _this.editorWindow_mousewheel();
+                _this.getWheelInfo(_this.toolMouseEvent, e);
+                _this.editorWindow_mousewheel(_this.toolMouseEvent);
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('mousedown', function (e) {
-                _this.getMouseInfo(e, false, _this.layerWindow);
-                _this.layerWindow_mousedown();
+                _this.getMouseInfo(_this.subWindowToolMouseEvent, e, false, _this.layerWindow);
+                _this.layerWindow_mousedown(_this.subWindowToolMouseEvent);
+                e.preventDefault();
+            });
+            this.subtoolWindow.canvas.addEventListener('mousedown', function (e) {
+                _this.getMouseInfo(_this.subWindowToolMouseEvent, e, false, _this.subtoolWindow);
+                _this.subtoolWindow_mousedown(_this.subWindowToolMouseEvent);
                 e.preventDefault();
             });
             document.addEventListener('keydown', function (e) {
@@ -850,7 +869,7 @@ var ManualTracingTool;
         Main.prototype.run = function () {
         };
         // Events
-        Main.prototype.mainWindow_mousedown = function () {
+        Main.prototype.mainWindow_mousedown = function (e) {
             if (!this.mainProcessState) {
                 return;
             }
@@ -858,37 +877,35 @@ var ManualTracingTool;
             this.toolEnv.updateContext();
             // Execute current tool
             if (this.isModalToolRunning()) {
-                this.currentTool.mouseDown(this.toolMouseEvent, this.toolEnv);
+                this.currentTool.mouseDown(e, this.toolEnv);
             }
             else if (this.toolEnv.isDrawMode()) {
-                this.currentTool.mouseDown(this.toolMouseEvent, this.toolEnv);
+                this.currentTool.mouseDown(e, this.toolEnv);
             }
             else if (this.toolEnv.isSelectMode()) {
-                this.currentSelectTool.mouseDown(this.toolMouseEvent, this.toolEnv);
+                this.currentSelectTool.mouseDown(e, this.toolEnv);
             }
             // View operation
-            if (this.toolMouseEvent.isRightButtonPressing()) {
-                this.mainWindow_MouseViewOperationStart();
+            if (e.isRightButtonPressing() || e.isCenterButtonPressing()) {
+                this.mainWindow_MouseViewOperationStart(e);
             }
             else {
-                this.mainWindow_MouseViewOperationEnd();
+                this.mainWindow_MouseViewOperationEnd(e);
             }
             if (this.toolEnv.needsDrawOperatorCursor() && this.toolEnv.isCtrlKeyPressing()) {
-                vec3.copy(this.toolContext.operatorCursor.location, this.toolMouseEvent.location);
+                vec3.copy(this.toolContext.operatorCursor.location, e.location);
                 this.toolEnv.setRedrawEditorWindow();
             }
         };
-        Main.prototype.mainWindow_MouseViewOperationStart = function () {
-            this.toolMouseEvent.isMouseDragging = true;
+        Main.prototype.mainWindow_MouseViewOperationStart = function (e) {
+            e.startMouseDragging();
             mat4.copy(this.dragBeforeTransformMatrix, this.invView2DMatrix);
             vec3.copy(this.dragBeforeViewLocation, this.mainWindow.viewLocation);
-            vec3.copy(this.toolMouseEvent.mouseDownLocation, this.toolMouseEvent.location);
-            vec3.set(this.toolMouseEvent.mouseMovedVector, 0.0, 0.0, 0.0);
         };
-        Main.prototype.mainWindow_MouseViewOperationEnd = function () {
-            this.toolMouseEvent.isMouseDragging = false;
+        Main.prototype.mainWindow_MouseViewOperationEnd = function (e) {
+            e.isMouseDragging = false;
         };
-        Main.prototype.mainWindow_mousemove = function () {
+        Main.prototype.mainWindow_mousemove = function (e) {
             if (this.isWhileLoading()) {
                 return;
             }
@@ -896,31 +913,31 @@ var ManualTracingTool;
             this.toolEnv.updateContext();
             // Execute current tool
             if (this.isModalToolRunning()) {
-                if (!this.toolMouseEvent.isMouseDragging) {
-                    this.currentTool.mouseMove(this.toolMouseEvent, this.toolEnv);
+                if (!e.isMouseDragging) {
+                    this.currentTool.mouseMove(e, this.toolEnv);
                 }
             }
             else if (this.toolEnv.isDrawMode()) {
-                this.currentTool.mouseMove(this.toolMouseEvent, this.toolEnv);
+                this.currentTool.mouseMove(e, this.toolEnv);
             }
             else if (this.toolEnv.isSelectMode()) {
-                var isHitChanged = this.mousemoveHittest(this.toolMouseEvent.location[0], this.toolMouseEvent.location[1], this.toolEnv.mouseCursorViewRadius, false);
+                var isHitChanged = this.mousemoveHittest(e.location[0], e.location[1], this.toolEnv.mouseCursorViewRadius, false);
                 if (isHitChanged) {
                     this.toolEnv.setRedrawMainWindow();
                 }
-                this.currentSelectTool.mouseMove(this.toolMouseEvent, this.toolEnv);
+                this.currentSelectTool.mouseMove(e, this.toolEnv);
             }
             // View operation
-            if (this.toolMouseEvent.isMouseDragging) {
-                vec3.set(this.tempVec3, this.toolMouseEvent.offsetX, this.toolMouseEvent.offsetY, 0.0);
+            if (e.isMouseDragging) {
+                vec3.set(this.tempVec3, e.offsetX, e.offsetY, 0.0);
                 vec3.transformMat4(this.tempVec3, this.tempVec3, this.dragBeforeTransformMatrix);
-                vec3.subtract(this.toolMouseEvent.mouseMovedVector, this.toolMouseEvent.mouseDownLocation, this.tempVec3);
-                vec3.add(this.mainWindow.viewLocation, this.dragBeforeViewLocation, this.toolMouseEvent.mouseMovedVector);
+                vec3.subtract(e.mouseMovedVector, e.mouseDownLocation, this.tempVec3);
+                vec3.add(this.mainWindow.viewLocation, this.dragBeforeViewLocation, e.mouseMovedVector);
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawWebGLWindow();
             }
         };
-        Main.prototype.mainWindow_mouseup = function () {
+        Main.prototype.mainWindow_mouseup = function (e) {
             if (this.isWhileLoading()) {
                 return;
             }
@@ -928,34 +945,30 @@ var ManualTracingTool;
             this.toolEnv.updateContext();
             // Draw mode
             if (this.toolEnv.isDrawMode()) {
-                this.currentTool.mouseUp(this.toolMouseEvent, this.toolEnv);
+                this.currentTool.mouseUp(e, this.toolEnv);
             }
             else if (this.toolEnv.isSelectMode()) {
-                this.currentSelectTool.mouseUp(this.toolMouseEvent, this.toolEnv);
+                this.currentSelectTool.mouseUp(e, this.toolEnv);
             }
-            this.mainWindow_MouseViewOperationEnd();
+            this.mainWindow_MouseViewOperationEnd(e);
         };
-        Main.prototype.layerWindow_mousedown = function () {
+        Main.prototype.layerWindow_mousedown = function (e) {
             if (this.isWhileLoading()) {
                 return;
             }
             var context = this.toolContext;
             var layerWindow = this.layerWindow;
             this.toolEnv.updateContext();
-            var doubleClicked = this.hundleDoubleClick(layerWindow, this.toolMouseEvent.offsetX, this.toolMouseEvent.offsetY);
-            var clickedX = this.toolMouseEvent.location[0];
-            var clickedY = this.toolMouseEvent.location[1];
-            if (this.toolMouseEvent.location[1] <= layerWindow.layerItemButtonButtom) {
+            var doubleClicked = this.hundleDoubleClick(layerWindow, e.offsetX, e.offsetY);
+            var clickedX = e.location[0];
+            var clickedY = e.location[1];
+            if (e.location[1] <= layerWindow.layerItemButtonButtom) {
                 // Layer window button click
                 this.layerWindow_mousedown_LayerItemButton(clickedX, clickedY, doubleClicked);
             }
-            else if (this.toolMouseEvent.location[1] < layerWindow.layerWindowPainY) {
+            else if (e.location[1] < layerWindow.layerWindowPainY) {
                 // Layer window item click
                 this.layerWindow_mousedown_LayerItem(clickedX, clickedY, doubleClicked);
-            }
-            else {
-                // Sub tool click
-                this.layerWindow_mousedown_Subtool(clickedX, clickedY, doubleClicked);
             }
         };
         Main.prototype.layerWindow_mousedown_LayerItemButton = function (clickedX, clickedY, doubleClicked) {
@@ -1054,46 +1067,53 @@ var ManualTracingTool;
             }
             this.toolEnv.setRedrawLayerWindow();
         };
-        Main.prototype.layerWindow_mousedown_Subtool = function (clickedX, clickedY, doubleClicked) {
+        Main.prototype.subtoolWindow_mousedown = function (e) {
             var context = this.toolContext;
             if (context.mainToolID == ManualTracingTool.MainToolID.none || this.subToolViewItems.length == 0) {
                 return;
             }
-            var firstItem = this.subToolViewItems[0];
-            var selectedIndex = Math.floor((clickedY - firstItem.top) / (firstItem.getHeight()));
-            if (selectedIndex < 0 || selectedIndex >= this.subToolViewItems.length) {
-                return;
-            }
-            var viewItem = this.subToolViewItems[selectedIndex];
-            var tool = viewItem.tool;
-            if (tool.isAvailable(this.toolEnv)) {
-                // Change current sub tool
-                this.setCurrentSubTool(selectedIndex);
-                this.updateFooterMessage();
-                this.toolEnv.setRedrawMainWindowEditorWindow();
-                this.toolEnv.setRedrawLayerWindow();
-                // Option button click
-                for (var _i = 0, _a = viewItem.buttons; _i < _a.length; _i++) {
-                    var button = _a[_i];
-                    if (clickedX >= button.left && clickedX <= button.right
-                        && clickedY >= button.top && clickedY <= button.bottom) {
-                        var inpuSideID = tool.getInputSideID(button.index, this.toolEnv);
-                        if (tool.setInputSide(button.index, inpuSideID, this.toolEnv)) {
-                            this.toolEnv.setRedrawMainWindowEditorWindow();
-                            this.toolEnv.setRedrawLayerWindow();
+            this.toolEnv.updateContext();
+            var clickedX = e.location[0];
+            var clickedY = e.location[1];
+            if (e.isLeftButtonPressing()) {
+                var firstItem = this.subToolViewItems[0];
+                var selectedIndex = Math.floor((clickedY - firstItem.top) / (firstItem.getHeight()));
+                if (selectedIndex < 0 || selectedIndex >= this.subToolViewItems.length) {
+                    return;
+                }
+                var viewItem = this.subToolViewItems[selectedIndex];
+                var tool = viewItem.tool;
+                if (tool.isAvailable(this.toolEnv)) {
+                    // Change current sub tool
+                    this.setCurrentSubTool(selectedIndex);
+                    this.updateFooterMessage();
+                    this.toolEnv.setRedrawMainWindowEditorWindow();
+                    this.toolEnv.setRedrawLayerWindow();
+                    // Option button click
+                    for (var _i = 0, _a = viewItem.buttons; _i < _a.length; _i++) {
+                        var button = _a[_i];
+                        if (clickedX >= button.left && clickedX <= button.right
+                            && clickedY >= button.top && clickedY <= button.bottom) {
+                            var inpuSideID = tool.getInputSideID(button.index, this.toolEnv);
+                            if (tool.setInputSide(button.index, inpuSideID, this.toolEnv)) {
+                                this.toolEnv.setRedrawMainWindowEditorWindow();
+                                this.toolEnv.setRedrawLayerWindow();
+                            }
                         }
                     }
                 }
             }
+            if (e.isMouseDragging) {
+            }
         };
-        Main.prototype.editorWindow_mousewheel = function () {
+        Main.prototype.editorWindow_mousewheel = function (e) {
             if (this.isWhileLoading()) {
                 return;
             }
             // View operation
-            if (this.toolMouseEvent.wheelDelta != 0.0
-                && !this.toolMouseEvent.isMouseDragging) {
-                this.mainWindow.addViewScale(this.toolMouseEvent.wheelDelta * 0.3);
+            if (e.wheelDelta != 0.0
+                && !e.isMouseDragging) {
+                this.mainWindow.addViewScale(e.wheelDelta * 0.3);
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawWebGLWindow();
             }
@@ -1276,7 +1296,7 @@ var ManualTracingTool;
                 return;
             }
             if (e.key == ' ') {
-                this.mainWindow_MouseViewOperationStart();
+                this.mainWindow_MouseViewOperationStart(this.toolMouseEvent);
                 e.preventDefault();
                 return;
             }
@@ -1354,7 +1374,7 @@ var ManualTracingTool;
                 return;
             }
             if (e.key == ' ') {
-                this.mainWindow_MouseViewOperationEnd();
+                this.mainWindow_MouseViewOperationEnd(this.toolMouseEvent);
             }
         };
         Main.prototype.htmlWindow_resize = function (e) {
@@ -1381,8 +1401,8 @@ var ManualTracingTool;
             var mainTool = this.getCurrentMainTool();
             this.setCurrentSubTool(mainTool.currentSubToolIndex);
             if (isChanged) {
-                this.collectSubToolViewItems();
-                this.caluculateLayerWindowLayout(this.layerWindow);
+                this.subtoolWindow_CollectViewItems();
+                this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
                 this.toolContext.redrawHeaderWindow = true;
             }
         };
@@ -1483,8 +1503,10 @@ var ManualTracingTool;
             this.fitCanvas(this.webglWindow, this.mainWindow);
             this.fitCanvas(this.pickingWindow, this.mainWindow);
             this.resizeCanvasToParent(this.layerWindow);
+            this.resizeCanvasToParent(this.subtoolWindow);
             if (this.isWhileLoading()) {
                 this.caluculateLayerWindowLayout(this.layerWindow);
+                this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
             }
         };
         Main.prototype.resizeCanvasToParent = function (canvasWindow) {
@@ -1499,22 +1521,22 @@ var ManualTracingTool;
             canvasWindow.canvas.width = canvasWindow.width;
             canvasWindow.canvas.height = canvasWindow.height;
         };
-        Main.prototype.getMouseInfo = function (e, touchUp, canvasWindow) {
-            this.toolMouseEvent.button = e.button;
-            this.toolMouseEvent.buttons = e.buttons;
+        Main.prototype.getMouseInfo = function (toolMouseEvent, e, touchUp, canvasWindow) {
+            toolMouseEvent.button = e.button;
+            toolMouseEvent.buttons = e.buttons;
             if (touchUp) {
-                this.toolMouseEvent.button = 0;
-                this.toolMouseEvent.buttons = 0;
+                toolMouseEvent.button = -1;
+                toolMouseEvent.buttons = 0;
             }
-            this.toolMouseEvent.offsetX = e.offsetX;
-            this.toolMouseEvent.offsetY = e.offsetY;
-            this.calculateTransfomredMouseParams(canvasWindow);
-            //console.log(e.offsetX.toFixed(2) + ',' + e.offsetY.toFixed(2) + '  ' + this.toolMouseEvent.offsetX.toFixed(2) + ',' + this.toolMouseEvent.offsetY.toFixed(2));
+            toolMouseEvent.offsetX = e.offsetX;
+            toolMouseEvent.offsetY = e.offsetY;
+            this.calculateTransfomredMouseParams(toolMouseEvent, canvasWindow);
+            //console.log(e.offsetX.toFixed(2) + ',' + e.offsetY.toFixed(2) + '  ' + toolMouseEvent.offsetX.toFixed(2) + ',' + this.toolMouseEvent.offsetY.toFixed(2));
         };
-        Main.prototype.getTouchInfo = function (e, touchDown, touchUp, canvasWindow) {
+        Main.prototype.getTouchInfo = function (toolMouseEvent, e, touchDown, touchUp, canvasWindow) {
             if (e.touches == undefined || e.touches.length == 0) {
-                this.toolMouseEvent.button = 0;
-                this.toolMouseEvent.buttons = 0;
+                toolMouseEvent.button = 0;
+                toolMouseEvent.buttons = 0;
                 return;
             }
             var rect = canvasWindow.canvas.getBoundingClientRect();
@@ -1523,24 +1545,24 @@ var ManualTracingTool;
                 return;
             }
             if (touchDown) {
-                this.toolMouseEvent.button = 1;
-                this.toolMouseEvent.buttons = 1;
+                toolMouseEvent.button = 1;
+                toolMouseEvent.buttons = 1;
             }
             if (touchUp) {
-                this.toolMouseEvent.button = 0;
-                this.toolMouseEvent.buttons = 0;
+                toolMouseEvent.button = 0;
+                toolMouseEvent.buttons = 0;
             }
-            this.toolMouseEvent.offsetX = touch.clientX - rect.left;
-            this.toolMouseEvent.offsetY = touch.clientY - rect.top;
-            this.calculateTransfomredMouseParams(canvasWindow);
+            toolMouseEvent.offsetX = touch.clientX - rect.left;
+            toolMouseEvent.offsetY = touch.clientY - rect.top;
+            this.calculateTransfomredMouseParams(toolMouseEvent, canvasWindow);
             //console.log(touch.clientX.toFixed(2) + ',' + touch.clientY.toFixed(2) + '(' + ')'  + '  ' + this.toolMouseEvent.offsetX.toFixed(2) + ',' + this.toolMouseEvent.offsetY.toFixed(2));
         };
-        Main.prototype.calculateTransfomredMouseParams = function (canvasWindow) {
+        Main.prototype.calculateTransfomredMouseParams = function (toolMouseEvent, canvasWindow) {
             canvasWindow.caluclateViewMatrix(this.view2DMatrix);
             mat4.invert(this.invView2DMatrix, this.view2DMatrix);
-            vec3.set(this.tempVec3, this.toolMouseEvent.offsetX, this.toolMouseEvent.offsetY, 0.0);
-            vec3.transformMat4(this.toolMouseEvent.location, this.tempVec3, this.invView2DMatrix);
-            vec3.copy(this.toolEnv.mouseCursorLocation, this.toolMouseEvent.location);
+            vec3.set(this.tempVec3, toolMouseEvent.offsetX, toolMouseEvent.offsetY, 0.0);
+            vec3.transformMat4(toolMouseEvent.location, this.tempVec3, this.invView2DMatrix);
+            vec3.copy(this.toolEnv.mouseCursorLocation, toolMouseEvent.location);
         };
         Main.prototype.hundleDoubleClick = function (wnd, offsetX, offsetY) {
             if (wnd.clickCount == 0) {
@@ -1562,7 +1584,7 @@ var ManualTracingTool;
                 }
             }
         };
-        Main.prototype.getWheelInfo = function (e) {
+        Main.prototype.getWheelInfo = function (toolMouseEvent, e) {
             var wheelDelta = 0.0;
             if ('wheelDelta' in e) {
                 wheelDelta = e['wheelDelta'];
@@ -1579,7 +1601,7 @@ var ManualTracingTool;
             else if (wheelDelta < 0) {
                 wheelDelta = -1.0;
             }
-            this.toolMouseEvent.wheelDelta = wheelDelta;
+            toolMouseEvent.wheelDelta = wheelDelta;
         };
         Main.prototype.createModalOptionObject = function (targetElementId) {
             return {
@@ -1919,11 +1941,13 @@ var ManualTracingTool;
                 this.toolContext.updateLayerWindowItems = false;
                 this.collectLayerWindowItems();
                 this.caluculateLayerWindowLayout(this.layerWindow);
+                this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
             }
             if (this.toolContext.redrawLayerWindow) {
                 this.toolContext.redrawLayerWindow = false;
                 this.clearWindow(this.layerWindow);
                 this.drawLayerWindow(this.layerWindow);
+                this.subtoolWindow_Draw(this.subtoolWindow);
             }
             if (this.toolContext.redrawWebGLWindow) {
                 this.toolContext.redrawWebGLWindow = false;
@@ -2358,7 +2382,6 @@ var ManualTracingTool;
             this.caluculateLayerWindowLayout_LayerWindowItem(layerWindow, this.layerWindowLayoutArea);
             // subtools
             this.layerWindowLayoutArea.top = layerWindow.layerWindowPainY;
-            this.caluculateLayerWindowLayout_SubToolViewItem(layerWindow, this.layerWindowLayoutArea);
         };
         Main.prototype.caluculateLayerWindowLayout_LayerButtons = function (layerWindow, layoutArea) {
             var currentX = layoutArea.left;
@@ -2399,7 +2422,6 @@ var ManualTracingTool;
             this.canvasRender.setContext(layerWindow);
             this.drawLayerWindow_LayerWindowButtons(layerWindow);
             this.drawLayerWindow_LayerItems(layerWindow);
-            this.drawLayerWindow_SubTools(layerWindow);
         };
         Main.prototype.drawLayerWindow_LayerWindowButtons = function (layerWindow) {
             for (var _i = 0, _a = this.layerWindowButtons; _i < _a.length; _i++) {
@@ -2459,7 +2481,7 @@ var ManualTracingTool;
             this.canvasRender.setFillColor(0.0, 0.0, 0.0, 1.0);
             this.canvasRender.fillText(layer.name, item.textLeft + depthOffset, bottom - bottomMargin);
         };
-        Main.prototype.collectSubToolViewItems = function () {
+        Main.prototype.subtoolWindow_CollectViewItems = function () {
             this.subToolViewItems = new List();
             var currentMainTool = this.getCurrentMainTool();
             for (var i = 0; i < currentMainTool.subTools.length; i++) {
@@ -2475,11 +2497,11 @@ var ManualTracingTool;
                 this.subToolViewItems.push(viewItem);
             }
         };
-        Main.prototype.caluculateLayerWindowLayout_SubToolViewItem = function (layerWindow, layoutArea) {
-            var scale = layerWindow.subToolItemScale;
-            var fullWidth = layerWindow.width - 1;
-            var unitHeight = layerWindow.subToolItemUnitHeight * scale - 1;
-            var currentY = layoutArea.top;
+        Main.prototype.subtoolWindow_CaluculateLayout = function (subtoolWindow) {
+            var scale = subtoolWindow.subToolItemScale;
+            var fullWidth = subtoolWindow.width - 1;
+            var unitHeight = subtoolWindow.subToolItemUnitHeight * scale - 1;
+            var currentY = 0;
             for (var _i = 0, _a = this.subToolViewItems; _i < _a.length; _i++) {
                 var viewItem = _a[_i];
                 viewItem.left = 0.0;
@@ -2489,13 +2511,14 @@ var ManualTracingTool;
                 currentY += unitHeight;
             }
         };
-        Main.prototype.drawLayerWindow_SubTools = function (layerWindow) {
+        Main.prototype.subtoolWindow_Draw = function (subtoolWindow) {
+            this.canvasRender.setContext(subtoolWindow);
             var context = this.toolContext;
             var currentMainTool = this.getCurrentMainTool();
-            var scale = layerWindow.subToolItemScale;
-            var fullWidth = layerWindow.width - 1;
-            var unitWidth = layerWindow.subToolItemUnitWidth;
-            var unitHeight = layerWindow.subToolItemUnitHeight;
+            var scale = subtoolWindow.subToolItemScale;
+            var fullWidth = subtoolWindow.width - 1;
+            var unitWidth = subtoolWindow.subToolItemUnitWidth;
+            var unitHeight = subtoolWindow.subToolItemUnitHeight;
             var lastY = 0.0;
             for (var _i = 0, _a = this.subToolViewItems; _i < _a.length; _i++) {
                 var viewItem = _a[_i];
@@ -2716,12 +2739,23 @@ var ManualTracingTool;
             _this.layerItemFontSize = 16.0;
             _this.layerItemVisibilityIconWidth = 24.0;
             _this.layerItemVisibilityIconRight = 24.0;
+            return _this;
+        }
+        return LayerWindow;
+    }(ManualTracingTool.CanvasWindow));
+    var SubtoolWindow = /** @class */ (function (_super) {
+        __extends(SubtoolWindow, _super);
+        function SubtoolWindow() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.clickCount = 0;
+            _this.clickedX = 0;
+            _this.clickedY = 0;
             _this.subToolItemScale = 0.5;
             _this.subToolItemUnitWidth = 256;
             _this.subToolItemUnitHeight = 128;
             return _this;
         }
-        return LayerWindow;
+        return SubtoolWindow;
     }(ManualTracingTool.CanvasWindow));
     var RectangleLayoutArea = /** @class */ (function () {
         function RectangleLayoutArea() {
@@ -2816,6 +2850,11 @@ var ManualTracingTool;
         function HTMLElementID() {
             this.none = 'none';
             this.fileName = 'fileName';
+            this.mainCanvas = 'mainCanvas';
+            this.editorCanvas = 'editorCanvas';
+            this.webglCanvas = 'webglCanvas';
+            this.layerCanvas = 'layerCanvas';
+            this.subtoolCanvas = 'subtoolCanvas';
             this.menu_btnDrawTool = 'menu_btnDrawTool';
             this.menu_btnScratchTool = 'menu_btnScratchTool';
             this.menu_btnPoseTool = 'menu_btnPoseTool';
@@ -2885,10 +2924,11 @@ var ManualTracingTool;
     var _Main;
     window.onload = function () {
         _Main = new Main();
-        _Main.mainWindow.canvas = document.getElementById('mainCanvas');
-        _Main.editorWindow.canvas = document.getElementById('editorCanvas');
-        _Main.layerWindow.canvas = document.getElementById('layerCanvas');
-        _Main.webglWindow.canvas = document.getElementById('webglCanvas');
+        _Main.mainWindow.canvas = document.getElementById(_Main.ID.mainCanvas);
+        _Main.editorWindow.canvas = document.getElementById(_Main.ID.editorCanvas);
+        _Main.webglWindow.canvas = document.getElementById(_Main.ID.webglCanvas);
+        _Main.layerWindow.canvas = document.getElementById(_Main.ID.layerCanvas);
+        _Main.subtoolWindow.canvas = document.getElementById(_Main.ID.subtoolCanvas);
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
         //document.getElementById('footer').appendChild(_Main.pickingWindow.canvas);

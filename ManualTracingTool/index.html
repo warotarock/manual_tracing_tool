@@ -152,25 +152,13 @@
         }
 
         div#mainCanvasWindow {
-            width: 78%;
-            height: 99%;
-            float: left;
-            border: solid;
-            border-width: 1px;
-        }
-
-        div#rightSideWindow {
-            width: 20%;
-            height: 99%;
-            float: left;
-            border: solid;
-            border-width: 1px;
-        }
-
-        canvas#webglCanvas {
             position: absolute;
-            border: none;
-            z-index: 1;
+            left: 0px;
+            right: 210px;
+            top: 0px;
+            bottom: 0px;
+            border: solid;
+            border-width: 1px;
         }
 
         canvas#mainCanvas {
@@ -185,7 +173,37 @@
             z-index: 3;
         }
 
+        canvas#webglCanvas {
+            position: absolute;
+            border: none;
+            z-index: 1;
+        }
+
+        div#rightSideWindow1 {
+            width: 200px;
+            position: absolute;
+            right: 5px;
+            top: 0px;
+            bottom: 50%;
+            border: solid;
+            border-width: 1px;
+        }
+
         canvas#layerCanvas {
+            border: none;
+        }
+
+        div#rightSideWindow2 {
+            width: 200px;
+            position: absolute;
+            right: 5px;
+            top: 50.5%;
+            bottom: 0px;
+            border: solid;
+            border-width: 1px;
+        }
+
+        canvas#subtoolCanvas {
             border: none;
         }
 
@@ -355,8 +373,11 @@
             <canvas id="mainCanvas"></canvas>
             <canvas id="editorCanvas"></canvas>
         </div>
-        <div id="rightSideWindow">
+        <div id="rightSideWindow1">
             <canvas id="layerCanvas"></canvas>
+        </div>
+        <div id="rightSideWindow2">
+            <canvas id="subtoolCanvas"></canvas>
         </div>
     </main>
 
