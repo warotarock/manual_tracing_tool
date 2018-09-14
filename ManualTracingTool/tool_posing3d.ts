@@ -248,7 +248,7 @@ namespace ManualTracingTool {
             env.posing3DLogic.calculateHeadLocation(env.currentPosingData, env.currentPosingModel);
 
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         }
     }
 
@@ -313,7 +313,7 @@ namespace ManualTracingTool {
             env.posing3DLogic.calculateHeadRotation(env.currentPosingData, env.currentPosingModel);
 
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         }
     }
 
@@ -376,7 +376,7 @@ namespace ManualTracingTool {
             env.posing3DLogic.calculateHeadTwist(env.currentPosingData, env.currentPosingModel);
 
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         }
     }
 
@@ -458,7 +458,7 @@ namespace ManualTracingTool {
             }
 
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         }
     }
 
@@ -521,7 +521,7 @@ namespace ManualTracingTool {
             env.posing3DLogic.calculateBodyRotation(env.currentPosingData, env.currentPosingModel);
 
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         }
     }
 
@@ -603,7 +603,7 @@ namespace ManualTracingTool {
             // Update dependent input
 
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         }
     }
 

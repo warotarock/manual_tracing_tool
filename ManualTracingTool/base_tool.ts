@@ -100,6 +100,7 @@ namespace ManualTracingTool {
         redrawMainWindow = false;
         redrawEditorWindow = false;
         redrawLayerWindow = false;
+        redrawSubtoolWindow = false;
         updateLayerWindowItems = false;
         redrawWebGLWindow = false;
         redrawHeaderWindow = false;
@@ -230,6 +231,11 @@ namespace ManualTracingTool {
             this.toolContext.redrawLayerWindow = true;
         }
 
+        setRedrawSubtoolWindow() {
+
+            this.toolContext.redrawSubtoolWindow = true;
+        }
+
         setRedrawMainWindowEditorWindow() {
 
             this.setRedrawMainWindow();
@@ -241,6 +247,7 @@ namespace ManualTracingTool {
 
             this.setRedrawMainWindowEditorWindow();
             this.setUpadateLayerWindowItems();
+            this.setRedrawSubtoolWindow();
         }
 
         setRedrawWebGLWindow() {
@@ -382,9 +389,17 @@ namespace ManualTracingTool {
         wheelDelta = 0.0;
 
         isMouseDragging = false;
-        location = [0.0, 0.0, 0.0];
-        mouseDownLocation = [0.0, 0.0, 0.0];
-        mouseMovedVector = [0.0, 0.0, 0.0];
+        location = vec3.fromValues(0.0, 0.0, 0.0);
+        mouseDownLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        mouseMovedVector = vec3.fromValues(0.0, 0.0, 0.0);
+
+        clickCount = 0;
+        lastClickedOffset = vec3.fromValues(0.0, 0.0, 0.0);
+
+        mouseDownOffset = vec3.fromValues(0.0, 0.0, 0.0);
+        mouseMovedOffset = vec3.fromValues(0.0, 0.0, 0.0);
+
+        tempVec3 = vec3.fromValues(0.0, 0.0, 0.0);
 
         isLeftButtonPressing(): boolean {
 
@@ -416,12 +431,63 @@ namespace ManualTracingTool {
             return (this.buttons == 0);
         }
 
+        hundleDoubleClick(offsetX: float, offsetY: float): boolean {
+
+            if (this.clickCount == 0) {
+
+                this.clickCount++;
+                this.lastClickedOffset[0] = offsetX;
+                this.lastClickedOffset[1] = offsetY;
+
+                setTimeout(() => {
+                    this.clickCount = 0;
+                }, 350);
+
+                return false;
+            }
+            else {
+
+                this.clickCount = 0;
+
+                if (Math.pow(offsetX - this.lastClickedOffset[0], 2)
+                    + Math.pow(offsetY - this.lastClickedOffset[1], 2) < 9.0) {
+
+                    return true;
+                }
+                else {
+
+                    return false;
+                }
+            }
+        }
+
         startMouseDragging() {
 
             this.isMouseDragging = true;
 
             vec3.copy(this.mouseDownLocation, this.location);
             vec3.set(this.mouseMovedVector, 0.0, 0.0, 0.0);
+
+            vec3.set(this.mouseDownOffset, this.offsetX, this.offsetY, 0.0);
+            vec3.set(this.mouseMovedOffset, 0.0, 0.0, 0.0);
+        }
+
+        processMouseDragging() {
+
+            if (!this.isMouseDragging) {
+
+                return;
+            }
+
+            vec3.subtract(this.mouseMovedVector, this.mouseDownLocation, this.location);
+
+            vec3.set(this.tempVec3, this.offsetX, this.offsetY, 0.0);
+            vec3.subtract(this.mouseMovedOffset, this.mouseDownOffset, this.tempVec3);
+        }
+
+        endMouseDragging() {
+
+            this.isMouseDragging = false;
         }
     }
 
