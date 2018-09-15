@@ -18,6 +18,7 @@ namespace ManualTracingTool {
     // 　・消しゴム＋線の非表示ツール
     // ・塗りつぶし機能の追加
     // 　・連続する線として設定した線を接続して塗りつぶすことができる機能（複数の線の間を塗りつぶす機能の簡易版ともいえる）
+    // ・ファイルを指定してのドキュメント読み込み
     // ・ポージングツールの整備
     // 　・ポージングツール以外のツールでパンしたとき３Ⅾを更新する
     // 　・複数のポージングレイヤーの描画
@@ -29,6 +30,9 @@ namespace ManualTracingTool {
     // 　・キーフレームウィンドウを追加
     // 　　・キーフレームを追加、削除できるようにする
     // 　　・アニメーションの再生機能
+    // ・モバイル対応
+    // 　・タッチ操作をきちんとする
+    // 　・画面サイズによってはダイアログがまともに表示されない問題の対応
 
     // どこかでやる必要があること (nearest future tasks)
     // ・PNG出力、jpeg出力
@@ -181,9 +185,9 @@ namespace ManualTracingTool {
 
         // Selection tools
         selectionTools = List<ToolBase>(<int>OperationUnitID.countOfID);
-        tool_LinePointBrushSelect = new Tool_Select_BrushSelet_LinePoint();
-        tool_LineSegmentBrushSelect = new Tool_Select_BrushSelet_LineSegment();
-        tool_LineBrushSelect = new Tool_Select_BrushSelet_Line();
+        tool_LinePointBrushSelect = new Tool_Select_BrushSelect_LinePoint();
+        tool_LineSegmentBrushSelect = new Tool_Select_BrushSelect_LineSegment();
+        tool_LineBrushSelect = new Tool_Select_BrushSelect_Line();
         tool_SelectAllPoints = new Tool_Select_All_LinePoint();
 
         // File reference layer tools
@@ -204,6 +208,7 @@ namespace ManualTracingTool {
         tool_ExtrudeLine = new Tool_ExtrudeLine();
         tool_ScratchLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
+        tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
 
@@ -889,6 +894,7 @@ namespace ManualTracingTool {
                     .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 1)
                     .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 2)
                     .subTool(this.tool_ResampleSegment, this.subToolImages[1], 3)
+                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 3)
             );
 
             this.mainTools.push(
@@ -1786,12 +1792,11 @@ namespace ManualTracingTool {
                     if (this.toolContext.currentLayer != null
                         && this.toolContext.currentLayer.type == LayerTypeID.vectorLayer) {
 
-                        let command = new Command_DeletePoints();
-                        if (command.collectEditTargets(<VectorLayer>(this.toolContext.currentLayer))) {
+                        let command = new Command_DeleteSelectedPoints();
+                        if (command.prepareEditTargets(<VectorLayer>(this.toolContext.currentLayer))) {
 
                             command.execute(this.toolEnv);
                             this.toolContext.commandHistory.addCommand(command);
-
                         }
 
                         this.toolEnv.setRedrawMainWindow();
@@ -3182,8 +3187,29 @@ namespace ManualTracingTool {
             this.canvasRender.beginPath()
             this.canvasRender.setFillColorV(color);
 
-            let firstPoint = line.points[0];
+            let startIndex = 0;
+            let endIndex = line.points.length - 1;
 
+            // search first visible point
+            let firstIndex = -1;
+            for (let i = startIndex; i <= endIndex; i++) {
+
+                let point = line.points[i];
+
+                if (point.modifyFlag != LinePointModifyFlagID.delete) {
+
+                    firstIndex = i;
+                    break;
+                }
+            }
+
+            if (firstIndex == -1) {
+
+                return;
+            }
+
+            // set first location
+            let firstPoint = line.points[firstIndex];
             if (useAdjustingLocation) {
 
                 this.canvasRender.moveTo(firstPoint.adjustingLocation[0], firstPoint.adjustingLocation[1]);
@@ -3199,6 +3225,11 @@ namespace ManualTracingTool {
             for (let i = 1; i < line.points.length; i++) {
 
                 let point1 = line.points[i];
+
+                if (point1.modifyFlag == LinePointModifyFlagID.delete) {
+
+                    continue;
+                }
 
                 if (useAdjustingLocation) {
 
@@ -3218,8 +3249,26 @@ namespace ManualTracingTool {
             this.canvasRender.setLineCap(CanvasRenderLineCap.round)
             this.canvasRender.beginPath()
 
-            let firstPoint = line.points[startIndex];
+            // search first visible point
+            let firstIndex = -1;
+            for (let i = startIndex; i <= endIndex; i++) {
 
+                let point = line.points[i];
+
+                if (point.modifyFlag != LinePointModifyFlagID.delete) {
+
+                    firstIndex = i;
+                    break;
+                }
+            }
+
+            if (firstIndex == -1) {
+
+                return;
+            }
+
+            // set first location
+            let firstPoint = line.points[firstIndex];
             if (useAdjustingLocation) {
 
                 this.canvasRender.moveTo(firstPoint.adjustingLocation[0], firstPoint.adjustingLocation[1]);
@@ -3232,9 +3281,14 @@ namespace ManualTracingTool {
             let currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
             this.canvasRender.setStrokeWidth(currentLineWidth);
 
-            for (let i = startIndex + 1; i <= endIndex; i++) {
+            for (let i = firstIndex + 1; i <= endIndex; i++) {
 
                 let point1 = line.points[i];
+
+                if (point1.modifyFlag == LinePointModifyFlagID.delete) {
+
+                    continue;
+                }
 
                 if (useAdjustingLocation) {
 

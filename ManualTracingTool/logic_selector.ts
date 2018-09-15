@@ -138,6 +138,18 @@ namespace ManualTracingTool {
             }
         }
 
+        deletePoint(point: LinePoint) {
+
+            if (point.modifyFlag == LinePointModifyFlagID.none) {
+
+                let selPoint = new PointSelectionInfo();
+                selPoint.point = point;
+                this.selectedPoints.push(selPoint);
+
+                point.modifyFlag = LinePointModifyFlagID.delete;
+            }
+        }
+
         updateLineSelectionState() {
 
             for (let selLineInfo of this.selectedLines) {
@@ -188,7 +200,7 @@ namespace ManualTracingTool {
             this.selectionInfo.clear();
         }
 
-        protected onPointHited(line: VectorLine, point: LinePoint) { // @override
+        protected onPointHited(group: VectorGroup, line: VectorLine, point: LinePoint) { // @override
 
             this.selectionInfo.selectPoint(line, point, this.editMode);
         }

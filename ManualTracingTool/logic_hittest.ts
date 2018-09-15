@@ -37,7 +37,7 @@ namespace ManualTracingTool {
 
         }
 
-        protected onPointHited(line: VectorLine, point: LinePoint) { // @virtual
+        protected onPointHited(group: VectorGroup, line: VectorLine, point: LinePoint) { // @virtual
 
         }
 
@@ -158,7 +158,7 @@ namespace ManualTracingTool {
 
                 if (distance2d < minDistance) {
 
-                    this.onPointHited(line, point);
+                    this.onPointHited(group, line, point);
                 }
 
                 if (this.exitPointHitTest) {

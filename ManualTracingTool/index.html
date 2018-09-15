@@ -32,6 +32,7 @@
     <script src="./src/tool_resample_segment.js"></script>
     <script src="./src/tool_select_brush_select.js"></script>
     <script src="./src/tool_select_points_all.js"></script>
+    <script src="./src/tool_delete_points_brush_select.js"></script>
     <script src="./src/tool_transform_lattice.js"></script>
     <script src="./src/tool_transform_line_point.js"></script>
     <script src="./src/tool_edit_image_file_ref.js"></script>
@@ -225,10 +226,10 @@
             padding: 20px;
         }
 
-        .modalDialogWindow.openFileDialogModal {
-            width: 400px;
-            height: 100px;
-        }
+            .modalDialogWindow.openFileDialogModal {
+                width: 400px;
+                height: 100px;
+            }
 
             .modalDialogWindow.openFileDialogModal_file {
                 background-color: #ddd;
@@ -237,31 +238,31 @@
                 width: 100%;
             }
 
-        .modalDialogWindow.layerPropertyModal {
-            width: 400px;
-            height: 340px;
-            margin-bottom: -50%;
-        }
-
-            .modalDialogWindow.layerPropertyModal input {
-                margin-left: 15px;
-                margin-top: 15px;
+            .modalDialogWindow.layerPropertyModal {
+                width: 400px;
+                height: 340px;
+                margin-bottom: -50%;
             }
 
-            .modalDialogWindow.layerPropertyModal div {
-                margin-top: 15px;
+                .modalDialogWindow.layerPropertyModal input {
+                    margin-left: 15px;
+                    margin-top: 15px;
+                }
+
+                .modalDialogWindow.layerPropertyModal div {
+                    margin-top: 15px;
+                }
+
+            .modalDialogWindow.palletColorModal {
+                width: 500px;
+                height: 340px;
+                margin-bottom: -50%;
             }
 
-        .modalDialogWindow.palletColorModal {
-            width: 500px;
-            height: 340px;
-            margin-bottom: -50%;
-        }
-
-            .modalDialogWindow.palletColorModal input {
-                margin-left: 15px;
-                margin-top: 15px;
-            }
+                .modalDialogWindow.palletColorModal input {
+                    margin-left: 15px;
+                    margin-top: 15px;
+                }
 
         #palletColorModal_colors {
             margin-top: 10px;
@@ -313,9 +314,9 @@
                 margin-bottom: 15px;
             }
 
-            .modalDialogWindow.operationOptionModal div label input.lineWidth {
-                width: 50px;
-            }
+                .modalDialogWindow.operationOptionModal div label input.lineWidth {
+                    width: 50px;
+                }
 
         .modalDialogWindow.newLayerCommandOptionModal {
             width: 400px;

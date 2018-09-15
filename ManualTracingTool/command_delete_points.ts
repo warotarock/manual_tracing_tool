@@ -25,72 +25,28 @@ namespace ManualTracingTool {
         deletedLines: List<VectorLine> = null;
         deletedPoints: List<LinePoint> = null;
 
-        collectEditTargets(layer: VectorLayer): boolean {
+        prepareEditTargets(layer: VectorLayer): boolean {
 
             if (this.errorCheck(layer)) {
                 return false;
             }
 
             // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
-            let modifiedGroupCount = 0;
-
-            for (let group of layer.geometry.groups) {
-
-                let deleteLineCount = 0;
-                let modifiedLineCount = 0;
-
-                for (let line of group.lines) {
-
-                    let deletePointCount = 0;
-
-                    // Set flag to delete points
-                    for (let point of line.points) {
-
-                        if (point.isSelected && point.modifyFlag == LinePointModifyFlagID.none) {
-
-                            point.modifyFlag = LinePointModifyFlagID.delete;
-                            deletePointCount++;
-                        }
-                    }
-
-                    // Set flag to delete line
-                    if (deletePointCount > 0 && line.modifyFlag == VectorLineModifyFlagID.none) {
-
-                        if (deletePointCount >= line.points.length) {
-
-                            line.modifyFlag = VectorLineModifyFlagID.delete;
-                            deleteLineCount++;
-                        }
-                        else {
-
-                            line.modifyFlag = VectorLineModifyFlagID.deletePoints;
-                        }
-
-                        modifiedLineCount++;
-                    }
-                }
-
-                // Set modify flag to group
-                if (deleteLineCount > 0) {
-
-                    group.modifyFlag = VectorGroupModifyFlagID.deleteLines;
-                }
-
-                if (modifiedLineCount > 0) {
-
-                    group.linePointModifyFlag = VectorGroupModifyFlagID.modifyLines;
-                }
-
-                if (group.modifyFlag != VectorGroupModifyFlagID.none || group.linePointModifyFlag != VectorGroupModifyFlagID.none) {
-
-                    modifiedGroupCount++;
-                }
-            }
+            let existsChanges = this.setDeleteFlags(layer);
 
             // If no change, cancel it
-            if (modifiedGroupCount == 0) {
+            if (!existsChanges) {
                 return false;
             }
+
+            this.setDeleteFlagsForGroups(layer);
+
+            this.collectEditTargets(layer);
+
+            return true;
+        }
+
+        private collectEditTargets(layer: VectorLayer) {
 
             // Collect informations for modified lines and deleted points
             let editLines = new List<Command_DeletePoints_EditLine>();
@@ -104,31 +60,37 @@ namespace ManualTracingTool {
 
                 for (let line of group.lines) {
 
-                    if (line.modifyFlag != VectorLineModifyFlagID.deletePoints) {
-                        continue;
-                    }
+                    if (line.modifyFlag == VectorLineModifyFlagID.delete) {
 
-                    // Delete points by creating new list
-                    let newPointList = new List<LinePoint>();
-
-                    for (let point of line.points) {
-
-                        if (point.modifyFlag == LinePointModifyFlagID.none) {
-
-                            newPointList.push(point);
-                        }
-                        else {
+                        for (let point of line.points) {
 
                             deletedPoints.push(point);
                         }
                     }
+                    else if (line.modifyFlag == VectorLineModifyFlagID.deletePoints) {
 
-                    let editLine = new Command_DeletePoints_EditLine();
-                    editLine.targetLine = line;
-                    editLine.oldPointList = line.points;
-                    editLine.newPointList = newPointList;
+                        // Delete points by creating new list
+                        let newPointList = new List<LinePoint>();
 
-                    editLines.push(editLine);
+                        for (let point of line.points) {
+
+                            if (point.modifyFlag == LinePointModifyFlagID.none) {
+
+                                newPointList.push(point);
+                            }
+                            else {
+
+                                deletedPoints.push(point);
+                            }
+                        }
+
+                        let editLine = new Command_DeletePoints_EditLine();
+                        editLine.targetLine = line;
+                        editLine.oldPointList = line.points;
+                        editLine.newPointList = newPointList;
+
+                        editLines.push(editLine);
+                    }
                 }
             }
 
@@ -180,8 +142,6 @@ namespace ManualTracingTool {
             this.deletedPoints = deletedPoints;
 
             this.layer = layer;
-
-            return true;
         }
 
         execute(env: ToolEnvironment) { // @override
@@ -248,6 +208,119 @@ namespace ManualTracingTool {
             }
 
             return false;
+        }
+
+        protected setDeleteFlags(layer: VectorLayer): boolean { // @virtual
+
+            return false;
+        }
+
+        protected setDeleteFlagsForGroups(layer: VectorLayer) {
+
+            let modifiedGroupCount = 0;
+
+            for (let group of layer.geometry.groups) {
+
+                let deleteLineCount = 0;
+                let modifiedLineCount = 0;
+
+                for (let line of group.lines) {
+
+                    let deletePointCount = 0;
+
+                    // Check deleting points
+                    for (let point of line.points) {
+
+                        if (point.modifyFlag == LinePointModifyFlagID.delete) {
+
+                            deletePointCount++;
+                        }
+                    }
+
+                    // Set flag to delete line
+                    if (deletePointCount > 0 && line.modifyFlag == VectorLineModifyFlagID.none) {
+
+                        if (deletePointCount >= line.points.length) {
+
+                            line.modifyFlag = VectorLineModifyFlagID.delete;
+                            deleteLineCount++;
+                        }
+                        else {
+
+                            line.modifyFlag = VectorLineModifyFlagID.deletePoints;
+                        }
+
+                        modifiedLineCount++;
+                    }
+                }
+
+                // Set modify flag to group
+                if (deleteLineCount > 0) {
+
+                    group.modifyFlag = VectorGroupModifyFlagID.deleteLines;
+                }
+
+                if (modifiedLineCount > 0) {
+
+                    group.linePointModifyFlag = VectorGroupModifyFlagID.modifyLines;
+                }
+
+                if (group.modifyFlag != VectorGroupModifyFlagID.none || group.linePointModifyFlag != VectorGroupModifyFlagID.none) {
+
+                    modifiedGroupCount++;
+                }
+            }
+        }
+    }
+
+    export class Command_DeleteSelectedPoints extends Command_DeletePoints {
+
+        protected setDeleteFlags(layer: VectorLayer): boolean { // @override
+
+            let deletePointCount = 0;
+
+            for (let group of layer.geometry.groups) {
+
+                for (let line of group.lines) {
+
+                    // Set flag to delete points
+                    for (let point of line.points) {
+
+                        if (point.isSelected && point.modifyFlag == LinePointModifyFlagID.none) {
+
+                            point.modifyFlag = LinePointModifyFlagID.delete;
+                            deletePointCount++;
+                        }
+                    }
+                }
+            }
+
+            return (deletePointCount > 0);
+        }
+    }
+
+    export class Command_DeleteFlagedPoints extends Command_DeletePoints {
+
+        protected setDeleteFlags(layer: VectorLayer): boolean { // @override
+
+            let deletePointCount = 0;
+
+            for (let group of layer.geometry.groups) {
+
+                for (let line of group.lines) {
+
+                    // Set flag to delete points
+                    for (let point of line.points) {
+
+                        if (point.modifyFlag == LinePointModifyFlagID.delete) {
+
+                            deletePointCount++;
+                        }
+                    }
+                }
+            }
+
+            return (deletePointCount > 0);
         }
     }
 }

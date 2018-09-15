@@ -105,6 +105,7 @@
     <TypeScriptCompile Include="logic_hittest.ts" />
     <TypeScriptCompile Include="tool_scratch_line_width.ts" />
     <TypeScriptCompile Include="tool_scratch_line.ts" />
+    <TypeScriptCompile Include="tool_delete_points_brush_select.ts" />
     <TypeScriptCompile Include="tool_select_points_all.ts" />
     <TypeScriptCompile Include="tool_select_brush_select.ts" />
     <TypeScriptCompile Include="tool_draw_line.ts" />

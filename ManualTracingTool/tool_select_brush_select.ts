@@ -7,7 +7,7 @@ namespace ManualTracingTool {
         selecting = 1
     }
 
-    export class Tool_Select_BrushSelet_LinePoint extends ToolBase {
+    export class Tool_Select_BrushSelect_LinePoint extends ToolBase {
 
         selectionProcessID = SelectionProgressID.none;
 
@@ -114,7 +114,7 @@ namespace ManualTracingTool {
             this.executeCommand(env);
         }
 
-        private executeCommand(env: ToolEnvironment) { // @virtual
+        protected executeCommand(env: ToolEnvironment) { // @virtual
 
             let command = new Command_Select();
             command.selectionInfo = this.logic_Selector.selectionInfo;
@@ -125,12 +125,12 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Select_BrushSelet_Line extends Tool_Select_BrushSelet_LinePoint {
+    export class Tool_Select_BrushSelect_Line extends Tool_Select_BrushSelect_LinePoint {
 
         logic_Selector: ISelector_BrushSelect = new Selector_Line_BrushSelect(); // @override
     }
 
-    export class Tool_Select_BrushSelet_LineSegment extends Tool_Select_BrushSelet_LinePoint {
+    export class Tool_Select_BrushSelect_LineSegment extends Tool_Select_BrushSelect_LinePoint {
 
         logic_Selector: ISelector_BrushSelect = new Selector_LineSegment_BrushSelect(); // @override
     }
