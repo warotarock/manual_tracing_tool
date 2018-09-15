@@ -16,10 +16,13 @@ namespace ManualTracingTool {
 
             if (e.key == 'o') {
 
-                env.openFileDialog();
-
-                //this.executeCommand(env);
+                env.openFileDialog(OpenFileDialogTargetID.imageFileReferenceLayerFilePath);
             }
+        }
+
+        toolWindowItemDoubleClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            env.openFileDialog(OpenFileDialogTargetID.imageFileReferenceLayerFilePath);
         }
 
         onOpenFile(filePath: string, env: ToolEnvironment) { // @override

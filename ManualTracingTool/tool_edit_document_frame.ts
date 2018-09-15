@@ -10,6 +10,11 @@ namespace ManualTracingTool {
             return true;
         }
 
+        toolWindowItemDoubleClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            env.openDocumentSettingDialog();
+        }
+
         protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
             return true;

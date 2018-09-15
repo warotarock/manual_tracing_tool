@@ -42,13 +42,22 @@ namespace ManualTracingTool {
         drawMode = 2
     }
 
+    export enum OpenFileDialogTargetID {
+
+        none,
+        openDocument = 1,
+        saveDocument = 2,
+        imageFileReferenceLayerFilePath = 3
+    }
+
     export interface MainEditor {
 
         setCurrentLayer(layer: Layer);
         endModalTool();
         cancelModalTool();
-        openFileDialog();
+        openFileDialog(targetID: OpenFileDialogTargetID);
         startLoadingDocumentResourcesProcess(document: DocumentData);
+        openDocumentSettingDialog();
     }
 
     export interface MainEditorDrawer {
@@ -323,9 +332,14 @@ namespace ManualTracingTool {
             this.toolContext.mainEditor.cancelModalTool();
         }
 
-        openFileDialog() {
+        openFileDialog(targetID: OpenFileDialogTargetID) {
 
-            this.toolContext.mainEditor.openFileDialog();
+            this.toolContext.mainEditor.openFileDialog(targetID);
+        }
+
+        openDocumentSettingDialog() {
+
+            this.toolContext.mainEditor.openDocumentSettingDialog();
         }
 
         startLoadingCurrentDocumentResources() {
@@ -510,6 +524,12 @@ namespace ManualTracingTool {
         }
 
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        }
+
+        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        }
+
+        toolWindowItemDoubleClick(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
         keydown(e: KeyboardEvent, env: ToolEnvironment) { // @virtual

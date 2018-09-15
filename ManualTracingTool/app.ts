@@ -1538,13 +1538,15 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
             let wnd = this.subtoolWindow;
+            let env = this.toolEnv;
+            let doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
 
             if (context.mainToolID == MainToolID.none || this.subToolViewItems.length == 0) {
 
                 return;
             }
 
-            this.toolEnv.updateContext();
+            env.updateContext();
 
             let clickedX = e.location[0];
             let clickedY = e.location[1];
@@ -1562,27 +1564,37 @@ namespace ManualTracingTool {
                 let viewItem = this.subToolViewItems[selectedIndex];
                 let tool = viewItem.tool;
 
-                if (tool.isAvailable(this.toolEnv)) {
+                if (tool.isAvailable(env)) {
 
                     // Change current sub tool
                     this.setCurrentSubTool(selectedIndex);
                     this.updateFooterMessage();
-                    this.toolEnv.setRedrawMainWindowEditorWindow();
-                    this.toolEnv.setRedrawSubtoolWindow();
+                    env.setRedrawMainWindowEditorWindow();
+                    env.setRedrawSubtoolWindow();
 
                     // Option button click
-                    for (let button of viewItem.buttons) {
+                    let button = this.hitTestLayout(viewItem.buttons, clickedX, clickedY);
+                    if (button != null) {
 
-                        if (clickedX >= button.left && clickedX <= button.right
-                            && clickedY >= button.top && clickedY <= button.bottom) {
+                        let inpuSideID = tool.getInputSideID(button.index, env);
 
-                            let inpuSideID = tool.getInputSideID(button.index, this.toolEnv);
+                        if (tool.setInputSide(button.index, inpuSideID, env)) {
 
-                            if (tool.setInputSide(button.index, inpuSideID, this.toolEnv)) {
+                            env.setRedrawMainWindowEditorWindow();
+                            env.setRedrawSubtoolWindow();
+                        }
+                    }
 
-                                this.toolEnv.setRedrawMainWindowEditorWindow();
-                                this.toolEnv.setRedrawSubtoolWindow();
-                            }
+                    // Tool event
+                    if (button == null && this.currentTool != null) {
+
+                        if (doubleClicked) {
+
+                            this.currentTool.toolWindowItemDoubleClick(e, env);
+                        }
+                        else if (e.isLeftButtonPressing()) {
+
+                            this.currentTool.toolWindowItemClick(e, env);
                         }
                     }
                 }
@@ -2211,9 +2223,30 @@ namespace ManualTracingTool {
             return (this.currentModalTool != null);
         }
 
-        public openFileDialog() { //@implements MainEditor
+        public openFileDialog(targetID: OpenFileDialogTargetID) { //@implements MainEditor
 
-            this.openFileDialogModal();
+            if (targetID == OpenFileDialogTargetID.imageFileReferenceLayerFilePath) {
+
+                if (this.toolContext.currentLayer != null
+                    && this.toolContext.currentLayer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                    let filePath = (<ImageFileReferenceLayer>(this.toolContext.currentLayer)).imageFilePath;
+
+                    this.openFileDialogModal(targetID, filePath);
+                }
+
+            }
+            else if (targetID == OpenFileDialogTargetID.openDocument) {
+
+            }
+            else if (targetID == OpenFileDialogTargetID.saveDocument) {
+
+            }
+        }
+
+        public openDocumentSettingDialog() { //@implements MainEditor
+
+            this.openDocumentSettingModal();
         }
 
         // View operations
@@ -2349,6 +2382,7 @@ namespace ManualTracingTool {
         currentModalDialog_DocumentData: DocumentData = null;
         layerPropertyWindow_EditLayer: Layer = null;
         palletColorWindow_Mode = OpenPalletColorModalMode.LineColor;
+        openFileDialogTargetID = OpenFileDialogTargetID.none;
         modalOverlayOption = {
             speedIn: 0,
             speedOut: 100,
@@ -2668,13 +2702,47 @@ namespace ManualTracingTool {
             this.executeLayerCommand(layerCommand);
         }
 
-        private openFileDialogModal() {
+        private openFileDialogModal(targetID: OpenFileDialogTargetID, filePath: string) {
 
             if (this.isModalShown()) {
                 return;
             }
 
+            this.openFileDialogTargetID = targetID;
+
             this.openModal(this.ID.openFileDialogModal);
+        }
+
+        private onClosedFileDialogModal() {
+
+            this.toolEnv.updateContext();
+
+            let filePath = this.getInputElementFilePath(this.ID.openFileDialogModal_file);
+
+            let targetID = this.openFileDialogTargetID;
+            this.openFileDialogTargetID = OpenFileDialogTargetID.none;
+
+            if (this.currentModalDialogResult != this.ID.openFileDialogModal_ok) {
+
+                return;
+            }
+
+            if (targetID == OpenFileDialogTargetID.imageFileReferenceLayerFilePath) {
+
+                if (this.currentTool != null) {
+
+                    if (!StringIsNullOrEmpty(filePath)) {
+
+                        this.currentTool.onOpenFile(filePath, this.toolEnv);
+                    }
+                }
+            }
+            else if (targetID == OpenFileDialogTargetID.openDocument) {
+
+            }
+            else if (targetID == OpenFileDialogTargetID.saveDocument) {
+
+            }
         }
 
         private openDocumentSettingModal() {
@@ -2752,20 +2820,7 @@ namespace ManualTracingTool {
             }
             else if (this.currentModalDialogID == this.ID.openFileDialogModal) {
 
-                this.toolEnv.updateContext();
-
-                if (this.currentModalDialogResult == this.ID.openFileDialogModal_ok) {
-
-                    if (this.currentTool != null) {
-
-                        let filePath = this.getInputElementFilePath(this.ID.openFileDialogModal_file);
-
-                        if (!StringIsNullOrEmpty(filePath)) {
-
-                            this.currentTool.onOpenFile(filePath, this.toolEnv);
-                        }
-                    }
-                }
+                this.onClosedFileDialogModal();
             }
             else if (this.currentModalDialogID == this.ID.documentSettingModal) {
 
@@ -3931,16 +3986,28 @@ namespace ManualTracingTool {
 
             for (let area of areas) {
 
-                if (x >= area.left
-                    && x <= area.right
-                    && y >= area.top
-                    && y <= area.bottom) {
+                if (this.hitTestLayoutRectangle(area, x, y)) {
 
                     return area;
                 }
             }
 
             return null;
+        }
+
+        private hitTestLayoutRectangle(area: RectangleLayoutArea, x: float, y: float): boolean {
+
+            if (x >= area.left
+                && x <= area.right
+                && y >= area.top
+                && y <= area.bottom) {
+
+                return true;
+            }
+            else {
+
+                return false;
+            }
         }
 
         // Selection management
