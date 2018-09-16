@@ -314,8 +314,14 @@
                 margin-bottom: 15px;
             }
 
-                .modalDialogWindow.operationOptionModal div label input.lineWidth {
+                .modalDialogWindow.operationOptionModal div label input.lineWidthMin {
                     width: 50px;
+                    margin-right: 8px;
+                }
+
+                .modalDialogWindow.operationOptionModal div label input.lineWidthMax {
+                    width: 50px;
+                    margin-left: 5px;
                 }
 
         .modalDialogWindow.newLayerCommandOptionModal {
@@ -475,7 +481,8 @@
         <div>
             <label>
                 線の太さ
-                <input type="number" id="operationOptionModal_LineWidth" class="lineWidth" step="1" />
+                <input type="number" id="operationOptionModal_LineMinWidth" class="lineWidthMin" step="0.2" />-
+                <input type="number" id="operationOptionModal_LineWidth" class="lineWidthMax" step="0.2" />
             </label>
             <br />
         </div>

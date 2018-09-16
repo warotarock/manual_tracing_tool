@@ -90,6 +90,7 @@ namespace ManualTracingTool {
         operationUnitID = OperationUnitID.linePoint;
 
         drawLineBaseWidth = 1.0;
+        drawLineMinWidth = 0.1;
 
         commandHistory: CommandHistory = null;
 
@@ -148,6 +149,7 @@ namespace ManualTracingTool {
         document: DocumentData = null;
 
         drawLineBaseWidth = 1.0;
+        drawLineMinWidth = 1.0;
 
         currentVectorLayer: VectorLayer = null;
         currentVectorGroup: VectorGroup = null;
@@ -189,6 +191,7 @@ namespace ManualTracingTool {
             this.document = this.toolContext.document;
 
             this.drawLineBaseWidth = this.toolContext.drawLineBaseWidth;
+            this.drawLineMinWidth = this.toolContext.drawLineMinWidth;
 
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
             this.currentVectorGroup = this.toolContext.currentVectorGroup;
