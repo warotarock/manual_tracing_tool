@@ -144,6 +144,63 @@ namespace ManualTracingTool {
             this.layer = layer;
         }
 
+        private setDeleteFlagsForGroups(layer: VectorLayer) {
+
+            let modifiedGroupCount = 0;
+
+            for (let group of layer.geometry.groups) {
+
+                let deleteLineCount = 0;
+                let modifiedLineCount = 0;
+
+                for (let line of group.lines) {
+
+                    let deletePointCount = 0;
+
+                    // Check deleting points
+                    for (let point of line.points) {
+
+                        if (point.modifyFlag == LinePointModifyFlagID.delete) {
+
+                            deletePointCount++;
+                        }
+                    }
+
+                    // Set flag to delete line
+                    if (deletePointCount > 0 && line.modifyFlag == VectorLineModifyFlagID.none) {
+
+                        if (deletePointCount >= line.points.length) {
+
+                            line.modifyFlag = VectorLineModifyFlagID.delete;
+                            deleteLineCount++;
+                        }
+                        else {
+
+                            line.modifyFlag = VectorLineModifyFlagID.deletePoints;
+                        }
+
+                        modifiedLineCount++;
+                    }
+                }
+
+                // Set modify flag to group
+                if (deleteLineCount > 0) {
+
+                    group.modifyFlag = VectorGroupModifyFlagID.deleteLines;
+                }
+
+                if (modifiedLineCount > 0) {
+
+                    group.linePointModifyFlag = VectorGroupModifyFlagID.modifyLines;
+                }
+
+                if (group.modifyFlag != VectorGroupModifyFlagID.none || group.linePointModifyFlag != VectorGroupModifyFlagID.none) {
+
+                    modifiedGroupCount++;
+                }
+            }
+        }
+
         execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
@@ -213,63 +270,6 @@ namespace ManualTracingTool {
         protected setDeleteFlags(layer: VectorLayer): boolean { // @virtual
 
             return false;
-        }
-
-        protected setDeleteFlagsForGroups(layer: VectorLayer) {
-
-            let modifiedGroupCount = 0;
-
-            for (let group of layer.geometry.groups) {
-
-                let deleteLineCount = 0;
-                let modifiedLineCount = 0;
-
-                for (let line of group.lines) {
-
-                    let deletePointCount = 0;
-
-                    // Check deleting points
-                    for (let point of line.points) {
-
-                        if (point.modifyFlag == LinePointModifyFlagID.delete) {
-
-                            deletePointCount++;
-                        }
-                    }
-
-                    // Set flag to delete line
-                    if (deletePointCount > 0 && line.modifyFlag == VectorLineModifyFlagID.none) {
-
-                        if (deletePointCount >= line.points.length) {
-
-                            line.modifyFlag = VectorLineModifyFlagID.delete;
-                            deleteLineCount++;
-                        }
-                        else {
-
-                            line.modifyFlag = VectorLineModifyFlagID.deletePoints;
-                        }
-
-                        modifiedLineCount++;
-                    }
-                }
-
-                // Set modify flag to group
-                if (deleteLineCount > 0) {
-
-                    group.modifyFlag = VectorGroupModifyFlagID.deleteLines;
-                }
-
-                if (modifiedLineCount > 0) {
-
-                    group.linePointModifyFlag = VectorGroupModifyFlagID.modifyLines;
-                }
-
-                if (group.modifyFlag != VectorGroupModifyFlagID.none || group.linePointModifyFlag != VectorGroupModifyFlagID.none) {
-
-                    modifiedGroupCount++;
-                }
-            }
         }
     }
 

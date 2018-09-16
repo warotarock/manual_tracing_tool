@@ -138,6 +138,18 @@ namespace ManualTracingTool {
             }
         }
 
+        editPoint(point: LinePoint) {
+
+            if (point.modifyFlag == LinePointModifyFlagID.none) {
+
+                let selPoint = new PointSelectionInfo();
+                selPoint.point = point;
+                this.selectedPoints.push(selPoint);
+
+                point.modifyFlag = LinePointModifyFlagID.edit;
+            }
+        }
+
         deletePoint(point: LinePoint) {
 
             if (point.modifyFlag == LinePointModifyFlagID.none) {

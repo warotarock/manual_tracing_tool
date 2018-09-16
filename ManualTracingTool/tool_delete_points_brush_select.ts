@@ -14,14 +14,9 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_DeletePoints_BrushSelect extends Tool_Select_BrushSelect_LinePoint {
+    export class Tool_DeletePoints_BrushSelect extends Tool_BrushSelectLinePointBase {
 
         logic_Selector: ISelector_BrushSelect = new Selector_DeleteLinePoint_BrushSelect(); // @override
-
-        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
-
-            drawEnv.editorDrawer.drawMouseCursor();
-        }
 
         protected executeCommand(env: ToolEnvironment) { // @override
 

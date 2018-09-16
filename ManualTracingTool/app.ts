@@ -209,6 +209,7 @@ namespace ManualTracingTool {
         tool_ScratchLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
         tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
+        tool_EditLinePointWidth_BrushSelect = new Tool_EditLinePointWidth_BrushSelect();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
 
@@ -895,6 +896,7 @@ namespace ManualTracingTool {
                     .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 2)
                     .subTool(this.tool_ResampleSegment, this.subToolImages[1], 3)
                     .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 3)
+                    .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 3)
             );
 
             this.mainTools.push(
@@ -1947,20 +1949,13 @@ namespace ManualTracingTool {
                     modalToolID = ModalToolID.scale;
                 }
 
-                if (this.toolEnv.isDrawMode()) {
+                if (this.toolEnv.isCurrentLayerVectorLayer()) {
 
-                    if (this.toolEnv.isCurrentLayerVectorLayer()) {
-
-                        this.currentTool.keydown(e, this.toolEnv);
-                    }
-                    else if (this.toolEnv.isCurrentLayerImageFileReferenceLayer()) {
-
-                        this.startModalTool(modalToolID);
-                    }
+                    this.startVectorLayerModalTool(modalToolID);
                 }
-                else {
+                else if (this.toolEnv.isCurrentLayerImageFileReferenceLayer()) {
 
-                    this.startModalTool(modalToolID);
+                    this.startImageFileReferenceLayerModalTool(modalToolID);
                 }
 
                 e.preventDefault();
@@ -2163,18 +2158,7 @@ namespace ManualTracingTool {
             layer.isSelected = true;
         }
 
-        private startModalTool(modalToolID: ModalToolID) {
-
-            let modalTool: ModalToolBase = null;
-
-            if (this.toolEnv.isCurrentLayerVectorLayer()) {
-
-                modalTool = this.vectorLayer_ModalTools[<int>modalToolID];
-            }
-            else if (this.toolEnv.isCurrentLayerImageFileReferenceLayer()) {
-
-                modalTool = this.imageFileReferenceLayer_ModalTools[<int>modalToolID];
-            }
+        public startModalTool(modalTool: ModalToolBase) { //@implements MainEditor
 
             if (modalTool == null) {
 
@@ -2193,6 +2177,30 @@ namespace ManualTracingTool {
             this.modalBeforeTool = this.currentTool;
             this.currentModalTool = modalTool;
             this.currentTool = modalTool;
+        }
+
+        private startVectorLayerModalTool(modalToolID: ModalToolID) {
+
+            let modalTool = this.vectorLayer_ModalTools[<int>modalToolID];
+
+            if (modalTool == null) {
+
+                return;
+            }
+
+            this.startModalTool(modalTool);
+        }
+
+        private startImageFileReferenceLayerModalTool(modalToolID: ModalToolID) {
+
+            let modalTool = this.imageFileReferenceLayer_ModalTools[<int>modalToolID];
+
+            if (modalTool == null) {
+
+                return;
+            }
+
+            this.startModalTool(modalTool);
         }
 
         public endModalTool() { //@implements MainEditor
@@ -2225,7 +2233,7 @@ namespace ManualTracingTool {
             this.modalBeforeTool = null;
         }
 
-        private isModalToolRunning(): boolean {
+        public isModalToolRunning(): boolean { //@implements MainEditor
 
             return (this.currentModalTool != null);
         }
@@ -3142,7 +3150,6 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.canvasRender.setStrokeWidth(strokeWidth);
             this.canvasRender.setStrokeColorV(color);
 
             this.drawVectorLineSegment(line, 0, line.points.length - 1, useAdjustingLocation);
@@ -3249,79 +3256,80 @@ namespace ManualTracingTool {
         private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
 
             this.canvasRender.setLineCap(CanvasRenderLineCap.round)
-            this.canvasRender.beginPath()
 
-            // search first visible point
-            let firstIndex = -1;
-            for (let i = startIndex; i <= endIndex; i++) {
+            for (let pointIndex = startIndex; pointIndex <= endIndex;) {
 
-                let point = line.points[i];
+                // search first visible point
+                let segmentStartIndex = -1;
+                for (let index = pointIndex; index <= endIndex; index++) {
+                    let point = line.points[index];
 
-                if (point.modifyFlag != LinePointModifyFlagID.delete) {
+                    let isNotDeleted = (point.modifyFlag != LinePointModifyFlagID.delete);
 
-                    firstIndex = i;
+                    let lineWidth = (useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
+                    let isVisibleWidth = (lineWidth > 0.0);
+
+                    if (isNotDeleted && isVisibleWidth) {
+
+                        segmentStartIndex = index;
+                        break;
+                    }
+                }
+
+                if (segmentStartIndex == -1) {
                     break;
                 }
-            }
 
-            if (firstIndex == -1) {
+                let firstPoint = line.points[segmentStartIndex];
+                let currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
 
-                return;
-            }
+                // search end index of the segment
+                let segmentEndIndex = segmentStartIndex;
+                for (let index = segmentStartIndex + 1; index <= endIndex; index++) {
+                    let point = line.points[index];
 
-            // set first location
-            let firstPoint = line.points[firstIndex];
-            if (useAdjustingLocation) {
+                    let isNotDeleted = (point.modifyFlag != LinePointModifyFlagID.delete);
 
-                this.canvasRender.moveTo(firstPoint.adjustingLocation[0], firstPoint.adjustingLocation[1]);
-            }
-            else {
+                    let lineWidth = (useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
+                    let isVisibleWidth = (lineWidth > 0.0);
 
-                this.canvasRender.moveTo(firstPoint.location[0], firstPoint.location[1]);
-            }
+                    let isSameLineWidth = (lineWidth == currentLineWidth);
 
-            let currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
-            this.canvasRender.setStrokeWidth(currentLineWidth);
+                    segmentEndIndex = index;
 
-            for (let i = firstIndex + 1; i <= endIndex; i++) {
+                    if (isNotDeleted && isVisibleWidth && isSameLineWidth) {
 
-                let point1 = line.points[i];
-
-                if (point1.modifyFlag == LinePointModifyFlagID.delete) {
-
-                    continue;
-                }
-
-                if (useAdjustingLocation) {
-
-                    this.canvasRender.lineTo(point1.adjustingLocation[0], point1.adjustingLocation[1]);
-                }
-                else {
-
-                    this.canvasRender.lineTo(point1.location[0], point1.location[1]);
-                }
-
-                if (point1.lineWidth != currentLineWidth) {
-
-                    this.canvasRender.stroke();
-                    this.canvasRender.beginPath();
-
-                    currentLineWidth = this.lineWidthAdjust(point1.lineWidth);
-                    this.canvasRender.setStrokeWidth(currentLineWidth);
-
-                    if (useAdjustingLocation) {
-
-                        this.canvasRender.moveTo(point1.adjustingLocation[0], point1.adjustingLocation[1]);
+                        continue;
                     }
                     else {
 
-                        this.canvasRender.moveTo(point1.location[0], point1.location[1]);
+                        break;
                     }
-                    continue;
                 }
-            }
 
-            this.canvasRender.stroke();
+                if (segmentEndIndex == segmentStartIndex) {
+                    break;
+                }
+
+                // draw segment
+                this.canvasRender.beginPath()
+                this.canvasRender.setStrokeWidth(currentLineWidth);
+
+                let firstLocaton = (useAdjustingLocation ? firstPoint.adjustingLocation : firstPoint.location);
+                this.canvasRender.moveTo(firstLocaton[0], firstLocaton[1]);
+
+                for (let index = segmentStartIndex + 1; index <= segmentEndIndex; index++) {
+                    let point = line.points[index];
+
+                    let location = (useAdjustingLocation ? point.adjustingLocation : point.location);
+                    this.canvasRender.lineTo(location[0], location[1]);
+                }
+
+                this.canvasRender.stroke();
+
+                // next step
+                pointIndex = segmentEndIndex;
+            }
         }
 
         private drawVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) {

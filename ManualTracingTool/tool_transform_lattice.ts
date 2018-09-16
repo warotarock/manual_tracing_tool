@@ -14,6 +14,13 @@ namespace ManualTracingTool {
 
         mouseAnchorLocation = vec3.create();
 
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.currentVectorLayer != null
+            );
+        }
+
         prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
             this.clearEditData(e, env);
@@ -97,22 +104,12 @@ namespace ManualTracingTool {
         protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
-        startModal(env: ToolEnvironment) { // @override
-
-            env.setRedrawEditorWindow();
-        }
-
-        endModal(env: ToolEnvironment) { // @override
-
-            env.setRedrawMainWindowEditorWindow();
-        }
-
-        cancelModal(env: ToolEnvironment) { // @override
-
-            env.setRedrawMainWindowEditorWindow();
-        }
-
         mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            if (!env.isModalToolRunning()) {
+
+                return;
+            }
 
             // Move lattice points
 

@@ -148,11 +148,6 @@ namespace ManualTracingTool {
 
         }
 
-        cancelModal(env: ToolEnvironment) { // @override
-
-            env.setRedrawMainWindowEditorWindow();
-        }
-
         protected processTransform(env: ToolEnvironment) { // @override
 
             let image = env.currentImageFileReferenceLayer.imageResource.image;

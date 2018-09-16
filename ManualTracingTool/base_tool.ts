@@ -53,11 +53,16 @@ namespace ManualTracingTool {
     export interface MainEditor {
 
         setCurrentLayer(layer: Layer);
+
+        startLoadingDocumentResourcesProcess(document: DocumentData);
+
+        openFileDialog(targetID: OpenFileDialogTargetID);
+        openDocumentSettingDialog();
+
+        startModalTool(modalTool: ModalToolBase);
         endModalTool();
         cancelModalTool();
-        openFileDialog(targetID: OpenFileDialogTargetID);
-        startLoadingDocumentResourcesProcess(document: DocumentData);
-        openDocumentSettingDialog();
+        isModalToolRunning(): boolean;
     }
 
     export interface MainEditorDrawer {
@@ -325,6 +330,11 @@ namespace ManualTracingTool {
             this.currentVectorLine.isEditTarget = isEditTarget;
         }
 
+        startModalTool(modalTool: ModalToolBase) {
+
+            this.toolContext.mainEditor.startModalTool(modalTool);
+        }
+
         endModalTool() {
 
             this.toolContext.mainEditor.endModalTool();
@@ -333,6 +343,11 @@ namespace ManualTracingTool {
         cancelModalTool() {
 
             this.toolContext.mainEditor.cancelModalTool();
+        }
+
+        isModalToolRunning(): boolean{
+
+            return this.toolContext.mainEditor.isModalToolRunning();
         }
 
         openFileDialog(targetID: OpenFileDialogTargetID) {
@@ -363,7 +378,7 @@ namespace ManualTracingTool {
         sampledPointColor = vec4.fromValues(0.0, 0.5, 1.0, 1.0);
         extrutePointColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         editingLineColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
-        selectedVectorLineColor = vec4.fromValues(0.8, 0.3, 0.0, 0.5);
+        selectedVectorLineColor = vec4.fromValues(1.0, 0.5, 0.0, 0.8);
 
         linePointVisualBrightnessAdjustRate = 0.3;
 
@@ -549,14 +564,17 @@ namespace ManualTracingTool {
 
         prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @virtual
 
-            return false;
+            return true;
         }
 
         startModal(env: ToolEnvironment) { // @virtual
 
+            env.setRedrawEditorWindow();
         }
 
         endModal(env: ToolEnvironment) { // @virtual
+
+            env.setRedrawEditorWindow();
         }
 
         cancelModal(env: ToolEnvironment) { // @virtual

@@ -43,6 +43,7 @@ namespace ManualTracingTool {
         selectedToUnselected = 1,
         unselectedToSelected = 2,
         delete = 3,
+        edit = 4,
     }
 
     export class LinePoint {

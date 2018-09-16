@@ -1,17 +1,24 @@
 ﻿
 namespace ManualTracingTool {
 
-    enum SelectionProgressID {
-
-        none = 0,
-        selecting = 1
-    }
-
-    export class Tool_Select_BrushSelect_LinePoint extends ToolBase {
-
-        selectionProcessID = SelectionProgressID.none;
+    export class Tool_BrushSelectLinePointBase extends ModalToolBase {
 
         logic_Selector: ISelector_BrushSelect = new Selector_LinePoint_BrushSelect(); // @virtual
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.currentVectorLayer != null
+            );
+        }
+
+        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
+
+            if (!env.isSelectMode()) {
+
+                drawEnv.editorDrawer.drawMouseCursor();
+            }
+        }
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
@@ -34,12 +41,11 @@ namespace ManualTracingTool {
 
             if (env.currentVectorLayer == null) {
 
-                // redraw cursor
                 env.setRedrawEditorWindow();
                 return;
             }
 
-            if (this.selectionProcessID == SelectionProgressID.selecting) {
+            if (env.isModalToolRunning()) {
 
                 if (e.isLeftButtonPressing()) {
 
@@ -59,7 +65,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (this.selectionProcessID == SelectionProgressID.selecting) {
+            if (env.isModalToolRunning()) {
 
                 this.endSelection(env);
 
@@ -84,9 +90,15 @@ namespace ManualTracingTool {
                 this.logic_Selector.editMode = SelectionEditMode.setSelected;
             }
 
+            this.onStartSelection(e, env);
+
             this.logic_Selector.startProcess();
 
-            this.selectionProcessID = SelectionProgressID.selecting;
+            env.startModalTool(this);
+        }
+
+        protected onStartSelection(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+
         }
 
         private processSelection(e: ToolMouseEvent, env: ToolEnvironment) {
@@ -96,14 +108,7 @@ namespace ManualTracingTool {
 
         private endSelection(env: ToolEnvironment) {
 
-            if (this.selectionProcessID != SelectionProgressID.selecting) {
-
-                return;
-            }
-
             this.logic_Selector.endProcess();
-
-            this.selectionProcessID = SelectionProgressID.none;
 
             if (this.logic_Selector.selectionInfo.selectedLines.length == 0
                 && this.logic_Selector.selectionInfo.selectedPoints.length == 0) {
@@ -112,9 +117,35 @@ namespace ManualTracingTool {
             }
 
             this.executeCommand(env);
+
+            env.endModalTool();
         }
 
         protected executeCommand(env: ToolEnvironment) { // @virtual
+
+        }
+    }
+
+    export class Tool_Select_BrushSelect_LinePoint extends Tool_BrushSelectLinePointBase {
+
+        prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
+
+            return true;
+        }
+
+        cancelModal(env: ToolEnvironment) { // @override
+
+            for (let selPoint of this.logic_Selector.selectionInfo.selectedPoints) {
+
+                selPoint.point.isSelected = selPoint.selectStateBefore;
+            }
+
+            this.logic_Selector.endProcess();
+
+            env.setRedrawMainWindowEditorWindow();
+        }
+
+        protected executeCommand(env: ToolEnvironment) { // @override
 
             let command = new Command_Select();
             command.selectionInfo = this.logic_Selector.selectionInfo;
