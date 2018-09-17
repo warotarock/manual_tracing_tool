@@ -3,7 +3,10 @@ namespace ManualTracingTool {
 
     export class Tool_DrawLine extends ToolBase {
 
+        helpText = '線を追加します。Shiftキーで直前の線から続けて塗りつぶします。';
+
         editLine: VectorLine = null;
+        continuousFill = false;
 
         resamplingUnitLength = 1.0;
 
@@ -20,9 +23,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (env.isAnyModifierKeyPressing()) {
-                return;
-            }
+            this.continuousFill = env.isShiftKeyPressing();
 
             this.editLine = new VectorLine();
 
@@ -62,6 +63,8 @@ namespace ManualTracingTool {
                 return;
             }
 
+            this.continuousFill = (this.continuousFill || env.isShiftKeyPressing());
+
             this.executeCommand(env);
 
             env.setRedrawMainWindow();
@@ -85,6 +88,7 @@ namespace ManualTracingTool {
             let command = new Command_AddLine();
             command.group = env.currentVectorGroup;
             command.line = resampledLine;
+            command.continuousFill = this.continuousFill;
 
             command.execute(env);
 
@@ -98,24 +102,67 @@ namespace ManualTracingTool {
 
         group: VectorGroup = null;
         line: VectorLine = null;
+        continuousFill = false;
+
+        previousConnectedLine: VectorLine = null;
+        previousConnectedLine_continuousFill = false;
 
         execute(env: ToolEnvironment) { // @override
 
             this.errorCheck();
 
-            this.group.lines.push(this.line);
+            if (this.continuousFill && this.group.lines.length >= 1 && this.line.points.length >= 2) {
 
-            env.setCurrentVectorLine(this.line, false);
+                let connectLine = this.group.lines[this.group.lines.length - 1];
+
+                if (connectLine.points.length >= 2) {
+
+                    let lastPoint = connectLine.points[connectLine.points.length - 1];
+                    let point1 = this.line.points[0];
+                    let point2 = this.line.points[this.line.points.length - 1];
+
+                    let distance1 = vec3.squaredDistance(lastPoint.location, point1.location);
+                    let distance2 = vec3.squaredDistance(lastPoint.location, point2.location);
+
+                    if (distance2 < distance1) {
+
+                        let revercedList = new List<LinePoint>();
+                        for (let i = this.line.points.length - 1; i >= 0; i--) {
+
+                            revercedList.push(this.line.points[i]);
+                        }
+
+                        this.line.points = revercedList;
+                    }
+
+                    this.previousConnectedLine = this.group.lines[this.group.lines.length - 1];
+                    this.previousConnectedLine_continuousFill = this.previousConnectedLine.continuousFill;
+                }
+            }
+
+            this.redo(env);
         }
 
         undo(env: ToolEnvironment) { // @override
 
             ListRemoveAt(this.group.lines, this.group.lines.length - 1);
+
+            if (this.previousConnectedLine != null) {
+
+                this.previousConnectedLine.continuousFill = this.previousConnectedLine_continuousFill;
+            }
         }
 
         redo(env: ToolEnvironment) { // @override
 
-            this.execute(env);
+            this.group.lines.push(this.line);
+
+            if (this.previousConnectedLine != null) {
+
+                this.previousConnectedLine.continuousFill = true;
+            }
+
+            env.setCurrentVectorLine(this.line, false);
         }
 
         errorCheck() {

@@ -11,7 +11,7 @@ namespace ManualTracingTool {
 
     export class Tool_ScratchLineWidth extends ManualTracingTool.Tool_ScratchLine {
 
-        helpText = '線の太くします。Shiftキーで線を細くします。<br />Ctrlキーで最大の太さ固定になります。';
+        helpText = '線を最大の太さに近づけます。Shiftキーで線を細くします。<br />Ctrlキーで最大の太さ固定になります。';
 
         enableExtrude = false;
 

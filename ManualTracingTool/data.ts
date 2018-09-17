@@ -75,15 +75,8 @@ namespace ManualTracingTool {
     export class VectorLine {
 
         points = new List<LinePoint>();
-
-        isCloseToMouse = false;
-        isEditTarget = false;
+        continuousFill = false;
         isSelected = false;
-
-        strokeWidth = 1.0;
-
-        // runtime
-        modifyFlag = VectorLineModifyFlagID.none;
 
         left = 999999.0;
         top = 999999.0;
@@ -92,6 +85,12 @@ namespace ManualTracingTool {
         bottom = -999999.0;
 
         totalLength = 0.0;
+
+        // runtime
+        modifyFlag = VectorLineModifyFlagID.none;
+
+        isCloseToMouse = false;
+        isEditTarget = false;
     }
 
     export enum VectorGroupModifyFlagID {

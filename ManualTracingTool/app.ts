@@ -12,10 +12,6 @@ let fs = (typeof (require) != 'undefined') ? require('fs') : {
 namespace ManualTracingTool {
 
     // これからやろうと思っていること (current tasks)
-    // ・描画ツールの追加
-    // 　・点削除ブラシツール（線の点をブラシ選択の要領で削除できる）
-    // 　・線の非表示ツール（線の幅を0にして描画のみしないようにできる）
-    // 　・消しゴム＋線の非表示ツール
     // ・塗りつぶし機能の追加
     // 　・連続する線として設定した線を接続して塗りつぶすことができる機能（複数の線の間を塗りつぶす機能の簡易版ともいえる）
     // ・ファイルを指定してのドキュメント読み込み
@@ -53,6 +49,7 @@ namespace ManualTracingTool {
     // ・現在のレイヤーが移動したときにカーソルが変な位置に出る
     // ・点の移動ツールなどで右クリックでキャンセルしたときに点の位置がモーダル中の位置で表示されつづけていた
     // ・ポージングツール以外のツールでパンしたとき３Ⅾが更新されない
+    // ・線の連続塗りつぶしで後ろの線が削除されたときにフラグを解除していない
 
     // いつかやるかも (anytime tasks)
     // ・ラティス変形ツール
@@ -71,8 +68,12 @@ namespace ManualTracingTool {
     // 　直線上の点は削減する
     // 　曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
     // ・レイヤーを選択変更したときレイヤーに応じたコンテキストの状態になるようにする
+    // ・点削除＋線の非表示ツール
 
     // 終わったもの (done)
+    // ・描画ツールの追加
+    // 　・点削除ブラシツール（線の点をブラシ選択の要領で削除できる）
+    // 　・線の非表示ツール（線の幅を0にして描画のみしないようにできる）
     // ・ツールの整理
     // 　・ポージングツールのツールが表示しきれていないのでサブツールウィンドウをスクロール可能にする
     // ・パレット機能の実装
@@ -715,6 +716,12 @@ namespace ManualTracingTool {
                     for (let line of group.lines) {
 
                         line.modifyFlag = VectorLineModifyFlagID.none;
+                        line.isEditTarget = false;
+                        line.isCloseToMouse = false;
+
+                        if (line['strokeWidth'] != undefined) {
+                            delete line['strokeWidth'];
+                        }
 
                         for (let point of line.points) {
 
@@ -814,6 +821,10 @@ namespace ManualTracingTool {
                 for (let group of vectorLayer.geometry.groups) {
 
                     for (let line of group.lines) {
+
+                        delete line.modifyFlag;
+                        delete line.isCloseToMouse;
+                        delete line.isEditTarget;
 
                         for (let point of line.points) {
 
@@ -3082,11 +3093,14 @@ namespace ManualTracingTool {
 
             for (let group of geometry.groups) {
 
+                let continuousFill = false;
                 for (let line of group.lines) {
 
                     if (layer.fillAreaType != FillAreaTypeID.none) {
 
-                        this.drawVectorLineFill(line, fillColor, line.strokeWidth, useAdjustingLocation);
+                        this.drawVectorLineFill(line, fillColor, 1.0, useAdjustingLocation, continuousFill);
+
+                        continuousFill = line.continuousFill;
                     }
                 }
 
@@ -3096,27 +3110,27 @@ namespace ManualTracingTool {
 
                         if (layer.drawLineType == DrawLineTypeID.layerColor) {
 
-                            this.drawVectorLineStroke(line, lineColor, line.strokeWidth, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, lineColor, 1.0, useAdjustingLocation);
                         }
                         else if (layer.drawLineType == DrawLineTypeID.palletColor) {
 
                             let palletColor = documentData.palletColos[layer.line_PalletColorIndex];
 
-                            this.drawVectorLineStroke(line, palletColor.color, line.strokeWidth, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, palletColor.color, 1.0, useAdjustingLocation);
                         }
                     }
                     else if (this.toolEnv.isSelectMode()) {
 
                         if (!isCurrentLayer) {
 
-                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, line.strokeWidth, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, 1.0, useAdjustingLocation);
                         }
                         else {
 
                             if (this.toolContext.operationUnitID == OperationUnitID.linePoint
                                 || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
 
-                                this.drawVectorLineStroke(line, lineColor, line.strokeWidth, useAdjustingLocation);
+                                this.drawVectorLineStroke(line, lineColor, 1.0, useAdjustingLocation);
 
                                 this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
                             }
@@ -3129,11 +3143,11 @@ namespace ManualTracingTool {
 
                                 if (line.isCloseToMouse) {
 
-                                    this.drawVectorLineStroke(line, color, line.strokeWidth + 2.0, useAdjustingLocation);
+                                    this.drawVectorLineStroke(line, color, 1.0 + 2.0, useAdjustingLocation);
                                 }
                                 else {
 
-                                    this.drawVectorLineStroke(line, color, line.strokeWidth, useAdjustingLocation);
+                                    this.drawVectorLineStroke(line, color, 1.0, useAdjustingLocation);
                                 }
 
                                 //this.drawAdjustingLinePoints(canvasWindow, line);
@@ -3186,15 +3200,18 @@ namespace ManualTracingTool {
             return Math.floor(width * 5) / 5;
         }
 
-        private drawVectorLineFill(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) {
+        private drawVectorLineFill(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean, isFillContinuing: boolean) {
 
             if (line.points.length <= 1) {
                 return;
             }
 
-            this.canvasRender.setLineCap(CanvasRenderLineCap.round)
-            this.canvasRender.beginPath()
-            this.canvasRender.setFillColorV(color);
+            if (!isFillContinuing) {
+
+                this.canvasRender.setLineCap(CanvasRenderLineCap.round)
+                this.canvasRender.beginPath()
+                this.canvasRender.setFillColorV(color);
+            }
 
             let startIndex = 0;
             let endIndex = line.points.length - 1;
@@ -3219,13 +3236,14 @@ namespace ManualTracingTool {
 
             // set first location
             let firstPoint = line.points[firstIndex];
-            if (useAdjustingLocation) {
+            let firstLocation = (useAdjustingLocation ? firstPoint.adjustingLocation : firstPoint.location);
+            if (isFillContinuing) {
 
-                this.canvasRender.moveTo(firstPoint.adjustingLocation[0], firstPoint.adjustingLocation[1]);
+                this.canvasRender.lineTo(firstLocation[0], firstLocation[1]);
             }
             else {
 
-                this.canvasRender.moveTo(firstPoint.location[0], firstPoint.location[1]);
+                this.canvasRender.moveTo(firstLocation[0], firstLocation[1]);
             }
 
             let currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
@@ -3233,24 +3251,21 @@ namespace ManualTracingTool {
 
             for (let i = 1; i < line.points.length; i++) {
 
-                let point1 = line.points[i];
+                let point = line.points[i];
 
-                if (point1.modifyFlag == LinePointModifyFlagID.delete) {
+                if (point.modifyFlag == LinePointModifyFlagID.delete) {
 
                     continue;
                 }
 
-                if (useAdjustingLocation) {
-
-                    this.canvasRender.lineTo(point1.adjustingLocation[0], point1.adjustingLocation[1]);
-                }
-                else {
-
-                    this.canvasRender.lineTo(point1.location[0], point1.location[1]);
-                }
+                let location = (useAdjustingLocation ? point.adjustingLocation : point.location);
+                this.canvasRender.lineTo(location[0], location[1]);
             }
 
-            this.canvasRender.fill();
+            if (!line.continuousFill) {
+
+                this.canvasRender.fill();
+            }
         }
 
         private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
