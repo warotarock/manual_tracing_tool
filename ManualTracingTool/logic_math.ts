@@ -82,7 +82,7 @@ namespace ManualTracingTool {
             //Aから線上最近点までの距離（ABベクトルの後ろにあるときはマイナス値）
             let dist_AX = (nAB_x * AP_x + nAB_y * AP_y);
 
-            return dist_AX;
+            return dist_AX / len;
         }
 
         static pointToLine_NearestPoint(result: Vec3, P_x: float, P_y: float, A_x: float, A_y: float, B_x: float, B_y: float): Vec3 {

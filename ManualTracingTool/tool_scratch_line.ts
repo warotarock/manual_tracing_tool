@@ -43,8 +43,7 @@ namespace ManualTracingTool {
         cutoutAngle = 30 / 180.0 * Math.PI;
 
         editFalloffRadiusMinRate = 0.15;
-        editFalloffRadiusMaxRate = 1.5;
-        editFalloffNormaldistanceRate = 2.0;
+        editFalloffRadiusMaxRate = 2.0;
         editInfluence = 0.5;
 
         editExtrudeMinRadiusRate = 0.5;
@@ -52,7 +51,7 @@ namespace ManualTracingTool {
 
         tool_ScratchLine_EditLine_Visible = true;
         tool_ScratchLine_TargetLine_Visible = true;
-        tool_ScratchLine_SampledLine_Visible = false;
+        tool_ScratchLine_SampledLine_Visible = true;
         tool_ScratchLine_CandidatePoints_Visible = false;
         tool_ScratchLine_ExtrudePoints_Visible = false;
 
@@ -313,7 +312,7 @@ namespace ManualTracingTool {
 
         protected resampleLine(baseLine: VectorLine, env: ToolEnvironment): VectorLine {
 
-            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
+            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength * 2.0);
 
             let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(baseLine.totalLength, resamplingUnitLength);
             if (divisionCount > this.maxResamplingDivisionCount) {
@@ -436,7 +435,7 @@ namespace ManualTracingTool {
 
                     let normalDistance = vec3.distance(point.location, this.nearestPointLocation);
 
-                    if (normalDistance > editFalloffRadiusMax * this.editFalloffNormaldistanceRate) {
+                    if (normalDistance > editFalloffRadiusMax) {
 
                         continue;
                     }
@@ -448,6 +447,11 @@ namespace ManualTracingTool {
                         this.nearestPointLocation[0],
                         this.nearestPointLocation[1]
                     );
+
+                    if (sorroundingDistance > editFalloffRadiusMax) {
+
+                        continue;
+                    }
 
                     let normPositionInEditorLineSegment = Logic_Points.pointToLineSegment_NormalizedPosition(
                         nearestLinePoint1.location
@@ -672,29 +676,27 @@ namespace ManualTracingTool {
 
         protected calculateCandidatePointInfluence(editorLine_TotalLength: float, normalDistance: float, sorroundingDistance: float, totalLengthInEditorLine: float, normPositionInEditorLineSegment: float, editFalloffRadiusMin: float, editFalloffRadiusMax: float): float { // @virtual
 
-            let falloffDistance = sorroundingDistance;
+            let falloffDistance = 1.0;
 
             if (editorLine_TotalLength > editFalloffRadiusMax * 2.0) {
 
                 if (totalLengthInEditorLine < editFalloffRadiusMax) {
 
-                    falloffDistance += (editFalloffRadiusMax - totalLengthInEditorLine);
+                    //falloffDistance = 0.0;
+                    falloffDistance = totalLengthInEditorLine / editFalloffRadiusMax;
                 }
 
                 if (totalLengthInEditorLine > editorLine_TotalLength - editFalloffRadiusMax) {
 
-                    falloffDistance += (totalLengthInEditorLine - (editorLine_TotalLength - editFalloffRadiusMax));
+                    //falloffDistance = 0.0;
+                    falloffDistance = (editorLine_TotalLength - totalLengthInEditorLine) / editFalloffRadiusMax;
                 }
             }
             else {
 
-                falloffDistance *= 2.0; // ※どうすべきか後で検討する
+                falloffDistance = 1.0 - sorroundingDistance / editFalloffRadiusMax;
             }
-
-            //console.log(nearestSegmentIndex + ' ' + falloffDistance.toFixed(2) + ' ' + normPositionInEditorLineSegment.toFixed(2) + ' ' + totalLengthInEditorLine.toFixed(2));
-
-            let distanceRate = Maths.smoothstep(editFalloffRadiusMin, editFalloffRadiusMax, falloffDistance);
-            let influence = 1.0 - Maths.clamp(distanceRate, 0.0, 1.0);
+            let influence = Maths.clamp(falloffDistance, 0.0, 1.0);
 
             if (influence == 0.0) {
                 return 0.0;
