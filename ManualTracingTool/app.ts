@@ -12,8 +12,6 @@ let fs = (typeof (require) != 'undefined') ? require('fs') : {
 namespace ManualTracingTool {
 
     // これからやろうと思っていること (current tasks)
-    // ・塗りつぶし機能の追加
-    // 　・連続する線として設定した線を接続して塗りつぶすことができる機能（複数の線の間を塗りつぶす機能の簡易版ともいえる）
     // ・ファイルを指定してのドキュメント読み込み
     // ・ポージングツールの整備
     // 　・ポージングツール以外のツールでパンしたとき３Ⅾを更新する
@@ -52,6 +50,7 @@ namespace ManualTracingTool {
     // ・線の連続塗りつぶしで後ろの線が削除されたときにフラグを解除していない
 
     // いつかやるかも (anytime tasks)
+    // ・既存の線を連続塗りつぶし設定するツール
     // ・ラティス変形ツール
     // ・アンカーの表示/非表示をツールで切り替えるようにする
     // ・レイヤーカラーをどこかに表示する
@@ -71,6 +70,8 @@ namespace ManualTracingTool {
     // ・点削除＋線の非表示ツール
 
     // 終わったもの (done)
+    // ・塗りつぶし機能の追加
+    // 　・連続する線として設定した線を接続して塗りつぶすことができる機能（複数の線の間を塗りつぶす機能の簡易版ともいえる）
     // ・描画ツールの追加
     // 　・点削除ブラシツール（線の点をブラシ選択の要領で削除できる）
     // 　・線の非表示ツール（線の幅を0にして描画のみしないようにできる）
@@ -1153,6 +1154,11 @@ namespace ManualTracingTool {
 
             // Modal window
 
+            document.addEventListener('custombox:content:open', () => {
+
+                this.onModalWindowShown();
+            });
+
             document.addEventListener('custombox:content:close', () => {
 
                 this.onModalWindowClosed();
@@ -1664,7 +1670,7 @@ namespace ManualTracingTool {
             if (e.wheelDelta != 0.0
                 && !e.isMouseDragging) {
 
-                this.mainWindow.addViewScale(e.wheelDelta * 0.3);
+                this.mainWindow.addViewScale(e.wheelDelta * 0.1);
 
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawWebGLWindow();
@@ -1672,6 +1678,9 @@ namespace ManualTracingTool {
         }
 
         private document_keydown(e: KeyboardEvent) {
+
+            var env = this.toolEnv;
+            let context = this.toolContext;
 
             if (this.isWhileLoading()) {
                 return;
@@ -1685,18 +1694,16 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let context = this.toolContext;
-
             this.toolContext.shiftKey = e.shiftKey;
             this.toolContext.altKey = e.altKey;
             this.toolContext.ctrlKey = e.ctrlKey;
 
-            this.toolEnv.updateContext();
+            env.updateContext();
 
             if (e.key == 'Tab') {
 
                 // Change mode
-                if (this.toolEnv.isDrawMode()) {
+                if (env.isDrawMode()) {
 
                     context.editMode = EditModeID.selectMode;
                 }
@@ -1708,58 +1715,61 @@ namespace ManualTracingTool {
                 /// Update footer message
                 this.updateFooterMessage();
 
-                this.toolEnv.setRedrawMainWindowEditorWindow();
+                env.setRedrawMainWindowEditorWindow();
 
-                return e.preventDefault();
+                e.preventDefault();
+                return;
             }
 
-            if (e.key == 'n' && this.toolEnv.isCtrlKeyPressing()) {
+            if (e.key == 'n' && env.isCtrlKeyPressing()) {
 
                 this.document = this.createDefaultDocumentData();
                 this.toolContext.document = this.document;
 
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
 
-                this.toolEnv.setRedrawAllWindows();
+                env.setRedrawAllWindows();
 
                 return;
             }
 
             if (e.key == 'b') {
 
-                if (this.toolEnv.isDrawMode()) {
+                if (env.isDrawMode()) {
 
                     this.setCurrentMainTool(MainToolID.drawLine);
                     this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
 
                     this.updateFooterMessage();
-                    this.toolEnv.setRedrawMainWindowEditorWindow();
-                    this.toolEnv.setRedrawLayerWindow();
-                    this.toolEnv.setRedrawSubtoolWindow();
+                    env.setRedrawMainWindowEditorWindow();
+                    env.setRedrawLayerWindow();
+                    env.setRedrawSubtoolWindow();
                 }
 
+                e.preventDefault();
                 return;
             }
 
             if (e.key == 'e') {
 
-                if (this.toolEnv.isDrawMode()) {
+                if (env.isDrawMode()) {
 
                     this.setCurrentMainTool(MainToolID.scratchLine);
                     this.setCurrentSubTool(<int>ScrathLineToolSubToolID.scratchLine);
 
                     this.updateFooterMessage();
-                    this.toolEnv.setRedrawMainWindowEditorWindow();
-                    this.toolEnv.setRedrawLayerWindow();
-                    this.toolEnv.setRedrawSubtoolWindow();
+                    env.setRedrawMainWindowEditorWindow();
+                    env.setRedrawLayerWindow();
+                    env.setRedrawSubtoolWindow();
                 }
 
+                e.preventDefault();
                 return;
             }
 
             if (e.key == 'p') {
 
-                if (this.toolEnv.isDrawMode()) {
+                if (env.isDrawMode()) {
 
                     this.setCurrentMainTool(MainToolID.posing);
                     if (this.currentTool == this.tool_Posing3d_LocateHead) {
@@ -1772,35 +1782,38 @@ namespace ManualTracingTool {
                     }
 
                     this.updateFooterMessage();
-                    this.toolEnv.setRedrawMainWindow();
-                    this.toolEnv.setRedrawLayerWindow();
-                    this.toolEnv.setRedrawSubtoolWindow();
+                    env.setRedrawMainWindow();
+                    env.setRedrawLayerWindow();
+                    env.setRedrawSubtoolWindow();
                 }
 
+                e.preventDefault();
                 return;
             }
 
             if (e.key == 'z') {
 
-                this.toolContext.commandHistory.undo(this.toolEnv);
+                this.toolContext.commandHistory.undo(env);
 
-                this.toolEnv.setRedrawMainWindow();
+                env.setRedrawMainWindow();
 
+                e.preventDefault();
                 return;
             }
 
             if (e.key == 'y') {
 
-                this.toolContext.commandHistory.redo(this.toolEnv);
+                this.toolContext.commandHistory.redo(env);
 
-                this.toolEnv.setRedrawMainWindow();
+                env.setRedrawMainWindow();
 
+                e.preventDefault();
                 return;
             }
 
             if (e.key == 'Delete' || e.key == 'x') {
 
-                if (this.toolEnv.isSelectMode()) {
+                if (env.isSelectMode()) {
 
                     if (this.toolContext.currentLayer != null
                         && this.toolContext.currentLayer.type == LayerTypeID.vectorLayer) {
@@ -1808,20 +1821,21 @@ namespace ManualTracingTool {
                         let command = new Command_DeleteSelectedPoints();
                         if (command.prepareEditTargets(<VectorLayer>(this.toolContext.currentLayer))) {
 
-                            command.execute(this.toolEnv);
+                            command.execute(env);
                             this.toolContext.commandHistory.addCommand(command);
                         }
 
-                        this.toolEnv.setRedrawMainWindow();
+                        env.setRedrawMainWindow();
                     }
                 }
 
+                e.preventDefault();
                 return;
             }
 
             if (e.key == 's') {
 
-                if (this.toolEnv.isCtrlKeyPressing()) {
+                if (env.isCtrlKeyPressing()) {
 
                     this.saveDocument();
 
@@ -1837,7 +1851,7 @@ namespace ManualTracingTool {
                 this.mainWindow.viewScale = 1.0;
                 this.mainWindow.viewRotation = 0.0;
 
-                this.toolEnv.setRedrawMainWindowEditorWindow();
+                env.setRedrawMainWindowEditorWindow();
 
                 e.preventDefault();
                 return;
@@ -1845,7 +1859,7 @@ namespace ManualTracingTool {
 
             if (e.key == 't' || e.key == 'r') {
 
-                if (this.toolEnv.isDrawMode()) {
+                if (env.isDrawMode()) {
 
                     let rot = 10.0;
                     if (e.key == 't') {
@@ -1860,7 +1874,7 @@ namespace ManualTracingTool {
                         this.mainWindow.viewRotation += 360.0;
                     }
 
-                    this.toolEnv.setRedrawMainWindowEditorWindow();
+                    env.setRedrawMainWindowEditorWindow();
 
                     e.preventDefault();
                     return;
@@ -1876,7 +1890,7 @@ namespace ManualTracingTool {
 
                 this.mainWindow.addViewScale(addScale);
 
-                this.toolEnv.setRedrawMainWindowEditorWindow();
+                env.setRedrawMainWindowEditorWindow();
 
                 e.preventDefault();
                 return;
@@ -1924,7 +1938,7 @@ namespace ManualTracingTool {
                     this.mainWindow.viewLocation[1] = bottomLimit;
                 }
 
-                this.toolEnv.setRedrawMainWindowEditorWindow();
+                env.setRedrawMainWindowEditorWindow();
 
                 e.preventDefault();
                 return;
@@ -1940,9 +1954,9 @@ namespace ManualTracingTool {
 
             if (e.key == 'a') {
 
-                if (this.toolEnv.isSelectMode()) {
+                if (env.isSelectMode()) {
 
-                    this.tool_SelectAllPoints.execute(this.toolEnv);
+                    this.tool_SelectAllPoints.execute(env);
                     e.preventDefault();
                 }
             }
@@ -1960,16 +1974,23 @@ namespace ManualTracingTool {
                     modalToolID = ModalToolID.scale;
                 }
 
-                if (this.toolEnv.isCurrentLayerVectorLayer()) {
+                if (env.isCurrentLayerVectorLayer()) {
 
-                    this.startVectorLayerModalTool(modalToolID);
+                    if (env.isSelectMode()) {
+
+                        this.startVectorLayerModalTool(modalToolID);
+                        e.preventDefault();
+                    }
+                    else {
+
+                        this.currentTool.keydown(e, env);
+                    }
                 }
-                else if (this.toolEnv.isCurrentLayerImageFileReferenceLayer()) {
+                else if (env.isCurrentLayerImageFileReferenceLayer()) {
 
                     this.startImageFileReferenceLayerModalTool(modalToolID);
+                    e.preventDefault();
                 }
-
-                e.preventDefault();
             }
 
             if (e.key == 'Escape') {
@@ -1978,17 +1999,21 @@ namespace ManualTracingTool {
 
                     this.cancelModalTool();
                 }
+
+                e.preventDefault();
             }
 
             if (e.key == 'Enter') {
 
-                this.currentTool.keydown(e, this.toolEnv);
+                this.currentTool.keydown(e, env);
+                e.preventDefault();
             }
 
             if (e.key == '1') {
 
                 let layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openLayerPropertyModal(layerItem.layer, layerItem);
+                e.preventDefault();
             }
 
             if (e.key == '2') {
@@ -1996,6 +2021,7 @@ namespace ManualTracingTool {
                 let layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openPalletColorModal(
                     OpenPalletColorModalMode.LineColor, this.toolContext.document, layerItem.layer);
+                e.preventDefault();
             }
 
             if (e.key == '3') {
@@ -2003,31 +2029,37 @@ namespace ManualTracingTool {
                 let layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openPalletColorModal(
                     OpenPalletColorModalMode.FillColor, this.toolContext.document, layerItem.layer);
+                e.preventDefault();
             }
 
             if (e.key == '4') {
 
                 this.openDocumentSettingModal();
+                e.preventDefault();
             }
 
             if (e.key == '5') {
 
                 this.openNewLayerCommandOptionModal();
+                e.preventDefault();
             }
 
             if (e.key == '^') {
 
                 this.openOperationOptionModal();
+                e.preventDefault();
             }
 
             if (e.key == '\\') {
 
                 this.openExportImageFileModal();
+                e.preventDefault();
             }
 
             if (e.key == 'o') {
 
-                this.currentTool.keydown(e, this.toolEnv);
+                this.currentTool.keydown(e, env);
+                e.preventDefault();
             }
         }
 
@@ -2142,12 +2174,15 @@ namespace ManualTracingTool {
 
                 let posingLayer = <PosingLayer>layer;
 
+                this.toolContext.currentPosingLayer = posingLayer;
                 this.toolContext.currentPosingData = posingLayer.posingData;
                 this.toolContext.currentPosingModel = posingLayer.posingModel;
             }
             else {
 
+                this.toolContext.currentPosingLayer = null;
                 this.toolContext.currentPosingData = null;
+                this.toolContext.currentPosingModel = null;
             }
 
             if (layer.type == LayerTypeID.imageFileReferenceLayer) {
@@ -2404,6 +2439,7 @@ namespace ManualTracingTool {
         // Dialogs
 
         currentModalDialogID: string = null;
+        currentModalFocusElementName: string = null;
         currentModalDialogResult: string = null;
         currentModalDialog_DocumentData: DocumentData = null;
         layerPropertyWindow_EditLayer: Layer = null;
@@ -2443,9 +2479,10 @@ namespace ManualTracingTool {
             Custombox.modal.closeAll();
         }
 
-        private openModal(modalID: string) {
+        private openModal(modalID: string, focusElementName: string) {
 
             this.currentModalDialogID = modalID;
+            this.currentModalFocusElementName = focusElementName;
 
             var modal: any = new Custombox.modal(
                 this.createModalOptionObject(this.currentModalDialogID)
@@ -2488,7 +2525,7 @@ namespace ManualTracingTool {
 
             this.layerPropertyWindow_EditLayer = layer;
 
-            this.openModal(this.ID.layerPropertyModal);
+            this.openModal(this.ID.layerPropertyModal, this.ID.layerPropertyModal_layerName);
         }
 
         private openPalletColorModal(mode: OpenPalletColorModalMode, documentData: DocumentData, layer: Layer) {
@@ -2525,7 +2562,7 @@ namespace ManualTracingTool {
 
             this.displayPalletColorModalColors(documentData, vectorLayer);
 
-            this.openModal(this.ID.palletColorModal);
+            this.openModal(this.ID.palletColorModal, null);
         }
 
         private displayPalletColorModalColors(documentData: DocumentData, vectorLayer: VectorLayer) {
@@ -2673,7 +2710,7 @@ namespace ManualTracingTool {
 
             this.setRadioElementIntValue(this.ID.operationOptionModal_operationUnit, this.toolContext.operationUnitID);
 
-            this.openModal(this.ID.operationOptionModal);
+            this.openModal(this.ID.operationOptionModal, null);
         }
 
         private openNewLayerCommandOptionModal() {
@@ -2682,7 +2719,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.openModal(this.ID.newLayerCommandOptionModal);
+            this.openModal(this.ID.newLayerCommandOptionModal, null);
         }
 
         private onNewLayerCommandOptionModal() {
@@ -2737,7 +2774,7 @@ namespace ManualTracingTool {
 
             this.openFileDialogTargetID = targetID;
 
-            this.openModal(this.ID.openFileDialogModal);
+            this.openModal(this.ID.openFileDialogModal, null);
         }
 
         private onClosedFileDialogModal() {
@@ -2783,7 +2820,7 @@ namespace ManualTracingTool {
             this.setInputElementNumber(this.ID.documentSettingModal_FrameRight, this.document.documentFrame[2]);
             this.setInputElementNumber(this.ID.documentSettingModal_FrameBottom, this.document.documentFrame[3]);
 
-            this.openModal(this.ID.documentSettingModal);
+            this.openModal(this.ID.documentSettingModal, null);
         }
 
         private openExportImageFileModal() {
@@ -2794,7 +2831,16 @@ namespace ManualTracingTool {
 
             this.setRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
 
-            this.openModal(this.ID.exportImageFileModal);
+            this.openModal(this.ID.exportImageFileModal, null);
+        }
+
+        private onModalWindowShown() {
+
+            if (!StringIsNullOrEmpty(this.currentModalFocusElementName)) {
+
+                let element = this.getElement(this.currentModalFocusElementName);
+                element.focus();
+            }
         }
 
         private onModalWindowClosed() {
@@ -3587,7 +3633,8 @@ namespace ManualTracingTool {
 
         private drawWebGLWindow(mainWindow: CanvasWindow, webglWindow: CanvasWindow, pickingWindow: CanvasWindow) {
 
-            if (this.toolContext.currentPosingData == null) {
+            if (this.toolContext.currentPosingLayer == null
+                || this.toolContext.currentPosingData == null) {
                 return;
             }
 

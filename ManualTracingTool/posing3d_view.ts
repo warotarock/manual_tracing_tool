@@ -275,6 +275,7 @@ namespace ManualTracingTool {
 
         drawVisualImage(env: ToolEnvironment) {
 
+            let posingLayer = env.currentPosingLayer;
             let posingData = env.currentPosingData;
             let posingModel = env.currentPosingModel;
 
@@ -286,6 +287,10 @@ namespace ManualTracingTool {
             this.render.setDepthTest(true)
             this.render.setCulling(true);
             this.render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
+
+            if (!posingLayer.isVisible) {
+                return;
+            }
 
             this.caluculateCameraMatrix(posingData.real3DViewHalfWidth, env.mainWindow);
 

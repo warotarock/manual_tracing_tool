@@ -23,6 +23,8 @@ namespace ManualTracingTool {
 
     export class Tool_EditLinePointWidth_BrushSelect extends Tool_BrushSelectLinePointBase {
 
+        helpText = '線の太さを０に設定し、非表示にします。表示した場合は線の太さを変更してください。';
+
         logic_Selector: ISelector_BrushSelect = new Selector_EditLinePointWidth_BrushSelect(); // @override
 
         protected onStartSelection(e: ToolMouseEvent, env: ToolEnvironment) { // @override
