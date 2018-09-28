@@ -27,6 +27,9 @@ var ManualTracingTool;
             _this.mouseAnchorLocation = vec3.create();
             return _this;
         }
+        Tool_Transform_Lattice.prototype.isAvailable = function (env) {
+            return (env.currentVectorLayer != null);
+        };
         Tool_Transform_Lattice.prototype.prepareModal = function (e, env) {
             this.clearEditData(e, env);
             if (!this.checkTarget(e, env)) {
@@ -80,16 +83,10 @@ var ManualTracingTool;
         };
         Tool_Transform_Lattice.prototype.prepareModalExt = function (e, env) {
         };
-        Tool_Transform_Lattice.prototype.startModal = function (env) {
-            env.setRedrawEditorWindow();
-        };
-        Tool_Transform_Lattice.prototype.endModal = function (env) {
-            env.setRedrawMainWindowEditorWindow();
-        };
-        Tool_Transform_Lattice.prototype.cancelModal = function (env) {
-            env.setRedrawMainWindowEditorWindow();
-        };
         Tool_Transform_Lattice.prototype.mouseMove = function (e, env) {
+            if (!env.isModalToolRunning()) {
+                return;
+            }
             // Move lattice points
             this.processLatticePointMouseMove(e, env);
             // Transform edit data

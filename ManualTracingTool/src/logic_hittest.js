@@ -30,7 +30,7 @@ var ManualTracingTool;
         };
         HitTest_VectorLayer_Base.prototype.afterHitTestToLine = function (group, line) {
         };
-        HitTest_VectorLayer_Base.prototype.onPointHited = function (line, point) {
+        HitTest_VectorLayer_Base.prototype.onPointHited = function (group, line, point) {
         };
         HitTest_VectorLayer_Base.prototype.onLineSegmentHited = function (line, point1, point2) {
         };
@@ -111,7 +111,7 @@ var ManualTracingTool;
                 var point = line.points[i];
                 var distance2d = Math.pow(x - point.location[0], 2) + Math.pow(y - point.location[1], 2);
                 if (distance2d < minDistance) {
-                    this.onPointHited(line, point);
+                    this.onPointHited(group, line, point);
                 }
                 if (this.exitPointHitTest) {
                     break;

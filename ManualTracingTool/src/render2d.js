@@ -155,6 +155,10 @@ var ManualTracingTool;
         CanvasRender.prototype.drawImage = function (image, srcX, srcY, srcW, srcH, dstX, detY, dstW, dstH) {
             this.context.drawImage(image, srcX, srcY, srcW, srcH, dstX, detY, dstW, dstH);
         };
+        CanvasRender.prototype.pickColor = function (outColor, canvasWindow, x, y) {
+            var imageData = canvasWindow.context.getImageData(Math.floor(x), Math.floor(y), 1, 1);
+            vec4.set(outColor, imageData.data[0], imageData.data[1], imageData.data[2], imageData.data[3]);
+        };
         return CanvasRender;
     }());
     ManualTracingTool.CanvasRender = CanvasRender;

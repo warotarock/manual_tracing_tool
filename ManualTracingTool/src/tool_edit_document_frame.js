@@ -20,6 +20,9 @@ var ManualTracingTool;
         Tool_EditDocumentFrame.prototype.isAvailable = function (env) {
             return true;
         };
+        Tool_EditDocumentFrame.prototype.toolWindowItemDoubleClick = function (e, env) {
+            env.openDocumentSettingDialog();
+        };
         Tool_EditDocumentFrame.prototype.checkTarget = function (e, env) {
             return true;
         };
@@ -27,8 +30,8 @@ var ManualTracingTool;
             // calculate lattice points
             vec3.set(this.latticePoints[0].baseLocation, env.document.documentFrame[0], env.document.documentFrame[1], 0.0);
             vec3.set(this.latticePoints[1].baseLocation, env.document.documentFrame[2], env.document.documentFrame[1], 0.0);
-            vec3.set(this.latticePoints[2].baseLocation, env.document.documentFrame[2], env.document.documentFrame[2], 0.0);
-            vec3.set(this.latticePoints[3].baseLocation, env.document.documentFrame[0], env.document.documentFrame[2], 0.0);
+            vec3.set(this.latticePoints[2].baseLocation, env.document.documentFrame[2], env.document.documentFrame[3], 0.0);
+            vec3.set(this.latticePoints[3].baseLocation, env.document.documentFrame[0], env.document.documentFrame[3], 0.0);
             this.resetLatticePointLocationToBaseLocation();
             return true;
         };

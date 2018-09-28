@@ -14,7 +14,9 @@ var ManualTracingTool;
         __extends(Tool_DrawLine, _super);
         function Tool_DrawLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.helpText = '線を追加します。Shiftキーで直前の線から続けて塗りつぶします。';
             _this.editLine = null;
+            _this.continuousFill = false;
             _this.resamplingUnitLength = 1.0;
             return _this;
         }
@@ -25,9 +27,7 @@ var ManualTracingTool;
             if (!e.isLeftButtonPressing()) {
                 return;
             }
-            if (env.isAnyModifierKeyPressing()) {
-                return;
-            }
+            this.continuousFill = env.isShiftKeyPressing();
             this.editLine = new ManualTracingTool.VectorLine();
             this.addPointToEditLine(e, env);
         };
@@ -53,6 +53,7 @@ var ManualTracingTool;
                 env.setRedrawEditorWindow();
                 return;
             }
+            this.continuousFill = (this.continuousFill || env.isShiftKeyPressing());
             this.executeCommand(env);
             env.setRedrawMainWindow();
             env.setRedrawEditorWindow();
@@ -67,6 +68,7 @@ var ManualTracingTool;
             var command = new Command_AddLine();
             command.group = env.currentVectorGroup;
             command.line = resampledLine;
+            command.continuousFill = this.continuousFill;
             command.execute(env);
             env.commandHistory.addCommand(command);
             this.editLine = null;
@@ -80,18 +82,46 @@ var ManualTracingTool;
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.group = null;
             _this.line = null;
+            _this.continuousFill = false;
+            _this.previousConnectedLine = null;
+            _this.previousConnectedLine_continuousFill = false;
             return _this;
         }
         Command_AddLine.prototype.execute = function (env) {
             this.errorCheck();
-            this.group.lines.push(this.line);
-            env.setCurrentVectorLine(this.line, false);
+            if (this.continuousFill && this.group.lines.length >= 1 && this.line.points.length >= 2) {
+                var connectLine = this.group.lines[this.group.lines.length - 1];
+                if (connectLine.points.length >= 2) {
+                    var lastPoint = connectLine.points[connectLine.points.length - 1];
+                    var point1 = this.line.points[0];
+                    var point2 = this.line.points[this.line.points.length - 1];
+                    var distance1 = vec3.squaredDistance(lastPoint.location, point1.location);
+                    var distance2 = vec3.squaredDistance(lastPoint.location, point2.location);
+                    if (distance2 < distance1) {
+                        var revercedList = new List();
+                        for (var i = this.line.points.length - 1; i >= 0; i--) {
+                            revercedList.push(this.line.points[i]);
+                        }
+                        this.line.points = revercedList;
+                    }
+                    this.previousConnectedLine = this.group.lines[this.group.lines.length - 1];
+                    this.previousConnectedLine_continuousFill = this.previousConnectedLine.continuousFill;
+                }
+            }
+            this.redo(env);
         };
         Command_AddLine.prototype.undo = function (env) {
             ListRemoveAt(this.group.lines, this.group.lines.length - 1);
+            if (this.previousConnectedLine != null) {
+                this.previousConnectedLine.continuousFill = this.previousConnectedLine_continuousFill;
+            }
         };
         Command_AddLine.prototype.redo = function (env) {
-            this.execute(env);
+            this.group.lines.push(this.line);
+            if (this.previousConnectedLine != null) {
+                this.previousConnectedLine.continuousFill = true;
+            }
+            env.setCurrentVectorLine(this.line, false);
         };
         Command_AddLine.prototype.errorCheck = function () {
             if (this.group == null) {

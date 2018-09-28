@@ -10,20 +10,22 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var SelectionProgressID;
-    (function (SelectionProgressID) {
-        SelectionProgressID[SelectionProgressID["none"] = 0] = "none";
-        SelectionProgressID[SelectionProgressID["selecting"] = 1] = "selecting";
-    })(SelectionProgressID || (SelectionProgressID = {}));
-    var Tool_Select_BrushSelet_LinePoint = /** @class */ (function (_super) {
-        __extends(Tool_Select_BrushSelet_LinePoint, _super);
-        function Tool_Select_BrushSelet_LinePoint() {
+    var Tool_BrushSelectLinePointBase = /** @class */ (function (_super) {
+        __extends(Tool_BrushSelectLinePointBase, _super);
+        function Tool_BrushSelectLinePointBase() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.selectionProcessID = SelectionProgressID.none;
             _this.logic_Selector = new ManualTracingTool.Selector_LinePoint_BrushSelect(); // @virtual
             return _this;
         }
-        Tool_Select_BrushSelet_LinePoint.prototype.mouseDown = function (e, env) {
+        Tool_BrushSelectLinePointBase.prototype.isAvailable = function (env) {
+            return (env.currentVectorLayer != null);
+        };
+        Tool_BrushSelectLinePointBase.prototype.onDrawEditor = function (env, drawEnv) {
+            if (!env.isSelectMode()) {
+                drawEnv.editorDrawer.drawMouseCursor();
+            }
+        };
+        Tool_BrushSelectLinePointBase.prototype.mouseDown = function (e, env) {
             if (env.currentVectorLayer == null) {
                 return;
             }
@@ -34,13 +36,12 @@ var ManualTracingTool;
                 env.setRedrawEditorWindow();
             }
         };
-        Tool_Select_BrushSelet_LinePoint.prototype.mouseMove = function (e, env) {
+        Tool_BrushSelectLinePointBase.prototype.mouseMove = function (e, env) {
             if (env.currentVectorLayer == null) {
-                // redraw cursor
                 env.setRedrawEditorWindow();
                 return;
             }
-            if (this.selectionProcessID == SelectionProgressID.selecting) {
+            if (env.isModalToolRunning()) {
                 if (e.isLeftButtonPressing()) {
                     this.processSelection(e, env);
                     env.setRedrawMainWindow();
@@ -49,17 +50,17 @@ var ManualTracingTool;
             // redraw cursor
             env.setRedrawEditorWindow();
         };
-        Tool_Select_BrushSelet_LinePoint.prototype.mouseUp = function (e, env) {
+        Tool_BrushSelectLinePointBase.prototype.mouseUp = function (e, env) {
             if (env.currentVectorLayer == null) {
                 return;
             }
-            if (this.selectionProcessID == SelectionProgressID.selecting) {
+            if (env.isModalToolRunning()) {
                 this.endSelection(env);
                 env.setRedrawMainWindow();
             }
             env.setRedrawEditorWindow();
         };
-        Tool_Select_BrushSelet_LinePoint.prototype.startSelection = function (e, env) {
+        Tool_BrushSelectLinePointBase.prototype.startSelection = function (e, env) {
             if (env.isCtrlKeyPressing()) {
                 this.logic_Selector.editMode = ManualTracingTool.SelectionEditMode.toggle;
             }
@@ -69,53 +70,74 @@ var ManualTracingTool;
             else {
                 this.logic_Selector.editMode = ManualTracingTool.SelectionEditMode.setSelected;
             }
+            this.onStartSelection(e, env);
             this.logic_Selector.startProcess();
-            this.selectionProcessID = SelectionProgressID.selecting;
+            env.startModalTool(this);
         };
-        Tool_Select_BrushSelet_LinePoint.prototype.processSelection = function (e, env) {
+        Tool_BrushSelectLinePointBase.prototype.onStartSelection = function (e, env) {
+        };
+        Tool_BrushSelectLinePointBase.prototype.processSelection = function (e, env) {
             this.logic_Selector.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorViewRadius);
         };
-        Tool_Select_BrushSelet_LinePoint.prototype.endSelection = function (env) {
-            if (this.selectionProcessID != SelectionProgressID.selecting) {
-                return;
-            }
+        Tool_BrushSelectLinePointBase.prototype.endSelection = function (env) {
             this.logic_Selector.endProcess();
-            this.selectionProcessID = SelectionProgressID.none;
             if (this.logic_Selector.selectionInfo.selectedLines.length == 0
                 && this.logic_Selector.selectionInfo.selectedPoints.length == 0) {
                 return;
             }
             this.executeCommand(env);
+            env.endModalTool();
         };
-        Tool_Select_BrushSelet_LinePoint.prototype.executeCommand = function (env) {
+        Tool_BrushSelectLinePointBase.prototype.executeCommand = function (env) {
+        };
+        return Tool_BrushSelectLinePointBase;
+    }(ManualTracingTool.ModalToolBase));
+    ManualTracingTool.Tool_BrushSelectLinePointBase = Tool_BrushSelectLinePointBase;
+    var Tool_Select_BrushSelect_LinePoint = /** @class */ (function (_super) {
+        __extends(Tool_Select_BrushSelect_LinePoint, _super);
+        function Tool_Select_BrushSelect_LinePoint() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Tool_Select_BrushSelect_LinePoint.prototype.prepareModal = function (e, env) {
+            return true;
+        };
+        Tool_Select_BrushSelect_LinePoint.prototype.cancelModal = function (env) {
+            for (var _i = 0, _a = this.logic_Selector.selectionInfo.selectedPoints; _i < _a.length; _i++) {
+                var selPoint = _a[_i];
+                selPoint.point.isSelected = selPoint.selectStateBefore;
+            }
+            this.logic_Selector.endProcess();
+            env.setRedrawMainWindowEditorWindow();
+        };
+        Tool_Select_BrushSelect_LinePoint.prototype.executeCommand = function (env) {
             var command = new Command_Select();
             command.selectionInfo = this.logic_Selector.selectionInfo;
             command.execute(env);
             env.commandHistory.addCommand(command);
         };
-        return Tool_Select_BrushSelet_LinePoint;
-    }(ManualTracingTool.ToolBase));
-    ManualTracingTool.Tool_Select_BrushSelet_LinePoint = Tool_Select_BrushSelet_LinePoint;
-    var Tool_Select_BrushSelet_Line = /** @class */ (function (_super) {
-        __extends(Tool_Select_BrushSelet_Line, _super);
-        function Tool_Select_BrushSelet_Line() {
+        return Tool_Select_BrushSelect_LinePoint;
+    }(Tool_BrushSelectLinePointBase));
+    ManualTracingTool.Tool_Select_BrushSelect_LinePoint = Tool_Select_BrushSelect_LinePoint;
+    var Tool_Select_BrushSelect_Line = /** @class */ (function (_super) {
+        __extends(Tool_Select_BrushSelect_Line, _super);
+        function Tool_Select_BrushSelect_Line() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.logic_Selector = new ManualTracingTool.Selector_Line_BrushSelect(); // @override
             return _this;
         }
-        return Tool_Select_BrushSelet_Line;
-    }(Tool_Select_BrushSelet_LinePoint));
-    ManualTracingTool.Tool_Select_BrushSelet_Line = Tool_Select_BrushSelet_Line;
-    var Tool_Select_BrushSelet_LineSegment = /** @class */ (function (_super) {
-        __extends(Tool_Select_BrushSelet_LineSegment, _super);
-        function Tool_Select_BrushSelet_LineSegment() {
+        return Tool_Select_BrushSelect_Line;
+    }(Tool_Select_BrushSelect_LinePoint));
+    ManualTracingTool.Tool_Select_BrushSelect_Line = Tool_Select_BrushSelect_Line;
+    var Tool_Select_BrushSelect_LineSegment = /** @class */ (function (_super) {
+        __extends(Tool_Select_BrushSelect_LineSegment, _super);
+        function Tool_Select_BrushSelect_LineSegment() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.logic_Selector = new ManualTracingTool.Selector_LineSegment_BrushSelect(); // @override
             return _this;
         }
-        return Tool_Select_BrushSelet_LineSegment;
-    }(Tool_Select_BrushSelet_LinePoint));
-    ManualTracingTool.Tool_Select_BrushSelet_LineSegment = Tool_Select_BrushSelet_LineSegment;
+        return Tool_Select_BrushSelect_LineSegment;
+    }(Tool_Select_BrushSelect_LinePoint));
+    ManualTracingTool.Tool_Select_BrushSelect_LineSegment = Tool_Select_BrushSelect_LineSegment;
     var Command_Select = /** @class */ (function (_super) {
         __extends(Command_Select, _super);
         function Command_Select() {

@@ -22,9 +22,11 @@ var ManualTracingTool;
         };
         Tool_EditImageFileReference.prototype.keydown = function (e, env) {
             if (e.key == 'o') {
-                env.openFileDialog();
-                //this.executeCommand(env);
+                env.openFileDialog(ManualTracingTool.OpenFileDialogTargetID.imageFileReferenceLayerFilePath);
             }
+        };
+        Tool_EditImageFileReference.prototype.toolWindowItemDoubleClick = function (e, env) {
+            env.openFileDialog(ManualTracingTool.OpenFileDialogTargetID.imageFileReferenceLayerFilePath);
         };
         Tool_EditImageFileReference.prototype.onOpenFile = function (filePath, env) {
             if (env.currentImageFileReferenceLayer != null) {
@@ -116,9 +118,6 @@ var ManualTracingTool;
             return true;
         };
         Tool_Transform_ReferenceImage.prototype.createEditData = function (e, env) {
-        };
-        Tool_Transform_ReferenceImage.prototype.cancelModal = function (env) {
-            env.setRedrawMainWindowEditorWindow();
         };
         Tool_Transform_ReferenceImage.prototype.processTransform = function (env) {
             var image = env.currentImageFileReferenceLayer.imageResource.image;

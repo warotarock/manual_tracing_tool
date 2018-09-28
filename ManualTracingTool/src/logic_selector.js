@@ -116,6 +116,22 @@ var ManualTracingTool;
                 }
             }
         };
+        VectorLayerEditorSelectionInfo.prototype.editPoint = function (point) {
+            if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
+                var selPoint = new PointSelectionInfo();
+                selPoint.point = point;
+                this.selectedPoints.push(selPoint);
+                point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.edit;
+            }
+        };
+        VectorLayerEditorSelectionInfo.prototype.deletePoint = function (point) {
+            if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
+                var selPoint = new PointSelectionInfo();
+                selPoint.point = point;
+                this.selectedPoints.push(selPoint);
+                point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.delete;
+            }
+        };
         VectorLayerEditorSelectionInfo.prototype.updateLineSelectionState = function () {
             for (var _i = 0, _a = this.selectedLines; _i < _a.length; _i++) {
                 var selLineInfo = _a[_i];
@@ -155,7 +171,7 @@ var ManualTracingTool;
         Selector_LinePoint_BrushSelect.prototype.beforeHitTest = function () {
             this.selectionInfo.clear();
         };
-        Selector_LinePoint_BrushSelect.prototype.onPointHited = function (line, point) {
+        Selector_LinePoint_BrushSelect.prototype.onPointHited = function (group, line, point) {
             this.selectionInfo.selectPoint(line, point, this.editMode);
         };
         Selector_LinePoint_BrushSelect.prototype.afterHitTest = function () {

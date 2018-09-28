@@ -22,7 +22,7 @@ var ManualTracingTool;
         __extends(Tool_ScratchLineWidth, _super);
         function Tool_ScratchLineWidth() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.helpText = '線の太くします。SHIFTキーで線を細くします。最大は描画の線の太さ、最小は0.1です。';
+            _this.helpText = '線を最大の太さに近づけます。Shiftキーで線を細くします。<br />Ctrlキーで最大の太さ固定になります。';
             _this.enableExtrude = false;
             return _this;
         }
@@ -41,14 +41,14 @@ var ManualTracingTool;
                 command.targetLine = targetLine;
                 if (env.isCtrlKeyPressing()) {
                     command.fixedOverWriting = true;
-                    command.fixedOverWritingLineWidth = 3.0;
+                    command.fixedOverWritingLineWidth = env.drawLineBaseWidth;
                 }
                 for (var _i = 0, candidatePointPairs_1 = candidatePointPairs; _i < candidatePointPairs_1.length; _i++) {
                     var pair = candidatePointPairs_1[_i];
                     var editPoint = new Tool_ScratchLineWidth_EditPoint();
                     editPoint.pair = pair;
                     if (env.isShiftKeyPressing()) {
-                        editPoint.pair.candidatePoint.lineWidth = 0.1;
+                        editPoint.pair.candidatePoint.lineWidth = env.drawLineMinWidth;
                     }
                     else {
                         editPoint.pair.candidatePoint.lineWidth = env.drawLineBaseWidth;

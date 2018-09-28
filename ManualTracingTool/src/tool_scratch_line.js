@@ -49,14 +49,13 @@ var ManualTracingTool;
             _this.curveCheckPointCount = 3;
             _this.cutoutAngle = 30 / 180.0 * Math.PI;
             _this.editFalloffRadiusMinRate = 0.15;
-            _this.editFalloffRadiusMaxRate = 1.5;
-            _this.editFalloffNormaldistanceRate = 2.0;
+            _this.editFalloffRadiusMaxRate = 2.0;
             _this.editInfluence = 0.5;
             _this.editExtrudeMinRadiusRate = 0.5;
             _this.editExtrudeMaxRadiusRate = 1.0;
             _this.tool_ScratchLine_EditLine_Visible = true;
             _this.tool_ScratchLine_TargetLine_Visible = true;
-            _this.tool_ScratchLine_SampledLine_Visible = false;
+            _this.tool_ScratchLine_SampledLine_Visible = true;
             _this.tool_ScratchLine_CandidatePoints_Visible = false;
             _this.tool_ScratchLine_ExtrudePoints_Visible = false;
             return _this;
@@ -221,7 +220,7 @@ var ManualTracingTool;
             }
         };
         Tool_ScratchLine.prototype.resampleLine = function (baseLine, env) {
-            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
+            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength * 2.0);
             var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(baseLine.totalLength, resamplingUnitLength);
             if (divisionCount > this.maxResamplingDivisionCount) {
                 divisionCount = this.maxResamplingDivisionCount;
@@ -295,11 +294,14 @@ var ManualTracingTool;
                         continue;
                     }
                     var normalDistance = vec3.distance(point.location, this.nearestPointLocation);
-                    if (normalDistance > editFalloffRadiusMax * this.editFalloffNormaldistanceRate) {
+                    if (normalDistance > editFalloffRadiusMax) {
                         continue;
                     }
                     // Calculate edit influence
                     var sorroundingDistance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(nearestLinePoint1.location, nearestLinePoint2.location, this.nearestPointLocation[0], this.nearestPointLocation[1]);
+                    if (sorroundingDistance > editFalloffRadiusMax) {
+                        continue;
+                    }
                     var normPositionInEditorLineSegment = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(nearestLinePoint1.location, nearestLinePoint2.location, point.location);
                     var totalLengthInEditorLine = (nearestLinePoint1.totalLength
                         + (nearestLinePoint2.totalLength - nearestLinePoint1.totalLength) * normPositionInEditorLineSegment);
@@ -440,21 +442,21 @@ var ManualTracingTool;
             return result;
         };
         Tool_ScratchLine.prototype.calculateCandidatePointInfluence = function (editorLine_TotalLength, normalDistance, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax) {
-            var falloffDistance = sorroundingDistance;
+            var falloffDistance = 1.0;
             if (editorLine_TotalLength > editFalloffRadiusMax * 2.0) {
                 if (totalLengthInEditorLine < editFalloffRadiusMax) {
-                    falloffDistance += (editFalloffRadiusMax - totalLengthInEditorLine);
+                    //falloffDistance = 0.0;
+                    falloffDistance = totalLengthInEditorLine / editFalloffRadiusMax;
                 }
                 if (totalLengthInEditorLine > editorLine_TotalLength - editFalloffRadiusMax) {
-                    falloffDistance += (totalLengthInEditorLine - (editorLine_TotalLength - editFalloffRadiusMax));
+                    //falloffDistance = 0.0;
+                    falloffDistance = (editorLine_TotalLength - totalLengthInEditorLine) / editFalloffRadiusMax;
                 }
             }
             else {
-                falloffDistance *= 2.0; // ※どうすべきか後で検討する
+                falloffDistance = 1.0 - sorroundingDistance / editFalloffRadiusMax;
             }
-            //console.log(nearestSegmentIndex + ' ' + falloffDistance.toFixed(2) + ' ' + normPositionInEditorLineSegment.toFixed(2) + ' ' + totalLengthInEditorLine.toFixed(2));
-            var distanceRate = ManualTracingTool.Maths.smoothstep(editFalloffRadiusMin, editFalloffRadiusMax, falloffDistance);
-            var influence = 1.0 - ManualTracingTool.Maths.clamp(distanceRate, 0.0, 1.0);
+            var influence = ManualTracingTool.Maths.clamp(falloffDistance, 0.0, 1.0);
             if (influence == 0.0) {
                 return 0.0;
             }

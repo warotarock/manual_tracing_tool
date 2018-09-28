@@ -198,7 +198,7 @@ var ManualTracingTool;
             // Calculate
             env.posing3DLogic.calculateHeadLocation(env.currentPosingData, env.currentPosingModel);
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         };
         return Tool_Posing3d_LocateHead;
     }(Tool_Posing3d_LineInputToolBase));
@@ -248,7 +248,7 @@ var ManualTracingTool;
             // Calculate
             env.posing3DLogic.calculateHeadRotation(env.currentPosingData, env.currentPosingModel);
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         };
         return Tool_Posing3d_RotateHead;
     }(Tool_Posing3d_PointInputToolBase));
@@ -296,7 +296,7 @@ var ManualTracingTool;
             // Calculate
             env.posing3DLogic.calculateHeadTwist(env.currentPosingData, env.currentPosingModel);
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         };
         return Tool_Posing3d_TwistHead;
     }(Tool_Posing3d_PointInputToolBase));
@@ -358,7 +358,7 @@ var ManualTracingTool;
                 }
             }
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         };
         return Tool_Posing3d_LocateBody;
     }(Tool_Posing3d_PointInputToolBase));
@@ -406,7 +406,7 @@ var ManualTracingTool;
             // Calculate
             env.posing3DLogic.calculateBodyRotation(env.currentPosingData, env.currentPosingModel);
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         };
         return Tool_Posing3d_RatateBody;
     }(Tool_Posing3d_PointInputToolBase));
@@ -463,7 +463,7 @@ var ManualTracingTool;
             this.executeCalculation(env);
             // Update dependent input
             env.setRedrawWebGLWindow();
-            env.setRedrawLayerWindow();
+            env.setRedrawSubtoolWindow();
         };
         return Tool_Posing3d_LocateLeftArm1;
     }(Tool_Posing3d_PointInputToolBase));

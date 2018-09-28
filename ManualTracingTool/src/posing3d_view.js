@@ -244,6 +244,7 @@ var ManualTracingTool;
             }
         };
         Posing3DView.prototype.drawVisualImage = function (env) {
+            var posingLayer = env.currentPosingLayer;
             var posingData = env.currentPosingData;
             var posingModel = env.currentPosingModel;
             if (this.drawingUnits.length == 0) {
@@ -252,6 +253,9 @@ var ManualTracingTool;
             this.render.setDepthTest(true);
             this.render.setCulling(true);
             this.render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
+            if (!posingLayer.isVisible) {
+                return;
+            }
             this.caluculateCameraMatrix(posingData.real3DViewHalfWidth, env.mainWindow);
             // Draws input manipulaters
             this.drawHeadSphere(DrawImageType.visualImage, env);

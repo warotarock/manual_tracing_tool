@@ -48,6 +48,7 @@ var ManualTracingTool;
         LinePointModifyFlagID[LinePointModifyFlagID["selectedToUnselected"] = 1] = "selectedToUnselected";
         LinePointModifyFlagID[LinePointModifyFlagID["unselectedToSelected"] = 2] = "unselectedToSelected";
         LinePointModifyFlagID[LinePointModifyFlagID["delete"] = 3] = "delete";
+        LinePointModifyFlagID[LinePointModifyFlagID["edit"] = 4] = "edit";
     })(LinePointModifyFlagID = ManualTracingTool.LinePointModifyFlagID || (ManualTracingTool.LinePointModifyFlagID = {}));
     var LinePoint = /** @class */ (function () {
         function LinePoint() {
@@ -78,17 +79,17 @@ var ManualTracingTool;
     var VectorLine = /** @class */ (function () {
         function VectorLine() {
             this.points = new List();
-            this.isCloseToMouse = false;
-            this.isEditTarget = false;
+            this.continuousFill = false;
             this.isSelected = false;
-            this.strokeWidth = 1.0;
-            // runtime
-            this.modifyFlag = VectorLineModifyFlagID.none;
             this.left = 999999.0;
             this.top = 999999.0;
             this.right = -999999.0;
             this.bottom = -999999.0;
             this.totalLength = 0.0;
+            // runtime
+            this.modifyFlag = VectorLineModifyFlagID.none;
+            this.isCloseToMouse = false;
+            this.isEditTarget = false;
         }
         return VectorLine;
     }());

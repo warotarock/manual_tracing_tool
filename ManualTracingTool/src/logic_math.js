@@ -57,7 +57,7 @@ var ManualTracingTool;
             var nAB_y = AB_y / len;
             //Aから線上最近点までの距離（ABベクトルの後ろにあるときはマイナス値）
             var dist_AX = (nAB_x * AP_x + nAB_y * AP_y);
-            return dist_AX;
+            return dist_AX / len;
         };
         Maths.pointToLine_NearestPoint = function (result, P_x, P_y, A_x, A_y, B_x, B_y) {
             // from: http://www.sousakuba.com/Programming/gs_near_pos_on_line.html
