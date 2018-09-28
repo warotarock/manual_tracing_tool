@@ -1218,8 +1218,29 @@ namespace ManualTracingTool {
 
         // Continuous processes
 
+        _LastTime: long = 0;
+        _ElapsedTime: long = 0;
+
         run() {
 
+            // process animation time
+
+            let currentTime = (new Date().getTime());
+            if (this._LastTime == 0) {
+
+                this._ElapsedTime = 100;
+            }
+            else {
+
+                this._ElapsedTime = currentTime - this._LastTime;
+            }
+            this._LastTime = currentTime;
+
+            this.selectCurrentLayerAnimationTime -= this._ElapsedTime / 1000.0;
+            if (this.selectCurrentLayerAnimationTime < 0) {
+
+                this.selectCurrentLayerAnimationTime = 0;
+            }
         }
 
         // Events
@@ -1842,6 +1863,12 @@ namespace ManualTracingTool {
                     e.preventDefault();
                     return;
                 }
+                else {
+
+                    this.selectNextOrPreviousLayer(true);
+                    this.startShowingCurrentLayer();
+                    env.setRedrawLayerWindow();
+                }
             }
 
             if (e.key == 'Home' || e.key == 'q') {
@@ -1959,6 +1986,19 @@ namespace ManualTracingTool {
                     this.tool_SelectAllPoints.execute(env);
                     e.preventDefault();
                 }
+                else {
+
+                    this.selectNextOrPreviousLayer(false);
+                    this.startShowingCurrentLayer();
+                    env.setRedrawLayerWindow();
+                }
+            }
+
+            if (e.key == 'w') {
+
+                this.layerPicking(this.mainWindow, this.editorWindow.toolMouseEvent.offsetX, this.editorWindow.toolMouseEvent.offsetY);
+                this.startShowingCurrentLayer();
+                e.preventDefault();
             }
 
             if (e.key == 'g' || e.key == 'r' || e.key == 's') {
@@ -2202,6 +2242,26 @@ namespace ManualTracingTool {
             }
 
             layer.isSelected = true;
+        }
+
+        private selectNextOrPreviousLayer(selectNext: boolean) {
+
+            let item = this.findCurrentLayerLayerWindowItem();
+
+            if (selectNext) {
+
+                if (item.nextItem != null) {
+
+                    this.setCurrentLayer(item.nextItem.layer);
+                }
+            }
+            else {
+
+                if (item.previousItem != null) {
+
+                    this.setCurrentLayer(item.previousItem.layer);
+                }
+            }
         }
 
         public startModalTool(modalTool: ModalToolBase) { //@implements MainEditor
@@ -2965,6 +3025,7 @@ namespace ManualTracingTool {
             this.toolEnv.updateContext();
 
             if (this.footerText != this.footerTextBefore) {
+
                 this.getElement('footer').innerHTML = this.footerText;
                 this.footerTextBefore = this.footerText;
             }
@@ -2976,6 +3037,11 @@ namespace ManualTracingTool {
                 this.clearWindow(this.mainWindow);
 
                 this.drawMainWindow(this.mainWindow);
+
+                if (this.selectCurrentLayerAnimationTime > 0.0) {
+
+                    this.toolEnv.setRedrawMainWindow();
+                }
             }
 
             if (this.toolContext.redrawEditorWindow) {
@@ -3046,39 +3112,38 @@ namespace ManualTracingTool {
 
         private drawMainWindow(canvasWindow: CanvasWindow) {
 
+            let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
+
             this.canvasRender.setContext(canvasWindow);
 
             for (let i = this.document.rootLayer.childLayers.length - 1; i >= 0; i--) {
                 let layer = this.document.rootLayer.childLayers[i];
 
-                this.drawLayerRecursive(layer, this.document)
+                this.drawLayerRecursive(layer, currentLayerOnly, this.document)
             }
         }
 
-        private drawLayerRecursive(layer: Layer, documentData: DocumentData) {
+        private drawLayerRecursive(layer: Layer, currentLayerOnly: boolean, documentData: DocumentData) {
 
             if (!layer.isVisible) {
-
                 return;
             }
 
-            if (layer.type == LayerTypeID.vectorLayer) {
+            if (currentLayerOnly && layer != this.toolContext.currentLayer) {
+                return;
+            }
+
+            if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
                 this.drawVectorLayer(vectorLayer, vectorLayer.geometry, documentData);
-            }
-            else if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
-
-                let vectorLayerReferenceLayer = <VectorLayerReferenceLayer>layer;
-                let referenceLayer = vectorLayerReferenceLayer.referenceLayer;
-                this.drawVectorLayer(vectorLayerReferenceLayer, referenceLayer.geometry, documentData);
             }
             else if (layer.type == LayerTypeID.groupLayer) {
 
                 for (let i = layer.childLayers.length - 1; i >= 0; i--) {
                     let childLayer = layer.childLayers[i];
 
-                    this.drawLayerRecursive(childLayer, documentData);
+                    this.drawLayerRecursive(childLayer, currentLayerOnly, documentData);
                 }
             }
             else if (layer.type == LayerTypeID.posingLayer) {
@@ -3495,6 +3560,68 @@ namespace ManualTracingTool {
             this.canvasRender.setGlobalAlpha(1.0);
         }
 
+        private layerPicking(canvasWindow: CanvasWindow, pickLocationX: float, pickLocationY: float): int {
+
+            if (this.layerWindowItems == null) {
+                return -1;
+            }
+
+            let documentData = this.document;
+
+            for (let layerWindowItem of this.layerWindowItems) {
+
+                if (!VectorLayer.isVectorLayer(layerWindowItem.layer)) {
+                    continue;
+                }
+
+                let vectorLayer = <VectorLayer>layerWindowItem.layer;
+
+                this.clearWindow(canvasWindow);
+
+                this.canvasRender.setContext(canvasWindow);
+
+                this.drawVectorLayer(vectorLayer, vectorLayer.geometry, documentData);
+
+                this.canvasRender.pickColor(this.tempColor4, canvasWindow, pickLocationX, pickLocationY);
+
+                if (this.tempColor4[3] > 0.0) {
+
+                    this.setCurrentLayer(layerWindowItem.layer);
+                    this.toolEnv.setRedrawLayerWindow();
+                    break;
+                } 
+            }
+
+            this.drawMainWindow(this.mainWindow);
+        }
+
+        private selectCurrentLayerAnimationTime = 0.0;
+        private selectCurrentLayerAnimationTimeMax = 0.7;
+
+        private startShowingCurrentLayer() {
+
+            this.selectCurrentLayerAnimationTime = this.selectCurrentLayerAnimationTimeMax;
+            this.toolEnv.setRedrawMainWindow();
+
+            let layerWindow = this.layerWindow;
+
+            let item = this.findCurrentLayerLayerWindowItem();
+            if (item != null) {
+
+                let viewTop = layerWindow.viewLocation[1];
+
+                if (item.top < viewTop + layerWindow.layerItemHeight * 2.0) {
+
+                    layerWindow.viewLocation[1] = item.top - layerWindow.layerItemHeight * 2.0;
+                }
+                else if (item.top > viewTop + layerWindow.height - layerWindow.layerItemHeight * 2.0) {
+
+                    layerWindow.viewLocation[1] = item.top - layerWindow.height + layerWindow.layerItemHeight * 2.0;
+                }
+
+            }
+        }
+
         // Editor window drawing
 
         private drawEditorWindow(editorWindow: CanvasWindow, mainWindow: CanvasWindow) {
@@ -3713,14 +3840,29 @@ namespace ManualTracingTool {
             }
         }
 
-        private findCurrentLayerLayerWindowItem(): LayerWindowItem {
+        private findCurrentLayerLayerWindowItemIndex() {
 
-            for (let item of this.layerWindowItems) {
+            for (let index = 0; index < this.layerWindowItems.length; index++) {
+                let item = this.layerWindowItems[index];
 
                 if (item.layer == this.toolContext.currentLayer) {
 
-                    return item;
+                    return index;
                 }
+            }
+
+            return -1;
+        }
+
+        private findCurrentLayerLayerWindowItem(): LayerWindowItem {
+
+            let index = this.findCurrentLayerLayerWindowItemIndex();
+
+            if (index != -1) {
+
+                let item = this.layerWindowItems[index];
+
+                return item;
             }
 
             return null;

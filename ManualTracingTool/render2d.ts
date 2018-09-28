@@ -236,5 +236,17 @@ namespace ManualTracingTool {
 
             this.context.drawImage(image, srcX, srcY, srcW, srcH, dstX, detY, dstW, dstH);
         }
+
+        pickColor(outColor: Vec4, canvasWindow: CanvasWindow, x: float, y: float) {
+
+            let imageData = canvasWindow.context.getImageData(Math.floor(x), Math.floor(y), 1, 1);
+
+            vec4.set(outColor,
+                imageData.data[0],
+                imageData.data[1],
+                imageData.data[2],
+                imageData.data[3]
+            );
+        }
     }
 }
