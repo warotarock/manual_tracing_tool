@@ -3921,10 +3921,7 @@ namespace ManualTracingTool {
             if (this.layerWindowButtons.length > 0) {
 
                 let lastButton = this.layerWindowButtons[this.layerWindowButtons.length - 1];
-
-                layerWindow.layerItemButtonButtom = lastButton.bottom;
-
-                this.layerWindowLayoutArea.top = lastButton.bottom + 1.0;
+                this.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0;// lastButton.bottom + 1.0;
             }
 
             // layer items
@@ -3934,7 +3931,7 @@ namespace ManualTracingTool {
         private caluculateLayerWindowLayout_LayerButtons(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
 
             let currentX = layoutArea.left;
-            let currentY = layoutArea.top;
+            let currentY = layerWindow.viewLocation[1]; // layoutArea.top;
             let unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
             let unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
 
@@ -3946,6 +3943,8 @@ namespace ManualTracingTool {
                 button.bottom = currentY + unitHeight - 1;
 
                 currentX += unitWidth;
+
+                layerWindow.layerItemButtonButtom = button.bottom + 1.0;
             }
         }
 
@@ -3983,15 +3982,25 @@ namespace ManualTracingTool {
 
             this.canvasRender.setContext(layerWindow);
 
-            this.drawLayerWindow_LayerWindowButtons(layerWindow);
-
             this.drawLayerWindow_LayerItems(layerWindow);
+
+            this.drawLayerWindow_LayerWindowButtons(layerWindow);
         }
 
         layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
         layerWindowItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
 
         private drawLayerWindow_LayerWindowButtons(layerWindow: LayerWindow) {
+
+            this.caluculateLayerWindowLayout_LayerButtons(layerWindow, this.layerWindowLayoutArea);
+
+            if (this.layerWindowButtons.length > 0) {
+
+                let button = this.layerWindowButtons[0];
+
+                this.canvasRender.setFillColorV(this.layerWindowBackgroundColor);
+                this.canvasRender.fillRect(0.0, button.top, layerWindow.width - 1, button.getHeight());
+            }
 
             for (let button of this.layerWindowButtons) {
 
