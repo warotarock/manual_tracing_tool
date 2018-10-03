@@ -74,6 +74,23 @@ namespace ManualTracingTool {
         drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean);
     }
 
+    export class ToolBaseWindow extends CanvasWindow {
+
+        toolMouseEvent = new ToolMouseEvent();
+        dragBeforeViewLocation = vec3.create();
+
+        startMouseDragging() {
+
+            this.toolMouseEvent.startMouseDragging();
+            vec3.copy(this.dragBeforeViewLocation, this.viewLocation);
+        }
+
+        endMouseDragging() {
+
+            this.toolMouseEvent.endMouseDragging();
+        }
+    }
+
     export class PickingWindow extends CanvasWindow {
 
         maxDepth = 4.0;
