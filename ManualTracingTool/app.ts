@@ -2559,7 +2559,7 @@ namespace ManualTracingTool {
             active: false
         };
 
-        private createModalOptionObject(targetElementId: string): any {
+        private createModalOptionObject(targetElementId: string, positionY: string): any {
 
             return {
                 content: {
@@ -2567,6 +2567,8 @@ namespace ManualTracingTool {
                     close: true,
                     speedIn: 0,
                     delay: 0,
+                    positionX: 'center',
+                    positionY: 'center',
                     speedOut: 100
                 },
                 overlay: this.modalOverlayOption,
@@ -4717,7 +4719,6 @@ namespace ManualTracingTool {
         _Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
-        //document.getElementById('footer').appendChild(_Main.pickingWindow.canvas);
 
         var layerColorModal_colors = document.getElementById(_Main.ID.palletColorModal_colors);
         for (let palletColorIndex = 0; palletColorIndex < DocumentData.maxPalletColors; palletColorIndex++) {
