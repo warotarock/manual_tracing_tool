@@ -54,6 +54,24 @@ var ManualTracingTool;
         OpenFileDialogTargetID[OpenFileDialogTargetID["saveDocument"] = 2] = "saveDocument";
         OpenFileDialogTargetID[OpenFileDialogTargetID["imageFileReferenceLayerFilePath"] = 3] = "imageFileReferenceLayerFilePath";
     })(OpenFileDialogTargetID = ManualTracingTool.OpenFileDialogTargetID || (ManualTracingTool.OpenFileDialogTargetID = {}));
+    var ToolBaseWindow = /** @class */ (function (_super) {
+        __extends(ToolBaseWindow, _super);
+        function ToolBaseWindow() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.toolMouseEvent = new ToolMouseEvent();
+            _this.dragBeforeViewLocation = vec3.create();
+            return _this;
+        }
+        ToolBaseWindow.prototype.startMouseDragging = function () {
+            this.toolMouseEvent.startMouseDragging();
+            vec3.copy(this.dragBeforeViewLocation, this.viewLocation);
+        };
+        ToolBaseWindow.prototype.endMouseDragging = function () {
+            this.toolMouseEvent.endMouseDragging();
+        };
+        return ToolBaseWindow;
+    }(ManualTracingTool.CanvasWindow));
+    ManualTracingTool.ToolBaseWindow = ToolBaseWindow;
     var PickingWindow = /** @class */ (function (_super) {
         __extends(PickingWindow, _super);
         function PickingWindow() {

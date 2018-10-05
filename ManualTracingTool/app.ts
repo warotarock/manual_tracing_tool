@@ -904,13 +904,13 @@ namespace ManualTracingTool {
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.drawLine)
-                    .subTool(this.tool_DrawLine, this.subToolImages[0], 0)
-                    .subTool(this.tool_ScratchLine, this.subToolImages[1], 0)
-                    .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 1)
-                    .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 2)
-                    .subTool(this.tool_ResampleSegment, this.subToolImages[1], 3)
-                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 3)
-                    .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 3)
+                    .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
+                    .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
+                    .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
+                    .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
+                    .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
+                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
+                    .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
             );
 
             this.mainTools.push(

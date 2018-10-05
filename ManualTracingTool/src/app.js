@@ -129,13 +129,14 @@ var ManualTracingTool;
         function Main() {
             this.mainProcessState = MainProcessStateID.none;
             // UI elements
-            this.mainWindow = new ManualTracingTool.CanvasWindow();
-            this.editorWindow = new ToolBaseWindow();
+            this.mainWindow = new MainWindow();
+            this.editorWindow = new ManualTracingTool.CanvasWindow();
             this.webglWindow = new ManualTracingTool.CanvasWindow();
             this.pickingWindow = new ManualTracingTool.PickingWindow();
             this.layerWindow = new LayerWindow();
             this.subtoolWindow = new SubtoolWindow();
             this.renderingWindow = new ManualTracingTool.CanvasWindow();
+            this.activeCanvasWindow = null;
             this.canvasRender = new ManualTracingTool.CanvasRender();
             this.webGLRender = new WebGLRender();
             this.ID = new HTMLElementID();
@@ -249,9 +250,6 @@ var ManualTracingTool;
             this.modalLoaderOption = {
                 active: false
             };
-            // Main window drawing
-            this.dragBeforeTransformMatrix = mat4.create();
-            this.dragBeforeViewLocation = vec3.create();
             this.selectCurrentLayerAnimationTime = 0.0;
             this.selectCurrentLayerAnimationTimeMax = 0.7;
             this.operatorCurosrLineDash = [2.0, 2.0];
@@ -712,13 +710,13 @@ var ManualTracingTool;
             // Constructs main tools and sub tools structure
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.none));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.drawLine)
-                .subTool(this.tool_DrawLine, this.subToolImages[0], 0)
-                .subTool(this.tool_ScratchLine, this.subToolImages[1], 0)
-                .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 1)
-                .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 2)
-                .subTool(this.tool_ResampleSegment, this.subToolImages[1], 3)
-                .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 3)
-                .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 3));
+                .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
+                .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
+                .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
+                .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
+                .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
+                .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
+                .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.scratchLine)
                 .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
                 .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2));
@@ -768,58 +766,58 @@ var ManualTracingTool;
         Main.prototype.setEvents = function () {
             var _this = this;
             this.editorWindow.canvas.addEventListener('mousedown', function (e) {
-                _this.getMouseInfo(_this.editorWindow.toolMouseEvent, e, false, _this.mainWindow);
-                _this.mainWindow_mousedown(_this.editorWindow.toolMouseEvent);
+                _this.getMouseInfo(_this.mainWindow.toolMouseEvent, e, false, _this.mainWindow);
+                _this.mainWindow_mousedown();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mousemove', function (e) {
-                _this.getMouseInfo(_this.editorWindow.toolMouseEvent, e, false, _this.mainWindow);
-                _this.mainWindow_mousemove(_this.editorWindow.toolMouseEvent);
+                _this.getMouseInfo(_this.mainWindow.toolMouseEvent, e, false, _this.mainWindow);
+                _this.mainWindow_mousemove();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mouseup', function (e) {
-                _this.getMouseInfo(_this.editorWindow.toolMouseEvent, e, true, _this.mainWindow);
-                _this.mainWindow_mouseup(_this.editorWindow.toolMouseEvent);
+                _this.getMouseInfo(_this.mainWindow.toolMouseEvent, e, true, _this.mainWindow);
+                _this.mainWindow_mouseup();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchstart', function (e) {
-                _this.getTouchInfo(_this.editorWindow.toolMouseEvent, e, true, false, _this.mainWindow);
-                _this.mainWindow_mousedown(_this.editorWindow.toolMouseEvent);
+                _this.getTouchInfo(_this.mainWindow.toolMouseEvent, e, true, false, _this.mainWindow);
+                _this.mainWindow_mousedown();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchmove', function (e) {
-                _this.getTouchInfo(_this.editorWindow.toolMouseEvent, e, false, false, _this.mainWindow);
-                _this.mainWindow_mousemove(_this.editorWindow.toolMouseEvent);
+                _this.getTouchInfo(_this.mainWindow.toolMouseEvent, e, false, false, _this.mainWindow);
+                _this.mainWindow_mousemove();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchend', function (e) {
-                _this.getTouchInfo(_this.editorWindow.toolMouseEvent, e, false, true, _this.mainWindow);
-                _this.mainWindow_mouseup(_this.editorWindow.toolMouseEvent);
+                _this.getTouchInfo(_this.mainWindow.toolMouseEvent, e, false, true, _this.mainWindow);
+                _this.mainWindow_mouseup();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mousewheel', function (e) {
-                _this.getWheelInfo(_this.editorWindow.toolMouseEvent, e);
-                _this.editorWindow_mousewheel(_this.editorWindow.toolMouseEvent);
+                _this.getWheelInfo(_this.mainWindow.toolMouseEvent, e);
+                _this.editorWindow_mousewheel();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('mousedown', function (e) {
                 _this.getMouseInfo(_this.layerWindow.toolMouseEvent, e, false, _this.layerWindow);
-                _this.layerWindow_mousedown(_this.layerWindow.toolMouseEvent);
+                _this.layerWindow_mousedown();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('mousemove', function (e) {
                 _this.getMouseInfo(_this.layerWindow.toolMouseEvent, e, false, _this.layerWindow);
-                _this.layerWindow_mousemove(_this.layerWindow.toolMouseEvent);
+                _this.layerWindow_mousemove();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('mouseup', function (e) {
                 _this.getMouseInfo(_this.layerWindow.toolMouseEvent, e, true, _this.mainWindow);
-                _this.layerWindow_mouseup(_this.layerWindow.toolMouseEvent);
+                _this.layerWindow_mouseup();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('touchstart', function (e) {
                 _this.getTouchInfo(_this.layerWindow.toolMouseEvent, e, true, false, _this.layerWindow);
-                _this.layerWindow_mousedown(_this.layerWindow.toolMouseEvent);
+                _this.layerWindow_mousedown();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('touchmove', function (e) {
@@ -958,11 +956,13 @@ var ManualTracingTool;
             }
         };
         // Events
-        Main.prototype.mainWindow_mousedown = function (e) {
+        Main.prototype.mainWindow_mousedown = function () {
             if (!this.mainProcessState) {
                 return;
             }
             var context = this.toolContext;
+            var wnd = this.mainWindow;
+            var e = wnd.toolMouseEvent;
             this.toolEnv.updateContext();
             // Execute current tool
             if (this.isModalToolRunning()) {
@@ -976,29 +976,34 @@ var ManualTracingTool;
             }
             // View operation
             if (e.isRightButtonPressing() || e.isCenterButtonPressing()) {
-                this.mainWindow_MouseViewOperationStart(e);
+                this.mainWindow_MouseViewOperationStart();
             }
             else {
-                this.mainWindow_MouseViewOperationEnd(e);
+                this.mainWindow_MouseViewOperationEnd();
             }
             if (this.toolEnv.needsDrawOperatorCursor() && this.toolEnv.isCtrlKeyPressing()) {
                 vec3.copy(this.toolContext.operatorCursor.location, e.location);
                 this.toolEnv.setRedrawEditorWindow();
             }
         };
-        Main.prototype.mainWindow_MouseViewOperationStart = function (e) {
+        Main.prototype.mainWindow_MouseViewOperationStart = function () {
+            var wnd = this.mainWindow;
+            var e = wnd.toolMouseEvent;
             e.startMouseDragging();
-            mat4.copy(this.dragBeforeTransformMatrix, this.invView2DMatrix);
-            vec3.copy(this.dragBeforeViewLocation, this.mainWindow.viewLocation);
+            mat4.copy(wnd.dragBeforeTransformMatrix, this.invView2DMatrix);
+            vec3.copy(wnd.dragBeforeViewLocation, wnd.viewLocation);
         };
-        Main.prototype.mainWindow_MouseViewOperationEnd = function (e) {
+        Main.prototype.mainWindow_MouseViewOperationEnd = function () {
+            var e = this.mainWindow.toolMouseEvent;
             e.endMouseDragging();
         };
-        Main.prototype.mainWindow_mousemove = function (e) {
+        Main.prototype.mainWindow_mousemove = function () {
             if (this.isWhileLoading()) {
                 return;
             }
             var context = this.toolContext;
+            var wnd = this.mainWindow;
+            var e = wnd.toolMouseEvent;
             this.toolEnv.updateContext();
             // Execute current tool
             if (this.isModalToolRunning()) {
@@ -1019,18 +1024,20 @@ var ManualTracingTool;
             // View operation
             if (e.isMouseDragging) {
                 vec3.set(this.tempVec3, e.offsetX, e.offsetY, 0.0);
-                vec3.transformMat4(this.tempVec3, this.tempVec3, this.dragBeforeTransformMatrix);
+                vec3.transformMat4(this.tempVec3, this.tempVec3, wnd.dragBeforeTransformMatrix);
                 vec3.subtract(e.mouseMovedVector, e.mouseDownLocation, this.tempVec3);
-                vec3.add(this.mainWindow.viewLocation, this.dragBeforeViewLocation, e.mouseMovedVector);
+                vec3.add(this.mainWindow.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedVector);
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawWebGLWindow();
             }
         };
-        Main.prototype.mainWindow_mouseup = function (e) {
+        Main.prototype.mainWindow_mouseup = function () {
             if (this.isWhileLoading()) {
                 return;
             }
             var context = this.toolContext;
+            var wnd = this.mainWindow;
+            var e = wnd.toolMouseEvent;
             this.toolEnv.updateContext();
             // Draw mode
             if (this.toolEnv.isDrawMode()) {
@@ -1039,14 +1046,15 @@ var ManualTracingTool;
             else if (this.toolEnv.isSelectMode()) {
                 this.currentSelectTool.mouseUp(e, this.toolEnv);
             }
-            this.mainWindow_MouseViewOperationEnd(e);
+            this.mainWindow_MouseViewOperationEnd();
         };
-        Main.prototype.layerWindow_mousedown = function (e) {
+        Main.prototype.layerWindow_mousedown = function () {
             if (this.isWhileLoading()) {
                 return;
             }
             var context = this.toolContext;
             var wnd = this.layerWindow;
+            var e = wnd.toolMouseEvent;
             this.toolEnv.updateContext();
             var doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
             var clickedX = e.location[0];
@@ -1062,15 +1070,15 @@ var ManualTracingTool;
                 }
             }
             else if (e.isCenterButtonPressing() || e.isRightButtonPressing()) {
-                e.startMouseDragging();
-                vec3.copy(this.dragBeforeViewLocation, wnd.viewLocation);
+                wnd.startMouseDragging();
             }
         };
-        Main.prototype.layerWindow_mousemove = function (e) {
+        Main.prototype.layerWindow_mousemove = function () {
             var wnd = this.layerWindow;
+            var e = wnd.toolMouseEvent;
             // View operation
             if (e.isMouseDragging) {
-                vec3.add(wnd.viewLocation, this.dragBeforeViewLocation, e.mouseMovedOffset);
+                vec3.add(wnd.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedOffset);
                 wnd.viewLocation[0] = 0.0;
                 if (wnd.viewLocation[1] < 0.0) {
                     wnd.viewLocation[1] = 0.0;
@@ -1081,8 +1089,8 @@ var ManualTracingTool;
                 this.toolEnv.setRedrawLayerWindow();
             }
         };
-        Main.prototype.layerWindow_mouseup = function (e) {
-            e.endMouseDragging();
+        Main.prototype.layerWindow_mouseup = function () {
+            this.layerWindow.endMouseDragging();
         };
         Main.prototype.layerWindow_mousedown_LayerItemButton = function (clickedX, clickedY, doubleClicked) {
             var hitedButton = this.hitTestLayout(this.layerWindowButtons, clickedX, clickedY);
@@ -1227,15 +1235,14 @@ var ManualTracingTool;
                 }
             }
             else if (e.isCenterButtonPressing() || e.isRightButtonPressing()) {
-                e.startMouseDragging();
-                vec3.copy(this.dragBeforeViewLocation, wnd.viewLocation);
+                wnd.startMouseDragging();
             }
         };
         Main.prototype.subtoolWindow_mousemove = function (e) {
             var wnd = this.subtoolWindow;
             // View operation
             if (e.isMouseDragging) {
-                vec3.add(wnd.viewLocation, this.dragBeforeViewLocation, e.mouseMovedOffset);
+                vec3.add(wnd.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedOffset);
                 wnd.viewLocation[0] = 0.0;
                 if (wnd.viewLocation[1] < 0.0) {
                     wnd.viewLocation[1] = 0.0;
@@ -1247,12 +1254,14 @@ var ManualTracingTool;
             }
         };
         Main.prototype.subtoolWindow_mouseup = function (e) {
-            e.endMouseDragging();
+            this.subtoolWindow.endMouseDragging();
         };
-        Main.prototype.editorWindow_mousewheel = function (e) {
+        Main.prototype.editorWindow_mousewheel = function () {
             if (this.isWhileLoading()) {
                 return;
             }
+            var wnd = this.mainWindow;
+            var e = wnd.toolMouseEvent;
             // View operation
             if (e.wheelDelta != 0.0
                 && !e.isMouseDragging) {
@@ -1456,7 +1465,15 @@ var ManualTracingTool;
                 return;
             }
             if (e.key == ' ') {
-                this.mainWindow_MouseViewOperationStart(this.editorWindow.toolMouseEvent);
+                if (this.activeCanvasWindow == this.mainWindow) {
+                    this.mainWindow_MouseViewOperationStart();
+                }
+                else if (this.activeCanvasWindow == this.layerWindow) {
+                    this.layerWindow.startMouseDragging();
+                }
+                else if (this.activeCanvasWindow == this.subtoolWindow) {
+                    this.subtoolWindow.startMouseDragging();
+                }
                 e.preventDefault();
                 return;
             }
@@ -1472,7 +1489,7 @@ var ManualTracingTool;
                 }
             }
             if (e.key == 'w') {
-                this.layerPicking(this.mainWindow, this.editorWindow.toolMouseEvent.offsetX, this.editorWindow.toolMouseEvent.offsetY);
+                this.layerPicking(this.mainWindow, this.mainWindow.toolMouseEvent.offsetX, this.mainWindow.toolMouseEvent.offsetY);
                 this.startShowingCurrentLayer();
                 e.preventDefault();
             }
@@ -1555,7 +1572,15 @@ var ManualTracingTool;
                 return;
             }
             if (e.key == ' ') {
-                this.mainWindow_MouseViewOperationEnd(this.editorWindow.toolMouseEvent);
+                if (this.activeCanvasWindow == this.mainWindow) {
+                    this.mainWindow_MouseViewOperationEnd();
+                }
+                else if (this.activeCanvasWindow == this.layerWindow) {
+                    this.layerWindow.endMouseDragging();
+                }
+                else if (this.activeCanvasWindow == this.subtoolWindow) {
+                    this.subtoolWindow.endMouseDragging();
+                }
             }
         };
         Main.prototype.htmlWindow_resize = function (e) {
@@ -1653,7 +1678,7 @@ var ManualTracingTool;
             if (modalTool == null) {
                 return;
             }
-            var available = modalTool.prepareModal(this.editorWindow.toolMouseEvent, this.toolEnv);
+            var available = modalTool.prepareModal(this.mainWindow.toolMouseEvent, this.toolEnv);
             if (!available) {
                 return;
             }
@@ -1740,6 +1765,7 @@ var ManualTracingTool;
             canvasWindow.canvas.height = canvasWindow.height;
         };
         Main.prototype.getMouseInfo = function (toolMouseEvent, e, touchUp, canvasWindow) {
+            this.activeCanvasWindow = canvasWindow;
             toolMouseEvent.button = e.button;
             toolMouseEvent.buttons = e.buttons;
             if (touchUp) {
@@ -1753,6 +1779,7 @@ var ManualTracingTool;
             //console.log(e.offsetX.toFixed(2) + ',' + e.offsetY.toFixed(2) + '  ' + toolMouseEvent.offsetX.toFixed(2) + ',' + this.toolMouseEvent.offsetY.toFixed(2));
         };
         Main.prototype.getTouchInfo = function (toolMouseEvent, e, touchDown, touchUp, canvasWindow) {
+            this.activeCanvasWindow = canvasWindow;
             if (e.touches == undefined || e.touches.length == 0) {
                 toolMouseEvent.button = 0;
                 toolMouseEvent.buttons = 0;
@@ -1802,13 +1829,15 @@ var ManualTracingTool;
             }
             toolMouseEvent.wheelDelta = wheelDelta;
         };
-        Main.prototype.createModalOptionObject = function (targetElementId) {
+        Main.prototype.createModalOptionObject = function (targetElementId, positionY) {
             return {
                 content: {
                     target: targetElementId,
                     close: true,
                     speedIn: 0,
                     delay: 0,
+                    positionX: 'center',
+                    positionY: 'center',
                     speedOut: 100
                 },
                 overlay: this.modalOverlayOption,
@@ -2191,6 +2220,7 @@ var ManualTracingTool;
                 this.updateFooterMessage();
             }
         };
+        // Main window drawing
         Main.prototype.clearWindow = function (canvasWindow) {
             this.canvasRender.setContext(canvasWindow);
             this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
@@ -2596,7 +2626,7 @@ var ManualTracingTool;
             this.canvasRender.beginPath();
             this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
             this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
-            this.canvasRender.circle(this.editorWindow.toolMouseEvent.location[0], this.editorWindow.toolMouseEvent.location[1], this.getCurrentViewScaleLineWidth(this.toolContext.mouseCursorRadius));
+            this.canvasRender.circle(this.mainWindow.toolMouseEvent.location[0], this.mainWindow.toolMouseEvent.location[1], this.getCurrentViewScaleLineWidth(this.toolContext.mouseCursorRadius));
             this.canvasRender.stroke();
         };
         Main.prototype.drawEditorEditLineStroke = function (line) {
@@ -2687,15 +2717,14 @@ var ManualTracingTool;
             this.caluculateLayerWindowLayout_LayerButtons(layerWindow, this.layerWindowLayoutArea);
             if (this.layerWindowButtons.length > 0) {
                 var lastButton = this.layerWindowButtons[this.layerWindowButtons.length - 1];
-                layerWindow.layerItemButtonButtom = lastButton.bottom;
-                this.layerWindowLayoutArea.top = lastButton.bottom + 1.0;
+                this.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0; // lastButton.bottom + 1.0;
             }
             // layer items
             this.caluculateLayerWindowLayout_LayerWindowItem(layerWindow, this.layerWindowLayoutArea);
         };
         Main.prototype.caluculateLayerWindowLayout_LayerButtons = function (layerWindow, layoutArea) {
             var currentX = layoutArea.left;
-            var currentY = layoutArea.top;
+            var currentY = layerWindow.viewLocation[1]; // layoutArea.top;
             var unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
             var unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
             for (var _i = 0, _a = this.layerWindowButtons; _i < _a.length; _i++) {
@@ -2705,6 +2734,7 @@ var ManualTracingTool;
                 button.top = currentY;
                 button.bottom = currentY + unitHeight - 1;
                 currentX += unitWidth;
+                layerWindow.layerItemButtonButtom = button.bottom + 1.0;
             }
         };
         Main.prototype.caluculateLayerWindowLayout_LayerWindowItem = function (layerWindow, layoutArea) {
@@ -2731,10 +2761,16 @@ var ManualTracingTool;
         };
         Main.prototype.drawLayerWindow = function (layerWindow) {
             this.canvasRender.setContext(layerWindow);
-            this.drawLayerWindow_LayerWindowButtons(layerWindow);
             this.drawLayerWindow_LayerItems(layerWindow);
+            this.drawLayerWindow_LayerWindowButtons(layerWindow);
         };
         Main.prototype.drawLayerWindow_LayerWindowButtons = function (layerWindow) {
+            this.caluculateLayerWindowLayout_LayerButtons(layerWindow, this.layerWindowLayoutArea);
+            if (this.layerWindowButtons.length > 0) {
+                var button = this.layerWindowButtons[0];
+                this.canvasRender.setFillColorV(this.layerWindowBackgroundColor);
+                this.canvasRender.fillRect(0.0, button.top, layerWindow.width - 1, button.getHeight());
+            }
             for (var _i = 0, _a = this.layerWindowButtons; _i < _a.length; _i++) {
                 var button = _a[_i];
                 this.drawLayerWindow_LayerWindowButton(button);
@@ -3042,15 +3078,22 @@ var ManualTracingTool;
         };
         return Main;
     }());
-    var ToolBaseWindow = /** @class */ (function (_super) {
-        __extends(ToolBaseWindow, _super);
-        function ToolBaseWindow() {
+    var MainWindow = /** @class */ (function (_super) {
+        __extends(MainWindow, _super);
+        function MainWindow() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.toolMouseEvent = new ManualTracingTool.ToolMouseEvent();
+            _this.dragBeforeTransformMatrix = mat4.create();
             return _this;
         }
-        return ToolBaseWindow;
-    }(ManualTracingTool.CanvasWindow));
+        return MainWindow;
+    }(ManualTracingTool.ToolBaseWindow));
+    var EditorWindow = /** @class */ (function (_super) {
+        __extends(EditorWindow, _super);
+        function EditorWindow() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return EditorWindow;
+    }(ManualTracingTool.ToolBaseWindow));
     var LayerWindow = /** @class */ (function (_super) {
         __extends(LayerWindow, _super);
         function LayerWindow() {
@@ -3067,7 +3110,7 @@ var ManualTracingTool;
             return _this;
         }
         return LayerWindow;
-    }(ToolBaseWindow));
+    }(ManualTracingTool.ToolBaseWindow));
     var SubtoolWindow = /** @class */ (function (_super) {
         __extends(SubtoolWindow, _super);
         function SubtoolWindow() {
@@ -3082,7 +3125,7 @@ var ManualTracingTool;
             return _this;
         }
         return SubtoolWindow;
-    }(ToolBaseWindow));
+    }(ManualTracingTool.ToolBaseWindow));
     var RectangleLayoutArea = /** @class */ (function () {
         function RectangleLayoutArea() {
             this.index = -1;
@@ -3258,7 +3301,6 @@ var ManualTracingTool;
         _Main.subtoolWindow.canvas = document.getElementById(_Main.ID.subtoolCanvas);
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
-        //document.getElementById('footer').appendChild(_Main.pickingWindow.canvas);
         var layerColorModal_colors = document.getElementById(_Main.ID.palletColorModal_colors);
         for (var palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
             var colorItemDiv = document.createElement('div');
