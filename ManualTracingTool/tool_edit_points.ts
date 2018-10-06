@@ -1,7 +1,7 @@
 ﻿
 namespace ManualTracingTool {
 
-    export class Selector_EditLinePointWidth_BrushSelect extends Selector_LinePoint_BrushSelect {
+    export class Selector_HideLinePoint_BrushSelect extends Selector_LinePoint_BrushSelect {
 
         lineWidth = 0.0;
 
@@ -21,21 +21,21 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_EditLinePointWidth_BrushSelect extends Tool_BrushSelectLinePointBase {
+    export class Tool_HideLinePoint_BrushSelect extends Tool_BrushSelectLinePointBase {
 
-        helpText = '線の太さを０に設定し、非表示にします。表示した場合は線の太さを変更してください。';
+        helpText = '線の太さを０に設定し、非表示にします。表示したい場合は線の太さを変更してください。';
 
-        logic_Selector: ISelector_BrushSelect = new Selector_EditLinePointWidth_BrushSelect(); // @override
+        logic_Selector: ISelector_BrushSelect = new Selector_HideLinePoint_BrushSelect(); // @override
 
         protected onStartSelection(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            let logic_Selector = (<Selector_EditLinePointWidth_BrushSelect>this.logic_Selector);
+            let logic_Selector = (<Selector_HideLinePoint_BrushSelect>this.logic_Selector);
             logic_Selector.lineWidth = 0.0;
         }
 
         protected executeCommand(env: ToolEnvironment) { // @override
 
-            let command = new Command_EditLineWidth();
+            let command = new Command_EditLinePointLineWidth();
             if (command.prepareEditTargets(this.logic_Selector.selectionInfo)) {
 
                 command.execute(env);
@@ -66,7 +66,7 @@ namespace ManualTracingTool {
         oldLineWidth = 0.0;
     }
 
-    export class Command_EditLineWidth extends CommandBase {
+    export class Command_EditLinePointLineWidth extends CommandBase {
 
         editPoints = new List<Tool_EditLineWidth_EditPoint>();
 
