@@ -139,6 +139,7 @@ namespace ManualTracingTool {
         pickingWindow = new PickingWindow();
         layerWindow = new LayerWindow();
         subtoolWindow = new SubtoolWindow();
+        timeLineWindow = new TimeLineWindow();
 
         renderingWindow = new CanvasWindow();
 
@@ -213,7 +214,7 @@ namespace ManualTracingTool {
         tool_ScratchLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
         tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
-        tool_EditLinePointWidth_BrushSelect = new Tool_EditLinePointWidth_BrushSelect();
+        tool_EditLinePointWidth_BrushSelect = new Tool_HideLinePoint_BrushSelect();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
 
@@ -298,6 +299,7 @@ namespace ManualTracingTool {
             this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
             this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
             this.subtoolWindow.context = this.subtoolWindow.canvas.getContext('2d');
+            this.timeLineWindow.context = this.timeLineWindow.canvas.getContext('2d');
 
             this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
 
@@ -778,6 +780,12 @@ namespace ManualTracingTool {
                 vec3.copy(ifrLayer.adjustingRotation, ifrLayer.rotation);
                 vec3.copy(ifrLayer.adjustingScale, ifrLayer.scale);
             }
+            else if (layer.type == LayerTypeID.posingLayer) {
+
+                let posingLayer = <PosingLayer>layer;
+
+                posingLayer.drawingUnits = null;
+            }            
 
             for (let childLayer of layer.childLayers) {
 
@@ -2422,6 +2430,7 @@ namespace ManualTracingTool {
 
             this.resizeCanvasToParent(this.layerWindow);
             this.resizeCanvasToParent(this.subtoolWindow);
+            this.resizeCanvasToParent(this.timeLineWindow);
 
             if (this.isWhileLoading()) {
 
@@ -2459,6 +2468,18 @@ namespace ManualTracingTool {
                 toolMouseEvent.buttons = 0;
             }
 
+            // ____________| forefox | chrome        | opera         | firefox with pen
+            // L down      | 0, 1    | 0, 1 and 0, 1 | 0, 1          | 0, 0
+            // move with L | 0, 1    | 0, 1          | 0, 1          |
+            // L up        | 0, 0    | 0, 0 and 0, 0 | 0, 0 and 0, 0 |
+            // R down      | 2, 2    | 2, 2 and 2, 0 | 2, 2          | 2, 2
+            // move with R | 2, 0    | 2, 0          | 2, 0          | 0, 2
+            // R up        | 0, 0    | 2, 0 and 0, 0 | 0, 0          | 2, 0
+            // M down      | 1, 4    | 1, 4 and 0, 4 | 1, 4          |
+            // move with M | 0, 4    | 1, 0          | 0, 4          |
+            // M up        | 1, 0    | 1, 0 and 0, 0 | 1, 0 and 0, 0 |
+            console.log(e.button + ', ' + e.buttons);
+
             toolMouseEvent.offsetX = e.offsetX;
             toolMouseEvent.offsetY = e.offsetY;
             this.calculateTransfomredMouseParams(toolMouseEvent, canvasWindow);
@@ -2477,6 +2498,8 @@ namespace ManualTracingTool {
                 toolMouseEvent.buttons = 0;
                 return;
             }
+
+            console.log(e.touches.length);
 
             var rect = canvasWindow.canvas.getBoundingClientRect();
 
@@ -2559,7 +2582,7 @@ namespace ManualTracingTool {
             active: false
         };
 
-        private createModalOptionObject(targetElementId: string, positionY: string): any {
+        private createModalOptionObject(targetElementId: string): any {
 
             return {
                 content: {
@@ -3123,6 +3146,14 @@ namespace ManualTracingTool {
 
                 this.clearWindow(this.subtoolWindow);
                 this.subtoolWindow_Draw(this.subtoolWindow);
+            }
+
+            if (this.toolContext.redrawTimeLineWindow) {
+
+                this.toolContext.redrawTimeLineWindow = false;
+
+                this.clearWindow(this.timeLineWindow);
+                this.drawTimeLineWindow(this.timeLineWindow);
             }
 
             if (this.toolContext.redrawWebGLWindow) {
@@ -3804,20 +3835,39 @@ namespace ManualTracingTool {
 
         private drawWebGLWindow(mainWindow: CanvasWindow, webglWindow: CanvasWindow, pickingWindow: CanvasWindow) {
 
-            if (this.toolContext.currentPosingLayer == null
-                || this.toolContext.currentPosingData == null) {
-                return;
+            let env = this.toolEnv;
+
+            this.webGLRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
+            this.posing3dView.clear(env);
+
+            if (env.currentPosingLayer != null && this.toolContext.mainToolID == MainToolID.posing) {
+
+                let posingLayer = env.currentPosingLayer;
+
+                this.posing3dView.prepareDrawingStructures(posingLayer);
+                this.posing3dView.drawPickingImage(posingLayer, env);
+
+                mainWindow.copyTransformTo(pickingWindow);
+                pickingWindow.context.clearRect(0, 0, pickingWindow.width, pickingWindow.height);
+                pickingWindow.context.drawImage(webglWindow.canvas, 0, 0, webglWindow.width, webglWindow.height);
+
+                this.posing3dView.clear(env);
+                this.posing3dView.drawManipulaters(posingLayer, env);
             }
 
-            mainWindow.copyTransformTo(pickingWindow);
-            this.webGLRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
+            for (let index = this.layerWindowItems.length - 1; index >= 0; index--) {
 
-            this.posing3dView.drawPickingImage(this.toolEnv);
+                let item = this.layerWindowItems[index];
 
-            pickingWindow.context.clearRect(0, 0, pickingWindow.width, pickingWindow.height);
-            pickingWindow.context.drawImage(webglWindow.canvas, 0, 0, webglWindow.width, webglWindow.height);
+                if (item.layer.type != LayerTypeID.posingLayer) {
+                    continue;
+                }
 
-            this.posing3dView.drawVisualImage(this.toolEnv);
+                let posingLayer = <PosingLayer>item.layer;
+
+                this.posing3dView.prepareDrawingStructures(posingLayer);
+                this.posing3dView.drawPosingModel(posingLayer, env);
+            }
         }
 
         // Layer window drawing
@@ -4224,6 +4274,12 @@ namespace ManualTracingTool {
             this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
         }
 
+        // TimeLine window drawing
+
+        private drawTimeLineWindow(TimeLineWindow: TimeLineWindow) {
+
+        }
+
         // Header window drawing
 
         private updateHeaderButtons() {
@@ -4516,15 +4572,15 @@ namespace ManualTracingTool {
 
     class SubtoolWindow extends ToolBaseWindow {
 
-        clickCount = 0;
-        clickedX = 0;
-        clickedY = 0;
-
         subToolItemScale = 0.5;
         subToolItemUnitWidth = 256;
         subToolItemUnitHeight = 128;
 
         subToolItemsBottom = 0.0;
+    }
+
+    class TimeLineWindow extends ToolBaseWindow {
+
     }
 
     class RectangleLayoutArea {
@@ -4628,6 +4684,7 @@ namespace ManualTracingTool {
         webglCanvas = 'webglCanvas';
         layerCanvas = 'layerCanvas';
         subtoolCanvas = 'subtoolCanvas';
+        timeLineCanvas = 'timeLineCanvas';
 
         menu_btnDrawTool = 'menu_btnDrawTool';
         menu_btnScratchTool = 'menu_btnScratchTool';
@@ -4717,6 +4774,7 @@ namespace ManualTracingTool {
         _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.webglCanvas);
         _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
         _Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
+        _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
 

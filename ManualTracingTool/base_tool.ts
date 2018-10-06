@@ -134,6 +134,7 @@ namespace ManualTracingTool {
         redrawLayerWindow = false;
         redrawSubtoolWindow = false;
         updateLayerWindowItems = false;
+        redrawTimeLineWindow = false;
         redrawWebGLWindow = false;
         redrawHeaderWindow = false;
         redrawFooterWindow = false;
@@ -254,6 +255,13 @@ namespace ManualTracingTool {
             this.toolContext.redrawEditorWindow = true;
         }
 
+        setRedrawMainWindowEditorWindow() {
+
+            this.setRedrawMainWindow();
+            this.setRedrawEditorWindow();
+            this.setRedrawWebGLWindow();
+        }
+
         setRedrawLayerWindow() {
 
             this.toolContext.redrawLayerWindow = true;
@@ -270,11 +278,14 @@ namespace ManualTracingTool {
             this.toolContext.redrawSubtoolWindow = true;
         }
 
-        setRedrawMainWindowEditorWindow() {
+        setRedrawTimeLineWindow() {
 
-            this.setRedrawMainWindow();
-            this.setRedrawEditorWindow();
-            this.setRedrawWebGLWindow();
+            this.toolContext.redrawTimeLineWindow = true;
+        }
+
+        setRedrawWebGLWindow() {
+
+            this.toolContext.redrawWebGLWindow = true;
         }
 
         setRedrawAllWindows() {
@@ -282,11 +293,8 @@ namespace ManualTracingTool {
             this.setRedrawMainWindowEditorWindow();
             this.setUpadateLayerWindowItems();
             this.setRedrawSubtoolWindow();
-        }
-
-        setRedrawWebGLWindow() {
-
-            this.toolContext.redrawWebGLWindow = true;
+            this.setRedrawTimeLineWindow();
+            this.setRedrawWebGLWindow();
         }
 
         isAnyModifierKeyPressing(): boolean {

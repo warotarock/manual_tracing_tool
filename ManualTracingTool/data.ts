@@ -313,12 +313,33 @@ namespace ManualTracingTool {
         rightLeg2LocationInputData = new JointPartInputData();
     }
 
+    export class JointPartDrawingUnit {
+
+        aName = "";
+
+        targetData: DirectionInputData = null;
+
+        dependentInputData: PosingInputData = null;
+        parentMatrix: Mat4 = null;
+
+        subToolID: Posing3DSubToolID;
+
+        drawModel = true;
+        modelResource: ModelResource = null;
+        visualModelAlpha = 1.0;
+        hitTestSphereRadius = 0.0;
+        hitTestSphereAlpha = 0.5;
+    }
+
     export class PosingLayer extends Layer {
 
         type = LayerTypeID.posingLayer;
 
         posingModel = new PosingModel();
         posingData = new PosingData();
+
+        // runtime
+        drawingUnits: List<JointPartDrawingUnit> = null;
     }
 
     // Document

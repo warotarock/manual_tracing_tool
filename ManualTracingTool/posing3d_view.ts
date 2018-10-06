@@ -52,24 +52,6 @@ namespace ManualTracingTool {
         depthImage = 2
     }
 
-    class JointPartDrawingUnit {
-
-        aName = "";
-
-        targetData: DirectionInputData = null;
-
-        dependentInputData: PosingInputData = null;
-        parentMatrix: Mat4 = null;
-
-        subToolID: Posing3DSubToolID;
-
-        drawModel = true;
-        modelResource: ModelResource = null;
-        visualModelAlpha = 1.0;
-        hitTestSphereRadius = 0.0;
-        hitTestSphereAlpha = 0.5;
-    }
-
     export class Posing3DView {
 
         // Posing
@@ -95,8 +77,6 @@ namespace ManualTracingTool {
         leftLeg2Model: ModelResource = null;
         rightLeg1Model: ModelResource = null;
         rightLeg2Model: ModelResource = null;
-
-        drawingUnits = new List<JointPartDrawingUnit>();
 
         modelLocation = vec3.create();
 
@@ -152,12 +132,12 @@ namespace ManualTracingTool {
             this.imageResurces.push(imageResurces[0]);
         }
 
-        buildDrawingStructures(env: ToolEnvironment) {
+        buildDrawingStructures(posingLayer: PosingLayer) {
 
-            let posingData = env.currentPosingData;
-            let posingModel = env.currentPosingModel;
+            let posingData = posingLayer.posingData;
+            let posingModel = posingLayer.posingModel;
 
-            this.drawingUnits = new List<JointPartDrawingUnit>();
+            let drawingUnits = new List<JointPartDrawingUnit>();
 
             // Left arms
             {
@@ -169,7 +149,7 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.locateLeftArm1;
                 unit.hitTestSphereRadius = vec3.length(posingModel.leftArm1HeadLocation);
                 unit.modelResource = this.leftArm1Model;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
 
             {
@@ -181,7 +161,7 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.locateLeftArm2;
                 unit.hitTestSphereRadius = vec3.length(posingModel.leftArm2HeadLocation);
                 unit.modelResource = this.leftArm2Model;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
 
             // Right arm
@@ -194,7 +174,7 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.locateRightArm1;
                 unit.hitTestSphereRadius = vec3.length(posingModel.rightArm1HeadLocation);
                 unit.modelResource = this.rightArm1Model;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
 
             {
@@ -206,7 +186,7 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.locateRightArm2;
                 unit.hitTestSphereRadius = vec3.length(posingModel.rightArm2HeadLocation);
                 unit.modelResource = this.rightArm2Model;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
 
             // Left leg
@@ -219,7 +199,7 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.locateLeftLeg1;
                 unit.hitTestSphereRadius = vec3.length(posingModel.leftLeg1HeadLocation);
                 unit.modelResource = this.leftLeg1Model;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
 
             {
@@ -231,7 +211,7 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.locateLeftLeg2;
                 unit.hitTestSphereRadius = vec3.length(posingModel.leftLeg2HeadLocation);
                 unit.modelResource = this.leftLeg2Model;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
 
             // Right leg
@@ -244,7 +224,7 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.locateRightLeg1;
                 unit.hitTestSphereRadius = vec3.length(posingModel.rightLeg1HeadLocation);
                 unit.modelResource = this.rightLeg1Model;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
 
             {
@@ -256,7 +236,7 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.locateRightLeg2;
                 unit.hitTestSphereRadius = vec3.length(posingModel.rightLeg2HeadLocation);
                 unit.modelResource = this.rightLeg2Model;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
 
             // Head twist
@@ -269,40 +249,43 @@ namespace ManualTracingTool {
                 unit.subToolID = Posing3DSubToolID.twistHead;
                 unit.hitTestSphereRadius = posingModel.headTwistSphereSize;
                 unit.drawModel = false;
-                this.drawingUnits.push(unit);
+                drawingUnits.push(unit);
             }
+
+            posingLayer.drawingUnits = drawingUnits;
         }
 
-        drawVisualImage(env: ToolEnvironment) {
-
-            let posingLayer = env.currentPosingLayer;
-            let posingData = env.currentPosingData;
-            let posingModel = env.currentPosingModel;
-
-            if (this.drawingUnits.length == 0) {
-
-                this.buildDrawingStructures(env);
-            }
+        clear(env: ToolEnvironment) {
 
             this.render.setDepthTest(true)
             this.render.setCulling(true);
             this.render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
+        }
 
-            if (!posingLayer.isVisible) {
-                return;
+        prepareDrawingStructures(posingLayer: PosingLayer) {
+
+            if (posingLayer.drawingUnits == null) {
+
+                this.buildDrawingStructures(posingLayer);
             }
+        }
+
+        drawManipulaters(posingLayer: PosingLayer, env: ToolEnvironment) {
+
+            let posingData = posingLayer.posingData;
+            let posingModel = posingLayer.posingModel;
 
             this.caluculateCameraMatrix(posingData.real3DViewHalfWidth, env.mainWindow);
 
             // Draws input manipulaters
 
-            this.drawHeadSphere(DrawImageType.visualImage, env);
+            this.drawHeadSphere(DrawImageType.visualImage, posingLayer, env);
 
-            this.drawBodySphere(DrawImageType.visualImage, env);
+            this.drawBodySphere(DrawImageType.visualImage, posingLayer, env);
 
-            this.drawBodyRotationSphere(DrawImageType.visualImage, env);
+            this.drawBodyRotationSphere(DrawImageType.visualImage, posingLayer, env);
 
-            for (let drawingUnit of this.drawingUnits) {
+            for (let drawingUnit of posingLayer.drawingUnits) {
 
                 if (env.subToolIndex == drawingUnit.subToolID) {
 
@@ -312,22 +295,33 @@ namespace ManualTracingTool {
                         , drawingUnit.targetData.inputSideID
                         , drawingUnit.parentMatrix
                         , drawingUnit.hitTestSphereRadius
+                        , posingLayer
                         , env);
                 }
             }
+        }
 
-            // Draws visual models
+        drawPosingModel(posingLayer: PosingLayer, env: ToolEnvironment) {
+
+            if (!posingLayer.isVisible) {
+                return;
+            }
+
+            let posingData = posingLayer.posingData;
+            let posingModel = posingLayer.posingModel;
+
+            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth, env.mainWindow);
 
             this.render.clearDepthBuffer();
 
-            if (this.isHeadDrawable(env)) {
+            if (this.isHeadDrawable(posingData)) {
 
                 this.setShaderParameters(posingData.headLocationInputData.headMatrix, false, this.posingFigureShader);
                 this.posingFigureShader.setAlpha(1.0);
                 this.drawModel(this.headModel.model, this.imageResurces[0].image);
             }
 
-            if (this.isBodyDrawable(env)) {
+            if (this.isBodyDrawable(posingData)) {
 
                 this.setShaderParameters(posingData.bodyLocationInputData.bodyMatrix, false, this.posingFigureShader);
                 this.posingFigureShader.setAlpha(1.0);
@@ -342,7 +336,7 @@ namespace ManualTracingTool {
                 }
             }
 
-            for (let drawingUnit of this.drawingUnits) {
+            for (let drawingUnit of posingLayer.drawingUnits) {
 
                 if (drawingUnit.drawModel && drawingUnit.targetData.inputDone) {
 
@@ -355,24 +349,17 @@ namespace ManualTracingTool {
             }
         }
 
-        drawPickingImage(env: ToolEnvironment) {
+        drawPickingImage(posingLayer: PosingLayer, env: ToolEnvironment) {
 
-            let posingModel = env.currentPosingModel;
-
-            this.render.setDepthTest(true)
-            this.render.setCulling(true);
-            this.render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
             this.render.setBlendType(WebGLRenderBlendType.src);
 
-            let posingData = env.currentPosingData;
+            this.drawHeadSphere(DrawImageType.depthImage, posingLayer, env);
 
-            this.drawHeadSphere(DrawImageType.depthImage, env);
+            this.drawBodySphere(DrawImageType.depthImage, posingLayer, env);
 
-            this.drawBodySphere(DrawImageType.depthImage, env);
+            this.drawBodyRotationSphere(DrawImageType.depthImage, posingLayer, env);
 
-            this.drawBodyRotationSphere(DrawImageType.depthImage, env);
-
-            for (let drawingUnit of this.drawingUnits) {
+            for (let drawingUnit of posingLayer.drawingUnits) {
 
                 if (env.subToolIndex == drawingUnit.subToolID) {
 
@@ -380,9 +367,13 @@ namespace ManualTracingTool {
                         , drawingUnit.targetData.inputSideID
                         , drawingUnit.parentMatrix
                         , drawingUnit.hitTestSphereRadius
+                        , posingLayer
                         , env);
                 }
             }
+
+            //let posingModel = env.currentPosingModel;
+            //let posingData = env.currentPosingData;
 
             //if (env.subToolIndex == Posing3DSubToolID.lodcateLeftArm1) {
 
@@ -423,9 +414,10 @@ namespace ManualTracingTool {
             this.render.setBlendType(WebGLRenderBlendType.blend);
         }
 
-        private drawHeadSphere(drawImageType: DrawImageType, env: ToolEnvironment) {
+        private drawHeadSphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
 
-            let posingData = env.currentPosingData;
+            let posingData = posingLayer.posingData;
+            let posingModel = posingLayer.posingModel;
 
             let needsDrawing = (
                 posingData != null
@@ -438,7 +430,7 @@ namespace ManualTracingTool {
             }
 
             mat4.copy(this.locationMatrix, posingData.headLocationInputData.matrix);
-            let scale = env.currentPosingModel.headSphereSize;
+            let scale = posingModel.headSphereSize;
             mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
 
             if (drawImageType == DrawImageType.visualImage) {
@@ -453,9 +445,10 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawBodySphere(drawImageType: DrawImageType, env: ToolEnvironment) {
+        private drawBodySphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
 
-            let posingData = env.currentPosingData;
+            let posingData = posingLayer.posingData;
+            let posingModel = posingLayer.posingModel;
 
             let needsDrawing = (
                 posingData != null
@@ -472,7 +465,7 @@ namespace ManualTracingTool {
             mat4.identity(this.tmpMatrix);
             mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
 
-            let scale = env.currentPosingModel.bodySphereSize;
+            let scale = posingModel.bodySphereSize;
             mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
 
             if (drawImageType == DrawImageType.visualImage) {
@@ -487,9 +480,10 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawBodyRotationSphere(drawImageType: DrawImageType, env: ToolEnvironment) {
+        private drawBodyRotationSphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
 
-            let posingData = env.currentPosingData;
+            let posingData = posingLayer.posingData;
+            let posingModel = posingLayer.posingModel;
 
             let needsDrawing = (
                 posingData != null
@@ -505,7 +499,7 @@ namespace ManualTracingTool {
             mat4.identity(this.tmpMatrix);
             mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
 
-            let scale = env.currentPosingModel.bodyRotationSphereSize;
+            let scale = posingModel.bodyRotationSphereSize;
             mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
 
             if (drawImageType == DrawImageType.visualImage) {
@@ -520,9 +514,9 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawArmLegSphere(drawImageType: DrawImageType, inputSideID: InputSideID, rootMatrix: Mat4, scale: float, env: ToolEnvironment) {
+        private drawArmLegSphere(drawImageType: DrawImageType, inputSideID: InputSideID, rootMatrix: Mat4, scale: float, posingLayer: PosingLayer, env: ToolEnvironment) {
 
-            let posingData = env.currentPosingData;
+            let posingData = posingLayer.posingData;
 
             Maths.getTranslationMat4(this.tempVec3, rootMatrix);
             mat4.identity(this.tmpMatrix);
@@ -542,44 +536,44 @@ namespace ManualTracingTool {
             }
         }
 
-        private isHeadDrawable(env: ToolEnvironment): boolean {
+        private isHeadDrawable(posingData: PosingData): boolean {
 
-            return (env.currentPosingData != null
-                && env.currentPosingData.headRotationInputData.inputDone);
+            return (posingData != null
+                && posingData.headRotationInputData.inputDone);
         }
 
-        private isBodyDrawable(env: ToolEnvironment): boolean {
+        private isBodyDrawable(posingData: PosingData): boolean {
 
-            return (env.currentPosingData != null
-                && env.currentPosingData.bodyLocationInputData.inputDone
+            return (posingData != null
+                && posingData.bodyLocationInputData.inputDone
             );
         }
 
-        private isLeftArm1Drawable(env: ToolEnvironment): boolean {
+        private isLeftArm1Drawable(posingData: PosingData): boolean {
 
-            return (env.currentPosingData != null
-                && env.currentPosingData.leftArm1LocationInputData.inputDone
+            return (posingData != null
+                && posingData.leftArm1LocationInputData.inputDone
             );
         }
 
-        private isRightArm1Drawable(env: ToolEnvironment): boolean {
+        private isRightArm1Drawable(posingData: PosingData): boolean {
 
-            return (env.currentPosingData != null
-                && env.currentPosingData.rightArm1LocationInputData.inputDone
+            return (posingData != null
+                && posingData.rightArm1LocationInputData.inputDone
             );
         }
 
-        private isLeftLeg1Drawable(env: ToolEnvironment): boolean {
+        private isLeftLeg1Drawable(posingData: PosingData): boolean {
 
-            return (env.currentPosingData != null
-                && env.currentPosingData.leftLeg1LocationInputData.inputDone
+            return (posingData != null
+                && posingData.leftLeg1LocationInputData.inputDone
             );
         }
 
-        private isRightLeg1Drawable(env: ToolEnvironment): boolean {
+        private isRightLeg1Drawable(posingData: PosingData): boolean {
 
-            return (env.currentPosingData != null
-                && env.currentPosingData.rightLeg1LocationInputData.inputDone
+            return (posingData != null
+                && posingData.rightLeg1LocationInputData.inputDone
             );
         }
 
@@ -623,7 +617,7 @@ namespace ManualTracingTool {
             let flipSide = (inputSideID == InputSideID.back);
             this.setShaderParameters(locationMatrix, flipSide, this.posingFigureShader);
 
-            if (this.isHeadDrawable(env)) {
+            if (this.isHeadDrawable(env.currentPosingData)) {
                 this.posingFigureShader.setAlpha(0.3);
             }
             else {
