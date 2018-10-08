@@ -7,3 +7,9 @@ Under early construction now.
 It runs on [github page](https://warotarock.github.io/manual_tracing_tool/ManualTracingTool/).
 
 Feel free to see it!
+
+
+---
+Credits:
+
+- This program is useing some of [Icons8](https://icons8.com/) icons.
