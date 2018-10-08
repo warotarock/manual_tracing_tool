@@ -114,6 +114,7 @@ var ManualTracingTool;
             this.redrawLayerWindow = false;
             this.redrawSubtoolWindow = false;
             this.updateLayerWindowItems = false;
+            this.redrawTimeLineWindow = false;
             this.redrawWebGLWindow = false;
             this.redrawHeaderWindow = false;
             this.redrawFooterWindow = false;
@@ -195,6 +196,11 @@ var ManualTracingTool;
         ToolEnvironment.prototype.setRedrawEditorWindow = function () {
             this.toolContext.redrawEditorWindow = true;
         };
+        ToolEnvironment.prototype.setRedrawMainWindowEditorWindow = function () {
+            this.setRedrawMainWindow();
+            this.setRedrawEditorWindow();
+            this.setRedrawWebGLWindow();
+        };
         ToolEnvironment.prototype.setRedrawLayerWindow = function () {
             this.toolContext.redrawLayerWindow = true;
         };
@@ -205,18 +211,18 @@ var ManualTracingTool;
         ToolEnvironment.prototype.setRedrawSubtoolWindow = function () {
             this.toolContext.redrawSubtoolWindow = true;
         };
-        ToolEnvironment.prototype.setRedrawMainWindowEditorWindow = function () {
-            this.setRedrawMainWindow();
-            this.setRedrawEditorWindow();
-            this.setRedrawWebGLWindow();
+        ToolEnvironment.prototype.setRedrawTimeLineWindow = function () {
+            this.toolContext.redrawTimeLineWindow = true;
+        };
+        ToolEnvironment.prototype.setRedrawWebGLWindow = function () {
+            this.toolContext.redrawWebGLWindow = true;
         };
         ToolEnvironment.prototype.setRedrawAllWindows = function () {
             this.setRedrawMainWindowEditorWindow();
             this.setUpadateLayerWindowItems();
             this.setRedrawSubtoolWindow();
-        };
-        ToolEnvironment.prototype.setRedrawWebGLWindow = function () {
-            this.toolContext.redrawWebGLWindow = true;
+            this.setRedrawTimeLineWindow();
+            this.setRedrawWebGLWindow();
         };
         ToolEnvironment.prototype.isAnyModifierKeyPressing = function () {
             return (this.toolContext.shiftKey || this.toolContext.altKey || this.toolContext.ctrlKey);
@@ -292,6 +298,8 @@ var ManualTracingTool;
             this.mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
             this.operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
             this.modalToolSelectedAreaLineColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+            this.timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
+            this.timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);
             this.generalLinePointRadius = 2.0;
             this.selectedLinePointRadius = 3.0;
             this.viewZoomAdjustingSpeedRate = 3.0;

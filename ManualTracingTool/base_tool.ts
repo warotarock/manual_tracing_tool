@@ -412,6 +412,9 @@ namespace ManualTracingTool {
 
         modalToolSelectedAreaLineColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
 
+        timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
+        timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);
+
         generalLinePointRadius = 2.0;
         selectedLinePointRadius = 3.0;
         viewZoomAdjustingSpeedRate = 3.0;

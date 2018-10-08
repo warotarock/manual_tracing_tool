@@ -669,6 +669,10 @@ namespace ManualTracingTool {
                 DocumentData.initializeDefaultPalletColors(document);
             }
 
+            if (document.animationSettingData == undefined) {
+                document.animationSettingData = new AnimationSettingData();
+            }
+
             this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
         }
 
@@ -1162,6 +1166,12 @@ namespace ManualTracingTool {
                 e.preventDefault();
             });
 
+            this.getElement(this.ID.menu_btnExport).addEventListener('mousedown', (e: Event) => {
+
+                this.openExportImageFileModal();
+                e.preventDefault();
+            });
+
             // Modal window
 
             document.addEventListener('custombox:content:open', () => {
@@ -1179,6 +1189,9 @@ namespace ManualTracingTool {
 
             this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_ok);
             this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_cancel);
+
+            this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_ok);
+            this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_cancel);
 
             this.getElement(this.ID.palletColorModal_currentColor).addEventListener('change', (e: Event) => {
 
@@ -2176,9 +2189,7 @@ namespace ManualTracingTool {
 
             this.resizeWindows();
 
-            this.toolEnv.setRedrawMainWindowEditorWindow();
-            this.toolEnv.setRedrawLayerWindow();
-            this.toolEnv.setRedrawSubtoolWindow();
+            this.toolEnv.setRedrawAllWindows();
         }
 
         private htmlWindow_contextmenu(e): boolean {
@@ -2525,13 +2536,18 @@ namespace ManualTracingTool {
             //console.log(touch.clientX.toFixed(2) + ',' + touch.clientY.toFixed(2) + '(' + ')'  + '  ' + this.toolMouseEvent.offsetX.toFixed(2) + ',' + this.toolMouseEvent.offsetY.toFixed(2));
         }
 
-        private calculateTransfomredMouseParams(toolMouseEvent: ToolMouseEvent, canvasWindow: CanvasWindow) {
+        private calculateTransfomredLocation(resultVec: Vec3, canvasWindow: CanvasWindow, x: float, y: float) {
 
             canvasWindow.caluclateViewMatrix(this.view2DMatrix);
             mat4.invert(this.invView2DMatrix, this.view2DMatrix);
 
-            vec3.set(this.tempVec3, toolMouseEvent.offsetX, toolMouseEvent.offsetY, 0.0);
-            vec3.transformMat4(toolMouseEvent.location, this.tempVec3, this.invView2DMatrix);
+            vec3.set(this.tempVec3, x, y, 0.0);
+            vec3.transformMat4(resultVec, this.tempVec3, this.invView2DMatrix);
+        }
+
+        private calculateTransfomredMouseParams(toolMouseEvent: ToolMouseEvent, canvasWindow: CanvasWindow) {
+
+            this.calculateTransfomredLocation(toolMouseEvent.location, canvasWindow, toolMouseEvent.offsetX, toolMouseEvent.offsetY);
 
             vec3.copy(this.toolEnv.mouseCursorLocation, toolMouseEvent.location);
         }
@@ -2964,6 +2980,58 @@ namespace ManualTracingTool {
             this.openModal(this.ID.exportImageFileModal, null);
         }
 
+        private onClosedExportImageFileModal() {
+
+            if (this.currentModalDialogResult != this.ID.exportImageFileModal_ok) {
+
+                return;
+            }
+
+            let imageWidth = Math.floor(this.document.documentFrame[2] - this.document.documentFrame[0] + 1);
+            let imageHeight = Math.floor(this.document.documentFrame[3] - this.document.documentFrame[1] + 1);
+
+            if (imageWidth > 0 && imageHeight > 0) {
+
+                let canvas = this.renderingWindow.canvas;
+                canvas.width = imageWidth;
+                canvas.height = imageHeight;
+
+                this.renderingWindow.width = imageWidth;
+                this.renderingWindow.height = imageHeight;
+                this.renderingWindow.viewLocation[0] = 0.0;
+                this.renderingWindow.viewLocation[1] = 0.0;
+                this.renderingWindow.viewScale = 1.0;
+                this.renderingWindow.viewRotation = 0.0;
+                this.renderingWindow.centerLocationRate[0] = 0.5;
+                this.renderingWindow.centerLocationRate[1] = 0.5;
+                this.clearWindow(this.renderingWindow);
+                this.drawMainWindow(this.renderingWindow);
+
+                let exportPath = window.localStorage.getItem(this.exportPathKey);
+                let fileName = 'test';
+                let imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
+                let extText = '.png';
+                if (imageType == 2) {
+                    extText = '.jpg';
+                }
+                let fileFullPath = exportPath + '/' + fileName + extText;
+
+                let imageTypeText = 'image/png';
+                if (imageType == 2) {
+                    imageTypeText = 'image/jpeg';
+                }
+                var dataUrl = canvas.toDataURL(imageTypeText, 0.9);
+                var data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+                var buf = new Buffer(data, 'base64');
+
+                fs.writeFile(fileFullPath, buf, (error) => {
+                    if (error) {
+                        alert(error);
+                    }
+                });
+            }
+        }
+
         private onModalWindowShown() {
 
             if (!StringIsNullOrEmpty(this.currentModalFocusElementName)) {
@@ -3035,49 +3103,7 @@ namespace ManualTracingTool {
             }
             else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
 
-                let imageWidth = Math.floor(this.document.documentFrame[2] - this.document.documentFrame[0] + 1);
-                let imageHeight = Math.floor(this.document.documentFrame[3] - this.document.documentFrame[1] + 1);
-
-                if (imageWidth > 0 && imageHeight > 0) {
-
-                    let canvas = this.renderingWindow.canvas;
-                    canvas.width = imageWidth;
-                    canvas.height = imageHeight;
-
-                    this.renderingWindow.width = imageWidth;
-                    this.renderingWindow.height = imageHeight;
-                    this.renderingWindow.viewLocation[0] = 0.0;
-                    this.renderingWindow.viewLocation[1] = 0.0;
-                    this.renderingWindow.viewScale = 1.0;
-                    this.renderingWindow.viewRotation = 0.0;
-                    this.renderingWindow.centerLocationRate[0] = 0.5;
-                    this.renderingWindow.centerLocationRate[1] = 0.5;
-                    this.clearWindow(this.renderingWindow);
-                    this.drawMainWindow(this.renderingWindow);
-
-                    let exportPath = window.localStorage.getItem(this.exportPathKey);
-                    let fileName = 'test';
-                    let imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
-                    let extText = '.png';
-                    if (imageType == 2) {
-                        extText = '.jpg';
-                    }
-                    let fileFullPath = exportPath + '/' + fileName + extText;
-
-                    let imageTypeText = 'image/png';
-                    if (imageType == 2) {
-                        imageTypeText = 'image/jpeg';
-                    }
-                    var dataUrl = canvas.toDataURL(imageTypeText, 0.9);
-                    var data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
-                    var buf = new Buffer(data, 'base64');
-
-                    fs.writeFile(fileFullPath, buf, (error) => {
-                        if (error) {
-                            alert(error);
-                        }
-                    });
-                }
+                this.onClosedExportImageFileModal();
             }
 
             this.currentModalDialogID = this.ID.none;
@@ -4276,8 +4302,47 @@ namespace ManualTracingTool {
 
         // TimeLine window drawing
 
-        private drawTimeLineWindow(TimeLineWindow: TimeLineWindow) {
+        private drawTimeLineWindow(timeLineWindow: TimeLineWindow) {
 
+            let aniSetting = this.document.animationSettingData;
+
+            let left = timeLineWindow.leftPanelWidth;
+            let right = left + timeLineWindow.width - 1;
+
+            // Left panel
+
+            this.canvasRender.setGlobalAlpha(1.0);
+
+            this.canvasRender.setStrokeWidth(1.0);
+            this.canvasRender.setStrokeColorV(this.drawStyle.timeLineUnitFrameColor);
+            this.canvasRender.drawLine(left, 0.0, left, timeLineWindow.height);
+
+            // Frame measure
+
+            let frameUnitWidth = timeLineWindow.frameUnitWidth * aniSetting.timeLineWindowScale;
+            let frameNumberHeight = 16.0;
+            let frameLineBottom = timeLineWindow.height - 1.0 - frameNumberHeight;
+            let frameLineHeight = 10.0;
+            let secondFrameLineHeight = 30.0;
+
+            for (let x = left; x <= right; x += frameUnitWidth) {
+
+                this.canvasRender.drawLine(x, frameLineBottom - frameLineHeight, x, frameLineBottom);
+            }
+
+            for (let x = left; x <= right; x += frameUnitWidth * aniSetting.animationFrameParSecond) {
+
+                this.canvasRender.drawLine(x, frameLineBottom - secondFrameLineHeight, x, frameLineBottom);
+            }
+
+            this.canvasRender.drawLine(left, frameLineBottom, right, frameLineBottom);
+
+            // Current frame
+
+            let currentFrameX = left - aniSetting.timeLineWindowViewLocationX + aniSetting.currentTimeFrame * frameUnitWidth;
+            this.canvasRender.setStrokeWidth(3.0);
+            this.canvasRender.setStrokeColorV(this.drawStyle.timeLineCurrentFrameColor);
+            this.canvasRender.drawLine(currentFrameX, 0.0, currentFrameX, timeLineWindow.height);
         }
 
         // Header window drawing
@@ -4581,6 +4646,8 @@ namespace ManualTracingTool {
 
     class TimeLineWindow extends ToolBaseWindow {
 
+        leftPanelWidth = 100.0;
+        frameUnitWidth = 8.0;
     }
 
     class RectangleLayoutArea {
@@ -4690,6 +4757,7 @@ namespace ManualTracingTool {
         menu_btnScratchTool = 'menu_btnScratchTool';
         menu_btnPoseTool = 'menu_btnPoseTool';
         menu_btnOperationOption = 'menu_btnOperationOption';
+        menu_btnExport = 'menu_btnExport';
 
         unselectedMainButton = 'unselectedMainButton';
         selectedMainButton = 'selectedMainButton';
@@ -4736,6 +4804,8 @@ namespace ManualTracingTool {
 
         exportImageFileModal = '#exportImageFileModal';
         exportImageFileModal_imageFileType = 'exportImageFileModal_imageFileType';
+        exportImageFileModal_ok = 'exportImageFileModal_ok';
+        exportImageFileModal_cancel = 'exportImageFileModal_cancel';
     }
 
     enum OpenPalletColorModalMode {

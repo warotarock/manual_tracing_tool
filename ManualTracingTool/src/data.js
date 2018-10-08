@@ -335,6 +335,21 @@ var ManualTracingTool;
         return PosingData;
     }());
     ManualTracingTool.PosingData = PosingData;
+    var JointPartDrawingUnit = /** @class */ (function () {
+        function JointPartDrawingUnit() {
+            this.aName = "";
+            this.targetData = null;
+            this.dependentInputData = null;
+            this.parentMatrix = null;
+            this.drawModel = true;
+            this.modelResource = null;
+            this.visualModelAlpha = 1.0;
+            this.hitTestSphereRadius = 0.0;
+            this.hitTestSphereAlpha = 0.5;
+        }
+        return JointPartDrawingUnit;
+    }());
+    ManualTracingTool.JointPartDrawingUnit = JointPartDrawingUnit;
     var PosingLayer = /** @class */ (function (_super) {
         __extends(PosingLayer, _super);
         function PosingLayer() {
@@ -342,11 +357,26 @@ var ManualTracingTool;
             _this.type = LayerTypeID.posingLayer;
             _this.posingModel = new PosingModel();
             _this.posingData = new PosingData();
+            // runtime
+            _this.drawingUnits = null;
             return _this;
         }
         return PosingLayer;
     }(Layer));
     ManualTracingTool.PosingLayer = PosingLayer;
+    // Animation
+    var AnimationSettingData = /** @class */ (function () {
+        function AnimationSettingData() {
+            this.animationFrameParSecond = 24;
+            this.loopStartFrame = 0;
+            this.loopEndFrame = 240;
+            this.currentTimeFrame = 10.0;
+            this.timeLineWindowScale = 1.0;
+            this.timeLineWindowViewLocationX = 0.0;
+        }
+        return AnimationSettingData;
+    }());
+    ManualTracingTool.AnimationSettingData = AnimationSettingData;
     // Document
     var defaultColors = [
         vec4.fromValues(0.0, 0.0, 0.0, 1.0),
@@ -369,6 +399,7 @@ var ManualTracingTool;
             this.rootLayer = new Layer();
             this.documentFrame = vec4.fromValues(-512.0, -512.0, 512.0, 512.0);
             this.palletColos = new List();
+            this.animationSettingData = new AnimationSettingData();
             DocumentData.initializeDefaultPalletColors(this);
         }
         DocumentData.initializeDefaultPalletColors = function (documentData) {

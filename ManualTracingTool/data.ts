@@ -342,6 +342,20 @@ namespace ManualTracingTool {
         drawingUnits: List<JointPartDrawingUnit> = null;
     }
 
+    // Animation
+
+    export class AnimationSettingData {
+
+        animationFrameParSecond = 24;
+        loopStartFrame = 0;
+        loopEndFrame = 240;
+
+        currentTimeFrame = 10.0;
+
+        timeLineWindowScale = 1.0;
+        timeLineWindowViewLocationX = 0.0;
+    }
+
     // Document
 
     let defaultColors: List<Vec4> = [
@@ -371,6 +385,8 @@ namespace ManualTracingTool {
 
         static maxPalletColors = 25;
         palletColos = new List<PalletColor>();
+
+        animationSettingData = new AnimationSettingData();
 
         // This class must be created by this function for JSON.parse
         constructor() {
