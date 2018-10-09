@@ -77,7 +77,7 @@ namespace ManualTracingTool {
             return false;
         }
 
-        protected executeLayerSwap(parentLayer: Layer, swapIndex1: int, swapIndex2: int) {
+        protected executeLayerSwap(parentLayer: Layer, swapIndex1: int, swapIndex2: int, env: ToolEnvironment) {
 
             this.insertTo_ParentLayer = parentLayer;
 
@@ -90,9 +90,11 @@ namespace ManualTracingTool {
             this.insertTo_Layer_NewChildLayerList[swapIndex2] = swapItem;
 
             parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
+
+            env.upadateLayerStructure();
         }
 
-        protected executeLayerInsertToCurrent(childLayer: Layer) {
+        protected executeLayerInsertToCurrent(childLayer: Layer, env: ToolEnvironment) {
 
             let parentLayer: Layer;
             let insertIndex: int;
@@ -107,10 +109,10 @@ namespace ManualTracingTool {
                 insertIndex = this.currentLayerIndex;
             }
 
-            this.executeLayerInsert(parentLayer, insertIndex, childLayer);
+            this.executeLayerInsert(parentLayer, insertIndex, childLayer, env);
         }
 
-        protected executeLayerInsert(parentLayer: Layer, insertIndex: int, childLayer: Layer) {
+        protected executeLayerInsert(parentLayer: Layer, insertIndex: int, childLayer: Layer, env: ToolEnvironment) {
 
             this.insertTo_ParentLayer = parentLayer;
 
@@ -121,6 +123,9 @@ namespace ManualTracingTool {
             ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, childLayer);
 
             parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
+
+            env.upadateLayerStructure();
+            env.setCurrentLayer(childLayer);
         }
 
         protected executeLayerRemove(parentLayer: Layer, removeIndex: int) {
@@ -148,8 +153,8 @@ namespace ManualTracingTool {
                 this.removeFrom_ParentLayer.childLayers = this.removeFrom_OldChildLayerList;
             }
 
+            env.upadateLayerStructure();
             env.setRedrawMainWindowEditorWindow();
-            env.setUpadateLayerWindowItems();
         }
 
         redo(env: ToolEnvironment) { // @override
@@ -164,8 +169,8 @@ namespace ManualTracingTool {
                 this.removeFrom_ParentLayer.childLayers = this.removeFrom_NewChildLayerList;
             }
 
+            env.upadateLayerStructure();
             env.setRedrawMainWindowEditorWindow();
-            env.setUpadateLayerWindowItems();
         }
 
         execute(env: ToolEnvironment) { // @override
@@ -173,7 +178,6 @@ namespace ManualTracingTool {
             this.executeCommand(env);
 
             env.setRedrawMainWindowEditorWindow();
-            env.setUpadateLayerWindowItems();
         }
 
         executeCommand(env: ToolEnvironment) { // @virtual
@@ -204,12 +208,14 @@ namespace ManualTracingTool {
             this.newLayer = new VectorLayer();
             this.newLayer.name = 'new layer';
 
+            let keyFrame = new VectorLayerKeyFrame();
+            keyFrame.geometry = new VectorLayerGeometry();
+            this.newLayer.keyframes.push(keyFrame);
+
             let group = new VectorGroup();
-            this.newLayer.geometry.groups.push(group);
+            keyFrame.geometry.groups.push(group);
 
-            this.executeLayerInsertToCurrent(this.newLayer);
-
-            env.setCurrentLayer(this.newLayer);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         }
     }
 
@@ -243,11 +249,9 @@ namespace ManualTracingTool {
             this.newLayer.name = 'new ref layer';
 
             this.newLayer.referenceLayer = <VectorLayer>(this.currentLayer);
-            this.newLayer.geometry = this.newLayer.referenceLayer.geometry;
+            this.newLayer.keyframes = this.newLayer.referenceLayer.keyframes;
 
-            this.executeLayerInsertToCurrent(this.newLayer);
-
-            env.setCurrentLayer(this.newLayer);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         }
     }
 
@@ -275,9 +279,7 @@ namespace ManualTracingTool {
             this.newLayer = new GroupLayer();
             this.newLayer.name = 'new group';
 
-            this.executeLayerInsertToCurrent(this.newLayer);
-
-            env.setCurrentLayer(this.newLayer);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         }
     }
 
@@ -305,9 +307,7 @@ namespace ManualTracingTool {
             this.newLayer = new ImageFileReferenceLayer();
             this.newLayer.name = 'new file';
 
-            this.executeLayerInsertToCurrent(this.newLayer);
-
-            env.setCurrentLayer(this.newLayer);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         }
     }
 
@@ -335,9 +335,7 @@ namespace ManualTracingTool {
             this.newLayer = new PosingLayer();
             this.newLayer.name = 'new posing';
 
-            this.executeLayerInsertToCurrent(this.newLayer);
-
-            env.setCurrentLayer(this.newLayer);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         }
     }
 
@@ -399,15 +397,14 @@ namespace ManualTracingTool {
 
             if (this.currentLayerParent == this.previousLayerParent) {
 
-                this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex - 1);
+                this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex - 1, env);
+                env.setCurrentLayer(this.currentLayer);
             }
             else {
 
                 this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex);
-                this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer);
+                this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer, env);
             }
-
-            env.setCurrentLayer(this.currentLayer);
         }
     }
 
@@ -437,15 +434,14 @@ namespace ManualTracingTool {
 
             if (this.currentLayerParent == this.nextLayerParent) {
 
-                this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex + 1);
+                this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex + 1, env);
+                env.setCurrentLayer(this.currentLayer);
             }
             else {
 
                 this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex);
-                this.executeLayerInsert(this.nextLayerParent, this.nextLayerIndex, this.currentLayer);
+                this.executeLayerInsert(this.nextLayerParent, this.nextLayerIndex, this.currentLayer, env);
             }
-
-            env.setCurrentLayer(this.currentLayer);
         }
     }
 }

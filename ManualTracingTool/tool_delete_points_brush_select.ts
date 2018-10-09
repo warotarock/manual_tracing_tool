@@ -23,7 +23,7 @@ namespace ManualTracingTool {
         protected executeCommand(env: ToolEnvironment) { // @override
 
             let command = new Command_DeleteFlagedPoints();
-            if (command.prepareEditTargets(env.currentVectorLayer)) {
+            if (command.prepareEditTargets(env.currentVectorLayer, env.currentVectorGeometry)) {
 
                 command.execute(env);
                 env.commandHistory.addCommand(command);

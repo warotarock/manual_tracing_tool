@@ -176,6 +176,7 @@ namespace ManualTracingTool {
 
         currentTool: ToolBase = null;
         currentSelectTool: ToolBase = null;
+        currentKeyframe: ViewKeyFrame = null;
 
         //layerCommands = new List<Command_Layer_CommandBase>(LayerWindowButtonID.IDCount);
 
@@ -262,6 +263,8 @@ namespace ManualTracingTool {
 
         tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+
+        viewLayerContext = new ViewLayerContext();
 
         constructor() {
 
@@ -629,28 +632,8 @@ namespace ManualTracingTool {
                 layer1.name = 'layer1'
                 rootLayer.childLayers.push(layer1);
                 let group1 = new VectorGroup();
-                layer1.geometry.groups.push(group1);
+                layer1.keyframes[0].geometry.groups.push(group1);
             }
-
-            //{
-            //    let layer1 = new GroupLayer();
-            //    layer1.name = 'group1'
-            //    rootLayer.childLayers.push(layer1);
-
-            //    let layer2 = new VectorLayer();
-            //    layer2.name = 'child1'
-            //    layer1.childLayers.push(layer2);
-            //    let group2 = new VectorGroup();
-            //    layer2.geometry.groups.push(group2);
-            //}
-
-            //{
-            //    let layer1 = new VectorLayer();
-            //    layer1.name = 'background'
-            //    rootLayer.childLayers.push(layer1);
-            //    let group1 = new VectorGroup();
-            //    layer1.geometry.groups.push(group1);
-            //}
 
             {
                 let layer1 = new PosingLayer();
@@ -712,43 +695,55 @@ namespace ManualTracingTool {
                     vectorLayer.fill_PalletColorIndex = 1;
                 }
 
-                if (vectorLayer.geometry == undefined && vectorLayer['groups'] != undefined) {
+                if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {
 
-                    vectorLayer.geometry = new VectorLayerGeometry();
-                    vectorLayer.geometry.groups = vectorLayer['groups'];
+                    vectorLayer.keyframes = new List<VectorLayerKeyFrame>();
+                    let key = new VectorLayerKeyFrame();
+                    key.frame = 0;
+                    key.geometry = vectorLayer['geometry'];
+                    vectorLayer.keyframes.push(key);
+                }
 
+                if (vectorLayer['geometry'] != undefined) {
+                    delete vectorLayer['geometry'];
+                }
+
+                if (vectorLayer['groups'] != undefined) {
                     delete vectorLayer['groups'];
                 }
 
-                for (let group of vectorLayer.geometry.groups) {
+                for (let keyframe of vectorLayer.keyframes) {
 
-                    for (let line of group.lines) {
+                    for (let group of keyframe.geometry.groups) {
 
-                        line.modifyFlag = VectorLineModifyFlagID.none;
-                        line.isEditTarget = false;
-                        line.isCloseToMouse = false;
+                        for (let line of group.lines) {
 
-                        if (line['strokeWidth'] != undefined) {
-                            delete line['strokeWidth'];
-                        }
+                            line.modifyFlag = VectorLineModifyFlagID.none;
+                            line.isEditTarget = false;
+                            line.isCloseToMouse = false;
 
-                        for (let point of line.points) {
-
-                            point.modifyFlag = LinePointModifyFlagID.none;
-
-                            point.adjustingLocation = vec3.create();
-                            vec3.copy(point.adjustingLocation, point.location);
-
-                            point.tempLocation = vec3.create();
-
-                            point.adjustingLineWidth = point.lineWidth;
-
-                            if (point.lineWidth == undefined) {
-                                point.lineWidth = 1.0;
+                            if (line['strokeWidth'] != undefined) {
+                                delete line['strokeWidth'];
                             }
 
-                            if (point['adjustedLocation'] != undefined) {
-                                delete point['adjustedLocation'];
+                            for (let point of line.points) {
+
+                                point.modifyFlag = LinePointModifyFlagID.none;
+
+                                point.adjustingLocation = vec3.create();
+                                vec3.copy(point.adjustingLocation, point.location);
+
+                                point.tempLocation = vec3.create();
+
+                                point.adjustingLineWidth = point.lineWidth;
+
+                                if (point.lineWidth == undefined) {
+                                    point.lineWidth = 1.0;
+                                }
+
+                                if (point['adjustedLocation'] != undefined) {
+                                    delete point['adjustedLocation'];
+                                }
                             }
                         }
                     }
@@ -759,7 +754,7 @@ namespace ManualTracingTool {
                 let vRefLayer = <VectorLayerReferenceLayer>layer;
 
                 vRefLayer.referenceLayer = <VectorLayer>info.layerDictionary[vRefLayer.referenceLayerID];
-                vRefLayer.geometry = vRefLayer.referenceLayer.geometry;
+                vRefLayer.keyframes = vRefLayer.referenceLayer.keyframes;
 
                 delete vRefLayer.referenceLayerID;
             }
@@ -833,19 +828,22 @@ namespace ManualTracingTool {
 
                 let vectorLayer = <VectorLayer>layer;
 
-                for (let group of vectorLayer.geometry.groups) {
+                for (let keyframe of vectorLayer.keyframes) {
 
-                    for (let line of group.lines) {
+                    for (let group of keyframe.geometry.groups) {
 
-                        delete line.modifyFlag;
-                        delete line.isCloseToMouse;
-                        delete line.isEditTarget;
+                        for (let line of group.lines) {
 
-                        for (let point of line.points) {
+                            delete line.modifyFlag;
+                            delete line.isCloseToMouse;
+                            delete line.isEditTarget;
 
-                            delete point.adjustingLocation;
-                            delete point.tempLocation;
-                            delete point.adjustingLineWidth;
+                            for (let point of line.points) {
+
+                                delete point.adjustingLocation;
+                                delete point.tempLocation;
+                                delete point.adjustingLineWidth;
+                            }
                         }
                     }
                 }
@@ -854,7 +852,7 @@ namespace ManualTracingTool {
 
                 let vRefLayer = <VectorLayerReferenceLayer>layer;
 
-                delete vRefLayer.geometry;
+                delete vRefLayer.keyframes;
                 delete vRefLayer.referenceLayer;
             }
             else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
@@ -896,7 +894,7 @@ namespace ManualTracingTool {
 
             this.collectLayerWindowButtons();
 
-            this.collectLayerWindowItems();
+            this.updateLayerStructure();
         }
 
         private initializeModals() {
@@ -1355,7 +1353,7 @@ namespace ManualTracingTool {
             }
             else if (this.toolEnv.isSelectMode()) {
 
-                let isHitChanged = this.mousemoveHittest(e.location[0], e.location[1], this.toolEnv.mouseCursorViewRadius, false);
+                let isHitChanged = this.mousemoveHittest(e.location[0], e.location[1], this.toolEnv.mouseCursorViewRadius);
                 if (isHitChanged) {
                     this.toolEnv.setRedrawMainWindow();
                 }
@@ -1876,11 +1874,11 @@ namespace ManualTracingTool {
 
                 if (env.isSelectMode()) {
 
-                    if (this.toolContext.currentLayer != null
-                        && this.toolContext.currentLayer.type == LayerTypeID.vectorLayer) {
+                    if (this.toolContext.currentVectorLayer != null
+                        && this.toolContext.currentVectorGeometry != null) {
 
                         let command = new Command_DeleteSelectedPoints();
-                        if (command.prepareEditTargets(<VectorLayer>(this.toolContext.currentLayer))) {
+                        if (command.prepareEditTargets(this.toolContext.currentVectorLayer, this.toolContext.currentVectorGeometry)) {
 
                             command.execute(env);
                             this.toolContext.commandHistory.addCommand(command);
@@ -2204,6 +2202,145 @@ namespace ManualTracingTool {
             return false;
         }
 
+        // Core data system for layer and animation
+
+        updateLayerStructure() { // @implements MainEditor
+
+            this.collectViewContext();
+            this.collectLayerWindowItems();
+            this.caluculateLayerWindowLayout(this.layerWindow);
+            this.subtoolWindow_CollectViewItems();
+            this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+        }
+
+        collectViewContext() {
+
+            // Collects first keyframes for each layer
+
+            let layers = new List<Layer>();
+            this.collectViewContext_CollectLayersRecursive(layers, this.toolContext.document.rootLayer);
+
+            // Collects identical keyframes for each keyframes
+
+            let viewKeyFrames = new List<ViewKeyFrame>();
+            this.collectViewContext_CollectKeyframes(viewKeyFrames, layers);
+
+            // Creates all view-keyframes.
+
+            let sortedViewKeyFrames = viewKeyFrames.sort((a, b) => { return b.frame - a.frame });
+
+            this.collectViewContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
+
+            this.viewLayerContext.keyframes = sortedViewKeyFrames;
+
+            this.currentKeyframe = this.findCurrentViewKeyFrame(this.toolContext.document.animationSettingData.currentTimeFrame);
+        }
+
+        private collectViewContext_CollectLayersRecursive(result: List<Layer>, parentLayer: Layer) {
+
+            for (let layer of parentLayer.childLayers) {
+
+                result.push(layer);
+
+                if (layer.childLayers.length > 0) {
+
+                    this.collectViewContext_CollectLayersRecursive(result, layer);
+                }
+            }
+        }
+
+        private collectViewContext_CollectKeyframes(result: List<ViewKeyFrame>, layers: List<Layer>) {
+
+            let keyframeDictionary = new Dictionary<boolean>();
+
+            for (let layer of layers) {
+
+                if (VectorLayer.isVectorLayer(layer)) {
+
+                    let vectorLayer = <VectorLayer>(layer);
+
+                    for (let keyframe of vectorLayer.keyframes) {
+
+                        let frameText = keyframe.frame.toString();
+
+                        if (!DictionaryContainsKey(keyframeDictionary, frameText)) {
+
+                            let viewKeyframe = new ViewKeyFrame();
+                            result.push(viewKeyframe);
+
+                            keyframeDictionary[frameText] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        private collectViewContext_CollectKeyframeLayers(result: List<ViewKeyFrame>, layers: List<Layer>) {
+
+            // All view-keyframes contains view-layer info for all layer.
+
+            for (let viewKeyframe of result) {
+
+                for (let layer of layers) {
+
+                    let keyframeLayer = new ViewKeyframeLayer();
+                    keyframeLayer.layer = layer;
+
+                    if (VectorLayer.isVectorLayer(layer)) {
+
+                        let vectorLayer = <VectorLayer>layer;
+
+                        let max_KeyFrame: VectorLayerKeyFrame = null;
+                        for (let keyframe of vectorLayer.keyframes) {
+
+                            if (keyframe.frame > viewKeyframe.frame) {
+                                break;
+                            }
+
+                            max_KeyFrame = keyframe;
+                        }
+
+                        if (max_KeyFrame == null) {
+
+                            throw ('The document contains a layer that has no keyframe!');
+                        }
+
+                        keyframeLayer.vectorLayerKeyframe = max_KeyFrame;
+                    }
+
+                    viewKeyframe.layers.push(keyframeLayer);
+                }
+            }
+        }
+
+        private findCurrentViewKeyFrame(currentFrame: int): ViewKeyFrame {
+
+            let max_ViewKeyFrame: ViewKeyFrame = null;
+            for (let viewKeyframe of this.viewLayerContext.keyframes) {
+
+                if (viewKeyframe.frame > currentFrame) {
+                    break;
+                }
+
+                max_ViewKeyFrame = viewKeyframe;
+            }
+
+            return max_ViewKeyFrame;
+        }
+
+        private getViewKeyframeLayer(viewKeyFrame: ViewKeyFrame, layer: Layer): ViewKeyframeLayer {
+
+            for (let viewKeyframeLayer of viewKeyFrame.layers) {
+
+                if (viewKeyframeLayer.layer == layer) {
+
+                    return viewKeyframeLayer;
+                }
+            }
+
+            return null;
+        }
+
         // Tools and context operations
 
         private getCurrentMainTool(): MainTool {
@@ -2255,18 +2392,23 @@ namespace ManualTracingTool {
 
         public setCurrentLayer(layer: Layer) { //@implements MainEditor
 
+            let viewKeyframe = this.currentKeyframe;
+
             this.toolContext.currentLayer = layer;
 
-            if (VectorLayer.isVectorLayer(layer)) {
+            if (VectorLayer.isVectorLayer(layer) && viewKeyframe != null) {
 
-                let vectorLayer = <VectorLayer>layer;
+                let viewKeyframeLayer = this.getViewKeyframeLayer(viewKeyframe, layer);
+                let geometry = viewKeyframeLayer.vectorLayerKeyframe.geometry;
 
-                this.toolContext.currentVectorLayer = vectorLayer;
-                this.toolContext.currentVectorGroup = vectorLayer.geometry.groups[0];
+                this.toolContext.currentVectorLayer = <VectorLayer>layer;
+                this.toolContext.currentVectorGeometry = geometry;
+                this.toolContext.currentVectorGroup = geometry.groups[0];
             }
             else {
 
                 this.toolContext.currentVectorLayer = null;
+                this.toolContext.currentVectorGeometry = null;
                 this.toolContext.currentVectorGroup = null;
             }
 
@@ -2489,7 +2631,7 @@ namespace ManualTracingTool {
             // M down      | 1, 4    | 1, 4 and 0, 4 | 1, 4          |
             // move with M | 0, 4    | 1, 0          | 0, 4          |
             // M up        | 1, 0    | 1, 0 and 0, 0 | 1, 0 and 0, 0 |
-            console.log(e.button + ', ' + e.buttons);
+            //console.log(e.button + ', ' + e.buttons);
 
             toolMouseEvent.offsetX = e.offsetX;
             toolMouseEvent.offsetY = e.offsetY;
@@ -2510,7 +2652,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            console.log(e.touches.length);
+            //console.log(e.touches.length);
 
             var rect = canvasWindow.canvas.getBoundingClientRect();
 
@@ -3149,15 +3291,6 @@ namespace ManualTracingTool {
                 this.drawEditorWindow(this.editorWindow, this.mainWindow);
             }
 
-            if (this.toolContext.updateLayerWindowItems) {
-
-                this.toolContext.updateLayerWindowItems = false;
-
-                this.collectLayerWindowItems();
-                this.caluculateLayerWindowLayout(this.layerWindow);
-                this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
-            }
-
             if (this.toolContext.redrawLayerWindow) {
 
                 this.toolContext.redrawLayerWindow = false;
@@ -3213,18 +3346,26 @@ namespace ManualTracingTool {
 
         private drawMainWindow(canvasWindow: CanvasWindow) {
 
+            if (this.currentKeyframe == null) {
+                return;
+            }
+
             let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
 
             this.canvasRender.setContext(canvasWindow);
 
-            for (let i = this.document.rootLayer.childLayers.length - 1; i >= 0; i--) {
-                let layer = this.document.rootLayer.childLayers[i];
+            let viewKeyframe = this.currentKeyframe;
 
-                this.drawLayerRecursive(layer, currentLayerOnly, this.document)
+            for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
+                let viewKeyFrameLayer = viewKeyframe.layers[i];
+
+                this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document)
             }
         }
 
-        private drawLayerRecursive(layer: Layer, currentLayerOnly: boolean, documentData: DocumentData) {
+        private drawLayer(viewKeyFrameLayer: ViewKeyframeLayer, currentLayerOnly: boolean, documentData: DocumentData) {
+
+            let layer = viewKeyFrameLayer.layer;
 
             if (!layer.isVisible) {
                 return;
@@ -3237,15 +3378,11 @@ namespace ManualTracingTool {
             if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
-                this.drawVectorLayer(vectorLayer, vectorLayer.geometry, documentData);
+                this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData);
             }
             else if (layer.type == LayerTypeID.groupLayer) {
 
-                for (let i = layer.childLayers.length - 1; i >= 0; i--) {
-                    let childLayer = layer.childLayers[i];
-
-                    this.drawLayerRecursive(childLayer, currentLayerOnly, documentData);
-                }
+                // No drawing
             }
             else if (layer.type == LayerTypeID.posingLayer) {
 
@@ -3663,31 +3800,35 @@ namespace ManualTracingTool {
 
         private layerPicking(canvasWindow: CanvasWindow, pickLocationX: float, pickLocationY: float): int {
 
-            if (this.layerWindowItems == null) {
+            if (this.layerWindowItems == null || this.currentKeyframe == null) {
                 return -1;
             }
 
-            let documentData = this.document;
+            let documentData = this.toolContext.document;
 
-            for (let layerWindowItem of this.layerWindowItems) {
+            let viewKeyframe = this.currentKeyframe;
 
-                if (!VectorLayer.isVectorLayer(layerWindowItem.layer)) {
+            for (let viewKeyframeLayer of viewKeyframe.layers) {
+
+                let layer = viewKeyframeLayer.layer;
+
+                if (!VectorLayer.isVectorLayer(layer)) {
                     continue;
                 }
 
-                let vectorLayer = <VectorLayer>layerWindowItem.layer;
+                let vectorLayer = <VectorLayer>layer;
 
                 this.clearWindow(canvasWindow);
 
                 this.canvasRender.setContext(canvasWindow);
 
-                this.drawVectorLayer(vectorLayer, vectorLayer.geometry, documentData);
+                this.drawVectorLayer(vectorLayer, viewKeyframeLayer.vectorLayerKeyframe.geometry, documentData);
 
                 this.canvasRender.pickColor(this.tempColor4, canvasWindow, pickLocationX, pickLocationY);
 
                 if (this.tempColor4[3] > 0.0) {
 
-                    this.setCurrentLayer(layerWindowItem.layer);
+                    this.setCurrentLayer(layer);
                     this.toolEnv.setRedrawLayerWindow();
                     break;
                 } 
@@ -4456,20 +4597,13 @@ namespace ManualTracingTool {
 
         // Selection management
 
-        private mousemoveHittest(x: float, y: float, minDistance: float, recursive: boolean): boolean {
+        private mousemoveHittest(x: float, y: float, minDistance: float): boolean {
 
             this.hittest_Line_IsCloseTo.startProcess();
 
-            if (recursive) {
+            if (this.toolEnv.currentVectorGeometry != null) {
 
-                this.hittest_Line_IsCloseTo.processLayerRecursive(this.document.rootLayer.childLayers, x, y, minDistance);
-            }
-            else {
-
-                if (this.toolEnv.currentVectorLayer != null) {
-
-                    this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorLayer, x, y, minDistance);
-                }
+                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, x, y, minDistance);
             }
 
             this.hittest_Line_IsCloseTo.endProcess();
@@ -4609,6 +4743,23 @@ namespace ManualTracingTool {
 
             return file.path;
         }
+    }
+
+    class ViewKeyframeLayer {
+
+        layer: Layer = null;
+        vectorLayerKeyframe: VectorLayerKeyFrame = null;
+    }
+
+    class ViewKeyFrame {
+
+        frame = 0;
+        layers = new List<ViewKeyframeLayer>();
+    }
+
+    class ViewLayerContext {
+
+        keyframes: List<ViewKeyFrame> = null;
     }
 
     class MainWindow extends ToolBaseWindow {

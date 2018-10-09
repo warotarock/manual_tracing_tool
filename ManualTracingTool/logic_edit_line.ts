@@ -3,9 +3,9 @@ namespace ManualTracingTool {
 
     export class Logic_VectorLayer {
 
-        static clearLayerModifyFlags(layer: VectorLayer) {
+        static clearGeometryModifyFlags(geometry: VectorLayerGeometry) {
 
-            for (let group of layer.geometry.groups) {
+            for (let group of geometry.groups) {
 
                 this.clearGroupModifyFlags(group);
             }
@@ -32,9 +32,9 @@ namespace ManualTracingTool {
             }
         }
 
-        static fillLayerDeleteFlags(layer: VectorLayer, forceDelete: boolean) {
+        static fillGeometryDeleteFlags(geometry: VectorLayerGeometry, forceDelete: boolean) {
 
-            for (let group of layer.geometry.groups) {
+            for (let group of geometry.groups) {
 
                 this.fillGroupDeleteFlags(group, forceDelete);
             }

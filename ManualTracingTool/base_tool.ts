@@ -53,6 +53,7 @@ namespace ManualTracingTool {
     export interface MainEditor {
 
         setCurrentLayer(layer: Layer);
+        updateLayerStructure();
 
         startLoadingDocumentResourcesProcess(document: DocumentData);
 
@@ -120,6 +121,7 @@ namespace ManualTracingTool {
         currentLayer: Layer = null;
 
         currentVectorLayer: VectorLayer = null;
+        currentVectorGeometry: VectorLayerGeometry = null;
         currentVectorGroup: VectorGroup = null;
         currentVectorLine: VectorLine = null;
 
@@ -133,7 +135,6 @@ namespace ManualTracingTool {
         redrawEditorWindow = false;
         redrawLayerWindow = false;
         redrawSubtoolWindow = false;
-        updateLayerWindowItems = false;
         redrawTimeLineWindow = false;
         redrawWebGLWindow = false;
         redrawHeaderWindow = false;
@@ -175,6 +176,7 @@ namespace ManualTracingTool {
         drawLineMinWidth = 1.0;
 
         currentVectorLayer: VectorLayer = null;
+        currentVectorGeometry: VectorLayerGeometry = null;
         currentVectorGroup: VectorGroup = null;
         currentVectorLine: VectorLine = null;
 
@@ -217,6 +219,7 @@ namespace ManualTracingTool {
             this.drawLineMinWidth = this.toolContext.drawLineMinWidth;
 
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
+            this.currentVectorGeometry = this.toolContext.currentVectorGeometry;
             this.currentVectorGroup = this.toolContext.currentVectorGroup;
             this.currentVectorLine = this.toolContext.currentVectorLine;
 
@@ -267,10 +270,11 @@ namespace ManualTracingTool {
             this.toolContext.redrawLayerWindow = true;
         }
 
-        setUpadateLayerWindowItems() {
+        upadateLayerStructure() {
 
-            this.toolContext.updateLayerWindowItems = true;
+            this.toolContext.mainEditor.updateLayerStructure();
             this.toolContext.redrawLayerWindow = true;
+            this.toolContext.redrawTimeLineWindow = true;
         }
 
         setRedrawSubtoolWindow() {
@@ -291,10 +295,11 @@ namespace ManualTracingTool {
         setRedrawAllWindows() {
 
             this.setRedrawMainWindowEditorWindow();
-            this.setUpadateLayerWindowItems();
             this.setRedrawSubtoolWindow();
             this.setRedrawTimeLineWindow();
             this.setRedrawWebGLWindow();
+
+            this.upadateLayerStructure();
         }
 
         isAnyModifierKeyPressing(): boolean {

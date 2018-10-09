@@ -205,7 +205,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.lineSingleHitTester.processLayer(env.currentVectorLayer, location[0], location[1], env.mouseCursorViewRadius);
+            this.lineSingleHitTester.processLayer(env.currentVectorGeometry, location[0], location[1], env.mouseCursorViewRadius);
 
             let hitedLine = this.lineSingleHitTester.hitedLine;
 

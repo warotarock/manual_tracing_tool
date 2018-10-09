@@ -13,19 +13,19 @@ namespace ManualTracingTool {
 
         }
 
-        protected beforeHitTestToLayer(layer: VectorLayer) { // @virtual
+        protected beforeHitTestToLayer(geometry: VectorLayerGeometry) { // @virtual
 
         }
 
-        protected afterHitTestToLayer(layer: VectorLayer) { // @virtual
+        protected afterHitTestToLayer(geometry: VectorLayerGeometry) { // @virtual
 
         }
 
-        protected beforeHitTestToGroup(layer: VectorLayer, group: VectorGroup) { // @virtual
+        protected beforeHitTestToGroup(geometry: VectorLayerGeometry, group: VectorGroup) { // @virtual
 
         }
 
-        protected afterHitTestToGroup(layer: VectorLayer, group: VectorGroup) { // @virtual
+        protected afterHitTestToGroup(geometry: VectorLayerGeometry, group: VectorGroup) { // @virtual
 
         }
 
@@ -53,21 +53,15 @@ namespace ManualTracingTool {
     export interface IHitTest_VectorLayerLinePoint {
 
         startProcess();
-        processLayer(layer: Layer, x: float, y: float, minDistance: float);
-        processLayerRecursive(layers: List<Layer>, x: float, y: float, minDistance: float);
+        processLayer(geometry: VectorLayerGeometry, x: float, y: float, minDistance: float);
         endProcess();
     }
 
     export class HitTest_LinePointBase extends HitTest_VectorLayer_Base implements IHitTest_VectorLayerLinePoint {
 
-        processLayer(layer: Layer, x: float, y: float, minDistance: float) {
+        processLayer(geometry: VectorLayerGeometry, x: float, y: float, minDistance: float) {
 
-            this.hitTest(layer, x, y, minDistance * minDistance);
-        }
-
-        processLayerRecursive(layers: List<Layer>, x: float, y: float, minDistance: float) {
-
-            this.hitTestRecursive(layers, x, y, minDistance * minDistance);
+            this.hitTest(geometry, x, y, minDistance * minDistance);
         }
 
         startProcess() {
@@ -82,20 +76,13 @@ namespace ManualTracingTool {
             this.afterHitTest();
         }
 
-        protected hitTest(layer: Layer, x: float, y: float, minDistance: float) {
+        protected hitTest(geometry: VectorLayerGeometry, x: float, y: float, minDistance: float) {
 
-            if (layer.type != LayerTypeID.vectorLayer) {
+            this.beforeHitTestToLayer(geometry);
 
-                return;
-            }
+            for (let group of geometry.groups) {
 
-            let vectorLayer = <VectorLayer>layer;
-
-            this.beforeHitTestToLayer(vectorLayer);
-
-            for (let group of vectorLayer.geometry.groups) {
-
-                this.beforeHitTestToGroup(vectorLayer, group);
+                this.beforeHitTestToGroup(geometry, group);
 
                 for (let line of group.lines) {
 
@@ -109,26 +96,10 @@ namespace ManualTracingTool {
                     this.afterHitTestToLine(group, line);
                 }
 
-                this.afterHitTestToGroup(vectorLayer, group);
+                this.afterHitTestToGroup(geometry, group);
             }
 
-            this.afterHitTestToLayer(vectorLayer);
-        }
-
-        protected hitTestRecursive(layers: List<Layer>, x: float, y: float, minDistance: float) {
-
-            for (let layer of layers) {
-
-                if (layer.type == LayerTypeID.vectorLayer) {
-
-                    this.hitTest(layer, x, y, minDistance);
-                }
-
-                if (layer.childLayers.length > 0) {
-
-                    this.hitTestRecursive(layer.childLayers, x, y, minDistance);
-                }
-            }
+            this.afterHitTestToLayer(geometry);
         }
 
         protected hitTest_LineRectangle(line: VectorLine, x: float, y: float, minDistance: float): boolean {

@@ -116,6 +116,12 @@ namespace ManualTracingTool {
         groups = new List<VectorGroup>();
     }
 
+    export class VectorLayerKeyFrame {
+
+        frame = 0;
+        geometry: VectorLayerGeometry = null;
+    }
+
     export enum DrawLineTypeID {
 
         none = 1,
@@ -134,7 +140,7 @@ namespace ManualTracingTool {
 
         type = LayerTypeID.vectorLayer;
 
-        geometry = new VectorLayerGeometry();
+        keyframes = new List<VectorLayerKeyFrame>();
 
         drawLineType = DrawLineTypeID.layerColor;
 
@@ -148,6 +154,15 @@ namespace ManualTracingTool {
 
             return (layer.type == LayerTypeID.vectorLayer
                 || layer.type == LayerTypeID.vectorLayerReferenceLayer);
+        }
+
+        constructor() {
+            super();
+
+            let key = new VectorLayerKeyFrame();
+            key.frame = 0;
+            key.geometry = new VectorLayerGeometry();
+            this.keyframes.push(key);
         }
     }
 

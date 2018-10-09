@@ -40,7 +40,7 @@ namespace ManualTracingTool {
 
             let command = new Command_Resample_Segment();
 
-            if (command.collectEditTargets(env.currentVectorLayer, env)) {
+            if (command.collectEditTargets(env.currentVectorGeometry, env)) {
 
                 command.execute(env);
 
@@ -58,14 +58,14 @@ namespace ManualTracingTool {
         editGroups: List<Tool_Resample_Segment_EditGroup> = null;
         editLines: List<Tool_Resample_Segment_EditLine> = null;
 
-        collectEditTargets(layer: VectorLayer, env: ToolEnvironment): boolean {
+        collectEditTargets(geometry: VectorLayerGeometry, env: ToolEnvironment): boolean {
 
             let editGroups = new List<Tool_Resample_Segment_EditGroup>();
             let editLines = new List<Tool_Resample_Segment_EditLine>();
 
             let modifiedGroupCount = 0;
 
-            for (let group of layer.geometry.groups) {
+            for (let group of geometry.groups) {
 
                 let modifiedLineCount = 0;
 

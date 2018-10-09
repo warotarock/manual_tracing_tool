@@ -36,7 +36,7 @@ namespace ManualTracingTool {
 
             let isSelected = false;
 
-            for (let group of env.currentVectorLayer.geometry.groups) {
+            for (let group of env.currentVectorGeometry.groups) {
 
                 for (let line of group.lines) {
 
@@ -64,7 +64,7 @@ namespace ManualTracingTool {
 
             let selectionInfo = new VectorLayerEditorSelectionInfo();
 
-            for (let group of env.currentVectorLayer.geometry.groups) {
+            for (let group of env.currentVectorGeometry.groups) {
 
                 for (let line of group.lines) {
 
@@ -85,7 +85,7 @@ namespace ManualTracingTool {
 
             let selectionInfo = new VectorLayerEditorSelectionInfo();
 
-            for (let group of env.currentVectorLayer.geometry.groups) {
+            for (let group of env.currentVectorGeometry.groups) {
 
                 for (let line of group.lines) {
 
