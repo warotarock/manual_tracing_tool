@@ -23,14 +23,26 @@ namespace ManualTracingTool {
 
     export class Tool_HideLinePoint_BrushSelect extends Tool_BrushSelectLinePointBase {
 
-        helpText = '線の太さを０に設定し、非表示にします。表示したい場合は線の太さを変更してください。';
+        helpText = '線の太さに最大の太さに設定します。<br />Shiftキーで最小の太さに設定します。Ctrlキーで線をの太さを０にします。';
 
         logic_Selector: ISelector_BrushSelect = new Selector_HideLinePoint_BrushSelect(); // @override
 
         protected onStartSelection(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             let logic_Selector = (<Selector_HideLinePoint_BrushSelect>this.logic_Selector);
-            logic_Selector.lineWidth = 0.0;
+
+            if (env.isShiftKeyPressing()) {
+
+                logic_Selector.lineWidth = env.drawLineMinWidth;
+            }
+            else if (env.isCtrlKeyPressing()) {
+
+                logic_Selector.lineWidth = 0.0;
+            }
+            else {
+
+                logic_Selector.lineWidth = env.drawLineBaseWidth;
+            }
         }
 
         protected executeCommand(env: ToolEnvironment) { // @override

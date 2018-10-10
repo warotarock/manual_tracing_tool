@@ -1785,6 +1785,7 @@ namespace ManualTracingTool {
                 this.document = this.createDefaultDocumentData();
                 this.toolContext.document = this.document;
 
+                this.updateLayerStructure();
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
 
                 env.setRedrawAllWindows();
@@ -3645,7 +3646,7 @@ namespace ManualTracingTool {
                 }
 
                 let firstPoint = line.points[segmentStartIndex];
-                let currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
+                let currentLineWidth = this.lineWidthAdjust(useAdjustingLocation ? firstPoint.adjustingLineWidth : firstPoint.lineWidth);
 
                 // search end index of the segment
                 let segmentEndIndex = segmentStartIndex;
@@ -3654,7 +3655,7 @@ namespace ManualTracingTool {
 
                     let isNotDeleted = (point.modifyFlag != LinePointModifyFlagID.delete);
 
-                    let lineWidth = (useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
+                    let lineWidth = this.lineWidthAdjust(useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
                     let isVisibleWidth = (lineWidth > 0.0);
 
                     let isSameLineWidth = (lineWidth == currentLineWidth);
