@@ -366,13 +366,17 @@
 
         .modalDialogWindow.exportImageFileModal {
             width: 400px;
-            height: 100px;
+            height: 200px;
             background-color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             border-radius: 10px;
             display: none;
             padding: 20px;
         }
+
+            .modalDialogWindow.exportImageFileModal div {
+                margin-bottom: 15px;
+            }
     </style>
 </head>
 <body>
@@ -588,6 +592,12 @@
     </div>
 
     <div id="exportImageFileModal" class="modalDialogWindow exportImageFileModal">
+        <div>
+            <label>
+                ファイル名（拡張子を除く）<br />
+                <input type="text" id="exportImageFileModal_fileName" onfocus="this.select();" />
+            </label><br />
+        </div>
         <div>
             画像形式<br />
             <label>

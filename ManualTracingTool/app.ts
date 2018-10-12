@@ -13,17 +13,19 @@ namespace ManualTracingTool {
 
     // これからやろうと思っていること (current tasks)
     // ・ファイルを指定してのドキュメント読み込み
-    // ・ポージングツールの整備
-    // 　・ポージングツール以外のツールでパンしたとき３Ⅾを更新する
-    // 　・複数のポージングレイヤーの描画
-    // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
-    // 　・モデルを切り替えられるようにする（数種類でよい）
+    // ・エクスポートの整備
+    // 　・ファイル名を指定してのエクスポート
+    // 　・解像度を指定してエクスポート
+    // 　・jpgの背景を白にする
     // ・アニメーション機能
     // 　・ドキュメントにキーフレーム情報を追加
     // 　・レイヤーのジオメトリにキーフレーム情報を追加
     // 　・キーフレームウィンドウを追加
     // 　　・キーフレームを追加、削除できるようにする
     // 　　・アニメーションの再生機能
+    // ・ポージングツールの整備
+    // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
+    // 　・モデルを切り替えられるようにする（数種類でよい）
     // ・モバイル対応
     // 　・タッチ操作をきちんとする
     // 　・画面サイズによってはダイアログがまともに表示されない問題の対応
@@ -70,7 +72,10 @@ namespace ManualTracingTool {
     // ・点削除＋線の非表示ツール
 
     // 終わったもの (done)
-    // ・塗りつぶし機能の追加
+   // ・ポージングツールの整備
+    // 　・ポージングツール以外のツールでパンしたとき３Ⅾを更新する
+    // 　・複数のポージングレイヤーの描画
+     // ・塗りつぶし機能の追加
     // 　・連続する線として設定した線を接続して塗りつぶすことができる機能（複数の線の間を塗りつぶす機能の簡易版ともいえる）
     // ・描画ツールの追加
     // 　・点削除ブラシツール（線の点をブラシ選択の要領で削除できる）
@@ -3118,6 +3123,19 @@ namespace ManualTracingTool {
                 return;
             }
 
+            let fileName = this.getInputElementText(this.ID.fileName);
+            let lastSeperatorIndex = StringLastIndexOf(fileName, '\\');
+            if (lastSeperatorIndex == -1) {
+                lastSeperatorIndex = StringLastIndexOf(fileName, '/');
+            }
+            let eperatorDotIndex = StringLastIndexOf(fileName, '.');
+            if (lastSeperatorIndex != -1 && eperatorDotIndex != -1 && eperatorDotIndex - lastSeperatorIndex > 0) {
+
+                fileName = StringSubstring(fileName, lastSeperatorIndex + 1, eperatorDotIndex - lastSeperatorIndex - 1);
+            }
+
+            this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
+
             this.setRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
 
             this.openModal(this.ID.exportImageFileModal, null);
@@ -3126,7 +3144,12 @@ namespace ManualTracingTool {
         private onClosedExportImageFileModal() {
 
             if (this.currentModalDialogResult != this.ID.exportImageFileModal_ok) {
+                return;
+            }
 
+            let fileName = this.getInputElementText(this.ID.exportImageFileModal_fileName);
+
+            if (StringIsNullOrEmpty(fileName)) {
                 return;
             }
 
@@ -3151,7 +3174,6 @@ namespace ManualTracingTool {
                 this.drawMainWindow(this.renderingWindow);
 
                 let exportPath = window.localStorage.getItem(this.exportPathKey);
-                let fileName = 'test';
                 let imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
                 let extText = '.png';
                 if (imageType == 2) {
@@ -4955,6 +4977,7 @@ namespace ManualTracingTool {
         documentSettingModal_FrameBottom = 'documentSettingModal_FrameBottom';
 
         exportImageFileModal = '#exportImageFileModal';
+        exportImageFileModal_fileName = 'exportImageFileModal_fileName';
         exportImageFileModal_imageFileType = 'exportImageFileModal_imageFileType';
         exportImageFileModal_ok = 'exportImageFileModal_ok';
         exportImageFileModal_cancel = 'exportImageFileModal_cancel';

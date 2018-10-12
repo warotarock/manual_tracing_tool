@@ -53,6 +53,10 @@ function StringIndexOf(str: string, searchString): int {
     return str.indexOf(searchString);
 }
 
+function StringLastIndexOf(str: string, searchString): int {
+    return str.lastIndexOf(searchString);
+}
+
 function StringSubstring(text: string, startIndex: int, length: int): string {
     return text.substr(startIndex, length);
 }
