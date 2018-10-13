@@ -135,7 +135,13 @@ namespace ManualTracingTool {
 
     class Main implements MainEditor, MainEditorDrawer {
 
+        // Main process management
+
         mainProcessState = MainProcessStateID.none;
+        isEventSetDone = false;
+        isDeferredWindowResizeWaiting = false;
+        lastTime: long = 0;
+        elapsedTime: long = 0;
 
         // UI elements
 
@@ -364,6 +370,8 @@ namespace ManualTracingTool {
 
                 this.document = new DocumentData();
                 this.startLoadingDocumentJSON(this.document, lastURL);
+
+                this.updateHdeaderDocumentFileName();
             }
 
             _Main.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
@@ -418,7 +426,7 @@ namespace ManualTracingTool {
             _Main.mainProcessState = MainProcessStateID.DocumentResourceLoading;
         }
 
-        startLoadingDocumentResources(document: DocumentData) {
+        private startLoadingDocumentResources(document: DocumentData) {
 
             this.loadingDocumentImageResources = new List<ImageResource>();
 
@@ -611,8 +619,6 @@ namespace ManualTracingTool {
             this.updateFooterMessage();
 
             this.toolEnv.setRedrawAllWindows();
-
-            this.updateHdeaderDocumentFileName();
 
             this.setEvents();
         }
@@ -990,7 +996,17 @@ namespace ManualTracingTool {
 
         private setEvents() {
 
+            if (this.isEventSetDone) {
+                return;
+            }
+
+            this.isEventSetDone = true;
+
             this.editorWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.getMouseInfo(this.mainWindow.toolMouseEvent, e, false, this.mainWindow);
                 this.mainWindow_mousedown();
@@ -999,12 +1015,20 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getMouseInfo(this.mainWindow.toolMouseEvent, e, false, this.mainWindow);
                 this.mainWindow_mousemove();
                 e.preventDefault();
             });
 
             this.editorWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.getMouseInfo(this.mainWindow.toolMouseEvent, e, true, this.mainWindow);
                 this.mainWindow_mouseup();
@@ -1013,12 +1037,20 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getTouchInfo(this.mainWindow.toolMouseEvent, e, true, false, this.mainWindow);
                 this.mainWindow_mousedown();
                 e.preventDefault();
             });
 
             this.editorWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.getTouchInfo(this.mainWindow.toolMouseEvent, e, false, false, this.mainWindow);
                 this.mainWindow_mousemove();
@@ -1027,12 +1059,20 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getTouchInfo(this.mainWindow.toolMouseEvent, e, false, true, this.mainWindow);
                 this.mainWindow_mouseup();
                 e.preventDefault();
             });
 
             this.editorWindow.canvas.addEventListener('mousewheel', (e: MouseEvent) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.getWheelInfo(this.mainWindow.toolMouseEvent, e);
                 this.editorWindow_mousewheel();
@@ -1041,12 +1081,20 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getMouseInfo(this.layerWindow.toolMouseEvent, e, false, this.layerWindow);
                 this.layerWindow_mousedown();
                 e.preventDefault();
             });
 
             this.layerWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.getMouseInfo(this.layerWindow.toolMouseEvent, e, false, this.layerWindow);
                 this.layerWindow_mousemove();
@@ -1055,12 +1103,20 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getMouseInfo(this.layerWindow.toolMouseEvent, e, true, this.mainWindow);
                 this.layerWindow_mouseup();
                 e.preventDefault();
             });
 
             this.layerWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.getTouchInfo(this.layerWindow.toolMouseEvent, e, true, false, this.layerWindow);
                 this.layerWindow_mousedown();
@@ -1069,17 +1125,29 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getTouchInfo(this.layerWindow.toolMouseEvent, e, false, false, this.layerWindow);
                 e.preventDefault();
             });
 
             this.layerWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getTouchInfo(this.layerWindow.toolMouseEvent, e, false, true, this.layerWindow);
                 e.preventDefault();
             });
 
             this.subtoolWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.getMouseInfo(this.subtoolWindow.toolMouseEvent, e, false, this.subtoolWindow);
                 this.subtoolWindow_mousedown(this.subtoolWindow.toolMouseEvent);
@@ -1088,12 +1156,20 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getMouseInfo(this.subtoolWindow.toolMouseEvent, e, false, this.subtoolWindow);
                 this.subtoolWindow_mousemove(this.subtoolWindow.toolMouseEvent);
                 e.preventDefault();
             });
 
             this.subtoolWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.getMouseInfo(this.subtoolWindow.toolMouseEvent, e, true, this.mainWindow);
                 this.subtoolWindow_mouseup(this.subtoolWindow.toolMouseEvent);
@@ -1102,6 +1178,10 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getTouchInfo(this.subtoolWindow.toolMouseEvent, e, true, false, this.subtoolWindow);
                 this.subtoolWindow_mousedown(this.subtoolWindow.toolMouseEvent);
                 e.preventDefault();
@@ -1109,21 +1189,51 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getTouchInfo(this.subtoolWindow.toolMouseEvent, e, false, false, this.subtoolWindow);
                 e.preventDefault();
             });
 
             this.subtoolWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.getTouchInfo(this.subtoolWindow.toolMouseEvent, e, false, true, this.subtoolWindow);
                 e.preventDefault();
             });
 
             document.addEventListener('keydown', (e: KeyboardEvent) => {
+
+                if (this.isWhileLoading()) {
+                    return;
+                }
+
+                if (this.isModalShown()) {
+                    return;
+                }
+
+                if (document.activeElement.id == this.ID.fileName) {
+                    return;
+                }
+
                 this.document_keydown(e);
             });
 
             document.addEventListener('keyup', (e: KeyboardEvent) => {
+
+                if (this.isModalShown()) {
+                    return;
+                }
+
+                if (document.activeElement.id == this.ID.fileName) {
+                    return;
+                }
+
                 this.document_keyup(e);
             });
 
@@ -1139,6 +1249,10 @@ namespace ManualTracingTool {
 
             this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', (e: Event) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.setCurrentMainTool(MainToolID.drawLine);
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawLayerWindow();
@@ -1147,6 +1261,10 @@ namespace ManualTracingTool {
             });
 
             this.getElement(this.ID.menu_btnScratchTool).addEventListener('mousedown', (e: Event) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.setCurrentMainTool(MainToolID.scratchLine);
                 this.toolEnv.setRedrawMainWindowEditorWindow();
@@ -1157,6 +1275,10 @@ namespace ManualTracingTool {
 
             this.getElement(this.ID.menu_btnPoseTool).addEventListener('mousedown', (e: Event) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.setCurrentMainTool(MainToolID.posing);
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawLayerWindow();
@@ -1166,11 +1288,19 @@ namespace ManualTracingTool {
 
             this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', (e: Event) => {
 
+                if (this.isEventWaiting()) {
+                    return;
+                }
+
                 this.openOperationOptionModal();
                 e.preventDefault();
             });
 
             this.getElement(this.ID.menu_btnExport).addEventListener('mousedown', (e: Event) => {
+
+                if (this.isEventWaiting()) {
+                    return;
+                }
 
                 this.openExportImageFileModal();
                 e.preventDefault();
@@ -1231,6 +1361,19 @@ namespace ManualTracingTool {
             }
         }
 
+        private isEventWaiting() {
+
+            if (this.isWhileLoading()) {
+                return true;
+            }
+
+            if (this.isModalShown()) {
+                return true;
+            }
+
+            return false;
+        }
+
         private setEvents_ModalCloseButton(id: string) {
 
             this.getElement(id).addEventListener('click', (e: Event) => {
@@ -1245,25 +1388,31 @@ namespace ManualTracingTool {
 
         // Continuous processes
 
-        _LastTime: long = 0;
-        _ElapsedTime: long = 0;
-
         run() {
+
+            if (this.isDeferredWindowResizeWaiting) {
+
+                this.isDeferredWindowResizeWaiting = false;
+
+                this.resizeWindows();
+
+                this.toolEnv.setRedrawAllWindows();
+            }
 
             // process animation time
 
             let currentTime = (new Date().getTime());
-            if (this._LastTime == 0) {
+            if (this.lastTime == 0) {
 
-                this._ElapsedTime = 100;
+                this.elapsedTime = 100;
             }
             else {
 
-                this._ElapsedTime = currentTime - this._LastTime;
+                this.elapsedTime = currentTime - this.lastTime;
             }
-            this._LastTime = currentTime;
+            this.lastTime = currentTime;
 
-            this.selectCurrentLayerAnimationTime -= this._ElapsedTime / 1000.0;
+            this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
             if (this.selectCurrentLayerAnimationTime < 0) {
 
                 this.selectCurrentLayerAnimationTime = 0;
@@ -1273,10 +1422,6 @@ namespace ManualTracingTool {
         // Events
 
         private mainWindow_mousedown() {
-
-            if (!this.mainProcessState) {
-                return;
-            }
 
             let context = this.toolContext;
             let wnd = this.mainWindow;
@@ -1335,10 +1480,6 @@ namespace ManualTracingTool {
 
         private mainWindow_mousemove() {
 
-            if (this.isWhileLoading()) {
-                return;
-            }
-
             let context = this.toolContext;
             let wnd = this.mainWindow;
             let e = wnd.toolMouseEvent;
@@ -1384,10 +1525,6 @@ namespace ManualTracingTool {
 
         private mainWindow_mouseup() {
 
-            if (this.isWhileLoading()) {
-                return;
-            }
-
             let context = this.toolContext;
             let wnd = this.mainWindow;
             let e = wnd.toolMouseEvent;
@@ -1409,10 +1546,6 @@ namespace ManualTracingTool {
         }
 
         private layerWindow_mousedown() {
-
-            if (this.isWhileLoading()) {
-                return;
-            }
 
             let context = this.toolContext;
             let wnd = this.layerWindow;
@@ -1724,10 +1857,6 @@ namespace ManualTracingTool {
 
         private editorWindow_mousewheel() {
 
-            if (this.isWhileLoading()) {
-                return;
-            }
-
             let wnd = this.mainWindow;
             let e = wnd.toolMouseEvent;
 
@@ -1746,18 +1875,6 @@ namespace ManualTracingTool {
 
             var env = this.toolEnv;
             let context = this.toolContext;
-
-            if (this.isWhileLoading()) {
-                return;
-            }
-
-            if (this.isModalShown()) {
-                return;
-            }
-
-            if (document.activeElement.id == this.ID.fileName) {
-                return;
-            }
 
             e.preventDefault();
 
@@ -2032,7 +2149,7 @@ namespace ManualTracingTool {
 
                 if (env.isCtrlKeyPressing()) {
 
-                    this.document = this.createDefaultDocumentData();
+                    this.document = new DocumentData();
                     this.toolContext.document = this.document;
 
                     let fileName = this.getInputElementText(this.ID.fileName);
@@ -2159,14 +2276,6 @@ namespace ManualTracingTool {
             this.toolContext.altKey = e.altKey;
             this.toolContext.ctrlKey = e.ctrlKey;
 
-            if (this.isModalShown()) {
-                return;
-            }
-
-            if (document.activeElement.id == this.ID.fileName) {
-                return;
-            }
-
             if (e.key == ' ') {
 
                 if (this.activeCanvasWindow == this.mainWindow) {
@@ -2186,9 +2295,7 @@ namespace ManualTracingTool {
 
         private htmlWindow_resize(e: Event) {
 
-            this.resizeWindows();
-
-            this.toolEnv.setRedrawAllWindows();
+            this.isDeferredWindowResizeWaiting = true;
         }
 
         private htmlWindow_contextmenu(e): boolean {
