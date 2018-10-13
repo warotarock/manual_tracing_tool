@@ -12,7 +12,6 @@ let fs = (typeof (require) != 'undefined') ? require('fs') : {
 namespace ManualTracingTool {
 
     // これからやろうと思っていること (current tasks)
-    // ・ファイルを指定してのドキュメント読み込み
     // ・アニメーション機能
     // 　・ドキュメントにキーフレーム情報を追加
     // 　・レイヤーのジオメトリにキーフレーム情報を追加
@@ -22,6 +21,7 @@ namespace ManualTracingTool {
     // ・ポージングツールの整備
     // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
     // 　・モデルを切り替えられるようにする（数種類でよい）
+    // ・ファイルを指定してのドキュメント読み込み
     // ・エクスポートの整備
     // 　・解像度を指定してエクスポート
     // 　・背景色を指定する
@@ -1004,7 +1004,7 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1015,7 +1015,7 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1026,7 +1026,7 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1037,7 +1037,7 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1048,7 +1048,7 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1059,7 +1059,7 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1070,7 +1070,7 @@ namespace ManualTracingTool {
 
             this.editorWindow.canvas.addEventListener('mousewheel', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1081,7 +1081,7 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1092,7 +1092,7 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1103,7 +1103,7 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1114,7 +1114,7 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1125,7 +1125,7 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1135,7 +1135,7 @@ namespace ManualTracingTool {
 
             this.layerWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1145,7 +1145,7 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1156,7 +1156,7 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1167,7 +1167,7 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1178,7 +1178,7 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1189,7 +1189,7 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1199,13 +1199,89 @@ namespace ManualTracingTool {
 
             this.subtoolWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
                 this.getTouchInfo(this.subtoolWindow.toolMouseEvent, e, false, true, this.subtoolWindow);
                 e.preventDefault();
             });
+
+            this.timeLineWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getMouseInfo(this.timeLineWindow.toolMouseEvent, e, false, this.timeLineWindow);
+                this.timeLineWindow_mousedown(this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+
+            this.timeLineWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getMouseInfo(this.timeLineWindow.toolMouseEvent, e, false, this.timeLineWindow);
+                this.timeLineWindow_mousemove(this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+
+            this.timeLineWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getMouseInfo(this.timeLineWindow.toolMouseEvent, e, true, this.mainWindow);
+                this.timeLineWindow_mouseup(this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+
+            this.timeLineWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getTouchInfo(this.timeLineWindow.toolMouseEvent, e, true, false, this.timeLineWindow);
+                this.timeLineWindow_mousedown(this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+
+            this.timeLineWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getTouchInfo(this.timeLineWindow.toolMouseEvent, e, false, false, this.timeLineWindow);
+                e.preventDefault();
+            });
+
+            this.timeLineWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getTouchInfo(this.timeLineWindow.toolMouseEvent, e, false, true, this.timeLineWindow);
+                e.preventDefault();
+            });
+
+            this.timeLineWindow.canvas.addEventListener('mousewheel', (e: MouseEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getWheelInfo(this.timeLineWindow.toolMouseEvent, e);
+                this.timeLineWindow_mousewheel(this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+
 
             document.addEventListener('keydown', (e: KeyboardEvent) => {
 
@@ -1249,7 +1325,7 @@ namespace ManualTracingTool {
 
             this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', (e: Event) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1262,7 +1338,7 @@ namespace ManualTracingTool {
 
             this.getElement(this.ID.menu_btnScratchTool).addEventListener('mousedown', (e: Event) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1275,7 +1351,7 @@ namespace ManualTracingTool {
 
             this.getElement(this.ID.menu_btnPoseTool).addEventListener('mousedown', (e: Event) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1288,7 +1364,7 @@ namespace ManualTracingTool {
 
             this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', (e: Event) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1298,7 +1374,7 @@ namespace ManualTracingTool {
 
             this.getElement(this.ID.menu_btnExport).addEventListener('mousedown', (e: Event) => {
 
-                if (this.isEventWaiting()) {
+                if (this.isEventDisabled()) {
                     return;
                 }
 
@@ -1361,7 +1437,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private isEventWaiting() {
+        private isEventDisabled() {
 
             if (this.isWhileLoading()) {
                 return true;
@@ -1543,6 +1619,22 @@ namespace ManualTracingTool {
             }
 
             this.mainWindow_MouseViewOperationEnd();
+        }
+
+        private editorWindow_mousewheel() {
+
+            let wnd = this.mainWindow;
+            let e = wnd.toolMouseEvent;
+
+            // View operation
+            if (e.wheelDelta != 0.0
+                && !e.isMouseDragging) {
+
+                this.mainWindow.addViewScale(e.wheelDelta * 0.1);
+
+                this.toolEnv.setRedrawMainWindowEditorWindow();
+                this.toolEnv.setRedrawWebGLWindow();
+            }
         }
 
         private layerWindow_mousedown() {
@@ -1855,21 +1947,88 @@ namespace ManualTracingTool {
             this.subtoolWindow.endMouseDragging();
         }
 
-        private editorWindow_mousewheel() {
+        private timeLineWindow_mousedown(e: ToolMouseEvent) {
 
-            let wnd = this.mainWindow;
-            let e = wnd.toolMouseEvent;
+            let context = this.toolContext;
+            let wnd = this.timeLineWindow;
+            let env = this.toolEnv;
+            let aniSetting = context.document.animationSettingData;
 
-            // View operation
-            if (e.wheelDelta != 0.0
-                && !e.isMouseDragging) {
+            this.timeLineWindow_ProcessFrameInput(e);
+        }
 
-                this.mainWindow.addViewScale(e.wheelDelta * 0.1);
+        private timeLineWindow_ProcessFrameInput(e: ToolMouseEvent) {
 
-                this.toolEnv.setRedrawMainWindowEditorWindow();
-                this.toolEnv.setRedrawWebGLWindow();
+            let context = this.toolContext;
+            let wnd = this.timeLineWindow;
+            let env = this.toolEnv;
+            let aniSetting = context.document.animationSettingData;
+
+            let clickedFrame = wnd.getFrameByLocation(e.offsetX, aniSetting);
+
+            if (clickedFrame != -1) {
+
+                aniSetting.currentTimeFrame = clickedFrame;
+                env.setRedrawTimeLineWindow();
             }
         }
+
+        private timeLineWindow_mousemove(e: ToolMouseEvent) {
+
+            let context = this.toolContext;
+            let wnd = this.timeLineWindow;
+            let env = this.toolEnv;
+
+            if (e.isLeftButtonPressing()) {
+
+                this.timeLineWindow_ProcessFrameInput(e);
+            }
+        }
+
+        private timeLineWindow_mouseup(e: ToolMouseEvent) {
+
+            let context = this.toolContext;
+            let wnd = this.timeLineWindow;
+            let env = this.toolEnv;
+
+
+            wnd.endMouseDragging();
+        }
+
+        private timeLineWindow_mousewheel(e: ToolMouseEvent) {
+
+            let context = this.toolContext;
+            let wnd = this.mainWindow;
+            let env = this.toolEnv;
+            let aniSetting = context.document.animationSettingData;
+
+            if (env.isCtrlKeyPressing()) {
+
+                let addScale = 0.2;
+
+                if (e.wheelDelta > 0) {
+
+                    aniSetting.timeLineWindowScale += addScale;
+                }
+                else {
+
+                    aniSetting.timeLineWindowScale -= addScale;
+                }
+
+                if (aniSetting.timeLineWindowScale < 1.0) {
+
+                    aniSetting.timeLineWindowScale = 1.0;
+                }
+
+                if (aniSetting.timeLineWindowScale > aniSetting.timeLineWindowScaleMax) {
+
+                    aniSetting.timeLineWindowScale = aniSetting.timeLineWindowScaleMax;
+                }
+
+                env.setRedrawTimeLineWindow();
+            }
+        }
+
 
         private document_keydown(e: KeyboardEvent) {
 
@@ -4568,12 +4727,41 @@ namespace ManualTracingTool {
 
         // TimeLine window drawing
 
-        private drawTimeLineWindow(timeLineWindow: TimeLineWindow) {
+        private drawTimeLineWindow(wnd: TimeLineWindow) {
 
-            let aniSetting = this.document.animationSettingData;
+            let context = this.toolContext;
+            let aniSetting = context.document.animationSettingData;
 
-            let left = timeLineWindow.leftPanelWidth;
-            let right = left + timeLineWindow.width - 1;
+            let left = wnd.getTimeLineLeft();
+            let right = wnd.getTimeLineRight();
+            let frameUnitWidth = wnd.getFrameUnitWidth(aniSetting);
+
+            let frameNumberHeight = 16.0;
+            let frameLineBottom = wnd.height - 1.0 - frameNumberHeight;
+            let frameLineHeight = 10.0;
+            let secondFrameLineHeight = 30.0;
+
+            // Key frames
+
+            let minKeyFrame = wnd.getFrameByLocation(left, aniSetting);
+            let maxKeyFrame = wnd.getFrameByLocation(right, aniSetting);
+
+            this.canvasRender.setStrokeWidth(3.0);
+            this.canvasRender.setFillColorV(this.drawStyle.timeLineKeyFrameColor);
+
+            for (let viewKeyframe of this.viewLayerContext.keyframes) {
+
+                if (viewKeyframe.frame < minKeyFrame) {
+                    continue;
+                }
+
+                if (viewKeyframe.frame > maxKeyFrame) {
+                    break;
+                }
+
+                let frameX = wnd.getFrameLocation(viewKeyframe.frame, aniSetting);
+                this.canvasRender.fillRect(frameX, 0.0, frameUnitWidth - 1, frameLineBottom);
+            }
 
             // Left panel
 
@@ -4581,15 +4769,9 @@ namespace ManualTracingTool {
 
             this.canvasRender.setStrokeWidth(1.0);
             this.canvasRender.setStrokeColorV(this.drawStyle.timeLineUnitFrameColor);
-            this.canvasRender.drawLine(left, 0.0, left, timeLineWindow.height);
+            this.canvasRender.drawLine(left, 0.0, left, wnd.height);
 
             // Frame measure
-
-            let frameUnitWidth = timeLineWindow.frameUnitWidth * aniSetting.timeLineWindowScale;
-            let frameNumberHeight = 16.0;
-            let frameLineBottom = timeLineWindow.height - 1.0 - frameNumberHeight;
-            let frameLineHeight = 10.0;
-            let secondFrameLineHeight = 30.0;
 
             for (let x = left; x <= right; x += frameUnitWidth) {
 
@@ -4608,7 +4790,9 @@ namespace ManualTracingTool {
             let currentFrameX = left - aniSetting.timeLineWindowViewLocationX + aniSetting.currentTimeFrame * frameUnitWidth;
             this.canvasRender.setStrokeWidth(3.0);
             this.canvasRender.setStrokeColorV(this.drawStyle.timeLineCurrentFrameColor);
-            this.canvasRender.drawLine(currentFrameX, 0.0, currentFrameX, timeLineWindow.height);
+            this.canvasRender.drawLine(currentFrameX, 0.0, currentFrameX, wnd.height);
+            this.canvasRender.setStrokeWidth(1.0);
+
         }
 
         // Header window drawing
@@ -4920,12 +5104,6 @@ namespace ManualTracingTool {
         subToolItemsBottom = 0.0;
     }
 
-    class TimeLineWindow extends ToolBaseWindow {
-
-        leftPanelWidth = 100.0;
-        frameUnitWidth = 8.0;
-    }
-
     class RectangleLayoutArea {
 
         index = -1;
@@ -4966,6 +5144,61 @@ namespace ManualTracingTool {
             this.top = 0.0;
             this.right = canvasWindow.width - 1.0;
             this.bottom = canvasWindow.width - 1.0;
+        }
+    }
+
+    class TimeLineWindow extends ToolBaseWindow {
+
+        leftPanelWidth = 100.0;
+        frameUnitWidth = 8.0;
+
+        getFrameUnitWidth(aniSetting: AnimationSettingData): float {
+
+            return this.frameUnitWidth * aniSetting.timeLineWindowScale;
+        }
+
+        getTimeLineLeft(): float {
+
+            return this.leftPanelWidth;
+        }
+
+        getTimeLineRight(): float {
+
+            return this.getTimeLineLeft() + this.width - 1;
+        }
+
+        getFrameByLocation(x: float, aniSetting: AnimationSettingData): int {
+
+            let left = this.getTimeLineLeft();
+            let right = this.getTimeLineRight();
+
+            if (x < left) {
+                return -1;
+            }
+
+            if (x > right) {
+                return -1;
+            }
+
+            let frameUnitWidth = this.getFrameUnitWidth(aniSetting);
+
+            let absoluteX = x - (left - aniSetting.timeLineWindowViewLocationX);
+
+            let frame = Math.floor(absoluteX / frameUnitWidth + 0.5);
+            if (frame < 0) {
+                frame = 0;
+            }
+
+            return frame;
+        }
+
+        getFrameLocation(frame: float, aniSetting: AnimationSettingData) {
+
+            let left = this.getTimeLineLeft();
+            let frameUnitWidth = this.getFrameUnitWidth(aniSetting);
+            let x = left - aniSetting.timeLineWindowViewLocationX + frame * frameUnitWidth;
+
+            return x;
         }
     }
 
