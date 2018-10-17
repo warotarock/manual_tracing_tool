@@ -270,11 +270,11 @@ namespace ManualTracingTool {
             this.toolContext.redrawLayerWindow = true;
         }
 
-        upadateLayerStructure() {
+        updateLayerStructure() {
 
             this.toolContext.mainEditor.updateLayerStructure();
-            this.toolContext.redrawLayerWindow = true;
-            this.toolContext.redrawTimeLineWindow = true;
+            this.setRedrawLayerWindow();
+            this.setRedrawTimeLineWindow();
         }
 
         setRedrawSubtoolWindow() {
@@ -298,8 +298,6 @@ namespace ManualTracingTool {
             this.setRedrawSubtoolWindow();
             this.setRedrawTimeLineWindow();
             this.setRedrawWebGLWindow();
-
-            this.upadateLayerStructure();
         }
 
         isAnyModifierKeyPressing(): boolean {
@@ -419,7 +417,8 @@ namespace ManualTracingTool {
 
         timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
         timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);
-        timeLineKeyFrameColor = vec4.fromValues(0.0, 0.0, 1.0, 0.2);
+        timeLineKeyFrameColor = vec4.fromValues(0.0, 0.0, 1.0, 0.1);
+        timeLineLayerKeyFrameColor = vec4.fromValues(0.8, 0.8, 0.0, 1.0);
 
         generalLinePointRadius = 2.0;
         selectedLinePointRadius = 3.0;

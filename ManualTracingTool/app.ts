@@ -905,7 +905,6 @@ namespace ManualTracingTool {
             this.mainWindow.centerLocationRate[1] = 0.5;
 
             this.collectLayerWindowButtons();
-
             this.updateLayerStructure();
         }
 
@@ -1402,6 +1401,9 @@ namespace ManualTracingTool {
 
             this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_ok);
             this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_cancel);
+
+            this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_ok);
+            this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_cancel);
 
             this.getElement(this.ID.palletColorModal_currentColor).addEventListener('change', (e: Event) => {
 
@@ -1968,8 +1970,32 @@ namespace ManualTracingTool {
 
             if (clickedFrame != -1) {
 
-                aniSetting.currentTimeFrame = clickedFrame;
+                this.timeLineWindow_SetCurrentFrame(clickedFrame);
+                env.setRedrawMainWindowEditorWindow();
                 env.setRedrawTimeLineWindow();
+            }
+        }
+
+        private timeLineWindow_SetCurrentFrame(frame: int) {
+
+            let context = this.toolContext;
+            let aniSetting = context.document.animationSettingData;
+
+            aniSetting.currentTimeFrame = frame;
+
+            if (aniSetting.currentTimeFrame < 0) {
+                aniSetting.currentTimeFrame = 0;
+            }
+
+            if (aniSetting.currentTimeFrame > aniSetting.maxFrame) {
+                aniSetting.currentTimeFrame = aniSetting.maxFrame;
+            }
+
+            this.currentKeyframe = this.findViewKeyFrame(aniSetting.currentTimeFrame);
+
+            if (context.currentLayer != null) {
+
+                this.setCurrentLayer(context.currentLayer);
             }
         }
 
@@ -2028,7 +2054,6 @@ namespace ManualTracingTool {
                 env.setRedrawTimeLineWindow();
             }
         }
-
 
         private document_keydown(e: KeyboardEvent) {
 
@@ -2219,7 +2244,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'ArrowLeft' || e.key == 'ArrowRight' || e.key == 'ArrowUp' || e.key == 'ArrowDown') {
+            if (env.isCtrlKeyPressing() && (e.key == 'ArrowLeft' || e.key == 'ArrowRight' || e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
 
                 let x = 0.0;
                 let y = 0.0;
@@ -2263,6 +2288,25 @@ namespace ManualTracingTool {
 
                 env.setRedrawMainWindowEditorWindow();
 
+                return;
+            }
+
+            if (!env.isCtrlKeyPressing() && (e.key == 'ArrowLeft' || e.key == 'ArrowRight')) {
+
+                let addFrame = 1;
+                if (e.key == 'ArrowLeft') {
+                    addFrame = -addFrame;
+                }
+
+                this.timeLineWindow_SetCurrentFrame(context.document.animationSettingData.currentTimeFrame + addFrame);
+
+                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawTimeLineWindow();
+            }
+
+            if (e.key == 'i' && this.activeCanvasWindow == this.timeLineWindow) {
+
+                this.openNewKeyframeModal();
                 return;
             }
 
@@ -2482,10 +2526,13 @@ namespace ManualTracingTool {
 
         collectViewContext() {
 
+            let context = this.toolContext;
+            let aniSetting = context.document.animationSettingData;
+
             // Collects first keyframes for each layer
 
             let layers = new List<Layer>();
-            this.collectViewContext_CollectLayersRecursive(layers, this.toolContext.document.rootLayer);
+            Layer.collectLayerRecursive(layers, this.toolContext.document.rootLayer);
 
             // Collects identical keyframes for each keyframes
 
@@ -2494,13 +2541,13 @@ namespace ManualTracingTool {
 
             // Creates all view-keyframes.
 
-            let sortedViewKeyFrames = viewKeyFrames.sort((a, b) => { return b.frame - a.frame });
+            let sortedViewKeyFrames = viewKeyFrames.sort((a, b) => { return a.frame - b.frame });
 
             this.collectViewContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
 
             this.viewLayerContext.keyframes = sortedViewKeyFrames;
 
-            this.currentKeyframe = this.findCurrentViewKeyFrame(this.toolContext.document.animationSettingData.currentTimeFrame);
+            this.timeLineWindow_SetCurrentFrame(aniSetting.currentTimeFrame);
         }
 
         private collectViewContext_CollectLayersRecursive(result: List<Layer>, parentLayer: Layer) {
@@ -2533,6 +2580,7 @@ namespace ManualTracingTool {
                         if (!DictionaryContainsKey(keyframeDictionary, frameText)) {
 
                             let viewKeyframe = new ViewKeyFrame();
+                            viewKeyframe.frame = keyframe.frame;
                             result.push(viewKeyframe);
 
                             keyframeDictionary[frameText] = true;
@@ -2580,7 +2628,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private findCurrentViewKeyFrame(currentFrame: int): ViewKeyFrame {
+        private findViewKeyFrame(currentFrame: int): ViewKeyFrame {
 
             let max_ViewKeyFrame: ViewKeyFrame = null;
             for (let viewKeyframe of this.viewLayerContext.keyframes) {
@@ -2595,17 +2643,31 @@ namespace ManualTracingTool {
             return max_ViewKeyFrame;
         }
 
-        private getViewKeyframeLayer(viewKeyFrame: ViewKeyFrame, layer: Layer): ViewKeyframeLayer {
+        private findViewKeyframeLayerIndex(viewKeyFrame: ViewKeyFrame, layer: Layer): int {
 
-            for (let viewKeyframeLayer of viewKeyFrame.layers) {
+            for (let index = 0; index < viewKeyFrame.layers.length; index++) {
 
-                if (viewKeyframeLayer.layer == layer) {
+                if (viewKeyFrame.layers[index].layer == layer) {
 
-                    return viewKeyframeLayer;
+                    return index;
                 }
             }
 
-            return null;
+            return -1;
+        }
+
+        private findViewKeyframeLayer(viewKeyFrame: ViewKeyFrame, layer: Layer): ViewKeyframeLayer {
+
+            let index = this.findViewKeyframeLayerIndex(viewKeyFrame, layer);
+
+            if (index != -1) {
+
+                return viewKeyFrame.layers[index];
+            }
+            else {
+
+                return null;
+            }
         }
 
         // Tools and context operations
@@ -2665,7 +2727,7 @@ namespace ManualTracingTool {
 
             if (VectorLayer.isVectorLayer(layer) && viewKeyframe != null) {
 
-                let viewKeyframeLayer = this.getViewKeyframeLayer(viewKeyframe, layer);
+                let viewKeyframeLayer = this.findViewKeyframeLayer(viewKeyframe, layer);
                 let geometry = viewKeyframeLayer.vectorLayerKeyframe.geometry;
 
                 this.toolContext.currentVectorLayer = <VectorLayer>layer;
@@ -2992,7 +3054,7 @@ namespace ManualTracingTool {
         // Dialogs
 
         currentModalDialogID: string = null;
-        currentModalFocusElementName: string = null;
+        currentModalFocusElementID: string = null;
         currentModalDialogResult: string = null;
         currentModalDialog_DocumentData: DocumentData = null;
         layerPropertyWindow_EditLayer: Layer = null;
@@ -3037,7 +3099,7 @@ namespace ManualTracingTool {
         private openModal(modalID: string, focusElementName: string) {
 
             this.currentModalDialogID = modalID;
-            this.currentModalFocusElementName = focusElementName;
+            this.currentModalFocusElementID = focusElementName;
 
             var modal: any = new Custombox.modal(
                 this.createModalOptionObject(this.currentModalDialogID)
@@ -3458,11 +3520,36 @@ namespace ManualTracingTool {
             }
         }
 
+        private openNewKeyframeModal() {
+
+            this.openModal(this.ID.newKeyframeModal, null);
+        }
+
+        private onClosedNewKeyframeModal() {
+
+            if (this.currentModalDialogResult != this.ID.newKeyframeModal_ok) {
+                return;
+            }
+
+            let insertType = <NewKeyframeModal_InsertTypeID>(this.getRadioElementIntValue(this.ID.newKeyframeModal_InsertType, 1));
+
+            let env = this.toolEnv;
+
+            if (insertType == NewKeyframeModal_InsertTypeID.CopyGeometory_AllLayer) {
+
+                let command = new Command_Animation_InsertKeyframeAllLayer();
+                command.frame = env.document.animationSettingData.currentTimeFrame;
+                command.execute(env);
+
+                env.commandHistory.addCommand(command);
+            }
+        }
+
         private onModalWindowShown() {
 
-            if (!StringIsNullOrEmpty(this.currentModalFocusElementName)) {
+            if (!StringIsNullOrEmpty(this.currentModalFocusElementID)) {
 
-                let element = this.getElement(this.currentModalFocusElementName);
+                let element = this.getElement(this.currentModalFocusElementID);
                 element.focus();
             }
         }
@@ -3530,6 +3617,10 @@ namespace ManualTracingTool {
             else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
 
                 this.onClosedExportImageFileModal();
+            }
+            else if (this.currentModalDialogID == this.ID.newKeyframeModal) {
+
+                this.onClosedNewKeyframeModal();
             }
 
             this.currentModalDialogID = this.ID.none;
@@ -4730,6 +4821,7 @@ namespace ManualTracingTool {
         private drawTimeLineWindow(wnd: TimeLineWindow) {
 
             let context = this.toolContext;
+            let env = this.toolEnv;
             let aniSetting = context.document.animationSettingData;
 
             let left = wnd.getTimeLineLeft();
@@ -4741,26 +4833,75 @@ namespace ManualTracingTool {
             let frameLineHeight = 10.0;
             let secondFrameLineHeight = 30.0;
 
-            // Key frames
+            // Current frame
+
+            let currentFrameX = left - aniSetting.timeLineWindowViewLocationX + aniSetting.currentTimeFrame * frameUnitWidth;
+            this.canvasRender.setStrokeWidth(1.0);
+            this.canvasRender.setFillColorV(this.drawStyle.timeLineCurrentFrameColor);
+            this.canvasRender.fillRect(currentFrameX, 0.0, frameUnitWidth, wnd.height);
+
+            // Document keyframes
 
             let minKeyFrame = wnd.getFrameByLocation(left, aniSetting);
             let maxKeyFrame = wnd.getFrameByLocation(right, aniSetting);
 
-            this.canvasRender.setStrokeWidth(3.0);
+            this.canvasRender.setStrokeWidth(1.0);
             this.canvasRender.setFillColorV(this.drawStyle.timeLineKeyFrameColor);
 
             for (let viewKeyframe of this.viewLayerContext.keyframes) {
 
-                if (viewKeyframe.frame < minKeyFrame) {
+                let frame = viewKeyframe.frame;
+
+                if (frame < minKeyFrame) {
                     continue;
                 }
 
-                if (viewKeyframe.frame > maxKeyFrame) {
+                if (frame > maxKeyFrame) {
                     break;
                 }
 
-                let frameX = wnd.getFrameLocation(viewKeyframe.frame, aniSetting);
-                this.canvasRender.fillRect(frameX, 0.0, frameUnitWidth - 1, frameLineBottom);
+                let frameX = wnd.getFrameLocation(frame, aniSetting);
+                this.canvasRender.fillRect(frameX, 0.0, frameUnitWidth - 1.0, frameLineBottom);
+            }
+
+            // Layer keyframes
+
+            this.canvasRender.setStrokeWidth(1.0);
+            this.canvasRender.setFillColorV(this.drawStyle.timeLineLayerKeyFrameColor);
+
+            if (env.currentVectorLayer != null) {
+
+                let viewKeyFrame = this.findViewKeyFrame(aniSetting.currentTimeFrame);
+                let layerIndex = -1;
+                if (viewKeyFrame != null) {
+
+                    layerIndex = this.findViewKeyframeLayerIndex(viewKeyFrame, env.currentVectorLayer);
+                }
+
+                if (layerIndex != -1) {
+
+                    for (let viewKeyframe of this.viewLayerContext.keyframes) {
+
+                        let frame = viewKeyframe.frame;
+
+                        if (frame < minKeyFrame) {
+                            continue;
+                        }
+
+                        if (frame > maxKeyFrame) {
+                            break;
+                        }
+
+                        let viewKeyFrameLayer = viewKeyframe.layers[layerIndex];
+
+                        if (viewKeyFrameLayer.vectorLayerKeyframe.frame == frame) {
+
+                            let frameX = wnd.getFrameLocation(frame, aniSetting);
+                            this.canvasRender.fillRect(frameX + 2.0, 0.0, frameUnitWidth - 5.0, frameLineBottom);
+                        }
+                    }
+                }
+
             }
 
             // Left panel
@@ -4784,15 +4925,6 @@ namespace ManualTracingTool {
             }
 
             this.canvasRender.drawLine(left, frameLineBottom, right, frameLineBottom);
-
-            // Current frame
-
-            let currentFrameX = left - aniSetting.timeLineWindowViewLocationX + aniSetting.currentTimeFrame * frameUnitWidth;
-            this.canvasRender.setStrokeWidth(3.0);
-            this.canvasRender.setStrokeColorV(this.drawStyle.timeLineCurrentFrameColor);
-            this.canvasRender.drawLine(currentFrameX, 0.0, currentFrameX, wnd.height);
-            this.canvasRender.setStrokeWidth(1.0);
-
         }
 
         // Header window drawing
@@ -4924,7 +5056,13 @@ namespace ManualTracingTool {
 
         getElement(id: string): HTMLElement {
 
-            return document.getElementById(id);
+            let element = document.getElementById(id);
+
+            if (element == null) {
+                throw ('Could not find element "' + id + '"');
+            }
+
+            return element;
         }
 
         setElementText(id: string, text: string): HTMLElement {
@@ -5184,7 +5322,7 @@ namespace ManualTracingTool {
 
             let absoluteX = x - (left - aniSetting.timeLineWindowViewLocationX);
 
-            let frame = Math.floor(absoluteX / frameUnitWidth + 0.5);
+            let frame = Math.floor(absoluteX / frameUnitWidth);
             if (frame < 0) {
                 frame = 0;
             }
@@ -5316,6 +5454,11 @@ namespace ManualTracingTool {
         exportImageFileModal_imageFileType = 'exportImageFileModal_imageFileType';
         exportImageFileModal_ok = 'exportImageFileModal_ok';
         exportImageFileModal_cancel = 'exportImageFileModal_cancel';
+
+        newKeyframeModal = '#newKeyframeModal';
+        newKeyframeModal_InsertType = 'newKeyframeModal_InsertType';
+        newKeyframeModal_ok = 'newKeyframeModal_ok';
+        newKeyframeModal_cancel = 'newKeyframeModal_cancel';
     }
 
     enum OpenPalletColorModalMode {
@@ -5342,6 +5485,14 @@ namespace ManualTracingTool {
         scale = 3,
         latticeMove = 4,
         countOfID = 5,
+    }
+
+    enum NewKeyframeModal_InsertTypeID {
+
+        EmptyGeometory_AllLayer = 1,
+        EmptyGeometory_CurrentLayer = 2,
+        CopyGeometory_AllLayer = 3,
+        CopyGeometory_CurrentLayer = 4
     }
 
     var _Main: Main;

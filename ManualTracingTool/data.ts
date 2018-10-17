@@ -34,6 +34,19 @@ namespace ManualTracingTool {
 
         // file only
         ID: int;
+
+        static collectLayerRecursive(result: List<Layer>, parentLayer: Layer) {
+
+            for (let layer of parentLayer.childLayers) {
+
+                result.push(layer);
+
+                if (layer.childLayers.length > 0) {
+
+                    Layer.collectLayerRecursive(result, layer);
+                }
+            }
+        }
     }
 
     // Vector layer
@@ -364,6 +377,7 @@ namespace ManualTracingTool {
         animationFrameParSecond = 24;
         loopStartFrame = 0;
         loopEndFrame = 240;
+        maxFrame = 240;
 
         currentTimeFrame = 10.0;
 

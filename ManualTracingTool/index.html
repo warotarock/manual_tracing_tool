@@ -25,6 +25,7 @@
     <script src="./src/base_tool.js"></script>
     <script src="./src/command_delete_points.js"></script>
     <script src="./src/command_edit_layer.js"></script>
+    <script src="./src/command_edit_animation.js"></script>
     <script src="./src/tool_draw_line.js"></script>
     <script src="./src/tool_add_point.js"></script>
     <script src="./src/tool_scratch_line.js"></script>
@@ -229,6 +230,10 @@
             text-align: right;
         }
 
+        .nameInputTextBox {
+            width: 250px;
+        }
+
         .modalDialogWindow {
             background-color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -256,14 +261,14 @@
                 bottom: 100px;
             }
 
-            .modalDialogWindow.layerPropertyModal input {
-                margin-left: 15px;
-                margin-top: 15px;
-            }
+                .modalDialogWindow.layerPropertyModal input {
+                    margin-left: 15px;
+                    margin-top: 15px;
+                }
 
-            .modalDialogWindow.layerPropertyModal div {
-                margin-top: 15px;
-            }
+                .modalDialogWindow.layerPropertyModal div {
+                    margin-top: 15px;
+                }
 
         #layerPropertyModal_layerAlpha {
             width: 200px;
@@ -367,15 +372,20 @@
         .modalDialogWindow.exportImageFileModal {
             width: 400px;
             height: 200px;
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            display: none;
-            padding: 20px;
         }
 
             .modalDialogWindow.exportImageFileModal div {
                 margin-bottom: 15px;
+            }
+
+        .modalDialogWindow.newKeyframeModal {
+            width: 400px;
+            height: 230px;
+        }
+
+            .modalDialogWindow.newKeyframeModal div label input {
+                margin-left: 15px;
+                margin-top: 15px;
             }
     </style>
 </head>
@@ -385,8 +395,10 @@
         <div class="mainMenuButton" id="menu_btnDrawTool">Scratch line</div>
         <div class="mainMenuButton" id="menu_btnPoseTool">Posing</div>
         <div class="mainMenuButton" id="menu_btnScratchTool">Misc</div>
-        <div class="mainMenuButton2" id="menu_btnOperationOption"><img src="./res/icons8-settings-100.png" /></div>
+        <div class="mainMenuButton2" id="menu_btnPalette1"><img src="./res/icons8-paint-palette-96.png" /></div>
+        <div class="mainMenuButton2" id="menu_btnPalette2"><img src="./res/icons8-paint-palette-96.png" /></div>
         <div class="mainMenuButton2" id="menu_btnExport"><img src="./res/icons8-export-96.png" /></div>
+        <div class="mainMenuButton2" id="menu_btnOperationOption"><img src="./res/icons8-settings-100.png" /></div>
     </header>
     <main>
         <div id="mainCanvasWindow">
@@ -424,7 +436,7 @@
         </label><br />
         <label>
             名前
-            <input type="text" id="layerPropertyModal_layerName"  onfocus="this.select();"/>
+            <input type="text" id="layerPropertyModal_layerName" class="nameInputTextBox" onfocus="this.select();" />
         </label><br />
         <label>
             レイヤー色　
@@ -595,7 +607,7 @@
         <div>
             <label>
                 ファイル名（拡張子を除く）<br />
-                <input type="text" id="exportImageFileModal_fileName" onfocus="this.select();" />
+                <input type="text" id="exportImageFileModal_fileName" class="nameInputTextBox" onfocus="this.select();" />
             </label><br />
         </div>
         <div>
@@ -613,6 +625,32 @@
         <div class="OKCalcelButtons">
             <input type="button" id="exportImageFileModal_ok" value="エクスポート">
             <input type="button" id="exportImageFileModal_cancel" value="キャンセル">
+        </div>
+    </div>
+
+    <div id="newKeyframeModal" class="modalDialogWindow newKeyframeModal">
+        <div>
+            キーフレームの挿入<br />
+            <label>
+                <input type="radio" name="newKeyframeModal_InsertType" value="1">
+                空のキーを挿入（全レイヤー）
+            </label><br />
+            <label>
+                <input type="radio" name="newKeyframeModal_InsertType" value="2">
+                空のキーを挿入（アクティブなレイヤー）
+            </label><br />
+            <label>
+                <input type="radio" name="newKeyframeModal_InsertType" value="3" checked>
+                コピーを挿入（全レイヤー）
+            </label><br />
+            <label>
+                <input type="radio" name="newKeyframeModal_InsertType" value="4">
+                コピーを挿入（アクティブなレイヤー）
+            </label><br />
+        </div>
+        <div class="OKCalcelButtons">
+            <input type="button" id="newKeyframeModal_ok" value="ＯＫ">
+            <input type="button" id="newKeyframeModal_cancel" value="キャンセル">
         </div>
     </div>
 
