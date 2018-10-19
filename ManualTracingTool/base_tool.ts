@@ -296,6 +296,7 @@ namespace ManualTracingTool {
 
             this.setRedrawMainWindowEditorWindow();
             this.setRedrawSubtoolWindow();
+            this.setRedrawLayerWindow();
             this.setRedrawTimeLineWindow();
             this.setRedrawWebGLWindow();
         }
