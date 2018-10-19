@@ -13,6 +13,7 @@ namespace ManualTracingTool {
 
         helpText = '線を最大の太さに近づけます。Shiftキーで線を細くします。<br />Ctrlキーで最大の太さ固定になります。';
 
+        enableScratchEdit = false;
         enableExtrude = false;
 
         protected executeCommand(env: ToolEnvironment) { // @override
@@ -36,7 +37,6 @@ namespace ManualTracingTool {
             if (candidatePointPairs != null && candidatePointPairs.length > 0) {
 
                 let command = new Command_ScratchLineWidth();
-                command.isContinued = (this.extrudeLine != null);
                 command.targetLine = targetLine;
 
                 if (env.isCtrlKeyPressing()) {

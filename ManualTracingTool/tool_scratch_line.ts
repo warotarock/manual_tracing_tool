@@ -21,6 +21,7 @@ namespace ManualTracingTool {
 
     export class Tool_ScratchLine extends ToolBase {
 
+        enableScratchEdit = true;
         enableExtrude = false;
 
         editLine: VectorLine = null;
@@ -224,49 +225,84 @@ namespace ManualTracingTool {
 
         protected executeCommand(env: ToolEnvironment) { // @virtual
 
-            let baseRadius = env.mouseCursorViewRadius;
-            let targetLine = env.currentVectorLine;
-
-            // Resampling editor line
-            this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
-
-            // Get extruding line points
             if (this.enableExtrude) {
 
-                let editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
-                let editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
+                let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
+                let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
 
-                let forwardExtrude = true;
+                this.resampledLine = Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
 
-                let extrudeLine = this.generateExtrudePoints(false
-                    , targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
+                this.executeExtrudeLine(this.resampledLine, env);
+            }
 
-                if (extrudeLine == null) {
+            if (this.enableScratchEdit) {
 
-                    extrudeLine = this.generateExtrudePoints(true
-                        , targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
+                this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
 
-                    if (extrudeLine != null) {
+                let isExtrudeDone = (this.extrudeLine != null);
 
-                        forwardExtrude = false;
-                    }
+                this.executeScratchEditLine(this.resampledLine, isExtrudeDone, env);
+            }
+        }
+
+        protected executeExtrudeLine(resampledLine: VectorLine, env: ToolEnvironment) {
+
+            let targetLine = env.currentVectorLine;
+
+            // Create extrude points
+
+            let baseRadius = env.mouseCursorViewRadius;
+            let editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
+            let editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
+
+            let forwardExtrude = true;
+
+            let extrudeLine = this.generateExtrudePoints(false
+                , targetLine, resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
+
+            if (extrudeLine == null) {
+
+                extrudeLine = this.generateExtrudePoints(true
+                    , targetLine, resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
+
+                if (extrudeLine != null) {
+
+                    forwardExtrude = false;
                 }
-
-                this.forwardExtrude = forwardExtrude;
-                this.extrudeLine = extrudeLine;
             }
-            else {
 
-                this.forwardExtrude = false;
-                this.extrudeLine = null;
+            // Execute command
+
+            if (extrudeLine != null && extrudeLine.points.length > 0) {
+
+                let command = new Command_ExtrudeLine();
+                command.isContinuing = true;
+                command.targetLine = targetLine;
+                command.forwardExtrude = forwardExtrude;
+                command.extrudeLine = extrudeLine;
+
+                command.execute(env);
+
+                env.commandHistory.addCommand(command);
             }
+
+            this.forwardExtrude = forwardExtrude;
+            this.extrudeLine = extrudeLine;
+        }
+
+        protected executeScratchEditLine(resampledLine: VectorLine, isExtrudeDone: boolean, env: ToolEnvironment) {
+
+            let targetLine = env.currentVectorLine;
 
             // Get scratching candidate points
+
+            let baseRadius = env.mouseCursorViewRadius;
             let editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
             let editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
+
             let candidatePointPairs = this.ganerateCandidatePoints(
                 targetLine
-                , this.resampledLine
+                , resampledLine
                 , editFalloffRadiusMin
                 , editFalloffRadiusMax
             );
@@ -278,24 +314,12 @@ namespace ManualTracingTool {
                 this.candidateLine.points.push(pair.candidatePoint);
             }
 
-            // Create command
-            if (this.extrudeLine != null && this.extrudeLine.points.length > 0) {
-
-                let command = new Command_ExtrudeLine();
-                command.isContinuing = true;
-                command.targetLine = targetLine;
-                command.forwardExtrude = this.forwardExtrude;
-                command.extrudeLine = this.extrudeLine;
-
-                command.execute(env);
-
-                env.commandHistory.addCommand(command);
-            }
+            // Execute command
 
             if (candidatePointPairs != null && candidatePointPairs.length > 0) {
 
                 let command = new Command_ScratchLine();
-                command.isContinued = (this.extrudeLine != null);
+                command.isContinued = isExtrudeDone;
                 command.targetLine = targetLine;
 
                 for (let pair of candidatePointPairs) {
@@ -311,25 +335,11 @@ namespace ManualTracingTool {
             }
         }
 
-        protected resampleLine(baseLine: VectorLine, env: ToolEnvironment): VectorLine {
-
-            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength * 2.0);
-
-            let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(baseLine.totalLength, resamplingUnitLength);
-            if (divisionCount > this.maxResamplingDivisionCount) {
-
-                divisionCount = this.maxResamplingDivisionCount;
-            }
-
-            return Logic_Edit_Line.createResampledLine(baseLine, divisionCount);
-        }
-
-        protected generateCutoutedResampledLine(baseLine: VectorLine, env: ToolEnvironment): VectorLine {
-
-            let result = this.resampleLine(baseLine, env);
+        protected cutoutLine(result: VectorLine): VectorLine {
 
             let startIndex = this.searchCutoutIndex(result, false);
             let endIndex = this.searchCutoutIndex(result, true);
+
             result.points = ListGetRange(result.points, startIndex, (endIndex - startIndex) + 1);
 
             Logic_Edit_Line.smooth(result);
@@ -379,6 +389,21 @@ namespace ManualTracingTool {
             }
 
             return cutoutIndex;
+        }
+
+        protected generateCutoutedResampledLine(editorLine: VectorLine, env: ToolEnvironment): VectorLine {
+
+            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength * 2.0);
+            let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(editorLine.totalLength, resamplingUnitLength);
+            if (divisionCount > this.maxResamplingDivisionCount) {
+                divisionCount = this.maxResamplingDivisionCount;
+            }
+
+            let resampledLine = Logic_Edit_Line.createResampledLine(editorLine, divisionCount);
+
+            this.cutoutLine(resampledLine);
+
+            return resampledLine;
         }
 
         protected ganerateCandidatePoints(target_Line: VectorLine, editorLine: VectorLine, editFalloffRadiusMin: float, editFalloffRadiusMax: float): List<Tool_ScratchLine_CandidatePair> {
@@ -711,6 +736,7 @@ namespace ManualTracingTool {
 
     export class Tool_ExtrudeLine extends Tool_ScratchLine {
 
+        enableScratchEdit = false;
         enableExtrude = true;
     }
 
