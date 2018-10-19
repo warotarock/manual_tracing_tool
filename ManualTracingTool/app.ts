@@ -987,11 +987,71 @@ namespace ManualTracingTool {
 
             // TODO: ツールを作るたびに忘れるのでなんとかしる
             this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
-            this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
-            this.tool_ScratchLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
+            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            this.tool_ScratchLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength;
             this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         }
+
+        private isEventDisabled() {
+
+            if (this.isWhileLoading()) {
+                return true;
+            }
+
+            if (this.isModalShown()) {
+                return true;
+            }
+
+            return false;
+        }
+
+        private setEvents_ModalCloseButton(id: string) {
+
+            this.getElement(id).addEventListener('click', (e: Event) => {
+
+                this.currentModalDialogResult = id;
+
+                this.closeModal();
+
+                e.preventDefault();
+            });
+        }
+
+        // Continuous processes
+
+        run() {
+
+            if (this.isDeferredWindowResizeWaiting) {
+
+                this.isDeferredWindowResizeWaiting = false;
+
+                this.resizeWindows();
+
+                this.toolEnv.setRedrawAllWindows();
+            }
+
+            // process animation time
+
+            let currentTime = (new Date().getTime());
+            if (this.lastTime == 0) {
+
+                this.elapsedTime = 100;
+            }
+            else {
+
+                this.elapsedTime = currentTime - this.lastTime;
+            }
+            this.lastTime = currentTime;
+
+            this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
+            if (this.selectCurrentLayerAnimationTime < 0) {
+
+                this.selectCurrentLayerAnimationTime = 0;
+            }
+        }
+
+        // Events
 
         private setEvents() {
 
@@ -1281,7 +1341,6 @@ namespace ManualTracingTool {
                 e.preventDefault();
             });
 
-
             document.addEventListener('keydown', (e: KeyboardEvent) => {
 
                 if (this.isWhileLoading()) {
@@ -1381,6 +1440,26 @@ namespace ManualTracingTool {
                 e.preventDefault();
             });
 
+            this.getElement(this.ID.menu_btnPalette1).addEventListener('mousedown', (e: Event) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.openPalletColorModal(OpenPalletColorModalMode.LineColor, this.toolContext.document, this.toolContext.currentLayer);
+                e.preventDefault();
+            });
+
+            this.getElement(this.ID.menu_btnPalette2).addEventListener('mousedown', (e: Event) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.openPalletColorModal(OpenPalletColorModalMode.FillColor, this.toolContext.document, this.toolContext.currentLayer);
+                e.preventDefault();
+            });
+
             // Modal window
 
             document.addEventListener('custombox:content:open', () => {
@@ -1438,66 +1517,6 @@ namespace ManualTracingTool {
                 }
             }
         }
-
-        private isEventDisabled() {
-
-            if (this.isWhileLoading()) {
-                return true;
-            }
-
-            if (this.isModalShown()) {
-                return true;
-            }
-
-            return false;
-        }
-
-        private setEvents_ModalCloseButton(id: string) {
-
-            this.getElement(id).addEventListener('click', (e: Event) => {
-
-                this.currentModalDialogResult = id;
-
-                this.closeModal();
-
-                e.preventDefault();
-            });
-        }
-
-        // Continuous processes
-
-        run() {
-
-            if (this.isDeferredWindowResizeWaiting) {
-
-                this.isDeferredWindowResizeWaiting = false;
-
-                this.resizeWindows();
-
-                this.toolEnv.setRedrawAllWindows();
-            }
-
-            // process animation time
-
-            let currentTime = (new Date().getTime());
-            if (this.lastTime == 0) {
-
-                this.elapsedTime = 100;
-            }
-            else {
-
-                this.elapsedTime = currentTime - this.lastTime;
-            }
-            this.lastTime = currentTime;
-
-            this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
-            if (this.selectCurrentLayerAnimationTime < 0) {
-
-                this.selectCurrentLayerAnimationTime = 0;
-            }
-        }
-
-        // Events
 
         private mainWindow_mousedown() {
 
@@ -3151,7 +3170,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (!VectorLayer.isVectorLayer(layer)) {
+            if (layer == null || !VectorLayer.isVectorLayer(layer)) {
                 return;
             }
 
@@ -5405,6 +5424,8 @@ namespace ManualTracingTool {
         menu_btnPoseTool = 'menu_btnPoseTool';
         menu_btnOperationOption = 'menu_btnOperationOption';
         menu_btnExport = 'menu_btnExport';
+        menu_btnPalette1 = 'menu_btnPalette1';
+        menu_btnPalette2 = 'menu_btnPalette2';
 
         unselectedMainButton = 'unselectedMainButton';
         selectedMainButton = 'selectedMainButton';
