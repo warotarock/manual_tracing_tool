@@ -176,6 +176,8 @@ namespace ManualTracingTool {
         drawLineBaseWidth = 1.0;
         drawLineMinWidth = 1.0;
 
+        currentLayer: Layer = null;
+
         currentVectorLayer: VectorLayer = null;
         currentVectorGeometry: VectorLayerGeometry = null;
         currentVectorGroup: VectorGroup = null;
@@ -218,6 +220,8 @@ namespace ManualTracingTool {
 
             this.drawLineBaseWidth = this.toolContext.drawLineBaseWidth;
             this.drawLineMinWidth = this.toolContext.drawLineMinWidth;
+
+            this.currentLayer = this.toolContext.currentLayer;
 
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
             this.currentVectorGeometry = this.toolContext.currentVectorGeometry;

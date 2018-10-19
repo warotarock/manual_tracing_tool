@@ -2797,7 +2797,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private setCurrentFrame(frame: int) { //@implements MainEditor
+        public setCurrentFrame(frame: int) { //@implements MainEditor
 
             let context = this.toolContext;
             let aniSetting = context.document.animationSettingData;

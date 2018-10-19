@@ -23,6 +23,8 @@ namespace ManualTracingTool {
         insertTo_Layer_OldChildLayerList: List<Layer> = null;
         insertTo_Layer_NewChildLayerList: List<Layer> = null;
 
+        newLayer: Layer = null;
+
         isAvailable(env: ToolEnvironment): boolean { // @virtual
 
             return false;
@@ -94,7 +96,7 @@ namespace ManualTracingTool {
             env.updateLayerStructure();
         }
 
-        protected executeLayerInsertToCurrent(childLayer: Layer, env: ToolEnvironment) {
+        protected executeLayerInsertToCurrent(layer: Layer, env: ToolEnvironment) {
 
             let parentLayer: Layer;
             let insertIndex: int;
@@ -109,10 +111,10 @@ namespace ManualTracingTool {
                 insertIndex = this.currentLayerIndex;
             }
 
-            this.executeLayerInsert(parentLayer, insertIndex, childLayer, env);
+            this.executeLayerInsert(parentLayer, insertIndex, layer, env);
         }
 
-        protected executeLayerInsert(parentLayer: Layer, insertIndex: int, childLayer: Layer, env: ToolEnvironment) {
+        protected executeLayerInsert(parentLayer: Layer, insertIndex: int, layer: Layer, env: ToolEnvironment) {
 
             this.insertTo_ParentLayer = parentLayer;
 
@@ -120,12 +122,14 @@ namespace ManualTracingTool {
 
             this.insertTo_Layer_NewChildLayerList = ListClone(parentLayer.childLayers);
 
-            ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, childLayer);
+            ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, layer);
 
             parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
 
             env.updateLayerStructure();
-            env.setCurrentLayer(childLayer);
+
+            this.newLayer = layer;
+            env.setCurrentLayer(layer);
         }
 
         protected executeLayerRemove(parentLayer: Layer, removeIndex: int) {
@@ -153,7 +157,15 @@ namespace ManualTracingTool {
                 this.removeFrom_ParentLayer.childLayers = this.removeFrom_OldChildLayerList;
             }
 
+            env.setCurrentLayer(null);
+
             env.updateLayerStructure();
+
+            if (this.currentLayer != null) {
+
+                env.setCurrentLayer(this.currentLayer);
+            }
+
             env.setRedrawMainWindowEditorWindow();
         }
 
@@ -170,6 +182,12 @@ namespace ManualTracingTool {
             }
 
             env.updateLayerStructure();
+
+            if (this.newLayer != null) {
+
+                env.setCurrentLayer(this.newLayer);
+            }
+
             env.setRedrawMainWindowEditorWindow();
         }
 
