@@ -53,6 +53,7 @@ namespace ManualTracingTool {
     export interface MainEditor {
 
         setCurrentLayer(layer: Layer);
+        setCurrentFrame(frame: int);
         updateLayerStructure();
 
         startLoadingDocumentResourcesProcess(document: DocumentData);
@@ -273,6 +274,7 @@ namespace ManualTracingTool {
         updateLayerStructure() {
 
             this.toolContext.mainEditor.updateLayerStructure();
+            this.toolContext.mainEditor.setCurrentFrame(this.toolContext.document.animationSettingData.currentTimeFrame);
             this.setRedrawLayerWindow();
             this.setRedrawTimeLineWindow();
         }

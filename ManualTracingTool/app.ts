@@ -18,6 +18,9 @@ namespace ManualTracingTool {
     // 　・キーフレームウィンドウを追加
     // 　　・キーフレームを追加、削除できるようにする
     // 　　・アニメーションの再生機能
+    // ・パレット機能の拡充
+    // 　・パレット編集画面にカラーピッカーを自作する
+    // 　・色データを単なるRGBAではなく、表現形式や混色のベースとなる色情報まで持てるようにする
     // ・ポージングツールの整備
     // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
     // 　・モデルを切り替えられるようにする（数種類でよい）
@@ -606,7 +609,7 @@ namespace ManualTracingTool {
 
             this.setCurrentSelectionTool(this.toolContext.operationUnitID);
 
-            // debug
+            this.setCurrentFrame(0);
             this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
 
             this.toolEnv.updateContext();
@@ -1989,32 +1992,9 @@ namespace ManualTracingTool {
 
             if (clickedFrame != -1) {
 
-                this.timeLineWindow_SetCurrentFrame(clickedFrame);
+                this.setCurrentFrame(clickedFrame);
                 env.setRedrawMainWindowEditorWindow();
                 env.setRedrawTimeLineWindow();
-            }
-        }
-
-        private timeLineWindow_SetCurrentFrame(frame: int) {
-
-            let context = this.toolContext;
-            let aniSetting = context.document.animationSettingData;
-
-            aniSetting.currentTimeFrame = frame;
-
-            if (aniSetting.currentTimeFrame < 0) {
-                aniSetting.currentTimeFrame = 0;
-            }
-
-            if (aniSetting.currentTimeFrame > aniSetting.maxFrame) {
-                aniSetting.currentTimeFrame = aniSetting.maxFrame;
-            }
-
-            this.currentKeyframe = this.findViewKeyFrame(aniSetting.currentTimeFrame);
-
-            if (context.currentLayer != null) {
-
-                this.setCurrentLayer(context.currentLayer);
             }
         }
 
@@ -2113,6 +2093,8 @@ namespace ManualTracingTool {
                 this.toolContext.document = this.document;
 
                 this.updateLayerStructure();
+                this.setCurrentLayer(null);
+                this.setCurrentFrame(0);
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
 
                 env.setRedrawAllWindows();
@@ -2317,7 +2299,7 @@ namespace ManualTracingTool {
                     addFrame = -addFrame;
                 }
 
-                this.timeLineWindow_SetCurrentFrame(context.document.animationSettingData.currentTimeFrame + addFrame);
+                this.setCurrentFrame(context.document.animationSettingData.currentTimeFrame + addFrame);
 
                 env.setRedrawMainWindowEditorWindow();
                 env.setRedrawTimeLineWindow();
@@ -2565,8 +2547,6 @@ namespace ManualTracingTool {
             this.collectViewContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
 
             this.viewLayerContext.keyframes = sortedViewKeyFrames;
-
-            this.timeLineWindow_SetCurrentFrame(aniSetting.currentTimeFrame);
         }
 
         private collectViewContext_CollectLayersRecursive(result: List<Layer>, parentLayer: Layer) {
@@ -2744,7 +2724,7 @@ namespace ManualTracingTool {
 
             this.toolContext.currentLayer = layer;
 
-            if (VectorLayer.isVectorLayer(layer) && viewKeyframe != null) {
+            if (layer != null && VectorLayer.isVectorLayer(layer) && viewKeyframe != null) {
 
                 let viewKeyframeLayer = this.findViewKeyframeLayer(viewKeyframe, layer);
                 let geometry = viewKeyframeLayer.vectorLayerKeyframe.geometry;
@@ -2760,7 +2740,7 @@ namespace ManualTracingTool {
                 this.toolContext.currentVectorGroup = null;
             }
 
-            if (layer.type == LayerTypeID.posingLayer) {
+            if (layer != null && layer.type == LayerTypeID.posingLayer) {
 
                 let posingLayer = <PosingLayer>layer;
 
@@ -2775,7 +2755,7 @@ namespace ManualTracingTool {
                 this.toolContext.currentPosingModel = null;
             }
 
-            if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+            if (layer != null && layer.type == LayerTypeID.imageFileReferenceLayer) {
 
                 let imageFileReferenceLayer = <ImageFileReferenceLayer>layer;
 
@@ -2791,7 +2771,10 @@ namespace ManualTracingTool {
                 item.layer.isSelected = false;
             }
 
-            layer.isSelected = true;
+            if (layer != null) {
+
+                layer.isSelected = true;
+            }
         }
 
         private selectNextOrPreviousLayer(selectNext: boolean) {
@@ -2811,6 +2794,29 @@ namespace ManualTracingTool {
 
                     this.setCurrentLayer(item.previousItem.layer);
                 }
+            }
+        }
+
+        private setCurrentFrame(frame: int) { //@implements MainEditor
+
+            let context = this.toolContext;
+            let aniSetting = context.document.animationSettingData;
+
+            aniSetting.currentTimeFrame = frame;
+
+            if (aniSetting.currentTimeFrame < 0) {
+                aniSetting.currentTimeFrame = 0;
+            }
+
+            if (aniSetting.currentTimeFrame > aniSetting.maxFrame) {
+                aniSetting.currentTimeFrame = aniSetting.maxFrame;
+            }
+
+            this.currentKeyframe = this.findViewKeyFrame(aniSetting.currentTimeFrame);
+
+            if (context.currentLayer != null) {
+
+                this.setCurrentLayer(context.currentLayer);
             }
         }
 
