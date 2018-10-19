@@ -145,7 +145,7 @@ namespace ManualTracingTool {
 
         mouseCursorRadius = 20.0;
 
-        resamplingUnitLength = 12.0
+        resamplingUnitLength = 8.0
 
         operatorCursor = new OperatorCursor();
 
