@@ -13,6 +13,11 @@ namespace ManualTracingTool {
             return a + x * (b - a);
         }
 
+        static fract(x: float): float {
+
+            return x - Math.floor(x);
+        }
+
         static smoothstep(edge0: float, edge1: float, x: float): float {
 
             let t = Maths.clamp((x - edge0) / (edge1 - edge0), 0, 1);
@@ -130,6 +135,18 @@ namespace ManualTracingTool {
             result[8] = vecZ[0];
             result[9] = vecZ[1];
             result[10] = vecZ[2];
+        }
+
+        private static hsvToRGB_Element(h: float, s: float, v: float, baseElement: float) {
+
+            return ((Maths.clamp(Math.abs(Maths.fract(h + baseElement / 3.0) * 6.0 - 3.0) - 1.0, 0.0, 1.0) - 1.0) * s + 1.0) * v;
+        }
+
+        static hsvToRGBVec4(out: Vec4, h: float, s: float, v: float) {
+
+            out[0] = Maths.hsvToRGB_Element(h, s, v, 0.0);
+            out[1] = Maths.hsvToRGB_Element(h, s, v, 2.0);
+            out[2] = Maths.hsvToRGB_Element(h, s, v, 1.0);
         }
     }
 }

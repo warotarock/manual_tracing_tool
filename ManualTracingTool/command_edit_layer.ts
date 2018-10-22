@@ -132,7 +132,7 @@ namespace ManualTracingTool {
             env.setCurrentLayer(layer);
         }
 
-        protected executeLayerRemove(parentLayer: Layer, removeIndex: int) {
+        protected executeLayerRemove(parentLayer: Layer, removeIndex: int, env: ToolEnvironment) {
 
             this.removeFrom_ParentLayer = parentLayer;
 
@@ -143,6 +143,19 @@ namespace ManualTracingTool {
             ListRemoveAt(this.removeFrom_NewChildLayerList, removeIndex);
 
             parentLayer.childLayers = this.removeFrom_NewChildLayerList;
+
+            env.setCurrentLayer(null);
+
+            env.updateLayerStructure();
+
+            if (this.previousLayer != null) {
+
+                env.setCurrentLayer(this.previousLayer);
+            }
+            else if (this.nextLayer != null) {
+
+                env.setCurrentLayer(this.nextLayer);
+            }
         }
 
         undo(env: ToolEnvironment) { // @override
@@ -376,7 +389,7 @@ namespace ManualTracingTool {
 
         executeCommand(env: ToolEnvironment) { // @override
 
-            this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex);
+            this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
 
             if (this.previousLayer != null) {
 
@@ -420,7 +433,7 @@ namespace ManualTracingTool {
             }
             else {
 
-                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex);
+                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
                 this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer, env);
             }
         }
@@ -457,7 +470,7 @@ namespace ManualTracingTool {
             }
             else {
 
-                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex);
+                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
                 this.executeLayerInsert(this.nextLayerParent, this.nextLayerIndex, this.currentLayer, env);
             }
         }

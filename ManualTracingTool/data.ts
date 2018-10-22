@@ -155,13 +155,13 @@ namespace ManualTracingTool {
 
         keyframes = new List<VectorLayerKeyFrame>();
 
-        drawLineType = DrawLineTypeID.layerColor;
+        drawLineType = DrawLineTypeID.palletColor;
 
         fillAreaType = FillAreaTypeID.none;
         fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 
         line_PalletColorIndex = 0;
-        fill_PalletColorIndex = 0;
+        fill_PalletColorIndex = 1;
 
         static isVectorLayer(layer: Layer): boolean {
 
@@ -408,15 +408,14 @@ namespace ManualTracingTool {
 
     export class DocumentData {
 
-        loaded = false;
+        static maxPalletColors = 25;
 
         rootLayer = new Layer();
         documentFrame = vec4.fromValues(-512.0, -512.0, 512.0, 512.0);
-
-        static maxPalletColors = 25;
         palletColos = new List<PalletColor>();
-
         animationSettingData = new AnimationSettingData();
+
+        loaded = false;
 
         // This class must be created by this function for JSON.parse
         constructor() {

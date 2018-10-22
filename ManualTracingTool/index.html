@@ -279,7 +279,7 @@
         }
 
         .modalDialogWindow.palletColorModal {
-            width: 460px;
+            width: 660px;
             height: 280px;
             position: absolute;
             bottom: 100px;
@@ -292,6 +292,8 @@
 
         #palletColorModal_colors {
             margin-top: 10px;
+            width: 460px;
+            float: left;
         }
 
             #palletColorModal_colors div.colorItem {
@@ -316,6 +318,19 @@
                     width: 30px;
                     height: 30px;
                 }
+
+        #palletColorModal_colorMixer {
+            margin-top: 10px;
+            width: 200px;
+            height: 200px;
+            float: left;
+        }
+
+            #palletColorModal_colorMixer canvas {
+                margin-top: 10px;
+                width: 200px;
+                height: 200px;
+            }
 
         .modalDialogWindow.operationOptionModal {
             width: 400px;
@@ -501,6 +516,9 @@
                 <input type="radio" name="palletColorModal_colorIndex">
                 <input type="color">
             </div>-->
+        </div>
+        <div id="palletColorModal_colorMixer">
+            <canvas id="palletColorModal_colorCanvas"></canvas>
         </div>
     </div>
 

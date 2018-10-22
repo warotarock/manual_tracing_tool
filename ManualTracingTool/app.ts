@@ -155,6 +155,7 @@ namespace ManualTracingTool {
         layerWindow = new LayerWindow();
         subtoolWindow = new SubtoolWindow();
         timeLineWindow = new TimeLineWindow();
+        palletColorModal_colorCanvas = new ColorCanvasWindow();
 
         renderingWindow = new CanvasWindow();
 
@@ -320,6 +321,7 @@ namespace ManualTracingTool {
             this.timeLineWindow.context = this.timeLineWindow.canvas.getContext('2d');
 
             this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
+            this.palletColorModal_colorCanvas.context = this.palletColorModal_colorCanvas.canvas.getContext('2d');
 
             this.canvasRender.setContext(this.layerWindow);
             this.canvasRender.setFontSize(18.0);
@@ -400,6 +402,7 @@ namespace ManualTracingTool {
                     document.rootLayer = data.rootLayer;
                     document.documentFrame = data.documentFrame;
                     document.palletColos = data.palletColos;
+                    document.animationSettingData = data.animationSettingData;
 
                     document.loaded = true;
                 }
@@ -907,6 +910,9 @@ namespace ManualTracingTool {
             this.mainWindow.centerLocationRate[0] = 0.5;
             this.mainWindow.centerLocationRate[1] = 0.5;
 
+            this.setCanvasSizeFromStyle(this.palletColorModal_colorCanvas);
+            this.drawPalletColorMixer(this.palletColorModal_colorCanvas);
+
             this.collectLayerWindowButtons();
             this.updateLayerStructure();
         }
@@ -1344,6 +1350,17 @@ namespace ManualTracingTool {
                 e.preventDefault();
             });
 
+            this.palletColorModal_colorCanvas.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+
+                if (this.currentModalDialogID != this.ID.palletColorModal) {
+                    return;
+                }
+
+                this.getMouseInfo(this.palletColorModal_colorCanvas.toolMouseEvent, e, false, this.palletColorModal_colorCanvas);
+                this.onPalletColorModal_ColorCanvas_mousedown(this.palletColorModal_colorCanvas.toolMouseEvent);
+                e.preventDefault();
+            });
+
             document.addEventListener('keydown', (e: KeyboardEvent) => {
 
                 if (this.isWhileLoading()) {
@@ -1486,6 +1503,8 @@ namespace ManualTracingTool {
 
             this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_ok);
             this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_cancel);
+
+            // Pallet modal
 
             this.getElement(this.ID.palletColorModal_currentColor).addEventListener('change', (e: Event) => {
 
@@ -2091,6 +2110,8 @@ namespace ManualTracingTool {
 
                 this.document = this.createDefaultDocumentData();
                 this.toolContext.document = this.document;
+
+                this.toolContext.commandHistory = new CommandHistory();
 
                 this.updateLayerStructure();
                 this.setCurrentLayer(null);
@@ -2964,6 +2985,16 @@ namespace ManualTracingTool {
             canvasWindow.canvas.height = canvasWindow.height;
         }
 
+        private setCanvasSizeFromStyle(canvasWindow: CanvasWindow) {
+
+            let style = window.getComputedStyle(canvasWindow.canvas);
+            canvasWindow.width = Number(style.width.replace('px', ''));
+            canvasWindow.height = Number(style.height.replace('px', ''));
+
+            canvasWindow.canvas.width = canvasWindow.width;
+            canvasWindow.canvas.height = canvasWindow.height;
+        }
+
         private getMouseInfo(toolMouseEvent: ToolMouseEvent, e: MouseEvent, touchUp: boolean, canvasWindow: CanvasWindow) {
 
             this.activeCanvasWindow = canvasWindow;
@@ -3083,6 +3114,7 @@ namespace ManualTracingTool {
         currentModalDialogResult: string = null;
         currentModalDialog_DocumentData: DocumentData = null;
         layerPropertyWindow_EditLayer: Layer = null;
+        palletColorWindow_EditLayer: VectorLayer = null;
         palletColorWindow_Mode = OpenPalletColorModalMode.LineColor;
         openFileDialogTargetID = OpenFileDialogTargetID.none;
         modalOverlayOption = {
@@ -3200,7 +3232,7 @@ namespace ManualTracingTool {
 
             this.palletColorWindow_Mode = mode;
             this.currentModalDialog_DocumentData = documentData;
-            this.layerPropertyWindow_EditLayer = layer;
+            this.palletColorWindow_EditLayer = vectorLayer;
 
             this.displayPalletColorModalColors(documentData, vectorLayer);
 
@@ -3225,24 +3257,28 @@ namespace ManualTracingTool {
                 this.setInputElementRangeValue(this.ID.palletColorModal_currentAlpha, palletColor.color[3], 0.0, 1.0);
             }
 
-            for (let i = 0; i < documentData.palletColos.length; i++) {
+            for (let palletColorIndex = 0; palletColorIndex < documentData.palletColos.length; palletColorIndex++) {
 
-                let palletColor = documentData.palletColos[i];
+                let palletColor = documentData.palletColos[palletColorIndex];
 
-                let id = this.ID.palletColorModal_colorValue + i;
-                this.setInputElementColor(id, palletColor.color);
+                this.setColorPalletElementValue(palletColorIndex, palletColor.color);
             }
+        }
+
+        private setColorPalletElementValue(palletColorIndex: int, color: Vec4) {
+
+            let id = this.ID.palletColorModal_colorValue + palletColorIndex;
+            this.setInputElementColor(id, color);
         }
 
         private onPalletColorModal_ColorIndexChanged() {
 
-            if (this.layerPropertyWindow_EditLayer == null) {
-
+            if (this.palletColorWindow_EditLayer == null) {
                 return;
             }
 
             let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = <VectorLayer>this.layerPropertyWindow_EditLayer;
+            let vectorLayer = this.palletColorWindow_EditLayer;
 
             let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);;
 
@@ -3266,17 +3302,15 @@ namespace ManualTracingTool {
 
         private onPalletColorModal_CurrentColorChanged() {
 
-            if (this.layerPropertyWindow_EditLayer == null) {
-
+            if (this.palletColorWindow_EditLayer == null) {
                 return;
             }
 
             let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = <VectorLayer>this.layerPropertyWindow_EditLayer;
-
+            let vectorLayer = this.palletColorWindow_EditLayer;
             let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
-
             let palletColor = documentData.palletColos[palletColorIndex];
+
             this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
             palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
 
@@ -3287,15 +3321,15 @@ namespace ManualTracingTool {
 
         private onPalletColorModal_ColorChanged(palletColorIndex: int) {
 
-            if (this.layerPropertyWindow_EditLayer == null) {
+            if (this.palletColorWindow_EditLayer == null) {
 
                 return;
             }
 
             let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = <VectorLayer>this.layerPropertyWindow_EditLayer;
-
+            let vectorLayer = this.palletColorWindow_EditLayer;
             let palletColor = documentData.palletColos[palletColorIndex];
+
             this.getInputElementColor(this.ID.palletColorModal_colorValue + palletColorIndex, palletColor.color);
 
             this.displayPalletColorModalColors(documentData, vectorLayer);
@@ -3303,10 +3337,39 @@ namespace ManualTracingTool {
             this.toolEnv.setRedrawMainWindow();
         }
 
+        private onPalletColorModal_ColorCanvas_mousedown(e: ToolMouseEvent) {
+
+            if (this.palletColorWindow_EditLayer == null) {
+                return;
+            }
+
+            let context = this.toolContext;
+            let wnd = this.palletColorModal_colorCanvas;
+            let env = this.toolEnv;
+
+            this.canvasRender.setContext(wnd);
+            this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
+
+            let documentData = this.currentModalDialog_DocumentData;
+            let vectorLayer = this.palletColorWindow_EditLayer;
+            let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
+            let palletColor = documentData.palletColos[palletColorIndex];
+
+            palletColor.color[0] = this.tempColor4[0];
+            palletColor.color[1] = this.tempColor4[1];
+            palletColor.color[2] = this.tempColor4[2];
+
+            this.setColorPalletElementValue(palletColorIndex, palletColor.color);
+
+            this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
+
+            this.toolEnv.setRedrawMainWindow();
+        }
+
         private onClosedPalletColorModal() {
 
             let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = <VectorLayer>this.layerPropertyWindow_EditLayer;
+            let vectorLayer = this.palletColorWindow_EditLayer;
 
             let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);;
 
@@ -3338,7 +3401,7 @@ namespace ManualTracingTool {
             }
 
             this.currentModalDialog_DocumentData = null;
-            this.layerPropertyWindow_EditLayer = null;
+            this.palletColorWindow_EditLayer = null;
         }
 
         private openOperationOptionModal() {
@@ -4952,6 +5015,71 @@ namespace ManualTracingTool {
             this.canvasRender.drawLine(left, frameLineBottom, right, frameLineBottom);
         }
 
+        // Pallet modal drawing
+
+        colorW = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+        colorB = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+
+        private drawPalletColorMixer(wnd: CanvasWindow) {
+
+            let width = wnd.width;
+            let height = wnd.height;
+            let left = 0.0;
+            let top = 0.0;
+            let right = width - 1.0;
+            let bottom = height - 1.0;
+            let minRadius = 10.0;
+            let maxRadius = width * 1.0;
+
+            this.canvasRender.setContext(wnd);
+            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+            this.canvasRender.setFillColorV(this.colorB);
+            this.canvasRender.fillRect(0.0, 0.0, width, height);
+
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.add);
+            //this.canvasRender.setFillRadialGradient(left, top, minRadius, maxRadius, this.color11, this.color12);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(right, top, minRadius, maxRadius, this.color21, this.color22);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(right, bottom, minRadius, maxRadius, this.color31, this.color32);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(left, bottom, minRadius, maxRadius, this.color41, this.color42);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+            //this.canvasRender.setFillLinearGradient(left, top, left, bottom, this.colorW, this.colorB);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+
+            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+            let division = 50.0;
+            let unitWidth = width / division;
+            let unitHeight = height / division;
+            for (let x = 0.0; x < 1.0; x += (1.0 / division)) {
+
+                for (let y = 0.0; y < 1.0; y += (1.0 / division)) {
+
+                    let h = x; 
+                    let s = 0.0; 
+                    let v = 0.0; 
+                    if (y <= 0.5) {
+                        s = y * 2.0;
+                        v = 1.0;
+                    }
+                    else {
+                        s = 1.0;
+                        v = 1.0 - (y - 0.5) * 2.0;
+                    }
+
+                    Maths.hsvToRGBVec4(this.tempColor4, h, s, v);
+                    this.tempColor4[3] = 1.0;
+                    this.canvasRender.setFillColorV(this.tempColor4);
+                    this.canvasRender.fillRect(x * width, y * height, unitWidth, unitHeight);
+                }
+            }
+            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+        }
+
         // Header window drawing
 
         private updateHeaderButtons() {
@@ -5267,6 +5395,9 @@ namespace ManualTracingTool {
         subToolItemsBottom = 0.0;
     }
 
+    class ColorCanvasWindow extends ToolBaseWindow {
+    }
+
     class RectangleLayoutArea {
 
         index = -1;
@@ -5459,6 +5590,7 @@ namespace ManualTracingTool {
         palletColorModal_colorItemStyle = 'colorItem';
         palletColorModal_colorIndex = 'palletColorModal_colorIndex';
         palletColorModal_colorValue = 'palletColorModal_colorValue';
+        palletColorModal_colorCanvas = 'palletColorModal_colorCanvas';
 
         operationOptionModal = '#operationOptionModal';
         operationOptionModal_LineWidth = 'operationOptionModal_LineWidth'
@@ -5535,6 +5667,7 @@ namespace ManualTracingTool {
         _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
+        _Main.palletColorModal_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.palletColorModal_colorCanvas);
 
         var layerColorModal_colors = document.getElementById(_Main.ID.palletColorModal_colors);
         for (let palletColorIndex = 0; palletColorIndex < DocumentData.maxPalletColors; palletColorIndex++) {

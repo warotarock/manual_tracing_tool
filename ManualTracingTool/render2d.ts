@@ -50,16 +50,16 @@ namespace ManualTracingTool {
             this.caluclateViewMatrix(this.transformMatrix);
         }
 
-        caluclateViewMatrix(mat: Mat4) {
+        caluclateViewMatrix(out: Mat4) {
 
-            mat4.identity(mat);
+            mat4.identity(out);
 
-            mat4.translate(mat, mat, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
-            mat4.scale(mat, mat, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
-            mat4.rotateZ(mat, mat, this.viewRotation * Math.PI / 180.0);
+            mat4.translate(out, out, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
+            mat4.scale(out, out, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
+            mat4.rotateZ(out, out, this.viewRotation * Math.PI / 180.0);
             //mat4.translate(mat, mat, vec3.set(this.tempVec3, -this.width / 2, -this.height / 2, 0.0));
 
-            mat4.translate(mat, mat, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
+            mat4.translate(out, out, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
         }
 
         calculateViewUnitMatrix(out: Mat4) {
@@ -68,6 +68,11 @@ namespace ManualTracingTool {
             mat4.scale(out, out, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
             mat4.rotateZ(out, out, this.viewRotation * Math.PI / 180.0);
         }
+    }
+
+    export enum CanvasRenderBlendMode {
+
+        default, alphaOver, add, color, luminosity
     }
 
     export enum CanvasRenderLineCap {
@@ -139,14 +144,40 @@ namespace ManualTracingTool {
             this.context.clearRect(left, top, width, height);
         }
 
+        private getColorStyleText(r: float, g: float, b: float, a: float) {
+
+            return 'rgba(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ',' + (a).toFixed(2) + ')';
+        }
+
+        private getColorStyleTextV(color: Vec4) {
+
+            return this.getColorStyleText(color[0], color[1], color[2], color[3]);
+        }
+
         setFillColor(r: float, g: float, b: float, a: float) {
 
-            this.context.fillStyle = 'rgba(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ',' + (a).toFixed(2) + ')';
+            this.context.fillStyle = this.getColorStyleText(r, g, b, a);
         }
 
         setFillColorV(color: Vec4) {
 
             this.setFillColor(color[0], color[1], color[2], color[3]);
+        }
+
+        setFillLinearGradient(x0: float, y0: float, x1: float, y1: float, color1: Vec4, color2: Vec4) {
+
+            var grad = this.context.createLinearGradient(x0, y0, x1, y1);
+            grad.addColorStop(0.0, this.getColorStyleTextV(color1));
+            grad.addColorStop(1.0, this.getColorStyleTextV(color2));
+            this.context.fillStyle = grad;
+        }
+
+        setFillRadialGradient(x: float, y: float, r1: float, r2: float, color1: Vec4, color2: Vec4) {
+
+            var grad = this.context.createRadialGradient(x, y, r1, x, y, r2);
+            grad.addColorStop(0.0, this.getColorStyleTextV(color1));
+            grad.addColorStop(1.0, this.getColorStyleTextV(color2));
+            this.context.fillStyle = grad;
         }
 
         fillRect(left: int, top: int, width: int, height: int) {
@@ -161,7 +192,7 @@ namespace ManualTracingTool {
 
         setStrokeColor(r: float, g: float, b: float, a: float) {
 
-            this.context.strokeStyle = 'rgba(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ',' + (a).toFixed(2) + ')';
+            this.context.strokeStyle = this.getColorStyleText(r, g, b, a);
         }
 
         setStrokeColorV(color: Vec4) {
@@ -177,6 +208,26 @@ namespace ManualTracingTool {
         setGlobalAlpha(a: float) {
 
             this.context.globalAlpha = a;
+        }
+
+        setBlendMode(blendMode: CanvasRenderBlendMode) {
+
+            if (blendMode == CanvasRenderBlendMode.default || blendMode == CanvasRenderBlendMode.alphaOver) {
+
+                this.context.globalCompositeOperation = 'source-over';
+            }
+            else if (blendMode == CanvasRenderBlendMode.add) {
+
+                this.context.globalCompositeOperation = 'lighter';
+            }
+            else if (blendMode == CanvasRenderBlendMode.luminosity) {
+
+                this.context.globalCompositeOperation = 'luminosity';
+            }
+            else if (blendMode == CanvasRenderBlendMode.color) {
+
+                this.context.globalCompositeOperation = 'color';
+            }
         }
 
         setLineCap(lineCap: CanvasRenderLineCap) {
@@ -242,10 +293,10 @@ namespace ManualTracingTool {
             let imageData = canvasWindow.context.getImageData(Math.floor(x), Math.floor(y), 1, 1);
 
             vec4.set(outColor,
-                imageData.data[0],
-                imageData.data[1],
-                imageData.data[2],
-                imageData.data[3]
+                imageData.data[0] / 255.0,
+                imageData.data[1] / 255.0,
+                imageData.data[2] / 255.0,
+                imageData.data[3] / 255.0
             );
         }
     }
