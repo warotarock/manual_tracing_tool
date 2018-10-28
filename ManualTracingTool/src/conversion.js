@@ -25,6 +25,9 @@ function StringIsNullOrEmpty(str) {
 function StringIndexOf(str, searchString) {
     return str.indexOf(searchString);
 }
+function StringLastIndexOf(str, searchString) {
+    return str.lastIndexOf(searchString);
+}
 function StringSubstring(text, startIndex, length) {
     return text.substr(startIndex, length);
 }

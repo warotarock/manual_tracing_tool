@@ -21,7 +21,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_DrawLine.prototype.isAvailable = function (env) {
-            return (env.currentVectorLayer != null);
+            return (env.currentVectorLayer != null
+                && env.currentVectorLayer.isVisible);
         };
         Tool_DrawLine.prototype.mouseDown = function (e, env) {
             if (!e.isLeftButtonPressing()) {

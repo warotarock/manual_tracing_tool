@@ -28,7 +28,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Transform_Lattice.prototype.isAvailable = function (env) {
-            return (env.currentVectorLayer != null);
+            return (env.currentVectorLayer != null
+                && env.currentVectorLayer.isVisible);
         };
         Tool_Transform_Lattice.prototype.prepareModal = function (e, env) {
             this.clearEditData(e, env);

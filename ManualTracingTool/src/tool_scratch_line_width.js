@@ -23,6 +23,7 @@ var ManualTracingTool;
         function Tool_ScratchLineWidth() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.helpText = '線を最大の太さに近づけます。Shiftキーで線を細くします。<br />Ctrlキーで最大の太さ固定になります。';
+            _this.enableScratchEdit = false;
             _this.enableExtrude = false;
             return _this;
         }
@@ -37,7 +38,6 @@ var ManualTracingTool;
             var candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine, editFalloffRadiusMin, editFalloffRadiusMax);
             if (candidatePointPairs != null && candidatePointPairs.length > 0) {
                 var command = new Command_ScratchLineWidth();
-                command.isContinued = (this.extrudeLine != null);
                 command.targetLine = targetLine;
                 if (env.isCtrlKeyPressing()) {
                     command.fixedOverWriting = true;

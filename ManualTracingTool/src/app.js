@@ -16,18 +16,22 @@ var fs = (typeof (require) != 'undefined') ? require('fs') : {
 var ManualTracingTool;
 (function (ManualTracingTool) {
     // これからやろうと思っていること (current tasks)
-    // ・ファイルを指定してのドキュメント読み込み
-    // ・ポージングツールの整備
-    // 　・ポージングツール以外のツールでパンしたとき３Ⅾを更新する
-    // 　・複数のポージングレイヤーの描画
-    // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
-    // 　・モデルを切り替えられるようにする（数種類でよい）
     // ・アニメーション機能
     // 　・ドキュメントにキーフレーム情報を追加
     // 　・レイヤーのジオメトリにキーフレーム情報を追加
     // 　・キーフレームウィンドウを追加
     // 　　・キーフレームを追加、削除できるようにする
     // 　　・アニメーションの再生機能
+    // ・パレット機能の拡充
+    // 　・パレット編集画面にカラーピッカーを自作する
+    // 　・色データを単なるRGBAではなく、表現形式や混色のベースとなる色情報まで持てるようにする
+    // ・ポージングツールの整備
+    // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
+    // 　・モデルを切り替えられるようにする（数種類でよい）
+    // ・ファイルを指定してのドキュメント読み込み
+    // ・エクスポートの整備
+    // 　・解像度を指定してエクスポート
+    // 　・背景色を指定する
     // ・モバイル対応
     // 　・タッチ操作をきちんとする
     // 　・画面サイズによってはダイアログがまともに表示されない問題の対応
@@ -70,6 +74,11 @@ var ManualTracingTool;
     // ・レイヤーを選択変更したときレイヤーに応じたコンテキストの状態になるようにする
     // ・点削除＋線の非表示ツール
     // 終わったもの (done)
+    // ・エクスポートの整備
+    // 　・ファイル名を指定してのエクスポート
+    // ・ポージングツールの整備
+    // 　・ポージングツール以外のツールでパンしたとき３Ⅾを更新する
+    // 　・複数のポージングレイヤーの描画
     // ・塗りつぶし機能の追加
     // 　・連続する線として設定した線を接続して塗りつぶすことができる機能（複数の線の間を塗りつぶす機能の簡易版ともいえる）
     // ・描画ツールの追加
@@ -127,7 +136,12 @@ var ManualTracingTool;
     })(MainProcessStateID || (MainProcessStateID = {}));
     var Main = /** @class */ (function () {
         function Main() {
+            // Main process management
             this.mainProcessState = MainProcessStateID.none;
+            this.isEventSetDone = false;
+            this.isDeferredWindowResizeWaiting = false;
+            this.lastTime = 0;
+            this.elapsedTime = 0;
             // UI elements
             this.mainWindow = new MainWindow();
             this.editorWindow = new ManualTracingTool.CanvasWindow();
@@ -136,6 +150,7 @@ var ManualTracingTool;
             this.layerWindow = new LayerWindow();
             this.subtoolWindow = new SubtoolWindow();
             this.timeLineWindow = new TimeLineWindow();
+            this.palletColorModal_colorCanvas = new ColorCanvasWindow();
             this.renderingWindow = new ManualTracingTool.CanvasWindow();
             this.activeCanvasWindow = null;
             this.canvasRender = new ManualTracingTool.CanvasRender();
@@ -161,6 +176,7 @@ var ManualTracingTool;
             this.mainTools = new List();
             this.currentTool = null;
             this.currentSelectTool = null;
+            this.currentKeyframe = null;
             //layerCommands = new List<Command_Layer_CommandBase>(LayerWindowButtonID.IDCount);
             // Modal tools
             this.currentModalTool = null;
@@ -232,15 +248,14 @@ var ManualTracingTool;
             this.editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
             this.tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
             this.tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-            // Continuous processes
-            this._LastTime = 0;
-            this._ElapsedTime = 0;
+            this.viewLayerContext = new ViewLayerContext();
             // Dialogs
             this.currentModalDialogID = null;
-            this.currentModalFocusElementName = null;
+            this.currentModalFocusElementID = null;
             this.currentModalDialogResult = null;
             this.currentModalDialog_DocumentData = null;
             this.layerPropertyWindow_EditLayer = null;
+            this.palletColorWindow_EditLayer = null;
             this.palletColorWindow_Mode = OpenPalletColorModalMode.LineColor;
             this.openFileDialogTargetID = ManualTracingTool.OpenFileDialogTargetID.none;
             this.modalOverlayOption = {
@@ -266,6 +281,9 @@ var ManualTracingTool;
             // Subtool window drawing
             this.subToolItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
             this.subToolItemSeperatorLineColor = vec4.fromValues(0.0, 0.0, 0.0, 0.5);
+            // Pallet modal drawing
+            this.colorW = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            this.colorB = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
             // Footer window drawing
             this.footerText = '';
             this.footerTextBefore = '';
@@ -296,6 +314,7 @@ var ManualTracingTool;
             this.subtoolWindow.context = this.subtoolWindow.canvas.getContext('2d');
             this.timeLineWindow.context = this.timeLineWindow.canvas.getContext('2d');
             this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
+            this.palletColorModal_colorCanvas.context = this.palletColorModal_colorCanvas.canvas.getContext('2d');
             this.canvasRender.setContext(this.layerWindow);
             this.canvasRender.setFontSize(18.0);
             if (this.webGLRender.initializeWebGL(this.webglWindow.canvas)) {
@@ -331,6 +350,7 @@ var ManualTracingTool;
             else {
                 this.document = new ManualTracingTool.DocumentData();
                 this.startLoadingDocumentJSON(this.document, lastURL);
+                this.updateHdeaderDocumentFileName();
             }
             _Main.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
         };
@@ -349,6 +369,7 @@ var ManualTracingTool;
                 document.rootLayer = data.rootLayer;
                 document.documentFrame = data.documentFrame;
                 document.palletColos = data.palletColos;
+                document.animationSettingData = data.animationSettingData;
                 document.loaded = true;
             });
             xhr.send();
@@ -489,7 +510,7 @@ var ManualTracingTool;
             this.setCurrentMainTool(ManualTracingTool.MainToolID.drawLine);
             //this.setCurrentMainTool(MainToolID.posing);
             this.setCurrentSelectionTool(this.toolContext.operationUnitID);
-            // debug
+            this.setCurrentFrame(0);
             this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
             this.toolEnv.updateContext();
             // 初回描画
@@ -497,7 +518,6 @@ var ManualTracingTool;
             this.updateHeaderButtons();
             this.updateFooterMessage();
             this.toolEnv.setRedrawAllWindows();
-            this.updateHdeaderDocumentFileName();
             this.setEvents();
         };
         Main.prototype.createDefaultDocumentData = function () {
@@ -515,25 +535,8 @@ var ManualTracingTool;
                 layer1.name = 'layer1';
                 rootLayer.childLayers.push(layer1);
                 var group1 = new ManualTracingTool.VectorGroup();
-                layer1.geometry.groups.push(group1);
+                layer1.keyframes[0].geometry.groups.push(group1);
             }
-            //{
-            //    let layer1 = new GroupLayer();
-            //    layer1.name = 'group1'
-            //    rootLayer.childLayers.push(layer1);
-            //    let layer2 = new VectorLayer();
-            //    layer2.name = 'child1'
-            //    layer1.childLayers.push(layer2);
-            //    let group2 = new VectorGroup();
-            //    layer2.geometry.groups.push(group2);
-            //}
-            //{
-            //    let layer1 = new VectorLayer();
-            //    layer1.name = 'background'
-            //    rootLayer.childLayers.push(layer1);
-            //    let group1 = new VectorGroup();
-            //    layer1.geometry.groups.push(group1);
-            //}
             {
                 var layer1 = new ManualTracingTool.PosingLayer();
                 layer1.name = 'posing1';
@@ -576,33 +579,44 @@ var ManualTracingTool;
                 if (vectorLayer.fill_PalletColorIndex == undefined) {
                     vectorLayer.fill_PalletColorIndex = 1;
                 }
-                if (vectorLayer.geometry == undefined && vectorLayer['groups'] != undefined) {
-                    vectorLayer.geometry = new ManualTracingTool.VectorLayerGeometry();
-                    vectorLayer.geometry.groups = vectorLayer['groups'];
+                if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {
+                    vectorLayer.keyframes = new List();
+                    var key = new ManualTracingTool.VectorLayerKeyFrame();
+                    key.frame = 0;
+                    key.geometry = vectorLayer['geometry'];
+                    vectorLayer.keyframes.push(key);
+                }
+                if (vectorLayer['geometry'] != undefined) {
+                    delete vectorLayer['geometry'];
+                }
+                if (vectorLayer['groups'] != undefined) {
                     delete vectorLayer['groups'];
                 }
-                for (var _i = 0, _a = vectorLayer.geometry.groups; _i < _a.length; _i++) {
-                    var group = _a[_i];
-                    for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
-                        var line = _c[_b];
-                        line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
-                        line.isEditTarget = false;
-                        line.isCloseToMouse = false;
-                        if (line['strokeWidth'] != undefined) {
-                            delete line['strokeWidth'];
-                        }
-                        for (var _d = 0, _e = line.points; _d < _e.length; _d++) {
-                            var point = _e[_d];
-                            point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.none;
-                            point.adjustingLocation = vec3.create();
-                            vec3.copy(point.adjustingLocation, point.location);
-                            point.tempLocation = vec3.create();
-                            point.adjustingLineWidth = point.lineWidth;
-                            if (point.lineWidth == undefined) {
-                                point.lineWidth = 1.0;
+                for (var _i = 0, _a = vectorLayer.keyframes; _i < _a.length; _i++) {
+                    var keyframe = _a[_i];
+                    for (var _b = 0, _c = keyframe.geometry.groups; _b < _c.length; _b++) {
+                        var group = _c[_b];
+                        for (var _d = 0, _e = group.lines; _d < _e.length; _d++) {
+                            var line = _e[_d];
+                            line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
+                            line.isEditTarget = false;
+                            line.isCloseToMouse = false;
+                            if (line['strokeWidth'] != undefined) {
+                                delete line['strokeWidth'];
                             }
-                            if (point['adjustedLocation'] != undefined) {
-                                delete point['adjustedLocation'];
+                            for (var _f = 0, _g = line.points; _f < _g.length; _f++) {
+                                var point = _g[_f];
+                                point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.none;
+                                point.adjustingLocation = vec3.create();
+                                vec3.copy(point.adjustingLocation, point.location);
+                                point.tempLocation = vec3.create();
+                                point.adjustingLineWidth = point.lineWidth;
+                                if (point.lineWidth == undefined) {
+                                    point.lineWidth = 1.0;
+                                }
+                                if (point['adjustedLocation'] != undefined) {
+                                    delete point['adjustedLocation'];
+                                }
                             }
                         }
                     }
@@ -611,7 +625,7 @@ var ManualTracingTool;
             else if (layer.type == ManualTracingTool.LayerTypeID.vectorLayerReferenceLayer) {
                 var vRefLayer = layer;
                 vRefLayer.referenceLayer = info.layerDictionary[vRefLayer.referenceLayerID];
-                vRefLayer.geometry = vRefLayer.referenceLayer.geometry;
+                vRefLayer.keyframes = vRefLayer.referenceLayer.keyframes;
                 delete vRefLayer.referenceLayerID;
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
@@ -633,8 +647,8 @@ var ManualTracingTool;
                 var posingLayer = layer;
                 posingLayer.drawingUnits = null;
             }
-            for (var _f = 0, _g = layer.childLayers; _f < _g.length; _f++) {
-                var childLayer = _g[_f];
+            for (var _h = 0, _j = layer.childLayers; _h < _j.length; _h++) {
+                var childLayer = _j[_h];
                 this.fixLoadedDocumentData_FixLayer_Recursive(childLayer, info);
             }
         };
@@ -661,25 +675,28 @@ var ManualTracingTool;
         Main.prototype.fixSaveDocumentData_FixLayer_Recursive = function (layer, info) {
             if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
                 var vectorLayer = layer;
-                for (var _i = 0, _a = vectorLayer.geometry.groups; _i < _a.length; _i++) {
-                    var group = _a[_i];
-                    for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
-                        var line = _c[_b];
-                        delete line.modifyFlag;
-                        delete line.isCloseToMouse;
-                        delete line.isEditTarget;
-                        for (var _d = 0, _e = line.points; _d < _e.length; _d++) {
-                            var point = _e[_d];
-                            delete point.adjustingLocation;
-                            delete point.tempLocation;
-                            delete point.adjustingLineWidth;
+                for (var _i = 0, _a = vectorLayer.keyframes; _i < _a.length; _i++) {
+                    var keyframe = _a[_i];
+                    for (var _b = 0, _c = keyframe.geometry.groups; _b < _c.length; _b++) {
+                        var group = _c[_b];
+                        for (var _d = 0, _e = group.lines; _d < _e.length; _d++) {
+                            var line = _e[_d];
+                            delete line.modifyFlag;
+                            delete line.isCloseToMouse;
+                            delete line.isEditTarget;
+                            for (var _f = 0, _g = line.points; _f < _g.length; _f++) {
+                                var point = _g[_f];
+                                delete point.adjustingLocation;
+                                delete point.tempLocation;
+                                delete point.adjustingLineWidth;
+                            }
                         }
                     }
                 }
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.vectorLayerReferenceLayer) {
                 var vRefLayer = layer;
-                delete vRefLayer.geometry;
+                delete vRefLayer.keyframes;
                 delete vRefLayer.referenceLayer;
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
@@ -689,8 +706,8 @@ var ManualTracingTool;
                 delete ifrLayer.adjustingRotation;
                 delete ifrLayer.adjustingScale;
             }
-            for (var _f = 0, _g = layer.childLayers; _f < _g.length; _f++) {
-                var childLayer = _g[_f];
+            for (var _h = 0, _j = layer.childLayers; _h < _j.length; _h++) {
+                var childLayer = _j[_h];
                 this.fixSaveDocumentData_FixLayer_Recursive(childLayer, info);
             }
         };
@@ -707,8 +724,10 @@ var ManualTracingTool;
         Main.prototype.initializeViews = function () {
             this.mainWindow.centerLocationRate[0] = 0.5;
             this.mainWindow.centerLocationRate[1] = 0.5;
+            this.setCanvasSizeFromStyle(this.palletColorModal_colorCanvas);
+            this.drawPalletColorMixer(this.palletColorModal_colorCanvas);
             this.collectLayerWindowButtons();
-            this.collectLayerWindowItems();
+            this.updateLayerStructure();
         };
         Main.prototype.initializeModals = function () {
             this.setRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, ManualTracingTool.LayerTypeID.vectorLayer);
@@ -767,108 +786,298 @@ var ManualTracingTool;
             this.currentTool = this.tool_Posing3d_LocateHead;
             // TODO: ツールを作るたびに忘れるのでなんとかしる
             this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
-            this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
-            this.tool_ScratchLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength * 1.5;
+            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            this.tool_ScratchLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength;
             this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         };
+        Main.prototype.isEventDisabled = function () {
+            if (this.isWhileLoading()) {
+                return true;
+            }
+            if (this.isModalShown()) {
+                return true;
+            }
+            return false;
+        };
+        Main.prototype.setEvents_ModalCloseButton = function (id) {
+            var _this = this;
+            this.getElement(id).addEventListener('click', function (e) {
+                _this.currentModalDialogResult = id;
+                _this.closeModal();
+                e.preventDefault();
+            });
+        };
+        // Continuous processes
+        Main.prototype.run = function () {
+            var context = this.toolContext;
+            var env = this.toolEnv;
+            if (this.isDeferredWindowResizeWaiting) {
+                this.isDeferredWindowResizeWaiting = false;
+                this.resizeWindows();
+                this.toolEnv.setRedrawAllWindows();
+            }
+            // Process animation time
+            var currentTime = (new Date().getTime());
+            if (this.lastTime == 0) {
+                this.elapsedTime = 100;
+            }
+            else {
+                this.elapsedTime = currentTime - this.lastTime;
+            }
+            this.lastTime = currentTime;
+            this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
+            if (this.selectCurrentLayerAnimationTime < 0) {
+                this.selectCurrentLayerAnimationTime = 0;
+            }
+            // Process animation
+            if (context.animationPlaying) {
+                var aniSetting = context.document.animationSettingData;
+                aniSetting.currentTimeFrame += 1;
+                if (aniSetting.currentTimeFrame >= aniSetting.loopEndFrame) {
+                    aniSetting.currentTimeFrame = aniSetting.loopStartFrame;
+                }
+                this.setCurrentFrame(aniSetting.currentTimeFrame);
+                env.setRedrawMainWindow();
+                env.setRedrawTimeLineWindow();
+            }
+        };
+        // Events
         Main.prototype.setEvents = function () {
             var _this = this;
+            if (this.isEventSetDone) {
+                return;
+            }
+            this.isEventSetDone = true;
             this.editorWindow.canvas.addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.mainWindow.toolMouseEvent, e, false, _this.mainWindow);
                 _this.mainWindow_mousedown();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mousemove', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.mainWindow.toolMouseEvent, e, false, _this.mainWindow);
                 _this.mainWindow_mousemove();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mouseup', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.mainWindow.toolMouseEvent, e, true, _this.mainWindow);
                 _this.mainWindow_mouseup();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchstart', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.mainWindow.toolMouseEvent, e, true, false, _this.mainWindow);
                 _this.mainWindow_mousedown();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchmove', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.mainWindow.toolMouseEvent, e, false, false, _this.mainWindow);
                 _this.mainWindow_mousemove();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('touchend', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.mainWindow.toolMouseEvent, e, false, true, _this.mainWindow);
                 _this.mainWindow_mouseup();
                 e.preventDefault();
             });
             this.editorWindow.canvas.addEventListener('mousewheel', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getWheelInfo(_this.mainWindow.toolMouseEvent, e);
                 _this.editorWindow_mousewheel();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.layerWindow.toolMouseEvent, e, false, _this.layerWindow);
                 _this.layerWindow_mousedown();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('mousemove', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.layerWindow.toolMouseEvent, e, false, _this.layerWindow);
                 _this.layerWindow_mousemove();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('mouseup', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.layerWindow.toolMouseEvent, e, true, _this.mainWindow);
                 _this.layerWindow_mouseup();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('touchstart', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.layerWindow.toolMouseEvent, e, true, false, _this.layerWindow);
                 _this.layerWindow_mousedown();
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('touchmove', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.layerWindow.toolMouseEvent, e, false, false, _this.layerWindow);
                 e.preventDefault();
             });
             this.layerWindow.canvas.addEventListener('touchend', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.layerWindow.toolMouseEvent, e, false, true, _this.layerWindow);
                 e.preventDefault();
             });
             this.subtoolWindow.canvas.addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.subtoolWindow.toolMouseEvent, e, false, _this.subtoolWindow);
                 _this.subtoolWindow_mousedown(_this.subtoolWindow.toolMouseEvent);
                 e.preventDefault();
             });
             this.subtoolWindow.canvas.addEventListener('mousemove', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.subtoolWindow.toolMouseEvent, e, false, _this.subtoolWindow);
                 _this.subtoolWindow_mousemove(_this.subtoolWindow.toolMouseEvent);
                 e.preventDefault();
             });
             this.subtoolWindow.canvas.addEventListener('mouseup', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getMouseInfo(_this.subtoolWindow.toolMouseEvent, e, true, _this.mainWindow);
                 _this.subtoolWindow_mouseup(_this.subtoolWindow.toolMouseEvent);
                 e.preventDefault();
             });
             this.subtoolWindow.canvas.addEventListener('touchstart', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.subtoolWindow.toolMouseEvent, e, true, false, _this.subtoolWindow);
                 _this.subtoolWindow_mousedown(_this.subtoolWindow.toolMouseEvent);
                 e.preventDefault();
             });
             this.subtoolWindow.canvas.addEventListener('touchmove', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.subtoolWindow.toolMouseEvent, e, false, false, _this.subtoolWindow);
                 e.preventDefault();
             });
             this.subtoolWindow.canvas.addEventListener('touchend', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.getTouchInfo(_this.subtoolWindow.toolMouseEvent, e, false, true, _this.subtoolWindow);
                 e.preventDefault();
             });
+            this.timeLineWindow.canvas.addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getMouseInfo(_this.timeLineWindow.toolMouseEvent, e, false, _this.timeLineWindow);
+                _this.timeLineWindow_mousedown(_this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+            this.timeLineWindow.canvas.addEventListener('mousemove', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getMouseInfo(_this.timeLineWindow.toolMouseEvent, e, false, _this.timeLineWindow);
+                _this.timeLineWindow_mousemove(_this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+            this.timeLineWindow.canvas.addEventListener('mouseup', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getMouseInfo(_this.timeLineWindow.toolMouseEvent, e, true, _this.mainWindow);
+                _this.timeLineWindow_mouseup(_this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+            this.timeLineWindow.canvas.addEventListener('touchstart', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getTouchInfo(_this.timeLineWindow.toolMouseEvent, e, true, false, _this.timeLineWindow);
+                _this.timeLineWindow_mousedown(_this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+            this.timeLineWindow.canvas.addEventListener('touchmove', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getTouchInfo(_this.timeLineWindow.toolMouseEvent, e, false, false, _this.timeLineWindow);
+                e.preventDefault();
+            });
+            this.timeLineWindow.canvas.addEventListener('touchend', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getTouchInfo(_this.timeLineWindow.toolMouseEvent, e, false, true, _this.timeLineWindow);
+                e.preventDefault();
+            });
+            this.timeLineWindow.canvas.addEventListener('mousewheel', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getWheelInfo(_this.timeLineWindow.toolMouseEvent, e);
+                _this.timeLineWindow_mousewheel(_this.timeLineWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+            this.palletColorModal_colorCanvas.canvas.addEventListener('mousedown', function (e) {
+                if (_this.currentModalDialogID != _this.ID.palletColorModal) {
+                    return;
+                }
+                _this.getMouseInfo(_this.palletColorModal_colorCanvas.toolMouseEvent, e, false, _this.palletColorModal_colorCanvas);
+                _this.onPalletColorModal_ColorCanvas_mousedown(_this.palletColorModal_colorCanvas.toolMouseEvent);
+                e.preventDefault();
+            });
             document.addEventListener('keydown', function (e) {
+                if (_this.isWhileLoading()) {
+                    return;
+                }
+                if (_this.isModalShown()) {
+                    return;
+                }
+                if (document.activeElement.id == _this.ID.fileName) {
+                    return;
+                }
                 _this.document_keydown(e);
             });
             document.addEventListener('keyup', function (e) {
+                if (_this.isModalShown()) {
+                    return;
+                }
+                if (document.activeElement.id == _this.ID.fileName) {
+                    return;
+                }
                 _this.document_keyup(e);
             });
             window.addEventListener('resize', function (e) {
@@ -879,6 +1088,9 @@ var ManualTracingTool;
             });
             // Menu buttons
             this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.setCurrentMainTool(ManualTracingTool.MainToolID.drawLine);
                 _this.toolEnv.setRedrawMainWindowEditorWindow();
                 _this.toolEnv.setRedrawLayerWindow();
@@ -886,6 +1098,9 @@ var ManualTracingTool;
                 e.preventDefault();
             });
             this.getElement(this.ID.menu_btnScratchTool).addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.setCurrentMainTool(ManualTracingTool.MainToolID.scratchLine);
                 _this.toolEnv.setRedrawMainWindowEditorWindow();
                 _this.toolEnv.setRedrawLayerWindow();
@@ -893,6 +1108,9 @@ var ManualTracingTool;
                 e.preventDefault();
             });
             this.getElement(this.ID.menu_btnPoseTool).addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.setCurrentMainTool(ManualTracingTool.MainToolID.posing);
                 _this.toolEnv.setRedrawMainWindowEditorWindow();
                 _this.toolEnv.setRedrawLayerWindow();
@@ -900,11 +1118,31 @@ var ManualTracingTool;
                 e.preventDefault();
             });
             this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.openOperationOptionModal();
                 e.preventDefault();
             });
             this.getElement(this.ID.menu_btnExport).addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
                 _this.openExportImageFileModal();
+                e.preventDefault();
+            });
+            this.getElement(this.ID.menu_btnPalette1).addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.openPalletColorModal(OpenPalletColorModalMode.LineColor, _this.toolContext.document, _this.toolContext.currentLayer);
+                e.preventDefault();
+            });
+            this.getElement(this.ID.menu_btnPalette2).addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.openPalletColorModal(OpenPalletColorModalMode.FillColor, _this.toolContext.document, _this.toolContext.currentLayer);
                 e.preventDefault();
             });
             // Modal window
@@ -920,6 +1158,9 @@ var ManualTracingTool;
             this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_cancel);
             this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_ok);
             this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_cancel);
+            this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_ok);
+            this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_cancel);
+            // Pallet modal
             this.getElement(this.ID.palletColorModal_currentColor).addEventListener('change', function (e) {
                 _this.onPalletColorModal_CurrentColorChanged();
             });
@@ -947,34 +1188,7 @@ var ManualTracingTool;
                 _loop_1(palletColorIndex);
             }
         };
-        Main.prototype.setEvents_ModalCloseButton = function (id) {
-            var _this = this;
-            this.getElement(id).addEventListener('click', function (e) {
-                _this.currentModalDialogResult = id;
-                _this.closeModal();
-                e.preventDefault();
-            });
-        };
-        Main.prototype.run = function () {
-            // process animation time
-            var currentTime = (new Date().getTime());
-            if (this._LastTime == 0) {
-                this._ElapsedTime = 100;
-            }
-            else {
-                this._ElapsedTime = currentTime - this._LastTime;
-            }
-            this._LastTime = currentTime;
-            this.selectCurrentLayerAnimationTime -= this._ElapsedTime / 1000.0;
-            if (this.selectCurrentLayerAnimationTime < 0) {
-                this.selectCurrentLayerAnimationTime = 0;
-            }
-        };
-        // Events
         Main.prototype.mainWindow_mousedown = function () {
-            if (!this.mainProcessState) {
-                return;
-            }
             var context = this.toolContext;
             var wnd = this.mainWindow;
             var e = wnd.toolMouseEvent;
@@ -1013,9 +1227,6 @@ var ManualTracingTool;
             e.endMouseDragging();
         };
         Main.prototype.mainWindow_mousemove = function () {
-            if (this.isWhileLoading()) {
-                return;
-            }
             var context = this.toolContext;
             var wnd = this.mainWindow;
             var e = wnd.toolMouseEvent;
@@ -1030,7 +1241,7 @@ var ManualTracingTool;
                 this.currentTool.mouseMove(e, this.toolEnv);
             }
             else if (this.toolEnv.isSelectMode()) {
-                var isHitChanged = this.mousemoveHittest(e.location[0], e.location[1], this.toolEnv.mouseCursorViewRadius, false);
+                var isHitChanged = this.mousemoveHittest(e.location[0], e.location[1], this.toolEnv.mouseCursorViewRadius);
                 if (isHitChanged) {
                     this.toolEnv.setRedrawMainWindow();
                 }
@@ -1047,9 +1258,6 @@ var ManualTracingTool;
             }
         };
         Main.prototype.mainWindow_mouseup = function () {
-            if (this.isWhileLoading()) {
-                return;
-            }
             var context = this.toolContext;
             var wnd = this.mainWindow;
             var e = wnd.toolMouseEvent;
@@ -1063,10 +1271,18 @@ var ManualTracingTool;
             }
             this.mainWindow_MouseViewOperationEnd();
         };
-        Main.prototype.layerWindow_mousedown = function () {
-            if (this.isWhileLoading()) {
-                return;
+        Main.prototype.editorWindow_mousewheel = function () {
+            var wnd = this.mainWindow;
+            var e = wnd.toolMouseEvent;
+            // View operation
+            if (e.wheelDelta != 0.0
+                && !e.isMouseDragging) {
+                this.mainWindow.addViewScale(e.wheelDelta * 0.1);
+                this.toolEnv.setRedrawMainWindowEditorWindow();
+                this.toolEnv.setRedrawWebGLWindow();
             }
+        };
+        Main.prototype.layerWindow_mousedown = function () {
             var context = this.toolContext;
             var wnd = this.layerWindow;
             var e = wnd.toolMouseEvent;
@@ -1271,32 +1487,84 @@ var ManualTracingTool;
         Main.prototype.subtoolWindow_mouseup = function (e) {
             this.subtoolWindow.endMouseDragging();
         };
-        Main.prototype.editorWindow_mousewheel = function () {
-            if (this.isWhileLoading()) {
-                return;
+        Main.prototype.timeLineWindow_mousedown = function (e) {
+            var context = this.toolContext;
+            var wnd = this.timeLineWindow;
+            var env = this.toolEnv;
+            var aniSetting = context.document.animationSettingData;
+            var left = wnd.getTimeLineLeft();
+            if (e.offsetX < left) {
+                this.timeLineWindow_OnPlayPauseButton(e);
             }
+            else {
+                this.timeLineWindow_ProcessFrameInput(e);
+            }
+        };
+        Main.prototype.timeLineWindow_OnPlayPauseButton = function (e) {
+            var context = this.toolContext;
+            var env = this.toolEnv;
+            var aniSetting = context.document.animationSettingData;
+            if (context.animationPlaying) {
+                context.animationPlaying = false;
+                env.setRedrawTimeLineWindow();
+            }
+            else {
+                context.animationPlaying = true;
+                context.animationPlayingFPS = aniSetting.animationFrameParSecond;
+            }
+        };
+        Main.prototype.timeLineWindow_ProcessFrameInput = function (e) {
+            var context = this.toolContext;
+            var wnd = this.timeLineWindow;
+            var env = this.toolEnv;
+            var aniSetting = context.document.animationSettingData;
+            var clickedFrame = wnd.getFrameByLocation(e.offsetX, aniSetting);
+            if (clickedFrame != -1) {
+                this.setCurrentFrame(clickedFrame);
+                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawTimeLineWindow();
+            }
+        };
+        Main.prototype.timeLineWindow_mousemove = function (e) {
+            var context = this.toolContext;
+            var wnd = this.timeLineWindow;
+            var env = this.toolEnv;
+            if (e.isLeftButtonPressing()) {
+                this.timeLineWindow_ProcessFrameInput(e);
+            }
+        };
+        Main.prototype.timeLineWindow_mouseup = function (e) {
+            var context = this.toolContext;
+            var wnd = this.timeLineWindow;
+            var env = this.toolEnv;
+            wnd.endMouseDragging();
+        };
+        Main.prototype.timeLineWindow_mousewheel = function (e) {
+            var context = this.toolContext;
             var wnd = this.mainWindow;
-            var e = wnd.toolMouseEvent;
-            // View operation
-            if (e.wheelDelta != 0.0
-                && !e.isMouseDragging) {
-                this.mainWindow.addViewScale(e.wheelDelta * 0.1);
-                this.toolEnv.setRedrawMainWindowEditorWindow();
-                this.toolEnv.setRedrawWebGLWindow();
+            var env = this.toolEnv;
+            var aniSetting = context.document.animationSettingData;
+            if (env.isCtrlKeyPressing()) {
+                var addScale = 0.2;
+                if (e.wheelDelta > 0) {
+                    aniSetting.timeLineWindowScale += addScale;
+                }
+                else {
+                    aniSetting.timeLineWindowScale -= addScale;
+                }
+                if (aniSetting.timeLineWindowScale < 1.0) {
+                    aniSetting.timeLineWindowScale = 1.0;
+                }
+                if (aniSetting.timeLineWindowScale > aniSetting.timeLineWindowScaleMax) {
+                    aniSetting.timeLineWindowScale = aniSetting.timeLineWindowScaleMax;
+                }
+                env.setRedrawTimeLineWindow();
             }
         };
         Main.prototype.document_keydown = function (e) {
             var env = this.toolEnv;
             var context = this.toolContext;
-            if (this.isWhileLoading()) {
-                return;
-            }
-            if (this.isModalShown()) {
-                return;
-            }
-            if (document.activeElement.id == this.ID.fileName) {
-                return;
-            }
+            e.preventDefault();
             this.toolContext.shiftKey = e.shiftKey;
             this.toolContext.altKey = e.altKey;
             this.toolContext.ctrlKey = e.ctrlKey;
@@ -1312,12 +1580,15 @@ var ManualTracingTool;
                 /// Update footer message
                 this.updateFooterMessage();
                 env.setRedrawMainWindowEditorWindow();
-                e.preventDefault();
                 return;
             }
             if (e.key == 'n' && env.isCtrlKeyPressing()) {
                 this.document = this.createDefaultDocumentData();
                 this.toolContext.document = this.document;
+                this.toolContext.commandHistory = new ManualTracingTool.CommandHistory();
+                this.updateLayerStructure();
+                this.setCurrentLayer(null);
+                this.setCurrentFrame(0);
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
                 env.setRedrawAllWindows();
                 return;
@@ -1331,7 +1602,6 @@ var ManualTracingTool;
                     env.setRedrawLayerWindow();
                     env.setRedrawSubtoolWindow();
                 }
-                e.preventDefault();
                 return;
             }
             if (e.key == 'e') {
@@ -1343,7 +1613,6 @@ var ManualTracingTool;
                     env.setRedrawLayerWindow();
                     env.setRedrawSubtoolWindow();
                 }
-                e.preventDefault();
                 return;
             }
             if (e.key == 'p') {
@@ -1360,47 +1629,31 @@ var ManualTracingTool;
                     env.setRedrawLayerWindow();
                     env.setRedrawSubtoolWindow();
                 }
-                e.preventDefault();
                 return;
             }
             if (e.key == 'z') {
                 this.toolContext.commandHistory.undo(env);
                 env.setRedrawMainWindow();
-                e.preventDefault();
                 return;
             }
             if (e.key == 'y') {
                 this.toolContext.commandHistory.redo(env);
                 env.setRedrawMainWindow();
-                e.preventDefault();
                 return;
             }
             if (e.key == 'Delete' || e.key == 'x') {
                 if (env.isSelectMode()) {
-                    if (this.toolContext.currentLayer != null
-                        && this.toolContext.currentLayer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
+                    if (this.toolContext.currentVectorLayer != null
+                        && this.toolContext.currentVectorGeometry != null) {
                         var command = new ManualTracingTool.Command_DeleteSelectedPoints();
-                        if (command.prepareEditTargets((this.toolContext.currentLayer))) {
+                        if (command.prepareEditTargets(this.toolContext.currentVectorLayer, this.toolContext.currentVectorGeometry)) {
                             command.execute(env);
                             this.toolContext.commandHistory.addCommand(command);
                         }
                         env.setRedrawMainWindow();
                     }
                 }
-                e.preventDefault();
                 return;
-            }
-            if (e.key == 's') {
-                if (env.isCtrlKeyPressing()) {
-                    this.saveDocument();
-                    e.preventDefault();
-                    return;
-                }
-                else {
-                    this.selectNextOrPreviousLayer(true);
-                    this.startShowingCurrentLayer();
-                    env.setRedrawLayerWindow();
-                }
             }
             if (e.key == 'Home' || e.key == 'q') {
                 this.mainWindow.viewLocation[0] = 0.0;
@@ -1408,7 +1661,6 @@ var ManualTracingTool;
                 this.mainWindow.viewScale = 1.0;
                 this.mainWindow.viewRotation = 0.0;
                 env.setRedrawMainWindowEditorWindow();
-                e.preventDefault();
                 return;
             }
             if (e.key == 't' || e.key == 'r') {
@@ -1425,7 +1677,6 @@ var ManualTracingTool;
                         this.mainWindow.viewRotation += 360.0;
                     }
                     env.setRedrawMainWindowEditorWindow();
-                    e.preventDefault();
                     return;
                 }
             }
@@ -1436,10 +1687,9 @@ var ManualTracingTool;
                 }
                 this.mainWindow.addViewScale(addScale);
                 env.setRedrawMainWindowEditorWindow();
-                e.preventDefault();
                 return;
             }
-            if (e.key == 'ArrowLeft' || e.key == 'ArrowRight' || e.key == 'ArrowUp' || e.key == 'ArrowDown') {
+            if (env.isCtrlKeyPressing() && (e.key == 'ArrowLeft' || e.key == 'ArrowRight' || e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
                 var x = 0.0;
                 var y = 0.0;
                 if (e.key == 'ArrowLeft') {
@@ -1476,7 +1726,19 @@ var ManualTracingTool;
                     this.mainWindow.viewLocation[1] = bottomLimit;
                 }
                 env.setRedrawMainWindowEditorWindow();
-                e.preventDefault();
+                return;
+            }
+            if (!env.isCtrlKeyPressing() && (e.key == 'ArrowLeft' || e.key == 'ArrowRight')) {
+                var addFrame = 1;
+                if (e.key == 'ArrowLeft') {
+                    addFrame = -addFrame;
+                }
+                this.setCurrentFrame(context.document.animationSettingData.currentTimeFrame + addFrame);
+                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawTimeLineWindow();
+            }
+            if (e.key == 'i' && this.activeCanvasWindow == this.timeLineWindow) {
+                this.openNewKeyframeModal();
                 return;
             }
             if (e.key == ' ') {
@@ -1489,13 +1751,11 @@ var ManualTracingTool;
                 else if (this.activeCanvasWindow == this.subtoolWindow) {
                     this.subtoolWindow.startMouseDragging();
                 }
-                e.preventDefault();
                 return;
             }
             if (e.key == 'a') {
                 if (env.isSelectMode()) {
                     this.tool_SelectAllPoints.execute(env);
-                    e.preventDefault();
                 }
                 else {
                     this.selectNextOrPreviousLayer(false);
@@ -1506,86 +1766,93 @@ var ManualTracingTool;
             if (e.key == 'w') {
                 this.layerPicking(this.mainWindow, this.mainWindow.toolMouseEvent.offsetX, this.mainWindow.toolMouseEvent.offsetY);
                 this.startShowingCurrentLayer();
-                e.preventDefault();
+            }
+            if (e.key == 'l') {
+                if (env.isCtrlKeyPressing()) {
+                    this.document = new ManualTracingTool.DocumentData();
+                    this.toolContext.document = this.document;
+                    var fileName = this.getInputElementText(this.ID.fileName);
+                    this.startLoadingDocumentJSON(this.document, fileName);
+                    _Main.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+                    return;
+                }
             }
             if (e.key == 'g' || e.key == 'r' || e.key == 's') {
-                var modalToolID = ModalToolID.grabMove;
-                if (e.key == 'r') {
-                    modalToolID = ModalToolID.ratate;
+                if (e.key == 's' && env.isCtrlKeyPressing()) {
+                    this.saveDocument();
+                    return;
                 }
-                else if (e.key == 's') {
-                    modalToolID = ModalToolID.scale;
-                }
-                if (env.isCurrentLayerVectorLayer()) {
-                    if (env.isSelectMode()) {
-                        this.startVectorLayerModalTool(modalToolID);
-                        e.preventDefault();
+                if (env.isDrawMode()) {
+                    if (e.key == 's') {
+                        this.selectNextOrPreviousLayer(true);
+                        this.startShowingCurrentLayer();
+                        env.setRedrawLayerWindow();
                     }
                     else {
                         this.currentTool.keydown(e, env);
                     }
                 }
-                else if (env.isCurrentLayerImageFileReferenceLayer()) {
-                    this.startImageFileReferenceLayerModalTool(modalToolID);
-                    e.preventDefault();
+                else if (env.isSelectMode()) {
+                    var modalToolID = ModalToolID.grabMove;
+                    if (e.key == 'r') {
+                        modalToolID = ModalToolID.ratate;
+                    }
+                    else if (e.key == 's') {
+                        modalToolID = ModalToolID.scale;
+                    }
+                    if (env.isCurrentLayerVectorLayer()) {
+                        if (env.isSelectMode()) {
+                            this.startVectorLayerModalTool(modalToolID);
+                        }
+                        else {
+                            this.currentTool.keydown(e, env);
+                        }
+                    }
+                    else if (env.isCurrentLayerImageFileReferenceLayer()) {
+                        this.startImageFileReferenceLayerModalTool(modalToolID);
+                    }
                 }
             }
             if (e.key == 'Escape') {
                 if (this.isModalToolRunning()) {
                     this.cancelModalTool();
                 }
-                e.preventDefault();
             }
             if (e.key == 'Enter') {
                 this.currentTool.keydown(e, env);
-                e.preventDefault();
             }
             if (e.key == '1') {
                 var layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openLayerPropertyModal(layerItem.layer, layerItem);
-                e.preventDefault();
             }
             if (e.key == '2') {
                 var layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openPalletColorModal(OpenPalletColorModalMode.LineColor, this.toolContext.document, layerItem.layer);
-                e.preventDefault();
             }
             if (e.key == '3') {
                 var layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openPalletColorModal(OpenPalletColorModalMode.FillColor, this.toolContext.document, layerItem.layer);
-                e.preventDefault();
             }
             if (e.key == '4') {
                 this.openDocumentSettingModal();
-                e.preventDefault();
             }
             if (e.key == '5') {
                 this.openNewLayerCommandOptionModal();
-                e.preventDefault();
             }
             if (e.key == '^') {
                 this.openOperationOptionModal();
-                e.preventDefault();
             }
             if (e.key == '\\') {
                 this.openExportImageFileModal();
-                e.preventDefault();
             }
             if (e.key == 'o') {
                 this.currentTool.keydown(e, env);
-                e.preventDefault();
             }
         };
         Main.prototype.document_keyup = function (e) {
             this.toolContext.shiftKey = e.shiftKey;
             this.toolContext.altKey = e.altKey;
             this.toolContext.ctrlKey = e.ctrlKey;
-            if (this.isModalShown()) {
-                return;
-            }
-            if (document.activeElement.id == this.ID.fileName) {
-                return;
-            }
             if (e.key == ' ') {
                 if (this.activeCanvasWindow == this.mainWindow) {
                     this.mainWindow_MouseViewOperationEnd();
@@ -1599,8 +1866,7 @@ var ManualTracingTool;
             }
         };
         Main.prototype.htmlWindow_resize = function (e) {
-            this.resizeWindows();
-            this.toolEnv.setRedrawAllWindows();
+            this.isDeferredWindowResizeWaiting = true;
         };
         Main.prototype.htmlWindow_contextmenu = function (e) {
             if (e.preventDefault) {
@@ -1610,6 +1876,111 @@ var ManualTracingTool;
                 e.returnValue = false;
             }
             return false;
+        };
+        // Core data system for layer and animation
+        Main.prototype.updateLayerStructure = function () {
+            this.collectViewContext();
+            this.collectLayerWindowItems();
+            this.caluculateLayerWindowLayout(this.layerWindow);
+            this.subtoolWindow_CollectViewItems();
+            this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+        };
+        Main.prototype.collectViewContext = function () {
+            var context = this.toolContext;
+            var aniSetting = context.document.animationSettingData;
+            // Collects first keyframes for each layer
+            var layers = new List();
+            ManualTracingTool.Layer.collectLayerRecursive(layers, this.toolContext.document.rootLayer);
+            // Collects identical keyframes for each keyframes
+            var viewKeyFrames = new List();
+            this.collectViewContext_CollectKeyframes(viewKeyFrames, layers);
+            // Creates all view-keyframes.
+            var sortedViewKeyFrames = viewKeyFrames.sort(function (a, b) { return a.frame - b.frame; });
+            this.collectViewContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
+            this.viewLayerContext.keyframes = sortedViewKeyFrames;
+        };
+        Main.prototype.collectViewContext_CollectLayersRecursive = function (result, parentLayer) {
+            for (var _i = 0, _a = parentLayer.childLayers; _i < _a.length; _i++) {
+                var layer = _a[_i];
+                result.push(layer);
+                if (layer.childLayers.length > 0) {
+                    this.collectViewContext_CollectLayersRecursive(result, layer);
+                }
+            }
+        };
+        Main.prototype.collectViewContext_CollectKeyframes = function (result, layers) {
+            var keyframeDictionary = new Dictionary();
+            for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
+                var layer = layers_1[_i];
+                if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
+                    var vectorLayer = (layer);
+                    for (var _a = 0, _b = vectorLayer.keyframes; _a < _b.length; _a++) {
+                        var keyframe = _b[_a];
+                        var frameText = keyframe.frame.toString();
+                        if (!DictionaryContainsKey(keyframeDictionary, frameText)) {
+                            var viewKeyframe = new ViewKeyFrame();
+                            viewKeyframe.frame = keyframe.frame;
+                            result.push(viewKeyframe);
+                            keyframeDictionary[frameText] = true;
+                        }
+                    }
+                }
+            }
+        };
+        Main.prototype.collectViewContext_CollectKeyframeLayers = function (result, layers) {
+            // All view-keyframes contains view-layer info for all layer.
+            for (var _i = 0, result_1 = result; _i < result_1.length; _i++) {
+                var viewKeyframe = result_1[_i];
+                for (var _a = 0, layers_2 = layers; _a < layers_2.length; _a++) {
+                    var layer = layers_2[_a];
+                    var keyframeLayer = new ViewKeyframeLayer();
+                    keyframeLayer.layer = layer;
+                    if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
+                        var vectorLayer = layer;
+                        var max_KeyFrame = null;
+                        for (var _b = 0, _c = vectorLayer.keyframes; _b < _c.length; _b++) {
+                            var keyframe = _c[_b];
+                            if (keyframe.frame > viewKeyframe.frame) {
+                                break;
+                            }
+                            max_KeyFrame = keyframe;
+                        }
+                        if (max_KeyFrame == null) {
+                            throw ('The document contains a layer that has no keyframe!');
+                        }
+                        keyframeLayer.vectorLayerKeyframe = max_KeyFrame;
+                    }
+                    viewKeyframe.layers.push(keyframeLayer);
+                }
+            }
+        };
+        Main.prototype.findViewKeyFrame = function (currentFrame) {
+            var max_ViewKeyFrame = null;
+            for (var _i = 0, _a = this.viewLayerContext.keyframes; _i < _a.length; _i++) {
+                var viewKeyframe = _a[_i];
+                if (viewKeyframe.frame > currentFrame) {
+                    break;
+                }
+                max_ViewKeyFrame = viewKeyframe;
+            }
+            return max_ViewKeyFrame;
+        };
+        Main.prototype.findViewKeyframeLayerIndex = function (viewKeyFrame, layer) {
+            for (var index = 0; index < viewKeyFrame.layers.length; index++) {
+                if (viewKeyFrame.layers[index].layer == layer) {
+                    return index;
+                }
+            }
+            return -1;
+        };
+        Main.prototype.findViewKeyframeLayer = function (viewKeyFrame, layer) {
+            var index = this.findViewKeyframeLayerIndex(viewKeyFrame, layer);
+            if (index != -1) {
+                return viewKeyFrame.layers[index];
+            }
+            else {
+                return null;
+            }
         };
         // Tools and context operations
         Main.prototype.getCurrentMainTool = function () {
@@ -1640,17 +2011,21 @@ var ManualTracingTool;
             this.currentSelectTool = this.selectionTools[(operationUnitID)];
         };
         Main.prototype.setCurrentLayer = function (layer) {
+            var viewKeyframe = this.currentKeyframe;
             this.toolContext.currentLayer = layer;
-            if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
-                var vectorLayer = layer;
-                this.toolContext.currentVectorLayer = vectorLayer;
-                this.toolContext.currentVectorGroup = vectorLayer.geometry.groups[0];
+            if (layer != null && ManualTracingTool.VectorLayer.isVectorLayer(layer) && viewKeyframe != null) {
+                var viewKeyframeLayer = this.findViewKeyframeLayer(viewKeyframe, layer);
+                var geometry = viewKeyframeLayer.vectorLayerKeyframe.geometry;
+                this.toolContext.currentVectorLayer = layer;
+                this.toolContext.currentVectorGeometry = geometry;
+                this.toolContext.currentVectorGroup = geometry.groups[0];
             }
             else {
                 this.toolContext.currentVectorLayer = null;
+                this.toolContext.currentVectorGeometry = null;
                 this.toolContext.currentVectorGroup = null;
             }
-            if (layer.type == ManualTracingTool.LayerTypeID.posingLayer) {
+            if (layer != null && layer.type == ManualTracingTool.LayerTypeID.posingLayer) {
                 var posingLayer = layer;
                 this.toolContext.currentPosingLayer = posingLayer;
                 this.toolContext.currentPosingData = posingLayer.posingData;
@@ -1661,7 +2036,7 @@ var ManualTracingTool;
                 this.toolContext.currentPosingData = null;
                 this.toolContext.currentPosingModel = null;
             }
-            if (layer.type == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
+            if (layer != null && layer.type == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
                 var imageFileReferenceLayer = layer;
                 this.toolContext.currentImageFileReferenceLayer = imageFileReferenceLayer;
             }
@@ -1672,7 +2047,9 @@ var ManualTracingTool;
                 var item = _a[_i];
                 item.layer.isSelected = false;
             }
-            layer.isSelected = true;
+            if (layer != null) {
+                layer.isSelected = true;
+            }
         };
         Main.prototype.selectNextOrPreviousLayer = function (selectNext) {
             var item = this.findCurrentLayerLayerWindowItem();
@@ -1685,6 +2062,21 @@ var ManualTracingTool;
                 if (item.previousItem != null) {
                     this.setCurrentLayer(item.previousItem.layer);
                 }
+            }
+        };
+        Main.prototype.setCurrentFrame = function (frame) {
+            var context = this.toolContext;
+            var aniSetting = context.document.animationSettingData;
+            aniSetting.currentTimeFrame = frame;
+            if (aniSetting.currentTimeFrame < 0) {
+                aniSetting.currentTimeFrame = 0;
+            }
+            if (aniSetting.currentTimeFrame > aniSetting.maxFrame) {
+                aniSetting.currentTimeFrame = aniSetting.maxFrame;
+            }
+            this.currentKeyframe = this.findViewKeyFrame(aniSetting.currentTimeFrame);
+            if (context.currentLayer != null) {
+                this.setCurrentLayer(context.currentLayer);
             }
         };
         Main.prototype.startModalTool = function (modalTool) {
@@ -1778,6 +2170,13 @@ var ManualTracingTool;
             canvasWindow.canvas.width = canvasWindow.width;
             canvasWindow.canvas.height = canvasWindow.height;
         };
+        Main.prototype.setCanvasSizeFromStyle = function (canvasWindow) {
+            var style = window.getComputedStyle(canvasWindow.canvas);
+            canvasWindow.width = Number(style.width.replace('px', ''));
+            canvasWindow.height = Number(style.height.replace('px', ''));
+            canvasWindow.canvas.width = canvasWindow.width;
+            canvasWindow.canvas.height = canvasWindow.height;
+        };
         Main.prototype.getMouseInfo = function (toolMouseEvent, e, touchUp, canvasWindow) {
             this.activeCanvasWindow = canvasWindow;
             toolMouseEvent.button = e.button;
@@ -1796,7 +2195,7 @@ var ManualTracingTool;
             // M down      | 1, 4    | 1, 4 and 0, 4 | 1, 4          |
             // move with M | 0, 4    | 1, 0          | 0, 4          |
             // M up        | 1, 0    | 1, 0 and 0, 0 | 1, 0 and 0, 0 |
-            console.log(e.button + ', ' + e.buttons);
+            //console.log(e.button + ', ' + e.buttons);
             toolMouseEvent.offsetX = e.offsetX;
             toolMouseEvent.offsetY = e.offsetY;
             this.calculateTransfomredMouseParams(toolMouseEvent, canvasWindow);
@@ -1810,7 +2209,7 @@ var ManualTracingTool;
                 toolMouseEvent.buttons = 0;
                 return;
             }
-            console.log(e.touches.length);
+            //console.log(e.touches.length);
             var rect = canvasWindow.canvas.getBoundingClientRect();
             var touch = e.touches[0];
             if (!touchDown && touch.force < 0.1) {
@@ -1881,7 +2280,7 @@ var ManualTracingTool;
         };
         Main.prototype.openModal = function (modalID, focusElementName) {
             this.currentModalDialogID = modalID;
-            this.currentModalFocusElementName = focusElementName;
+            this.currentModalFocusElementID = focusElementName;
             var modal = new Custombox.modal(this.createModalOptionObject(this.currentModalDialogID));
             modal.open();
         };
@@ -1910,7 +2309,7 @@ var ManualTracingTool;
             if (this.isModalShown()) {
                 return;
             }
-            if (!ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
+            if (layer == null || !ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
                 return;
             }
             var vectorLayer = layer;
@@ -1928,7 +2327,7 @@ var ManualTracingTool;
             this.setRadioElementIntValue(this.ID.palletColorModal_colorIndex, palletColorIndex);
             this.palletColorWindow_Mode = mode;
             this.currentModalDialog_DocumentData = documentData;
-            this.layerPropertyWindow_EditLayer = layer;
+            this.palletColorWindow_EditLayer = vectorLayer;
             this.displayPalletColorModalColors(documentData, vectorLayer);
             this.openModal(this.ID.palletColorModal, null);
         };
@@ -1945,18 +2344,21 @@ var ManualTracingTool;
                 this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
                 this.setInputElementRangeValue(this.ID.palletColorModal_currentAlpha, palletColor.color[3], 0.0, 1.0);
             }
-            for (var i = 0; i < documentData.palletColos.length; i++) {
-                var palletColor = documentData.palletColos[i];
-                var id = this.ID.palletColorModal_colorValue + i;
-                this.setInputElementColor(id, palletColor.color);
+            for (var palletColorIndex = 0; palletColorIndex < documentData.palletColos.length; palletColorIndex++) {
+                var palletColor = documentData.palletColos[palletColorIndex];
+                this.setColorPalletElementValue(palletColorIndex, palletColor.color);
             }
         };
+        Main.prototype.setColorPalletElementValue = function (palletColorIndex, color) {
+            var id = this.ID.palletColorModal_colorValue + palletColorIndex;
+            this.setInputElementColor(id, color);
+        };
         Main.prototype.onPalletColorModal_ColorIndexChanged = function () {
-            if (this.layerPropertyWindow_EditLayer == null) {
+            if (this.palletColorWindow_EditLayer == null) {
                 return;
             }
             var documentData = this.currentModalDialog_DocumentData;
-            var vectorLayer = this.layerPropertyWindow_EditLayer;
+            var vectorLayer = this.palletColorWindow_EditLayer;
             var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
             ;
             if (this.palletColorWindow_Mode == OpenPalletColorModalMode.LineColor) {
@@ -1972,11 +2374,11 @@ var ManualTracingTool;
             this.toolEnv.setRedrawMainWindow();
         };
         Main.prototype.onPalletColorModal_CurrentColorChanged = function () {
-            if (this.layerPropertyWindow_EditLayer == null) {
+            if (this.palletColorWindow_EditLayer == null) {
                 return;
             }
             var documentData = this.currentModalDialog_DocumentData;
-            var vectorLayer = this.layerPropertyWindow_EditLayer;
+            var vectorLayer = this.palletColorWindow_EditLayer;
             var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
             var palletColor = documentData.palletColos[palletColorIndex];
             this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
@@ -1985,19 +2387,39 @@ var ManualTracingTool;
             this.toolEnv.setRedrawMainWindow();
         };
         Main.prototype.onPalletColorModal_ColorChanged = function (palletColorIndex) {
-            if (this.layerPropertyWindow_EditLayer == null) {
+            if (this.palletColorWindow_EditLayer == null) {
                 return;
             }
             var documentData = this.currentModalDialog_DocumentData;
-            var vectorLayer = this.layerPropertyWindow_EditLayer;
+            var vectorLayer = this.palletColorWindow_EditLayer;
             var palletColor = documentData.palletColos[palletColorIndex];
             this.getInputElementColor(this.ID.palletColorModal_colorValue + palletColorIndex, palletColor.color);
             this.displayPalletColorModalColors(documentData, vectorLayer);
             this.toolEnv.setRedrawMainWindow();
         };
+        Main.prototype.onPalletColorModal_ColorCanvas_mousedown = function (e) {
+            if (this.palletColorWindow_EditLayer == null) {
+                return;
+            }
+            var context = this.toolContext;
+            var wnd = this.palletColorModal_colorCanvas;
+            var env = this.toolEnv;
+            this.canvasRender.setContext(wnd);
+            this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
+            var documentData = this.currentModalDialog_DocumentData;
+            var vectorLayer = this.palletColorWindow_EditLayer;
+            var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
+            var palletColor = documentData.palletColos[palletColorIndex];
+            palletColor.color[0] = this.tempColor4[0];
+            palletColor.color[1] = this.tempColor4[1];
+            palletColor.color[2] = this.tempColor4[2];
+            this.setColorPalletElementValue(palletColorIndex, palletColor.color);
+            this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
+            this.toolEnv.setRedrawMainWindow();
+        };
         Main.prototype.onClosedPalletColorModal = function () {
             var documentData = this.currentModalDialog_DocumentData;
-            var vectorLayer = this.layerPropertyWindow_EditLayer;
+            var vectorLayer = this.palletColorWindow_EditLayer;
             var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
             ;
             if (this.palletColorWindow_Mode == OpenPalletColorModalMode.LineColor) {
@@ -2020,7 +2442,7 @@ var ManualTracingTool;
                 }
             }
             this.currentModalDialog_DocumentData = null;
-            this.layerPropertyWindow_EditLayer = null;
+            this.palletColorWindow_EditLayer = null;
         };
         Main.prototype.openOperationOptionModal = function () {
             if (this.isModalShown()) {
@@ -2106,11 +2528,25 @@ var ManualTracingTool;
             if (this.isModalShown()) {
                 return;
             }
+            var fileName = this.getInputElementText(this.ID.fileName);
+            var lastSeperatorIndex = StringLastIndexOf(fileName, '\\');
+            if (lastSeperatorIndex == -1) {
+                lastSeperatorIndex = StringLastIndexOf(fileName, '/');
+            }
+            var eperatorDotIndex = StringLastIndexOf(fileName, '.');
+            if (lastSeperatorIndex != -1 && eperatorDotIndex != -1 && eperatorDotIndex - lastSeperatorIndex > 0) {
+                fileName = StringSubstring(fileName, lastSeperatorIndex + 1, eperatorDotIndex - lastSeperatorIndex - 1);
+            }
+            this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
             this.setRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
             this.openModal(this.ID.exportImageFileModal, null);
         };
         Main.prototype.onClosedExportImageFileModal = function () {
             if (this.currentModalDialogResult != this.ID.exportImageFileModal_ok) {
+                return;
+            }
+            var fileName = this.getInputElementText(this.ID.exportImageFileModal_fileName);
+            if (StringIsNullOrEmpty(fileName)) {
                 return;
             }
             var imageWidth = Math.floor(this.document.documentFrame[2] - this.document.documentFrame[0] + 1);
@@ -2130,7 +2566,6 @@ var ManualTracingTool;
                 this.clearWindow(this.renderingWindow);
                 this.drawMainWindow(this.renderingWindow);
                 var exportPath = window.localStorage.getItem(this.exportPathKey);
-                var fileName = 'test';
                 var imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
                 var extText = '.png';
                 if (imageType == 2) {
@@ -2151,9 +2586,25 @@ var ManualTracingTool;
                 });
             }
         };
+        Main.prototype.openNewKeyframeModal = function () {
+            this.openModal(this.ID.newKeyframeModal, null);
+        };
+        Main.prototype.onClosedNewKeyframeModal = function () {
+            if (this.currentModalDialogResult != this.ID.newKeyframeModal_ok) {
+                return;
+            }
+            var insertType = (this.getRadioElementIntValue(this.ID.newKeyframeModal_InsertType, 1));
+            var env = this.toolEnv;
+            if (insertType == NewKeyframeModal_InsertTypeID.CopyGeometory_AllLayer) {
+                var command = new ManualTracingTool.Command_Animation_InsertKeyframeAllLayer();
+                command.frame = env.document.animationSettingData.currentTimeFrame;
+                command.execute(env);
+                env.commandHistory.addCommand(command);
+            }
+        };
         Main.prototype.onModalWindowShown = function () {
-            if (!StringIsNullOrEmpty(this.currentModalFocusElementName)) {
-                var element = this.getElement(this.currentModalFocusElementName);
+            if (!StringIsNullOrEmpty(this.currentModalFocusElementID)) {
+                var element = this.getElement(this.currentModalFocusElementID);
                 element.focus();
             }
         };
@@ -2200,6 +2651,9 @@ var ManualTracingTool;
             else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
                 this.onClosedExportImageFileModal();
             }
+            else if (this.currentModalDialogID == this.ID.newKeyframeModal) {
+                this.onClosedNewKeyframeModal();
+            }
             this.currentModalDialogID = this.ID.none;
             this.currentModalDialogResult = this.ID.none;
             this.toolEnv.setRedrawMainWindowEditorWindow();
@@ -2225,12 +2679,6 @@ var ManualTracingTool;
                 this.toolContext.redrawEditorWindow = false;
                 this.clearWindow(this.editorWindow);
                 this.drawEditorWindow(this.editorWindow, this.mainWindow);
-            }
-            if (this.toolContext.updateLayerWindowItems) {
-                this.toolContext.updateLayerWindowItems = false;
-                this.collectLayerWindowItems();
-                this.caluculateLayerWindowLayout(this.layerWindow);
-                this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
             }
             if (this.toolContext.redrawLayerWindow) {
                 this.toolContext.redrawLayerWindow = false;
@@ -2266,14 +2714,19 @@ var ManualTracingTool;
             this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
         };
         Main.prototype.drawMainWindow = function (canvasWindow) {
+            if (this.currentKeyframe == null) {
+                return;
+            }
             var currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
             this.canvasRender.setContext(canvasWindow);
-            for (var i = this.document.rootLayer.childLayers.length - 1; i >= 0; i--) {
-                var layer = this.document.rootLayer.childLayers[i];
-                this.drawLayerRecursive(layer, currentLayerOnly, this.document);
+            var viewKeyframe = this.currentKeyframe;
+            for (var i = viewKeyframe.layers.length - 1; i >= 0; i--) {
+                var viewKeyFrameLayer = viewKeyframe.layers[i];
+                this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document);
             }
         };
-        Main.prototype.drawLayerRecursive = function (layer, currentLayerOnly, documentData) {
+        Main.prototype.drawLayer = function (viewKeyFrameLayer, currentLayerOnly, documentData) {
+            var layer = viewKeyFrameLayer.layer;
             if (!layer.isVisible) {
                 return;
             }
@@ -2282,13 +2735,10 @@ var ManualTracingTool;
             }
             if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
                 var vectorLayer = layer;
-                this.drawVectorLayer(vectorLayer, vectorLayer.geometry, documentData);
+                this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData);
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.groupLayer) {
-                for (var i = layer.childLayers.length - 1; i >= 0; i--) {
-                    var childLayer = layer.childLayers[i];
-                    this.drawLayerRecursive(childLayer, currentLayerOnly, documentData);
-                }
+                // No drawing
             }
             else if (layer.type == ManualTracingTool.LayerTypeID.posingLayer) {
                 // No drawing
@@ -2471,13 +2921,13 @@ var ManualTracingTool;
                     break;
                 }
                 var firstPoint = line.points[segmentStartIndex];
-                var currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
+                var currentLineWidth = this.lineWidthAdjust(useAdjustingLocation ? firstPoint.adjustingLineWidth : firstPoint.lineWidth);
                 // search end index of the segment
                 var segmentEndIndex = segmentStartIndex;
                 for (var index = segmentStartIndex + 1; index <= endIndex; index++) {
                     var point = line.points[index];
                     var isNotDeleted = (point.modifyFlag != ManualTracingTool.LinePointModifyFlagID.delete);
-                    var lineWidth = (useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
+                    var lineWidth = this.lineWidthAdjust(useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
                     var isVisibleWidth = (lineWidth > 0.0);
                     var isSameLineWidth = (lineWidth == currentLineWidth);
                     segmentEndIndex = index;
@@ -2567,22 +3017,24 @@ var ManualTracingTool;
             this.canvasRender.setGlobalAlpha(1.0);
         };
         Main.prototype.layerPicking = function (canvasWindow, pickLocationX, pickLocationY) {
-            if (this.layerWindowItems == null) {
+            if (this.layerWindowItems == null || this.currentKeyframe == null) {
                 return -1;
             }
-            var documentData = this.document;
-            for (var _i = 0, _a = this.layerWindowItems; _i < _a.length; _i++) {
-                var layerWindowItem = _a[_i];
-                if (!ManualTracingTool.VectorLayer.isVectorLayer(layerWindowItem.layer)) {
+            var documentData = this.toolContext.document;
+            var viewKeyframe = this.currentKeyframe;
+            for (var _i = 0, _a = viewKeyframe.layers; _i < _a.length; _i++) {
+                var viewKeyframeLayer = _a[_i];
+                var layer = viewKeyframeLayer.layer;
+                if (!ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
                     continue;
                 }
-                var vectorLayer = layerWindowItem.layer;
+                var vectorLayer = layer;
                 this.clearWindow(canvasWindow);
                 this.canvasRender.setContext(canvasWindow);
-                this.drawVectorLayer(vectorLayer, vectorLayer.geometry, documentData);
+                this.drawVectorLayer(vectorLayer, viewKeyframeLayer.vectorLayerKeyframe.geometry, documentData);
                 this.canvasRender.pickColor(this.tempColor4, canvasWindow, pickLocationX, pickLocationY);
                 if (this.tempColor4[3] > 0.0) {
-                    this.setCurrentLayer(layerWindowItem.layer);
+                    this.setCurrentLayer(layer);
                     this.toolEnv.setRedrawLayerWindow();
                     break;
                 }
@@ -2970,33 +3422,174 @@ var ManualTracingTool;
             this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
         };
         // TimeLine window drawing
-        Main.prototype.drawTimeLineWindow = function (timeLineWindow) {
-            var aniSetting = this.document.animationSettingData;
-            var left = timeLineWindow.leftPanelWidth;
-            var right = left + timeLineWindow.width - 1;
+        Main.prototype.drawTimeLineWindow = function (wnd) {
+            var context = this.toolContext;
+            var env = this.toolEnv;
+            var aniSetting = context.document.animationSettingData;
+            var left = wnd.getTimeLineLeft();
+            var right = wnd.getTimeLineRight();
+            var bottom = wnd.height;
+            var frameUnitWidth = wnd.getFrameUnitWidth(aniSetting);
+            var frameNumberHeight = 16.0;
+            var frameLineBottom = wnd.height - 1.0 - frameNumberHeight;
+            var frameLineHeight = 10.0;
+            var secondFrameLineHeight = 30.0;
+            // Control buttons
+            //アニメーション再生開始、終了のボタンを描画する。ボタンでアニメーション再生、停止をする。Ctrl+クリックで最初から再生。十字キーでのフレーム移動を約24fpsにする。
+            {
+                var srcX = 0;
+                var srcY = 196;
+                var srcW = 128;
+                var srcH = 128;
+                var dstW = 45;
+                var dstH = 45;
+                var dstX = left / 2 - dstW / 2 + 1;
+                var dstY = wnd.height / 2 - dstH / 2 + 1;
+                if (context.animationPlaying) {
+                    srcX = 128;
+                }
+                this.canvasRender.drawImage(this.systemImage.image.imageData, srcX, srcY, srcW, srcH, dstX, dstY, dstW, dstH);
+            }
+            // Current frame
+            var currentFrameX = left - aniSetting.timeLineWindowViewLocationX + aniSetting.currentTimeFrame * frameUnitWidth;
+            this.canvasRender.setStrokeWidth(1.0);
+            this.canvasRender.setFillColorV(this.drawStyle.timeLineCurrentFrameColor);
+            this.canvasRender.fillRect(currentFrameX, 0.0, frameUnitWidth, bottom);
+            aniSetting.maxFrame = 60;
+            //aniSetting.loopStartFrame = 10;
+            aniSetting.loopEndFrame = 24;
+            // Document keyframes
+            var minFrame = wnd.getFrameByLocation(left, aniSetting);
+            if (minFrame < 0) {
+                minFrame = 0;
+            }
+            var maxFrame = wnd.getFrameByLocation(right, aniSetting);
+            if (maxFrame > aniSetting.maxFrame) {
+                maxFrame = aniSetting.maxFrame;
+            }
+            this.canvasRender.setStrokeWidth(1.0);
+            this.canvasRender.setFillColorV(this.drawStyle.timeLineKeyFrameColor);
+            for (var _i = 0, _a = this.viewLayerContext.keyframes; _i < _a.length; _i++) {
+                var viewKeyframe = _a[_i];
+                var frame = viewKeyframe.frame;
+                if (frame < minFrame) {
+                    continue;
+                }
+                if (frame > maxFrame) {
+                    break;
+                }
+                var frameX = wnd.getFrameLocation(frame, aniSetting);
+                this.canvasRender.fillRect(frameX, 0.0, frameUnitWidth - 1.0, frameLineBottom);
+            }
+            // Loop part
+            this.canvasRender.setFillColorV(this.drawStyle.timeLineOutOfLoopingColor);
+            {
+                var frameX = wnd.getFrameLocation(aniSetting.loopStartFrame, aniSetting);
+                if (frameX > left) {
+                    this.canvasRender.fillRect(left, 0.0, frameX - left, bottom);
+                }
+            }
+            {
+                var frameX = wnd.getFrameLocation(aniSetting.loopEndFrame, aniSetting);
+                if (frameX < right) {
+                    this.canvasRender.fillRect(frameX, 0.0, right - frameX, bottom);
+                }
+            }
+            // Layer keyframes
+            this.canvasRender.setStrokeWidth(1.0);
+            this.canvasRender.setFillColorV(this.drawStyle.timeLineLayerKeyFrameColor);
+            if (env.currentVectorLayer != null) {
+                var viewKeyFrame = this.findViewKeyFrame(aniSetting.currentTimeFrame);
+                var layerIndex = -1;
+                if (viewKeyFrame != null) {
+                    layerIndex = this.findViewKeyframeLayerIndex(viewKeyFrame, env.currentVectorLayer);
+                }
+                if (layerIndex != -1) {
+                    for (var _b = 0, _c = this.viewLayerContext.keyframes; _b < _c.length; _b++) {
+                        var viewKeyframe = _c[_b];
+                        var frame = viewKeyframe.frame;
+                        if (frame < minFrame) {
+                            continue;
+                        }
+                        if (frame > maxFrame) {
+                            break;
+                        }
+                        var viewKeyFrameLayer = viewKeyframe.layers[layerIndex];
+                        if (viewKeyFrameLayer.vectorLayerKeyframe.frame == frame) {
+                            var frameX = wnd.getFrameLocation(frame, aniSetting);
+                            this.canvasRender.fillRect(frameX + 2.0, 0.0, frameUnitWidth - 5.0, frameLineBottom);
+                        }
+                    }
+                }
+            }
             // Left panel
             this.canvasRender.setGlobalAlpha(1.0);
             this.canvasRender.setStrokeWidth(1.0);
             this.canvasRender.setStrokeColorV(this.drawStyle.timeLineUnitFrameColor);
-            this.canvasRender.drawLine(left, 0.0, left, timeLineWindow.height);
+            this.canvasRender.drawLine(left, 0.0, left, wnd.height);
             // Frame measure
-            var frameUnitWidth = timeLineWindow.frameUnitWidth * aniSetting.timeLineWindowScale;
-            var frameNumberHeight = 16.0;
-            var frameLineBottom = timeLineWindow.height - 1.0 - frameNumberHeight;
-            var frameLineHeight = 10.0;
-            var secondFrameLineHeight = 30.0;
-            for (var x = left; x <= right; x += frameUnitWidth) {
-                this.canvasRender.drawLine(x, frameLineBottom - frameLineHeight, x, frameLineBottom);
-            }
-            for (var x = left; x <= right; x += frameUnitWidth * aniSetting.animationFrameParSecond) {
-                this.canvasRender.drawLine(x, frameLineBottom - secondFrameLineHeight, x, frameLineBottom);
+            {
+                var x = left;
+                for (var frame = minFrame; frame <= maxFrame; frame++) {
+                    if (frame % aniSetting.animationFrameParSecond == 0 || frame == maxFrame) {
+                        this.canvasRender.drawLine(x, frameLineBottom - secondFrameLineHeight, x, frameLineBottom);
+                    }
+                    this.canvasRender.drawLine(x, frameLineBottom - frameLineHeight, x, frameLineBottom);
+                    x += frameUnitWidth;
+                }
             }
             this.canvasRender.drawLine(left, frameLineBottom, right, frameLineBottom);
-            // Current frame
-            var currentFrameX = left - aniSetting.timeLineWindowViewLocationX + aniSetting.currentTimeFrame * frameUnitWidth;
-            this.canvasRender.setStrokeWidth(3.0);
-            this.canvasRender.setStrokeColorV(this.drawStyle.timeLineCurrentFrameColor);
-            this.canvasRender.drawLine(currentFrameX, 0.0, currentFrameX, timeLineWindow.height);
+        };
+        Main.prototype.drawPalletColorMixer = function (wnd) {
+            var width = wnd.width;
+            var height = wnd.height;
+            var left = 0.0;
+            var top = 0.0;
+            var right = width - 1.0;
+            var bottom = height - 1.0;
+            var minRadius = 10.0;
+            var maxRadius = width * 1.0;
+            this.canvasRender.setContext(wnd);
+            this.canvasRender.setBlendMode(ManualTracingTool.CanvasRenderBlendMode.default);
+            this.canvasRender.setFillColorV(this.colorB);
+            this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.add);
+            //this.canvasRender.setFillRadialGradient(left, top, minRadius, maxRadius, this.color11, this.color12);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(right, top, minRadius, maxRadius, this.color21, this.color22);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(right, bottom, minRadius, maxRadius, this.color31, this.color32);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(left, bottom, minRadius, maxRadius, this.color41, this.color42);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+            //this.canvasRender.setFillLinearGradient(left, top, left, bottom, this.colorW, this.colorB);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            this.canvasRender.setBlendMode(ManualTracingTool.CanvasRenderBlendMode.default);
+            var division = 50.0;
+            var unitWidth = width / division;
+            var unitHeight = height / division;
+            for (var x = 0.0; x < 1.0; x += (1.0 / division)) {
+                for (var y = 0.0; y < 1.0; y += (1.0 / division)) {
+                    var h = x;
+                    var s = 0.0;
+                    var v = 0.0;
+                    if (y <= 0.5) {
+                        s = y * 2.0;
+                        v = 1.0;
+                    }
+                    else {
+                        s = 1.0;
+                        v = 1.0 - (y - 0.5) * 2.0;
+                    }
+                    ManualTracingTool.Maths.hsvToRGBVec4(this.tempColor4, h, s, v);
+                    this.tempColor4[3] = 1.0;
+                    this.canvasRender.setFillColorV(this.tempColor4);
+                    this.canvasRender.fillRect(x * width, y * height, unitWidth, unitHeight);
+                }
+            }
+            this.canvasRender.setBlendMode(ManualTracingTool.CanvasRenderBlendMode.default);
         };
         // Header window drawing
         Main.prototype.updateHeaderButtons = function () {
@@ -3068,22 +3661,21 @@ var ManualTracingTool;
             }
         };
         // Selection management
-        Main.prototype.mousemoveHittest = function (x, y, minDistance, recursive) {
+        Main.prototype.mousemoveHittest = function (x, y, minDistance) {
             this.hittest_Line_IsCloseTo.startProcess();
-            if (recursive) {
-                this.hittest_Line_IsCloseTo.processLayerRecursive(this.document.rootLayer.childLayers, x, y, minDistance);
-            }
-            else {
-                if (this.toolEnv.currentVectorLayer != null) {
-                    this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorLayer, x, y, minDistance);
-                }
+            if (this.toolEnv.currentVectorGeometry != null) {
+                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, x, y, minDistance);
             }
             this.hittest_Line_IsCloseTo.endProcess();
             return this.hittest_Line_IsCloseTo.isChanged;
         };
         // HTML helper
         Main.prototype.getElement = function (id) {
-            return document.getElementById(id);
+            var element = document.getElementById(id);
+            if (element == null) {
+                throw ('Could not find element "' + id + '"');
+            }
+            return element;
         };
         Main.prototype.setElementText = function (id, text) {
             var element = (document.getElementById(id));
@@ -3159,6 +3751,26 @@ var ManualTracingTool;
         };
         return Main;
     }());
+    var ViewKeyframeLayer = /** @class */ (function () {
+        function ViewKeyframeLayer() {
+            this.layer = null;
+            this.vectorLayerKeyframe = null;
+        }
+        return ViewKeyframeLayer;
+    }());
+    var ViewKeyFrame = /** @class */ (function () {
+        function ViewKeyFrame() {
+            this.frame = 0;
+            this.layers = new List();
+        }
+        return ViewKeyFrame;
+    }());
+    var ViewLayerContext = /** @class */ (function () {
+        function ViewLayerContext() {
+            this.keyframes = null;
+        }
+        return ViewLayerContext;
+    }());
     var MainWindow = /** @class */ (function (_super) {
         __extends(MainWindow, _super);
         function MainWindow() {
@@ -3204,15 +3816,12 @@ var ManualTracingTool;
         }
         return SubtoolWindow;
     }(ManualTracingTool.ToolBaseWindow));
-    var TimeLineWindow = /** @class */ (function (_super) {
-        __extends(TimeLineWindow, _super);
-        function TimeLineWindow() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.leftPanelWidth = 100.0;
-            _this.frameUnitWidth = 8.0;
-            return _this;
+    var ColorCanvasWindow = /** @class */ (function (_super) {
+        __extends(ColorCanvasWindow, _super);
+        function ColorCanvasWindow() {
+            return _super !== null && _super.apply(this, arguments) || this;
         }
-        return TimeLineWindow;
+        return ColorCanvasWindow;
     }(ManualTracingTool.ToolBaseWindow));
     var RectangleLayoutArea = /** @class */ (function () {
         function RectangleLayoutArea() {
@@ -3248,6 +3857,48 @@ var ManualTracingTool;
         };
         return RectangleLayoutArea;
     }());
+    var TimeLineWindow = /** @class */ (function (_super) {
+        __extends(TimeLineWindow, _super);
+        function TimeLineWindow() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.leftPanelWidth = 100.0;
+            _this.frameUnitWidth = 8.0;
+            return _this;
+        }
+        TimeLineWindow.prototype.getFrameUnitWidth = function (aniSetting) {
+            return this.frameUnitWidth * aniSetting.timeLineWindowScale;
+        };
+        TimeLineWindow.prototype.getTimeLineLeft = function () {
+            return this.leftPanelWidth;
+        };
+        TimeLineWindow.prototype.getTimeLineRight = function () {
+            return this.getTimeLineLeft() + this.width - 1;
+        };
+        TimeLineWindow.prototype.getFrameByLocation = function (x, aniSetting) {
+            var left = this.getTimeLineLeft();
+            var right = this.getTimeLineRight();
+            if (x < left) {
+                return -1;
+            }
+            if (x > right) {
+                return -1;
+            }
+            var frameUnitWidth = this.getFrameUnitWidth(aniSetting);
+            var absoluteX = x - (left - aniSetting.timeLineWindowViewLocationX);
+            var frame = Math.floor(absoluteX / frameUnitWidth);
+            if (frame < 0) {
+                frame = 0;
+            }
+            return frame;
+        };
+        TimeLineWindow.prototype.getFrameLocation = function (frame, aniSetting) {
+            var left = this.getTimeLineLeft();
+            var frameUnitWidth = this.getFrameUnitWidth(aniSetting);
+            var x = left - aniSetting.timeLineWindowViewLocationX + frame * frameUnitWidth;
+            return x;
+        };
+        return TimeLineWindow;
+    }(ManualTracingTool.ToolBaseWindow));
     var LayerWindowButtonID;
     (function (LayerWindowButtonID) {
         LayerWindowButtonID[LayerWindowButtonID["none"] = 0] = "none";
@@ -3318,6 +3969,8 @@ var ManualTracingTool;
             this.menu_btnPoseTool = 'menu_btnPoseTool';
             this.menu_btnOperationOption = 'menu_btnOperationOption';
             this.menu_btnExport = 'menu_btnExport';
+            this.menu_btnPalette1 = 'menu_btnPalette1';
+            this.menu_btnPalette2 = 'menu_btnPalette2';
             this.unselectedMainButton = 'unselectedMainButton';
             this.selectedMainButton = 'selectedMainButton';
             this.openFileDialogModal = '#openFileDialogModal';
@@ -3341,6 +3994,7 @@ var ManualTracingTool;
             this.palletColorModal_colorItemStyle = 'colorItem';
             this.palletColorModal_colorIndex = 'palletColorModal_colorIndex';
             this.palletColorModal_colorValue = 'palletColorModal_colorValue';
+            this.palletColorModal_colorCanvas = 'palletColorModal_colorCanvas';
             this.operationOptionModal = '#operationOptionModal';
             this.operationOptionModal_LineWidth = 'operationOptionModal_LineWidth';
             this.operationOptionModal_LineMinWidth = 'operationOptionModal_LineMinWidth';
@@ -3355,9 +4009,14 @@ var ManualTracingTool;
             this.documentSettingModal_FrameRight = 'documentSettingModal_FrameRight';
             this.documentSettingModal_FrameBottom = 'documentSettingModal_FrameBottom';
             this.exportImageFileModal = '#exportImageFileModal';
+            this.exportImageFileModal_fileName = 'exportImageFileModal_fileName';
             this.exportImageFileModal_imageFileType = 'exportImageFileModal_imageFileType';
             this.exportImageFileModal_ok = 'exportImageFileModal_ok';
             this.exportImageFileModal_cancel = 'exportImageFileModal_cancel';
+            this.newKeyframeModal = '#newKeyframeModal';
+            this.newKeyframeModal_InsertType = 'newKeyframeModal_InsertType';
+            this.newKeyframeModal_ok = 'newKeyframeModal_ok';
+            this.newKeyframeModal_cancel = 'newKeyframeModal_cancel';
         }
         return HTMLElementID;
     }());
@@ -3383,6 +4042,13 @@ var ManualTracingTool;
         ModalToolID[ModalToolID["latticeMove"] = 4] = "latticeMove";
         ModalToolID[ModalToolID["countOfID"] = 5] = "countOfID";
     })(ModalToolID || (ModalToolID = {}));
+    var NewKeyframeModal_InsertTypeID;
+    (function (NewKeyframeModal_InsertTypeID) {
+        NewKeyframeModal_InsertTypeID[NewKeyframeModal_InsertTypeID["EmptyGeometory_AllLayer"] = 1] = "EmptyGeometory_AllLayer";
+        NewKeyframeModal_InsertTypeID[NewKeyframeModal_InsertTypeID["EmptyGeometory_CurrentLayer"] = 2] = "EmptyGeometory_CurrentLayer";
+        NewKeyframeModal_InsertTypeID[NewKeyframeModal_InsertTypeID["CopyGeometory_AllLayer"] = 3] = "CopyGeometory_AllLayer";
+        NewKeyframeModal_InsertTypeID[NewKeyframeModal_InsertTypeID["CopyGeometory_CurrentLayer"] = 4] = "CopyGeometory_CurrentLayer";
+    })(NewKeyframeModal_InsertTypeID || (NewKeyframeModal_InsertTypeID = {}));
     var _Main;
     window.onload = function () {
         _Main = new Main();
@@ -3394,6 +4060,7 @@ var ManualTracingTool;
         _Main.timeLineWindow.canvas = document.getElementById(_Main.ID.timeLineCanvas);
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
+        _Main.palletColorModal_colorCanvas.canvas = document.getElementById(_Main.ID.palletColorModal_colorCanvas);
         var layerColorModal_colors = document.getElementById(_Main.ID.palletColorModal_colors);
         for (var palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
             var colorItemDiv = document.createElement('div');
@@ -3429,6 +4096,11 @@ var ManualTracingTool;
             || _Main.mainProcessState == MainProcessStateID.InitialDocumentResourceLoading) {
             _Main.processLoadingDocumentResources();
         }
-        setTimeout(run, 1000 / 60);
+        if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
+            setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
+        }
+        else {
+            setTimeout(run, 1000 / 60);
+        }
     }
 })(ManualTracingTool || (ManualTracingTool = {}));

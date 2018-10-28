@@ -29,6 +29,7 @@ var ManualTracingTool;
             _this.insertTo_ParentLayer = null;
             _this.insertTo_Layer_OldChildLayerList = null;
             _this.insertTo_Layer_NewChildLayerList = null;
+            _this.newLayer = null;
             return _this;
         }
         Command_Layer_CommandBase.prototype.isAvailable = function (env) {
@@ -66,7 +67,7 @@ var ManualTracingTool;
             }
             return false;
         };
-        Command_Layer_CommandBase.prototype.executeLayerSwap = function (parentLayer, swapIndex1, swapIndex2) {
+        Command_Layer_CommandBase.prototype.executeLayerSwap = function (parentLayer, swapIndex1, swapIndex2, env) {
             this.insertTo_ParentLayer = parentLayer;
             this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
             this.insertTo_Layer_NewChildLayerList = ListClone(parentLayer.childLayers);
@@ -74,8 +75,9 @@ var ManualTracingTool;
             this.insertTo_Layer_NewChildLayerList[swapIndex1] = this.insertTo_Layer_NewChildLayerList[swapIndex2];
             this.insertTo_Layer_NewChildLayerList[swapIndex2] = swapItem;
             parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
+            env.updateLayerStructure();
         };
-        Command_Layer_CommandBase.prototype.executeLayerInsertToCurrent = function (childLayer) {
+        Command_Layer_CommandBase.prototype.executeLayerInsertToCurrent = function (layer, env) {
             var parentLayer;
             var insertIndex;
             if (this.currentLayer.type == ManualTracingTool.LayerTypeID.groupLayer) {
@@ -86,21 +88,32 @@ var ManualTracingTool;
                 parentLayer = this.currentLayerParent;
                 insertIndex = this.currentLayerIndex;
             }
-            this.executeLayerInsert(parentLayer, insertIndex, childLayer);
+            this.executeLayerInsert(parentLayer, insertIndex, layer, env);
         };
-        Command_Layer_CommandBase.prototype.executeLayerInsert = function (parentLayer, insertIndex, childLayer) {
+        Command_Layer_CommandBase.prototype.executeLayerInsert = function (parentLayer, insertIndex, layer, env) {
             this.insertTo_ParentLayer = parentLayer;
             this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
             this.insertTo_Layer_NewChildLayerList = ListClone(parentLayer.childLayers);
-            ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, childLayer);
+            ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, layer);
             parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
+            env.updateLayerStructure();
+            this.newLayer = layer;
+            env.setCurrentLayer(layer);
         };
-        Command_Layer_CommandBase.prototype.executeLayerRemove = function (parentLayer, removeIndex) {
+        Command_Layer_CommandBase.prototype.executeLayerRemove = function (parentLayer, removeIndex, env) {
             this.removeFrom_ParentLayer = parentLayer;
             this.removeFrom_OldChildLayerList = parentLayer.childLayers;
             this.removeFrom_NewChildLayerList = ListClone(parentLayer.childLayers);
             ListRemoveAt(this.removeFrom_NewChildLayerList, removeIndex);
             parentLayer.childLayers = this.removeFrom_NewChildLayerList;
+            env.setCurrentLayer(null);
+            env.updateLayerStructure();
+            if (this.previousLayer != null) {
+                env.setCurrentLayer(this.previousLayer);
+            }
+            else if (this.nextLayer != null) {
+                env.setCurrentLayer(this.nextLayer);
+            }
         };
         Command_Layer_CommandBase.prototype.undo = function (env) {
             if (this.insertTo_ParentLayer != null) {
@@ -109,8 +122,12 @@ var ManualTracingTool;
             if (this.removeFrom_ParentLayer != null) {
                 this.removeFrom_ParentLayer.childLayers = this.removeFrom_OldChildLayerList;
             }
+            env.setCurrentLayer(null);
+            env.updateLayerStructure();
+            if (this.currentLayer != null) {
+                env.setCurrentLayer(this.currentLayer);
+            }
             env.setRedrawMainWindowEditorWindow();
-            env.setUpadateLayerWindowItems();
         };
         Command_Layer_CommandBase.prototype.redo = function (env) {
             if (this.insertTo_ParentLayer != null) {
@@ -119,13 +136,15 @@ var ManualTracingTool;
             if (this.removeFrom_ParentLayer != null) {
                 this.removeFrom_ParentLayer.childLayers = this.removeFrom_NewChildLayerList;
             }
+            env.updateLayerStructure();
+            if (this.newLayer != null) {
+                env.setCurrentLayer(this.newLayer);
+            }
             env.setRedrawMainWindowEditorWindow();
-            env.setUpadateLayerWindowItems();
         };
         Command_Layer_CommandBase.prototype.execute = function (env) {
             this.executeCommand(env);
             env.setRedrawMainWindowEditorWindow();
-            env.setUpadateLayerWindowItems();
         };
         Command_Layer_CommandBase.prototype.executeCommand = function (env) {
         };
@@ -151,10 +170,12 @@ var ManualTracingTool;
         Command_Layer_AddVectorLayerToCurrentPosition.prototype.executeCommand = function (env) {
             this.newLayer = new ManualTracingTool.VectorLayer();
             this.newLayer.name = 'new layer';
+            var keyFrame = new ManualTracingTool.VectorLayerKeyFrame();
+            keyFrame.geometry = new ManualTracingTool.VectorLayerGeometry();
+            this.newLayer.keyframes.push(keyFrame);
             var group = new ManualTracingTool.VectorGroup();
-            this.newLayer.geometry.groups.push(group);
-            this.executeLayerInsertToCurrent(this.newLayer);
-            env.setCurrentLayer(this.newLayer);
+            keyFrame.geometry.groups.push(group);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         };
         return Command_Layer_AddVectorLayerToCurrentPosition;
     }(Command_Layer_CommandBase));
@@ -182,9 +203,8 @@ var ManualTracingTool;
             this.newLayer = new ManualTracingTool.VectorLayerReferenceLayer();
             this.newLayer.name = 'new ref layer';
             this.newLayer.referenceLayer = (this.currentLayer);
-            this.newLayer.geometry = this.newLayer.referenceLayer.geometry;
-            this.executeLayerInsertToCurrent(this.newLayer);
-            env.setCurrentLayer(this.newLayer);
+            this.newLayer.keyframes = this.newLayer.referenceLayer.keyframes;
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         };
         return Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition;
     }(Command_Layer_CommandBase));
@@ -208,8 +228,7 @@ var ManualTracingTool;
         Command_Layer_AddGroupLayerToCurrentPosition.prototype.executeCommand = function (env) {
             this.newLayer = new ManualTracingTool.GroupLayer();
             this.newLayer.name = 'new group';
-            this.executeLayerInsertToCurrent(this.newLayer);
-            env.setCurrentLayer(this.newLayer);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         };
         return Command_Layer_AddGroupLayerToCurrentPosition;
     }(Command_Layer_CommandBase));
@@ -233,8 +252,7 @@ var ManualTracingTool;
         Command_Layer_AddImageFileReferenceLayerToCurrentPosition.prototype.executeCommand = function (env) {
             this.newLayer = new ManualTracingTool.ImageFileReferenceLayer();
             this.newLayer.name = 'new file';
-            this.executeLayerInsertToCurrent(this.newLayer);
-            env.setCurrentLayer(this.newLayer);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         };
         return Command_Layer_AddImageFileReferenceLayerToCurrentPosition;
     }(Command_Layer_CommandBase));
@@ -258,8 +276,7 @@ var ManualTracingTool;
         Command_Layer_AddPosingLayerToCurrentPosition.prototype.executeCommand = function (env) {
             this.newLayer = new ManualTracingTool.PosingLayer();
             this.newLayer.name = 'new posing';
-            this.executeLayerInsertToCurrent(this.newLayer);
-            env.setCurrentLayer(this.newLayer);
+            this.executeLayerInsertToCurrent(this.newLayer, env);
         };
         return Command_Layer_AddPosingLayerToCurrentPosition;
     }(Command_Layer_CommandBase));
@@ -279,7 +296,7 @@ var ManualTracingTool;
             return true;
         };
         Command_Layer_Delete.prototype.executeCommand = function (env) {
-            this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex);
+            this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
             if (this.previousLayer != null) {
                 env.setCurrentLayer(this.previousLayer);
             }
@@ -309,13 +326,13 @@ var ManualTracingTool;
         };
         Command_Layer_MoveUp.prototype.executeCommand = function (env) {
             if (this.currentLayerParent == this.previousLayerParent) {
-                this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex - 1);
+                this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex - 1, env);
+                env.setCurrentLayer(this.currentLayer);
             }
             else {
-                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex);
-                this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer);
+                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+                this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer, env);
             }
-            env.setCurrentLayer(this.currentLayer);
         };
         return Command_Layer_MoveUp;
     }(Command_Layer_CommandBase));
@@ -339,13 +356,13 @@ var ManualTracingTool;
         };
         Command_Layer_MoveDown.prototype.executeCommand = function (env) {
             if (this.currentLayerParent == this.nextLayerParent) {
-                this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex + 1);
+                this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex + 1, env);
+                env.setCurrentLayer(this.currentLayer);
             }
             else {
-                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex);
-                this.executeLayerInsert(this.nextLayerParent, this.nextLayerIndex, this.currentLayer);
+                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+                this.executeLayerInsert(this.nextLayerParent, this.nextLayerIndex, this.currentLayer, env);
             }
-            env.setCurrentLayer(this.currentLayer);
         };
         return Command_Layer_MoveDown;
     }(Command_Layer_MoveUp));

@@ -33,6 +33,7 @@ var ManualTracingTool;
         __extends(Tool_ScratchLine, _super);
         function Tool_ScratchLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.enableScratchEdit = true;
             _this.enableExtrude = false;
             _this.editLine = null;
             _this.resampledLine = null;
@@ -61,7 +62,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_ScratchLine.prototype.isAvailable = function (env) {
-            return (env.currentVectorLayer != null);
+            return (env.currentVectorLayer != null
+                && env.currentVectorLayer.isVisible);
         };
         Tool_ScratchLine.prototype.mouseDown = function (e, env) {
             if (e.isLeftButtonPressing()) {
@@ -151,7 +153,7 @@ var ManualTracingTool;
             if (env.currentVectorLayer == null) {
                 return;
             }
-            this.lineSingleHitTester.processLayer(env.currentVectorLayer, location[0], location[1], env.mouseCursorViewRadius);
+            this.lineSingleHitTester.processLayer(env.currentVectorGeometry, location[0], location[1], env.mouseCursorViewRadius);
             var hitedLine = this.lineSingleHitTester.hitedLine;
             if (hitedLine != null) {
                 if (env.currentVectorLine != null) {
@@ -162,52 +164,62 @@ var ManualTracingTool;
             }
         };
         Tool_ScratchLine.prototype.executeCommand = function (env) {
-            var baseRadius = env.mouseCursorViewRadius;
-            var targetLine = env.currentVectorLine;
-            // Resampling editor line
-            this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
-            // Get extruding line points
             if (this.enableExtrude) {
-                var editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
-                var editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
-                var forwardExtrude = true;
-                var extrudeLine = this.generateExtrudePoints(false, targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
-                if (extrudeLine == null) {
-                    extrudeLine = this.generateExtrudePoints(true, targetLine, this.resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
-                    if (extrudeLine != null) {
-                        forwardExtrude = false;
-                    }
+                var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
+                var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
+                this.resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
+                this.executeExtrudeLine(this.resampledLine, env);
+            }
+            if (this.enableScratchEdit) {
+                this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
+                var isExtrudeDone = (this.extrudeLine != null);
+                this.executeScratchEditLine(this.resampledLine, isExtrudeDone, env);
+            }
+        };
+        Tool_ScratchLine.prototype.executeExtrudeLine = function (resampledLine, env) {
+            var targetLine = env.currentVectorLine;
+            // Create extrude points
+            var baseRadius = env.mouseCursorViewRadius;
+            var editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
+            var editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
+            var forwardExtrude = true;
+            var extrudeLine = this.generateExtrudePoints(false, targetLine, resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
+            if (extrudeLine == null) {
+                extrudeLine = this.generateExtrudePoints(true, targetLine, resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
+                if (extrudeLine != null) {
+                    forwardExtrude = false;
                 }
-                this.forwardExtrude = forwardExtrude;
-                this.extrudeLine = extrudeLine;
             }
-            else {
-                this.forwardExtrude = false;
-                this.extrudeLine = null;
+            // Execute command
+            if (extrudeLine != null && extrudeLine.points.length > 0) {
+                var command = new Command_ExtrudeLine();
+                command.isContinuing = true;
+                command.targetLine = targetLine;
+                command.forwardExtrude = forwardExtrude;
+                command.extrudeLine = extrudeLine;
+                command.execute(env);
+                env.commandHistory.addCommand(command);
             }
+            this.forwardExtrude = forwardExtrude;
+            this.extrudeLine = extrudeLine;
+        };
+        Tool_ScratchLine.prototype.executeScratchEditLine = function (resampledLine, isExtrudeDone, env) {
+            var targetLine = env.currentVectorLine;
             // Get scratching candidate points
+            var baseRadius = env.mouseCursorViewRadius;
             var editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
             var editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
-            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine, editFalloffRadiusMin, editFalloffRadiusMax);
+            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, resampledLine, editFalloffRadiusMin, editFalloffRadiusMax);
             // For display
             this.candidateLine = new ManualTracingTool.VectorLine();
             for (var _i = 0, candidatePointPairs_1 = candidatePointPairs; _i < candidatePointPairs_1.length; _i++) {
                 var pair = candidatePointPairs_1[_i];
                 this.candidateLine.points.push(pair.candidatePoint);
             }
-            // Create command
-            if (this.extrudeLine != null && this.extrudeLine.points.length > 0) {
-                var command = new Command_ExtrudeLine();
-                command.isContinuing = true;
-                command.targetLine = targetLine;
-                command.forwardExtrude = this.forwardExtrude;
-                command.extrudeLine = this.extrudeLine;
-                command.execute(env);
-                env.commandHistory.addCommand(command);
-            }
+            // Execute command
             if (candidatePointPairs != null && candidatePointPairs.length > 0) {
                 var command = new Command_ScratchLine();
-                command.isContinued = (this.extrudeLine != null);
+                command.isContinued = isExtrudeDone;
                 command.targetLine = targetLine;
                 for (var _a = 0, candidatePointPairs_2 = candidatePointPairs; _a < candidatePointPairs_2.length; _a++) {
                     var pair = candidatePointPairs_2[_a];
@@ -219,16 +231,7 @@ var ManualTracingTool;
                 env.commandHistory.addCommand(command);
             }
         };
-        Tool_ScratchLine.prototype.resampleLine = function (baseLine, env) {
-            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength * 2.0);
-            var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(baseLine.totalLength, resamplingUnitLength);
-            if (divisionCount > this.maxResamplingDivisionCount) {
-                divisionCount = this.maxResamplingDivisionCount;
-            }
-            return ManualTracingTool.Logic_Edit_Line.createResampledLine(baseLine, divisionCount);
-        };
-        Tool_ScratchLine.prototype.generateCutoutedResampledLine = function (baseLine, env) {
-            var result = this.resampleLine(baseLine, env);
+        Tool_ScratchLine.prototype.cutoutLine = function (result) {
             var startIndex = this.searchCutoutIndex(result, false);
             var endIndex = this.searchCutoutIndex(result, true);
             result.points = ListGetRange(result.points, startIndex, (endIndex - startIndex) + 1);
@@ -263,6 +266,16 @@ var ManualTracingTool;
                 k += scanDirection;
             }
             return cutoutIndex;
+        };
+        Tool_ScratchLine.prototype.generateCutoutedResampledLine = function (editorLine, env) {
+            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength * 2.0);
+            var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(editorLine.totalLength, resamplingUnitLength);
+            if (divisionCount > this.maxResamplingDivisionCount) {
+                divisionCount = this.maxResamplingDivisionCount;
+            }
+            var resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(editorLine, divisionCount);
+            this.cutoutLine(resampledLine);
+            return resampledLine;
         };
         Tool_ScratchLine.prototype.ganerateCandidatePoints = function (target_Line, editorLine, editFalloffRadiusMin, editFalloffRadiusMax) {
             var result = new List();
@@ -470,6 +483,7 @@ var ManualTracingTool;
         __extends(Tool_ExtrudeLine, _super);
         function Tool_ExtrudeLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.enableScratchEdit = false;
             _this.enableExtrude = true;
             return _this;
         }

@@ -38,6 +38,15 @@ var ManualTracingTool;
             this.childLayers = List();
             this.layerColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         }
+        Layer.collectLayerRecursive = function (result, parentLayer) {
+            for (var _i = 0, _a = parentLayer.childLayers; _i < _a.length; _i++) {
+                var layer = _a[_i];
+                result.push(layer);
+                if (layer.childLayers.length > 0) {
+                    Layer.collectLayerRecursive(result, layer);
+                }
+            }
+        };
         return Layer;
     }());
     ManualTracingTool.Layer = Layer;
@@ -119,6 +128,14 @@ var ManualTracingTool;
         return VectorLayerGeometry;
     }());
     ManualTracingTool.VectorLayerGeometry = VectorLayerGeometry;
+    var VectorLayerKeyFrame = /** @class */ (function () {
+        function VectorLayerKeyFrame() {
+            this.frame = 0;
+            this.geometry = null;
+        }
+        return VectorLayerKeyFrame;
+    }());
+    ManualTracingTool.VectorLayerKeyFrame = VectorLayerKeyFrame;
     var DrawLineTypeID;
     (function (DrawLineTypeID) {
         DrawLineTypeID[DrawLineTypeID["none"] = 1] = "none";
@@ -134,14 +151,18 @@ var ManualTracingTool;
     var VectorLayer = /** @class */ (function (_super) {
         __extends(VectorLayer, _super);
         function VectorLayer() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
+            var _this = _super.call(this) || this;
             _this.type = LayerTypeID.vectorLayer;
-            _this.geometry = new VectorLayerGeometry();
-            _this.drawLineType = DrawLineTypeID.layerColor;
+            _this.keyframes = new List();
+            _this.drawLineType = DrawLineTypeID.palletColor;
             _this.fillAreaType = FillAreaTypeID.none;
             _this.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             _this.line_PalletColorIndex = 0;
-            _this.fill_PalletColorIndex = 0;
+            _this.fill_PalletColorIndex = 1;
+            var key = new VectorLayerKeyFrame();
+            key.frame = 0;
+            key.geometry = new VectorLayerGeometry();
+            _this.keyframes.push(key);
             return _this;
         }
         VectorLayer.isVectorLayer = function (layer) {
@@ -370,8 +391,10 @@ var ManualTracingTool;
             this.animationFrameParSecond = 24;
             this.loopStartFrame = 0;
             this.loopEndFrame = 240;
+            this.maxFrame = 240;
             this.currentTimeFrame = 10.0;
             this.timeLineWindowScale = 1.0;
+            this.timeLineWindowScaleMax = 10.0;
             this.timeLineWindowViewLocationX = 0.0;
         }
         return AnimationSettingData;
@@ -395,11 +418,11 @@ var ManualTracingTool;
     var DocumentData = /** @class */ (function () {
         // This class must be created by this function for JSON.parse
         function DocumentData() {
-            this.loaded = false;
             this.rootLayer = new Layer();
             this.documentFrame = vec4.fromValues(-512.0, -512.0, 512.0, 512.0);
             this.palletColos = new List();
             this.animationSettingData = new AnimationSettingData();
+            this.loaded = false;
             DocumentData.initializeDefaultPalletColors(this);
         }
         DocumentData.initializeDefaultPalletColors = function (documentData) {

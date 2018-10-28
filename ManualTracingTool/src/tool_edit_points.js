@@ -33,13 +33,21 @@ var ManualTracingTool;
         __extends(Tool_HideLinePoint_BrushSelect, _super);
         function Tool_HideLinePoint_BrushSelect() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.helpText = '線の太さを０に設定し、非表示にします。表示したい場合は線の太さを変更してください。';
+            _this.helpText = '線の太さに最大の太さに設定します。<br />Shiftキーで最小の太さに設定します。Ctrlキーで線をの太さを０にします。';
             _this.logic_Selector = new Selector_HideLinePoint_BrushSelect(); // @override
             return _this;
         }
         Tool_HideLinePoint_BrushSelect.prototype.onStartSelection = function (e, env) {
             var logic_Selector = this.logic_Selector;
-            logic_Selector.lineWidth = 0.0;
+            if (env.isShiftKeyPressing()) {
+                logic_Selector.lineWidth = env.drawLineMinWidth;
+            }
+            else if (env.isCtrlKeyPressing()) {
+                logic_Selector.lineWidth = 0.0;
+            }
+            else {
+                logic_Selector.lineWidth = env.drawLineBaseWidth;
+            }
         };
         Tool_HideLinePoint_BrushSelect.prototype.executeCommand = function (env) {
             var command = new Command_EditLinePointLineWidth();

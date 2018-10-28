@@ -37,25 +37,25 @@ var ManualTracingTool;
             _this.deletedPoints = null;
             return _this;
         }
-        Command_DeletePoints.prototype.prepareEditTargets = function (layer) {
+        Command_DeletePoints.prototype.prepareEditTargets = function (layer, geometry) {
             if (this.errorCheck(layer)) {
                 return false;
             }
             // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
-            var existsChanges = this.setDeleteFlags(layer);
+            var existsChanges = this.setDeleteFlags(geometry);
             // If no change, cancel it
             if (!existsChanges) {
                 return false;
             }
-            this.setDeleteFlagsForGroups(layer);
-            this.collectEditTargets(layer);
+            this.setDeleteFlagsForGroups(layer, geometry);
+            this.collectEditTargets(layer, geometry);
             return true;
         };
-        Command_DeletePoints.prototype.collectEditTargets = function (layer) {
+        Command_DeletePoints.prototype.collectEditTargets = function (layer, geometry) {
             // Collect informations for modified lines and deleted points
             var editLines = new List();
             var deletedPoints = new List();
-            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 if (group.linePointModifyFlag == ManualTracingTool.VectorGroupModifyFlagID.none) {
                     continue;
@@ -91,7 +91,7 @@ var ManualTracingTool;
             // Collect informations for modified groups and deleted lines
             var editGroups = new List();
             var deletedLines = new List();
-            for (var _h = 0, _j = layer.geometry.groups; _h < _j.length; _h++) {
+            for (var _h = 0, _j = geometry.groups; _h < _j.length; _h++) {
                 var group = _j[_h];
                 if (group.modifyFlag == ManualTracingTool.VectorGroupModifyFlagID.none) {
                     continue;
@@ -125,9 +125,9 @@ var ManualTracingTool;
             this.deletedPoints = deletedPoints;
             this.layer = layer;
         };
-        Command_DeletePoints.prototype.setDeleteFlagsForGroups = function (layer) {
+        Command_DeletePoints.prototype.setDeleteFlagsForGroups = function (layer, geometry) {
             var modifiedGroupCount = 0;
-            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 var deleteLineCount = 0;
                 var modifiedLineCount = 0;
@@ -214,7 +214,7 @@ var ManualTracingTool;
             }
             return false;
         };
-        Command_DeletePoints.prototype.setDeleteFlags = function (layer) {
+        Command_DeletePoints.prototype.setDeleteFlags = function (geometry) {
             return false;
         };
         return Command_DeletePoints;
@@ -225,9 +225,9 @@ var ManualTracingTool;
         function Command_DeleteSelectedPoints() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        Command_DeleteSelectedPoints.prototype.setDeleteFlags = function (layer) {
+        Command_DeleteSelectedPoints.prototype.setDeleteFlags = function (geometry) {
             var deletePointCount = 0;
-            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];
@@ -251,9 +251,9 @@ var ManualTracingTool;
         function Command_DeleteFlagedPoints() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        Command_DeleteFlagedPoints.prototype.setDeleteFlags = function (layer) {
+        Command_DeleteFlagedPoints.prototype.setDeleteFlags = function (geometry) {
             var deletePointCount = 0;
-            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];

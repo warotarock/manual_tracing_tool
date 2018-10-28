@@ -32,7 +32,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Resample_Segment.prototype.isAvailable = function (env) {
-            return (env.currentVectorLayer != null);
+            return (env.currentVectorLayer != null
+                && env.currentVectorLayer.isVisible);
         };
         Tool_Resample_Segment.prototype.keydown = function (e, env) {
             if (e.key == 'Enter') {
@@ -43,7 +44,7 @@ var ManualTracingTool;
         };
         Tool_Resample_Segment.prototype.executeCommand = function (env) {
             var command = new Command_Resample_Segment();
-            if (command.collectEditTargets(env.currentVectorLayer, env)) {
+            if (command.collectEditTargets(env.currentVectorGeometry, env)) {
                 command.execute(env);
                 env.commandHistory.addCommand(command);
                 env.setRedrawMainWindowEditorWindow();
@@ -61,11 +62,11 @@ var ManualTracingTool;
             _this.editLines = null;
             return _this;
         }
-        Command_Resample_Segment.prototype.collectEditTargets = function (layer, env) {
+        Command_Resample_Segment.prototype.collectEditTargets = function (geometry, env) {
             var editGroups = new List();
             var editLines = new List();
             var modifiedGroupCount = 0;
-            for (var _i = 0, _a = layer.geometry.groups; _i < _a.length; _i++) {
+            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
                 var modifiedLineCount = 0;
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {

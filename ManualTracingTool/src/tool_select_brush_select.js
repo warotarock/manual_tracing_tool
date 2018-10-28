@@ -18,7 +18,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_BrushSelectLinePointBase.prototype.isAvailable = function (env) {
-            return (env.currentVectorLayer != null);
+            return (env.currentVectorLayer != null
+                && env.currentVectorLayer.isVisible);
         };
         Tool_BrushSelectLinePointBase.prototype.onDrawEditor = function (env, drawEnv) {
             if (!env.isSelectMode()) {
@@ -77,7 +78,7 @@ var ManualTracingTool;
         Tool_BrushSelectLinePointBase.prototype.onStartSelection = function (e, env) {
         };
         Tool_BrushSelectLinePointBase.prototype.processSelection = function (e, env) {
-            this.logic_Selector.processLayer(env.currentVectorLayer, e.location[0], e.location[1], env.mouseCursorViewRadius);
+            this.logic_Selector.processLayer(env.currentVectorGeometry, e.location[0], e.location[1], env.mouseCursorViewRadius);
         };
         Tool_BrushSelectLinePointBase.prototype.endSelection = function (env) {
             this.logic_Selector.endProcess();

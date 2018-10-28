@@ -18,13 +18,13 @@ var ManualTracingTool;
         };
         HitTest_VectorLayer_Base.prototype.afterHitTest = function () {
         };
-        HitTest_VectorLayer_Base.prototype.beforeHitTestToLayer = function (layer) {
+        HitTest_VectorLayer_Base.prototype.beforeHitTestToLayer = function (geometry) {
         };
-        HitTest_VectorLayer_Base.prototype.afterHitTestToLayer = function (layer) {
+        HitTest_VectorLayer_Base.prototype.afterHitTestToLayer = function (geometry) {
         };
-        HitTest_VectorLayer_Base.prototype.beforeHitTestToGroup = function (layer, group) {
+        HitTest_VectorLayer_Base.prototype.beforeHitTestToGroup = function (geometry, group) {
         };
-        HitTest_VectorLayer_Base.prototype.afterHitTestToGroup = function (layer, group) {
+        HitTest_VectorLayer_Base.prototype.afterHitTestToGroup = function (geometry, group) {
         };
         HitTest_VectorLayer_Base.prototype.beforeHitTestToLine = function (group, line) {
         };
@@ -44,11 +44,8 @@ var ManualTracingTool;
         function HitTest_LinePointBase() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        HitTest_LinePointBase.prototype.processLayer = function (layer, x, y, minDistance) {
-            this.hitTest(layer, x, y, minDistance * minDistance);
-        };
-        HitTest_LinePointBase.prototype.processLayerRecursive = function (layers, x, y, minDistance) {
-            this.hitTestRecursive(layers, x, y, minDistance * minDistance);
+        HitTest_LinePointBase.prototype.processLayer = function (geometry, x, y, minDistance) {
+            this.hitTest(geometry, x, y, minDistance * minDistance);
         };
         HitTest_LinePointBase.prototype.startProcess = function () {
             this.exitPointHitTest = false;
@@ -57,15 +54,11 @@ var ManualTracingTool;
         HitTest_LinePointBase.prototype.endProcess = function () {
             this.afterHitTest();
         };
-        HitTest_LinePointBase.prototype.hitTest = function (layer, x, y, minDistance) {
-            if (layer.type != ManualTracingTool.LayerTypeID.vectorLayer) {
-                return;
-            }
-            var vectorLayer = layer;
-            this.beforeHitTestToLayer(vectorLayer);
-            for (var _i = 0, _a = vectorLayer.geometry.groups; _i < _a.length; _i++) {
+        HitTest_LinePointBase.prototype.hitTest = function (geometry, x, y, minDistance) {
+            this.beforeHitTestToLayer(geometry);
+            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
                 var group = _a[_i];
-                this.beforeHitTestToGroup(vectorLayer, group);
+                this.beforeHitTestToGroup(geometry, group);
                 for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
                     var line = _c[_b];
                     this.beforeHitTestToLine(group, line);
@@ -74,20 +67,9 @@ var ManualTracingTool;
                     }
                     this.afterHitTestToLine(group, line);
                 }
-                this.afterHitTestToGroup(vectorLayer, group);
+                this.afterHitTestToGroup(geometry, group);
             }
-            this.afterHitTestToLayer(vectorLayer);
-        };
-        HitTest_LinePointBase.prototype.hitTestRecursive = function (layers, x, y, minDistance) {
-            for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
-                var layer = layers_1[_i];
-                if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
-                    this.hitTest(layer, x, y, minDistance);
-                }
-                if (layer.childLayers.length > 0) {
-                    this.hitTestRecursive(layer.childLayers, x, y, minDistance);
-                }
-            }
+            this.afterHitTestToLayer(geometry);
         };
         HitTest_LinePointBase.prototype.hitTest_LineRectangle = function (line, x, y, minDistance) {
             return (x >= line.left - minDistance

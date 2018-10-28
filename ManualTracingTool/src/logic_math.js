@@ -9,6 +9,9 @@ var ManualTracingTool;
         Maths.lerp = function (x, a, b) {
             return a + x * (b - a);
         };
+        Maths.fract = function (x) {
+            return x - Math.floor(x);
+        };
         Maths.smoothstep = function (edge0, edge1, x) {
             var t = Maths.clamp((x - edge0) / (edge1 - edge0), 0, 1);
             return t * t * (3 - 2 * t);
@@ -94,6 +97,14 @@ var ManualTracingTool;
             result[8] = vecZ[0];
             result[9] = vecZ[1];
             result[10] = vecZ[2];
+        };
+        Maths.hsvToRGB_Element = function (h, s, v, baseElement) {
+            return ((Maths.clamp(Math.abs(Maths.fract(h + baseElement / 3.0) * 6.0 - 3.0) - 1.0, 0.0, 1.0) - 1.0) * s + 1.0) * v;
+        };
+        Maths.hsvToRGBVec4 = function (out, h, s, v) {
+            out[0] = Maths.hsvToRGB_Element(h, s, v, 0.0);
+            out[1] = Maths.hsvToRGB_Element(h, s, v, 2.0);
+            out[2] = Maths.hsvToRGB_Element(h, s, v, 1.0);
         };
         return Maths;
     }());

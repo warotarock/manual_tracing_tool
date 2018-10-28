@@ -34,13 +34,13 @@ var ManualTracingTool;
         CanvasWindow.prototype.updateViewMatrix = function () {
             this.caluclateViewMatrix(this.transformMatrix);
         };
-        CanvasWindow.prototype.caluclateViewMatrix = function (mat) {
-            mat4.identity(mat);
-            mat4.translate(mat, mat, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
-            mat4.scale(mat, mat, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
-            mat4.rotateZ(mat, mat, this.viewRotation * Math.PI / 180.0);
+        CanvasWindow.prototype.caluclateViewMatrix = function (out) {
+            mat4.identity(out);
+            mat4.translate(out, out, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
+            mat4.scale(out, out, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
+            mat4.rotateZ(out, out, this.viewRotation * Math.PI / 180.0);
             //mat4.translate(mat, mat, vec3.set(this.tempVec3, -this.width / 2, -this.height / 2, 0.0));
-            mat4.translate(mat, mat, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
+            mat4.translate(out, out, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
         };
         CanvasWindow.prototype.calculateViewUnitMatrix = function (out) {
             mat4.identity(out);
@@ -50,6 +50,14 @@ var ManualTracingTool;
         return CanvasWindow;
     }());
     ManualTracingTool.CanvasWindow = CanvasWindow;
+    var CanvasRenderBlendMode;
+    (function (CanvasRenderBlendMode) {
+        CanvasRenderBlendMode[CanvasRenderBlendMode["default"] = 0] = "default";
+        CanvasRenderBlendMode[CanvasRenderBlendMode["alphaOver"] = 1] = "alphaOver";
+        CanvasRenderBlendMode[CanvasRenderBlendMode["add"] = 2] = "add";
+        CanvasRenderBlendMode[CanvasRenderBlendMode["color"] = 3] = "color";
+        CanvasRenderBlendMode[CanvasRenderBlendMode["luminosity"] = 4] = "luminosity";
+    })(CanvasRenderBlendMode = ManualTracingTool.CanvasRenderBlendMode || (ManualTracingTool.CanvasRenderBlendMode = {}));
     var CanvasRenderLineCap;
     (function (CanvasRenderLineCap) {
         CanvasRenderLineCap[CanvasRenderLineCap["butt"] = 0] = "butt";
@@ -95,11 +103,29 @@ var ManualTracingTool;
             this.context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
             this.context.clearRect(left, top, width, height);
         };
+        CanvasRender.prototype.getColorStyleText = function (r, g, b, a) {
+            return 'rgba(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ',' + (a).toFixed(2) + ')';
+        };
+        CanvasRender.prototype.getColorStyleTextV = function (color) {
+            return this.getColorStyleText(color[0], color[1], color[2], color[3]);
+        };
         CanvasRender.prototype.setFillColor = function (r, g, b, a) {
-            this.context.fillStyle = 'rgba(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ',' + (a).toFixed(2) + ')';
+            this.context.fillStyle = this.getColorStyleText(r, g, b, a);
         };
         CanvasRender.prototype.setFillColorV = function (color) {
             this.setFillColor(color[0], color[1], color[2], color[3]);
+        };
+        CanvasRender.prototype.setFillLinearGradient = function (x0, y0, x1, y1, color1, color2) {
+            var grad = this.context.createLinearGradient(x0, y0, x1, y1);
+            grad.addColorStop(0.0, this.getColorStyleTextV(color1));
+            grad.addColorStop(1.0, this.getColorStyleTextV(color2));
+            this.context.fillStyle = grad;
+        };
+        CanvasRender.prototype.setFillRadialGradient = function (x, y, r1, r2, color1, color2) {
+            var grad = this.context.createRadialGradient(x, y, r1, x, y, r2);
+            grad.addColorStop(0.0, this.getColorStyleTextV(color1));
+            grad.addColorStop(1.0, this.getColorStyleTextV(color2));
+            this.context.fillStyle = grad;
         };
         CanvasRender.prototype.fillRect = function (left, top, width, height) {
             this.context.fillRect(left, top, width, height);
@@ -108,7 +134,7 @@ var ManualTracingTool;
             this.context.lineWidth = width;
         };
         CanvasRender.prototype.setStrokeColor = function (r, g, b, a) {
-            this.context.strokeStyle = 'rgba(' + (r * 255).toFixed(0) + ',' + (g * 255).toFixed(0) + ',' + (b * 255).toFixed(0) + ',' + (a).toFixed(2) + ')';
+            this.context.strokeStyle = this.getColorStyleText(r, g, b, a);
         };
         CanvasRender.prototype.setStrokeColorV = function (color) {
             this.setStrokeColor(color[0], color[1], color[2], color[3]);
@@ -118,6 +144,20 @@ var ManualTracingTool;
         };
         CanvasRender.prototype.setGlobalAlpha = function (a) {
             this.context.globalAlpha = a;
+        };
+        CanvasRender.prototype.setBlendMode = function (blendMode) {
+            if (blendMode == CanvasRenderBlendMode.default || blendMode == CanvasRenderBlendMode.alphaOver) {
+                this.context.globalCompositeOperation = 'source-over';
+            }
+            else if (blendMode == CanvasRenderBlendMode.add) {
+                this.context.globalCompositeOperation = 'lighter';
+            }
+            else if (blendMode == CanvasRenderBlendMode.luminosity) {
+                this.context.globalCompositeOperation = 'luminosity';
+            }
+            else if (blendMode == CanvasRenderBlendMode.color) {
+                this.context.globalCompositeOperation = 'color';
+            }
         };
         CanvasRender.prototype.setLineCap = function (lineCap) {
             this.context.lineCap = CanvasRenderLineCap[lineCap];
@@ -157,7 +197,7 @@ var ManualTracingTool;
         };
         CanvasRender.prototype.pickColor = function (outColor, canvasWindow, x, y) {
             var imageData = canvasWindow.context.getImageData(Math.floor(x), Math.floor(y), 1, 1);
-            vec4.set(outColor, imageData.data[0], imageData.data[1], imageData.data[2], imageData.data[3]);
+            vec4.set(outColor, imageData.data[0] / 255.0, imageData.data[1] / 255.0, imageData.data[2] / 255.0, imageData.data[3] / 255.0);
         };
         return CanvasRender;
     }());
