@@ -154,6 +154,9 @@ namespace ManualTracingTool {
         altKey: boolean = false;
         ctrlKey: boolean = false;
 
+        animationPlaying = false;
+        animationPlayingFPS = 24;
+
         posing3DView: Posing3DView = null;
         posing3DLogic: Posing3DLogic = null;
     }
@@ -426,6 +429,7 @@ namespace ManualTracingTool {
         timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);
         timeLineKeyFrameColor = vec4.fromValues(0.0, 0.0, 1.0, 0.1);
         timeLineLayerKeyFrameColor = vec4.fromValues(0.8, 0.8, 0.0, 1.0);
+        timeLineOutOfLoopingColor = vec4.fromValues(0.0, 0.0, 0.0, 0.1);
 
         generalLinePointRadius = 2.0;
         selectedLinePointRadius = 3.0;

@@ -1031,6 +1031,9 @@ namespace ManualTracingTool {
 
         run() {
 
+            let context = this.toolContext;
+            let env = this.toolEnv;
+
             if (this.isDeferredWindowResizeWaiting) {
 
                 this.isDeferredWindowResizeWaiting = false;
@@ -1040,7 +1043,7 @@ namespace ManualTracingTool {
                 this.toolEnv.setRedrawAllWindows();
             }
 
-            // process animation time
+            // Process animation time
 
             let currentTime = (new Date().getTime());
             if (this.lastTime == 0) {
@@ -1057,6 +1060,25 @@ namespace ManualTracingTool {
             if (this.selectCurrentLayerAnimationTime < 0) {
 
                 this.selectCurrentLayerAnimationTime = 0;
+            }
+
+            // Process animation
+
+            if (context.animationPlaying) {
+
+                let aniSetting = context.document.animationSettingData;
+
+                aniSetting.currentTimeFrame += 1;
+
+                if (aniSetting.currentTimeFrame >= aniSetting.loopEndFrame) {
+
+                    aniSetting.currentTimeFrame = aniSetting.loopStartFrame;
+                }
+
+                this.setCurrentFrame(aniSetting.currentTimeFrame);
+
+                env.setRedrawMainWindow();
+                env.setRedrawTimeLineWindow();
             }
         }
 
@@ -1997,7 +2019,35 @@ namespace ManualTracingTool {
             let env = this.toolEnv;
             let aniSetting = context.document.animationSettingData;
 
-            this.timeLineWindow_ProcessFrameInput(e);
+            let left = wnd.getTimeLineLeft();
+
+            if (e.offsetX < left) {
+
+                this.timeLineWindow_OnPlayPauseButton(e);
+            }
+            else {
+
+                this.timeLineWindow_ProcessFrameInput(e);
+            }
+        }
+
+        private timeLineWindow_OnPlayPauseButton(e: ToolMouseEvent) {
+
+            let context = this.toolContext;
+            let env = this.toolEnv;
+            let aniSetting = context.document.animationSettingData;
+
+            if (context.animationPlaying) {
+
+                context.animationPlaying = false;
+
+                env.setRedrawTimeLineWindow();
+            }
+            else {
+
+                context.animationPlaying = true;
+                context.animationPlayingFPS = aniSetting.animationFrameParSecond;
+            }
         }
 
         private timeLineWindow_ProcessFrameInput(e: ToolMouseEvent) {
@@ -4914,6 +4964,7 @@ namespace ManualTracingTool {
 
             let left = wnd.getTimeLineLeft();
             let right = wnd.getTimeLineRight();
+            let bottom = wnd.height;
             let frameUnitWidth = wnd.getFrameUnitWidth(aniSetting);
 
             let frameNumberHeight = 16.0;
@@ -4921,17 +4972,49 @@ namespace ManualTracingTool {
             let frameLineHeight = 10.0;
             let secondFrameLineHeight = 30.0;
 
+            // Control buttons
+
+            //アニメーション再生開始、終了のボタンを描画する。ボタンでアニメーション再生、停止をする。Ctrl+クリックで最初から再生。十字キーでのフレーム移動を約24fpsにする。
+            {
+                let srcX = 0;
+                let srcY = 196;
+                let srcW = 128;
+                let srcH = 128;
+                let dstW = 45;
+                let dstH = 45;
+                let dstX = left / 2 - dstW / 2 + 1;
+                let dstY = wnd.height / 2 - dstH / 2 + 1;
+
+                if (context.animationPlaying) {
+
+                    srcX = 128;
+                }
+
+                this.canvasRender.drawImage(this.systemImage.image.imageData, srcX, srcY, srcW, srcH, dstX, dstY, dstW, dstH);
+            }
+
             // Current frame
 
             let currentFrameX = left - aniSetting.timeLineWindowViewLocationX + aniSetting.currentTimeFrame * frameUnitWidth;
             this.canvasRender.setStrokeWidth(1.0);
             this.canvasRender.setFillColorV(this.drawStyle.timeLineCurrentFrameColor);
-            this.canvasRender.fillRect(currentFrameX, 0.0, frameUnitWidth, wnd.height);
+            this.canvasRender.fillRect(currentFrameX, 0.0, frameUnitWidth, bottom);
+
+            aniSetting.maxFrame = 60;
+            //aniSetting.loopStartFrame = 10;
+            aniSetting.loopEndFrame = 24;
 
             // Document keyframes
 
-            let minKeyFrame = wnd.getFrameByLocation(left, aniSetting);
-            let maxKeyFrame = wnd.getFrameByLocation(right, aniSetting);
+            let minFrame = wnd.getFrameByLocation(left, aniSetting);
+            if (minFrame < 0) {
+                minFrame = 0;
+            }
+
+            let maxFrame = wnd.getFrameByLocation(right, aniSetting);
+            if (maxFrame > aniSetting.maxFrame) {
+                maxFrame = aniSetting.maxFrame;
+            }
 
             this.canvasRender.setStrokeWidth(1.0);
             this.canvasRender.setFillColorV(this.drawStyle.timeLineKeyFrameColor);
@@ -4940,16 +5023,33 @@ namespace ManualTracingTool {
 
                 let frame = viewKeyframe.frame;
 
-                if (frame < minKeyFrame) {
+                if (frame < minFrame) {
                     continue;
                 }
 
-                if (frame > maxKeyFrame) {
+                if (frame > maxFrame) {
                     break;
                 }
 
                 let frameX = wnd.getFrameLocation(frame, aniSetting);
                 this.canvasRender.fillRect(frameX, 0.0, frameUnitWidth - 1.0, frameLineBottom);
+            }
+
+            // Loop part
+            this.canvasRender.setFillColorV(this.drawStyle.timeLineOutOfLoopingColor);
+            {
+                let frameX = wnd.getFrameLocation(aniSetting.loopStartFrame, aniSetting);
+                if (frameX > left) {
+
+                    this.canvasRender.fillRect(left, 0.0, frameX - left, bottom);
+                }
+            }
+            {
+                let frameX = wnd.getFrameLocation(aniSetting.loopEndFrame, aniSetting);
+                if (frameX < right) {
+
+                    this.canvasRender.fillRect(frameX, 0.0, right - frameX, bottom);
+                }
             }
 
             // Layer keyframes
@@ -4972,11 +5072,11 @@ namespace ManualTracingTool {
 
                         let frame = viewKeyframe.frame;
 
-                        if (frame < minKeyFrame) {
+                        if (frame < minFrame) {
                             continue;
                         }
 
-                        if (frame > maxKeyFrame) {
+                        if (frame > maxFrame) {
                             break;
                         }
 
@@ -5001,15 +5101,19 @@ namespace ManualTracingTool {
             this.canvasRender.drawLine(left, 0.0, left, wnd.height);
 
             // Frame measure
+            {
+                let x = left;
+                for (let frame = minFrame; frame <= maxFrame; frame++) {
 
-            for (let x = left; x <= right; x += frameUnitWidth) {
+                    if (frame % aniSetting.animationFrameParSecond == 0 || frame == maxFrame) {
 
-                this.canvasRender.drawLine(x, frameLineBottom - frameLineHeight, x, frameLineBottom);
-            }
+                        this.canvasRender.drawLine(x, frameLineBottom - secondFrameLineHeight, x, frameLineBottom);
+                    }
 
-            for (let x = left; x <= right; x += frameUnitWidth * aniSetting.animationFrameParSecond) {
+                    this.canvasRender.drawLine(x, frameLineBottom - frameLineHeight, x, frameLineBottom);
 
-                this.canvasRender.drawLine(x, frameLineBottom - secondFrameLineHeight, x, frameLineBottom);
+                    x += frameUnitWidth;
+                }
             }
 
             this.canvasRender.drawLine(left, frameLineBottom, right, frameLineBottom);
@@ -5716,6 +5820,13 @@ namespace ManualTracingTool {
             _Main.processLoadingDocumentResources();
         }
 
-        setTimeout(run, 1000 / 60);
+        if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
+
+            setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
+        }
+        else {
+
+            setTimeout(run, 1000 / 60);
+        }
     }
 }
