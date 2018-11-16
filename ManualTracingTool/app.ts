@@ -1531,6 +1531,9 @@ namespace ManualTracingTool {
             this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_ok);
             this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_cancel);
 
+            this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_ok);
+            this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_cancel);
+
             // Pallet modal
 
             this.getElement(this.ID.palletColorModal_currentColor).addEventListener('change', (e: Event) => {
@@ -2253,7 +2256,11 @@ namespace ManualTracingTool {
 
             if (e.key == 'Delete' || e.key == 'x') {
 
-                if (env.isSelectMode()) {
+                if (this.activeCanvasWindow == this.timeLineWindow) {
+
+                    this.openDeleteKeyframeModal();
+                }
+                else if (env.isSelectMode()) {
 
                     if (this.toolContext.currentVectorLayer != null
                         && this.toolContext.currentVectorGeometry != null) {
@@ -2381,9 +2388,13 @@ namespace ManualTracingTool {
                 env.setRedrawTimeLineWindow();
             }
 
-            if (e.key == 'i' && this.activeCanvasWindow == this.timeLineWindow) {
+            if (e.key == 'i') {
 
-                this.openNewKeyframeModal();
+                if (this.activeCanvasWindow == this.timeLineWindow) {
+
+                    this.openNewKeyframeModal();
+                }
+
                 return;
             }
 
@@ -3674,17 +3685,50 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let insertType = <NewKeyframeModal_InsertTypeID>(this.getRadioElementIntValue(this.ID.newKeyframeModal_InsertType, 1));
-
             let env = this.toolEnv;
 
-            if (insertType == NewKeyframeModal_InsertTypeID.CopyGeometory_AllLayer) {
+            let insertType = <int>(this.getRadioElementIntValue(this.ID.newKeyframeModal_InsertType, 1));
+
+            if (insertType == 1) {
 
                 let command = new Command_Animation_InsertKeyframeAllLayer();
                 command.frame = env.document.animationSettingData.currentTimeFrame;
-                command.execute(env);
+                command.prepareEditData(env);
 
-                env.commandHistory.addCommand(command);
+                if (command.isAvailable(env)) {
+
+                    command.execute(env);
+                    env.commandHistory.addCommand(command);
+                }
+            }
+        }
+
+        private openDeleteKeyframeModal() {
+
+            this.openModal(this.ID.deleteKeyframeModal, null);
+        }
+
+        private onClosedDeleteKeyframeModal() {
+
+            if (this.currentModalDialogResult != this.ID.deleteKeyframeModal_ok) {
+                return;
+            }
+
+            let env = this.toolEnv;
+
+            let insertType = <int>(this.getRadioElementIntValue(this.ID.newKeyframeModal_InsertType, 1));
+
+            if (insertType == 1) {
+
+                let command = new Command_Animation_DeleteKeyframeAllLayer();
+                command.frame = env.document.animationSettingData.currentTimeFrame;
+                command.prepareEditData(env);
+
+                if (command.isAvailable(env)) {
+
+                    command.execute(env);
+                    env.commandHistory.addCommand(command);
+                }
             }
         }
 
@@ -3764,6 +3808,10 @@ namespace ManualTracingTool {
             else if (this.currentModalDialogID == this.ID.newKeyframeModal) {
 
                 this.onClosedNewKeyframeModal();
+            }
+            else if (this.currentModalDialogID == this.ID.deleteKeyframeModal) {
+
+                this.onClosedDeleteKeyframeModal();
             }
 
             this.currentModalDialogID = this.ID.none;
@@ -5726,6 +5774,11 @@ namespace ManualTracingTool {
         newKeyframeModal_InsertType = 'newKeyframeModal_InsertType';
         newKeyframeModal_ok = 'newKeyframeModal_ok';
         newKeyframeModal_cancel = 'newKeyframeModal_cancel';
+
+        deleteKeyframeModal = '#deleteKeyframeModal';
+        deleteKeyframeModal_InsertType = 'deleteKeyframeModal_InsertType';
+        deleteKeyframeModal_ok = 'deleteKeyframeModal_ok';
+        deleteKeyframeModal_cancel = 'deleteKeyframeModal_cancel';
     }
 
     enum OpenPalletColorModalMode {
@@ -5752,14 +5805,6 @@ namespace ManualTracingTool {
         scale = 3,
         latticeMove = 4,
         countOfID = 5,
-    }
-
-    enum NewKeyframeModal_InsertTypeID {
-
-        EmptyGeometory_AllLayer = 1,
-        EmptyGeometory_CurrentLayer = 2,
-        CopyGeometory_AllLayer = 3,
-        CopyGeometory_CurrentLayer = 4
     }
 
     var _Main: Main;

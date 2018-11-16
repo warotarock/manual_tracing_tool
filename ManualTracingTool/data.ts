@@ -169,6 +169,29 @@ namespace ManualTracingTool {
                 || layer.type == LayerTypeID.vectorLayerReferenceLayer);
         }
 
+        static findLastKeyframeIndex(vectorLayer: VectorLayer, targetFrame: int): int {
+
+            let keyframeIndex = -1;
+            for (let index = 0; index < vectorLayer.keyframes.length; index++) {
+
+                let keyframe = vectorLayer.keyframes[index];
+
+                if (keyframe.frame == targetFrame) {
+
+                    keyframeIndex = index;
+                    break;
+                }
+
+                if (keyframe.frame > targetFrame) {
+                    break;
+                }
+
+                keyframeIndex = index;
+            }
+
+            return keyframeIndex;
+        }
+
         constructor() {
             super();
 

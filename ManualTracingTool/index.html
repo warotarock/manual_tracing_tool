@@ -402,6 +402,16 @@
                 margin-left: 15px;
                 margin-top: 15px;
             }
+
+        .modalDialogWindow.deleteKeyframeModal {
+            width: 400px;
+            height: 140px;
+        }
+
+            .modalDialogWindow.deleteKeyframeModal div label input {
+                margin-left: 15px;
+                margin-top: 15px;
+            }
     </style>
 </head>
 <body>
@@ -431,8 +441,8 @@
             <canvas id="subtoolCanvas"></canvas>
         </div>
     </main>
-
-    <footer id="footer"></footer>
+    <footer id="footer">
+    </footer>
 
     <div id="openFileDialogModal" class="modalDialogWindow openFileDialogModal">
         <label>
@@ -650,20 +660,20 @@
         <div>
             キーフレームの挿入<br />
             <label>
-                <input type="radio" name="newKeyframeModal_InsertType" value="1">
-                空のキーを挿入（全レイヤー）
-            </label><br />
-            <label>
-                <input type="radio" name="newKeyframeModal_InsertType" value="2">
-                空のキーを挿入（アクティブなレイヤー）
-            </label><br />
-            <label>
-                <input type="radio" name="newKeyframeModal_InsertType" value="3" checked>
+                <input type="radio" name="newKeyframeModal_InsertType" value="1" checked>
                 コピーを挿入（全レイヤー）
             </label><br />
             <label>
-                <input type="radio" name="newKeyframeModal_InsertType" value="4">
+                <input type="radio" name="newKeyframeModal_InsertType" value="2">
                 コピーを挿入（アクティブなレイヤー）
+            </label><br />
+            <label>
+                <input type="radio" name="newKeyframeModal_InsertType" value="3">
+                空のキーを挿入（全レイヤー）
+            </label><br />
+            <label>
+                <input type="radio" name="newKeyframeModal_InsertType" value="4">
+                空のキーを挿入（アクティブなレイヤー）
             </label><br />
         </div>
         <div class="OKCalcelButtons">
@@ -672,5 +682,22 @@
         </div>
     </div>
 
+    <div id="deleteKeyframeModal" class="modalDialogWindow deleteKeyframeModal">
+        <div>
+            キーフレームの削除<br />
+            <label>
+                <input type="radio" name="deleteKeyframeModal_InsertType" value="1" checked>
+                全レイヤーのキーを削除
+            </label><br />
+            <label>
+                <input type="radio" name="deleteKeyframeModal_InsertType" value="2">
+                アクティブなレイヤーのキーを削除
+            </label><br />
+        </div>
+        <div class="OKCalcelButtons">
+            <input type="button" id="deleteKeyframeModal_ok" value="ＯＫ">
+            <input type="button" id="deleteKeyframeModal_cancel" value="キャンセル">
+        </div>
+    </div>
 </body>
 </html>

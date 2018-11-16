@@ -1,7 +1,7 @@
 ﻿
 namespace ManualTracingTool {
 
-    class Command_Animation_InsertKeyframeAllLayer_EditData {
+    class Command_Animation_KeyframeListEditData {
 
         layer: VectorLayer = null;
         oldKeyFrames: List<VectorLayerKeyFrame> = null;
@@ -12,16 +12,11 @@ namespace ManualTracingTool {
 
         frame = 0;
 
-        editDatas = new List<Command_Animation_InsertKeyframeAllLayer_EditData>();
+        editDatas = new List<Command_Animation_KeyframeListEditData>();
 
-        isAvailable(env: ToolEnvironment): boolean { // @override
+        prepareEditData(env: ToolEnvironment): boolean {
 
-            return true;
-        }
-
-        execute(env: ToolEnvironment) { // @override
-
-            let layers = new List<Layer>();
+            var layers = new List<Layer>();
             Layer.collectLayerRecursive(layers, env.document.rootLayer);
 
             let targetFrame = this.frame;
@@ -35,30 +30,13 @@ namespace ManualTracingTool {
                 let vectorLayer = <VectorLayer>layer;
 
                 // Search index to insert and last keyframe
-                let existsKeyframe = false;
-                let keyframeIndex = 0;
-                let last_KeyFrame: VectorLayerKeyFrame = null;
-                for (let index = 0; index < vectorLayer.keyframes.length; index++) {
+                let keyframeIndex = VectorLayer.findLastKeyframeIndex(vectorLayer, targetFrame);
 
-                    let keyframe = vectorLayer.keyframes[index];
-
-                    if (keyframe.frame == targetFrame) {
-
-                        existsKeyframe = true;
-                        break;
-                    }
-
-                    if (keyframe.frame > targetFrame) {
-                        break;
-                    }
-
-                    keyframeIndex = index;
-                    last_KeyFrame = keyframe;
-                }
-
-                if (existsKeyframe) {
+                if (keyframeIndex == -1) {
                     continue;
                 }
+
+                let last_KeyFrame = vectorLayer.keyframes[keyframeIndex];
 
                 // Crete keyframe and insert
                 let newKeyframe = new VectorLayerKeyFrame();
@@ -80,13 +58,23 @@ namespace ManualTracingTool {
                     newKeyFrames.push(newKeyframe);
                 }
 
-                let editData = new Command_Animation_InsertKeyframeAllLayer_EditData();
+                let editData = new Command_Animation_KeyframeListEditData();
                 editData.layer = vectorLayer;
                 editData.oldKeyFrames = vectorLayer.keyframes;
                 editData.newKeyFrames = newKeyFrames;
 
                 this.editDatas.push(editData);
             }
+
+            return this.isAvailable(env);
+        }
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (this.editDatas.length > 0);
+        }
+
+        execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -110,6 +98,84 @@ namespace ManualTracingTool {
 
             env.updateLayerStructure();
         }
+    }
 
+    export class Command_Animation_DeleteKeyframeAllLayer extends CommandBase {
+
+        frame = 0;
+
+        editDatas = new List<Command_Animation_KeyframeListEditData>();
+
+        prepareEditData(env: ToolEnvironment): boolean {
+
+            var layers = new List<Layer>();
+            Layer.collectLayerRecursive(layers, env.document.rootLayer);
+
+            let targetFrame = this.frame;
+
+            for (let layer of layers) {
+
+                if (layer.type != LayerTypeID.vectorLayer) {
+                    continue;
+                }
+
+                let vectorLayer = <VectorLayer>layer;
+
+                // Search index to insert and last keyframe
+                let keyframeIndex = VectorLayer.findLastKeyframeIndex(vectorLayer, targetFrame);
+
+                if (keyframeIndex == -1) {
+                    continue;
+                }
+
+                let last_KeyFrame = vectorLayer.keyframes[keyframeIndex];
+
+                if (last_KeyFrame.frame != targetFrame) {
+                    continue;
+                }
+
+                let newKeyFrames = ListClone(vectorLayer.keyframes);
+                ListRemoveAt(newKeyFrames, keyframeIndex);
+
+                let editData = new Command_Animation_KeyframeListEditData();
+                editData.layer = vectorLayer;
+                editData.oldKeyFrames = vectorLayer.keyframes;
+                editData.newKeyFrames = newKeyFrames;
+
+                this.editDatas.push(editData);
+            }
+
+            return this.isAvailable(env);
+        }
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (this.editDatas.length > 0);
+        }
+
+        execute(env: ToolEnvironment) { // @override
+
+            this.redo(env);
+        }
+
+        undo(env: ToolEnvironment) { // @override
+
+            for (let editData of this.editDatas) {
+
+                editData.layer.keyframes = editData.oldKeyFrames;
+            }
+
+            env.updateLayerStructure();
+        }
+
+        redo(env: ToolEnvironment) { // @override
+
+            for (let editData of this.editDatas) {
+
+                editData.layer.keyframes = editData.newKeyFrames;
+            }
+
+            env.updateLayerStructure();
+        }
     }
 }
