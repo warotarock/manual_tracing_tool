@@ -2137,6 +2137,10 @@ namespace ManualTracingTool {
 
             var env = this.toolEnv;
             let context = this.toolContext;
+            let key = e.key;
+            if (key.length == 1) {
+                key = key.toLowerCase();
+            }
 
             e.preventDefault();
 
@@ -2148,20 +2152,20 @@ namespace ManualTracingTool {
 
             if (this.isModalToolRunning()) {
 
-                this.document_keydown_modalTool(e);
+                this.document_keydown_modalTool(key, e);
 
                 return;
             }
 
             if (this.activeCanvasWindow == this.timeLineWindow) {
 
-                if (this.document_keydown_timeLineWindow(e)) {
+                if (this.document_keydown_timeLineWindow(key, e)) {
 
                     return;
                 }
             }
 
-            if (e.key == 'Tab') {
+            if (key == 'Tab') {
 
                 // Change mode
                 if (env.isDrawMode()) {
@@ -2181,7 +2185,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'n' && env.isCtrlKeyPressing()) {
+            if (key == 'n' && env.isCtrlKeyPressing()) {
 
                 this.document = this.createDefaultDocumentData();
                 this.toolContext.document = this.document;
@@ -2198,7 +2202,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'b') {
+            if (key == 'b') {
 
                 if (env.isDrawMode()) {
 
@@ -2214,7 +2218,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'e') {
+            if (key == 'e') {
 
                 if (env.isDrawMode()) {
 
@@ -2230,7 +2234,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'p') {
+            if (key == 'p') {
 
                 if (env.isDrawMode()) {
 
@@ -2253,7 +2257,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'z') {
+            if (key == 'z') {
 
                 this.toolContext.commandHistory.undo(env);
 
@@ -2262,7 +2266,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'y') {
+            if (key == 'y') {
 
                 this.toolContext.commandHistory.redo(env);
 
@@ -2271,7 +2275,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'Delete' || e.key == 'x') {
+            if (key == 'Delete' || key == 'x') {
 
                 if (env.isSelectMode()) {
 
@@ -2292,7 +2296,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'Home' || e.key == 'q') {
+            if (key == 'Home' || key == 'q') {
 
                 this.mainWindow.viewLocation[0] = 0.0;
                 this.mainWindow.viewLocation[1] = 0.0;
@@ -2304,12 +2308,12 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 't' || e.key == 'r') {
+            if (key == 't' || key == 'r') {
 
                 if (env.isDrawMode()) {
 
                     let rot = 10.0;
-                    if (e.key == 't') {
+                    if (key == 't') {
                         rot = -rot;
                     }
 
@@ -2327,10 +2331,10 @@ namespace ManualTracingTool {
                 }
             }
 
-            if (e.key == 'f' || e.key == 'd') {
+            if (key == 'f' || key == 'd') {
 
                 let addScale = 0.1 * this.drawStyle.viewZoomAdjustingSpeedRate;
-                if (e.key == 'd') {
+                if (key == 'd') {
                     addScale = -addScale;
                 }
 
@@ -2341,20 +2345,20 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (env.isCtrlKeyPressing() && (e.key == 'ArrowLeft' || e.key == 'ArrowRight' || e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
+            if (env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight' || key == 'ArrowUp' || key == 'ArrowDown')) {
 
                 let x = 0.0;
                 let y = 0.0;
-                if (e.key == 'ArrowLeft') {
+                if (key == 'ArrowLeft') {
                     x = -10.0;
                 }
-                if (e.key == 'ArrowRight') {
+                if (key == 'ArrowRight') {
                     x = 10.0;
                 }
-                if (e.key == 'ArrowUp') {
+                if (key == 'ArrowUp') {
                     y = -10.0;
                 }
-                if (e.key == 'ArrowDown') {
+                if (key == 'ArrowDown') {
                     y = 10.0;
                 }
 
@@ -2388,10 +2392,10 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (!env.isCtrlKeyPressing() && (e.key == 'ArrowLeft' || e.key == 'ArrowRight')) {
+            if (!env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight')) {
 
                 let addFrame = 1;
-                if (e.key == 'ArrowLeft') {
+                if (key == 'ArrowLeft') {
                     addFrame = -addFrame;
                 }
 
@@ -2401,12 +2405,12 @@ namespace ManualTracingTool {
                 env.setRedrawTimeLineWindow();
             }
 
-            if (e.key == 'i') {
+            if (key == 'i') {
 
                 return;
             }
 
-            if (e.key == ' ') {
+            if (key == ' ') {
 
                 if (this.activeCanvasWindow == this.mainWindow) {
 
@@ -2424,7 +2428,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (e.key == 'a') {
+            if (key == 'a') {
 
                 if (env.isSelectMode()) {
 
@@ -2438,13 +2442,13 @@ namespace ManualTracingTool {
                 }
             }
 
-            if (e.key == 'w') {
+            if (key == 'w') {
 
                 this.layerPicking(this.mainWindow, this.mainWindow.toolMouseEvent.offsetX, this.mainWindow.toolMouseEvent.offsetY);
                 this.startShowingCurrentLayer();
             }
 
-            if (e.key == 'l') {
+            if (key == 'l') {
 
                 if (env.isCtrlKeyPressing()) {
 
@@ -2459,9 +2463,9 @@ namespace ManualTracingTool {
                 }
             }
 
-            if (e.key == 'g' || e.key == 'r' || e.key == 's') {
+            if (key == 'g' || key == 'r' || key == 's') {
 
-                if (e.key == 's' && env.isCtrlKeyPressing()) {
+                if (key == 's' && env.isCtrlKeyPressing()) {
 
                     this.saveDocument();
                     return;
@@ -2469,7 +2473,7 @@ namespace ManualTracingTool {
 
                 if (env.isDrawMode()) {
 
-                    if (e.key == 's') {
+                    if (key == 's') {
                         this.selectNextOrPreviousLayer(true);
                         this.startShowingCurrentLayer();
                         env.setRedrawLayerWindow();
@@ -2483,11 +2487,11 @@ namespace ManualTracingTool {
 
                     let modalToolID = ModalToolID.grabMove;
 
-                    if (e.key == 'r') {
+                    if (key == 'r') {
 
                         modalToolID = ModalToolID.ratate;
                     }
-                    else if (e.key == 's') {
+                    else if (key == 's') {
 
                         modalToolID = ModalToolID.scale;
                     }
@@ -2510,52 +2514,52 @@ namespace ManualTracingTool {
                 }
             }
 
-            if (e.key == 'Enter') {
+            if (key == 'Enter') {
 
                 this.currentTool.keydown(e, env);
             }
 
-            if (e.key == '1') {
+            if (key == '1') {
 
                 let layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openLayerPropertyModal(layerItem.layer, layerItem);
             }
 
-            if (e.key == '2') {
+            if (key == '2') {
 
                 let layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openPalletColorModal(
                     OpenPalletColorModalMode.LineColor, this.toolContext.document, layerItem.layer);
             }
 
-            if (e.key == '3') {
+            if (key == '3') {
 
                 let layerItem = this.findCurrentLayerLayerWindowItem();
                 this.openPalletColorModal(
                     OpenPalletColorModalMode.FillColor, this.toolContext.document, layerItem.layer);
             }
 
-            if (e.key == '4') {
+            if (key == '4') {
 
                 this.openDocumentSettingModal();
             }
 
-            if (e.key == '5') {
+            if (key == '5') {
 
                 this.openNewLayerCommandOptionModal();
             }
 
-            if (e.key == '^') {
+            if (key == '^') {
 
                 this.openOperationOptionModal();
             }
 
-            if (e.key == '\\') {
+            if (key == '\\') {
 
                 this.openExportImageFileModal();
             }
 
-            if (e.key == 'o') {
+            if (key == 'o') {
 
                 this.currentTool.keydown(e, env);
             }
@@ -2584,11 +2588,11 @@ namespace ManualTracingTool {
             }
         }
 
-        private document_keydown_modalTool(e: KeyboardEvent) {
+        private document_keydown_modalTool(key: string, e: KeyboardEvent) {
 
             var env = this.toolEnv;
 
-            if (e.key == 'Escape') {
+            if (key == 'Escape') {
 
                 this.cancelModalTool();
             }
@@ -2598,29 +2602,28 @@ namespace ManualTracingTool {
             }
         }
 
-        private document_keydown_timeLineWindow(e: KeyboardEvent): boolean {
+        private document_keydown_timeLineWindow(key: string, e: KeyboardEvent): boolean {
 
             var env = this.toolEnv;
             let context = this.toolContext;
             let aniSetting = context.document.animationSettingData;
-            let key = e.key.toLowerCase();
 
-            if (e.key == 'i') {
+            if (key == 'i') {
                 this.openNewKeyframeModal();
                 return true;
             }
 
-            if (e.key == 'Delete' || e.key == 'x') {
+            if (key == 'Delete' || key == 'x') {
                 this.openDeleteKeyframeModal();
                 return true;
             }
 
-            if (e.key == 'k' || e.key == 'l') {
+            if (key == 'k' || key == 'l') {
 
                 if (this.currentKeyframe != null) {
 
                     var add_FrameTime = 1;
-                    if (e.key == 'k') {
+                    if (key == 'k') {
                         add_FrameTime = -1;
                     }
 
