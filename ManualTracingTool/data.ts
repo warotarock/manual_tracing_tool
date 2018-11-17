@@ -399,8 +399,8 @@ namespace ManualTracingTool {
 
         animationFrameParSecond = 24;
         loopStartFrame = 0;
-        loopEndFrame = 240;
-        maxFrame = 240;
+        loopEndFrame = 24;
+        maxFrame = 24;
 
         currentTimeFrame = 10.0;
 
