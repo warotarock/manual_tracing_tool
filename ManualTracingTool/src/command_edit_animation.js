@@ -10,13 +10,13 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Command_Animation_InsertKeyframeAllLayer_EditData = /** @class */ (function () {
-        function Command_Animation_InsertKeyframeAllLayer_EditData() {
+    var Command_Animation_KeyframeListEditData = /** @class */ (function () {
+        function Command_Animation_KeyframeListEditData() {
             this.layer = null;
             this.oldKeyFrames = null;
             this.newKeyFrames = null;
         }
-        return Command_Animation_InsertKeyframeAllLayer_EditData;
+        return Command_Animation_KeyframeListEditData;
     }());
     var Command_Animation_InsertKeyframeAllLayer = /** @class */ (function (_super) {
         __extends(Command_Animation_InsertKeyframeAllLayer, _super);
@@ -26,10 +26,7 @@ var ManualTracingTool;
             _this.editDatas = new List();
             return _this;
         }
-        Command_Animation_InsertKeyframeAllLayer.prototype.isAvailable = function (env) {
-            return true;
-        };
-        Command_Animation_InsertKeyframeAllLayer.prototype.execute = function (env) {
+        Command_Animation_InsertKeyframeAllLayer.prototype.prepareEditData = function (env) {
             var layers = new List();
             ManualTracingTool.Layer.collectLayerRecursive(layers, env.document.rootLayer);
             var targetFrame = this.frame;
@@ -40,24 +37,11 @@ var ManualTracingTool;
                 }
                 var vectorLayer = layer;
                 // Search index to insert and last keyframe
-                var existsKeyframe = false;
-                var keyframeIndex = 0;
-                var last_KeyFrame = null;
-                for (var index = 0; index < vectorLayer.keyframes.length; index++) {
-                    var keyframe = vectorLayer.keyframes[index];
-                    if (keyframe.frame == targetFrame) {
-                        existsKeyframe = true;
-                        break;
-                    }
-                    if (keyframe.frame > targetFrame) {
-                        break;
-                    }
-                    keyframeIndex = index;
-                    last_KeyFrame = keyframe;
-                }
-                if (existsKeyframe) {
+                var keyframeIndex = ManualTracingTool.VectorLayer.findLastKeyframeIndex(vectorLayer, targetFrame);
+                if (keyframeIndex == -1) {
                     continue;
                 }
+                var last_KeyFrame = vectorLayer.keyframes[keyframeIndex];
                 // Crete keyframe and insert
                 var newKeyframe = new ManualTracingTool.VectorLayerKeyFrame();
                 newKeyframe.frame = targetFrame;
@@ -74,12 +58,18 @@ var ManualTracingTool;
                 else {
                     newKeyFrames.push(newKeyframe);
                 }
-                var editData = new Command_Animation_InsertKeyframeAllLayer_EditData();
+                var editData = new Command_Animation_KeyframeListEditData();
                 editData.layer = vectorLayer;
                 editData.oldKeyFrames = vectorLayer.keyframes;
                 editData.newKeyFrames = newKeyFrames;
                 this.editDatas.push(editData);
             }
+            return this.isAvailable(env);
+        };
+        Command_Animation_InsertKeyframeAllLayer.prototype.isAvailable = function (env) {
+            return (this.editDatas.length > 0);
+        };
+        Command_Animation_InsertKeyframeAllLayer.prototype.execute = function (env) {
             this.redo(env);
         };
         Command_Animation_InsertKeyframeAllLayer.prototype.undo = function (env) {
@@ -99,4 +89,64 @@ var ManualTracingTool;
         return Command_Animation_InsertKeyframeAllLayer;
     }(ManualTracingTool.CommandBase));
     ManualTracingTool.Command_Animation_InsertKeyframeAllLayer = Command_Animation_InsertKeyframeAllLayer;
+    var Command_Animation_DeleteKeyframeAllLayer = /** @class */ (function (_super) {
+        __extends(Command_Animation_DeleteKeyframeAllLayer, _super);
+        function Command_Animation_DeleteKeyframeAllLayer() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.frame = 0;
+            _this.editDatas = new List();
+            return _this;
+        }
+        Command_Animation_DeleteKeyframeAllLayer.prototype.prepareEditData = function (env) {
+            var layers = new List();
+            ManualTracingTool.Layer.collectLayerRecursive(layers, env.document.rootLayer);
+            var targetFrame = this.frame;
+            for (var _i = 0, layers_2 = layers; _i < layers_2.length; _i++) {
+                var layer = layers_2[_i];
+                if (layer.type != ManualTracingTool.LayerTypeID.vectorLayer) {
+                    continue;
+                }
+                var vectorLayer = layer;
+                // Search index to insert and last keyframe
+                var keyframeIndex = ManualTracingTool.VectorLayer.findLastKeyframeIndex(vectorLayer, targetFrame);
+                if (keyframeIndex == -1) {
+                    continue;
+                }
+                var last_KeyFrame = vectorLayer.keyframes[keyframeIndex];
+                if (last_KeyFrame.frame != targetFrame) {
+                    continue;
+                }
+                var newKeyFrames = ListClone(vectorLayer.keyframes);
+                ListRemoveAt(newKeyFrames, keyframeIndex);
+                var editData = new Command_Animation_KeyframeListEditData();
+                editData.layer = vectorLayer;
+                editData.oldKeyFrames = vectorLayer.keyframes;
+                editData.newKeyFrames = newKeyFrames;
+                this.editDatas.push(editData);
+            }
+            return this.isAvailable(env);
+        };
+        Command_Animation_DeleteKeyframeAllLayer.prototype.isAvailable = function (env) {
+            return (this.editDatas.length > 0);
+        };
+        Command_Animation_DeleteKeyframeAllLayer.prototype.execute = function (env) {
+            this.redo(env);
+        };
+        Command_Animation_DeleteKeyframeAllLayer.prototype.undo = function (env) {
+            for (var _i = 0, _a = this.editDatas; _i < _a.length; _i++) {
+                var editData = _a[_i];
+                editData.layer.keyframes = editData.oldKeyFrames;
+            }
+            env.updateLayerStructure();
+        };
+        Command_Animation_DeleteKeyframeAllLayer.prototype.redo = function (env) {
+            for (var _i = 0, _a = this.editDatas; _i < _a.length; _i++) {
+                var editData = _a[_i];
+                editData.layer.keyframes = editData.newKeyFrames;
+            }
+            env.updateLayerStructure();
+        };
+        return Command_Animation_DeleteKeyframeAllLayer;
+    }(ManualTracingTool.CommandBase));
+    ManualTracingTool.Command_Animation_DeleteKeyframeAllLayer = Command_Animation_DeleteKeyframeAllLayer;
 })(ManualTracingTool || (ManualTracingTool = {}));

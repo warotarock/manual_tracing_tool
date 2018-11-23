@@ -169,6 +169,21 @@ var ManualTracingTool;
             return (layer.type == LayerTypeID.vectorLayer
                 || layer.type == LayerTypeID.vectorLayerReferenceLayer);
         };
+        VectorLayer.findLastKeyframeIndex = function (vectorLayer, targetFrame) {
+            var keyframeIndex = -1;
+            for (var index = 0; index < vectorLayer.keyframes.length; index++) {
+                var keyframe = vectorLayer.keyframes[index];
+                if (keyframe.frame == targetFrame) {
+                    keyframeIndex = index;
+                    break;
+                }
+                if (keyframe.frame > targetFrame) {
+                    break;
+                }
+                keyframeIndex = index;
+            }
+            return keyframeIndex;
+        };
         return VectorLayer;
     }(Layer));
     ManualTracingTool.VectorLayer = VectorLayer;
@@ -390,8 +405,8 @@ var ManualTracingTool;
         function AnimationSettingData() {
             this.animationFrameParSecond = 24;
             this.loopStartFrame = 0;
-            this.loopEndFrame = 240;
-            this.maxFrame = 240;
+            this.loopEndFrame = 24;
+            this.maxFrame = 24;
             this.currentTimeFrame = 10.0;
             this.timeLineWindowScale = 1.0;
             this.timeLineWindowScaleMax = 10.0;

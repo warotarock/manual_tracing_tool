@@ -129,7 +129,8 @@ var ManualTracingTool;
                 }
             }
             if (this.tool_ScratchLine_TargetLine_Visible) {
-                if (env.currentVectorLine != null && env.currentVectorLayer.layerColor != null) {
+                if (env.currentVectorLine != null
+                    && env.currentVectorLayer != null) {
                     drawEnv.editorDrawer.drawEditorVectorLinePoints(env.currentVectorLine, env.currentVectorLayer.layerColor, true);
                 }
             }
