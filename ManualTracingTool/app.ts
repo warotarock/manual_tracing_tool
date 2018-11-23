@@ -12,23 +12,33 @@ let fs = (typeof (require) != 'undefined') ? require('fs') : {
 namespace ManualTracingTool {
 
     // これからやろうと思っていること (current tasks)
-    // ・アニメーション機能
-    // 　・キーフレームウィンドウを追加
-    // 　　・キーフレームを削除できるようにする
-    // 　　・キーフレームを移動できるようにする
-    // 　　・アニメーションの再生機能
-    //　　　　Ctrl+クリックで最初から再生。十字キーでのフレーム移動を約24fpsにする。
-    // ・ポージングツールの整備
-    // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
-    // 　・モデルを切り替えられるようにする（数種類でよい）
-    // ・ファイルを指定してのドキュメント読み込み
+    // ・メインツールUIの仕様変更
+    // 　・現在のレイヤーが変わったときにメインツールを自動で変更する
+    // 　・ヘッダ部のコントロールを「Drawing」「Edit」「Misc」の三つに変更、Editのとき今までの編集モードにする。ヘッダ部クリックかTabで切り替わるようにする。
+    // ・編集ツールの整備
+    // 　・グループレイヤーによる複数レイヤー同時編集
+    // 　　・編集モード表示の複数レイヤー対応
+    // 　　・編集モード用のツールを作成、モーダル状態にして複合した編集操作をまとめたコマンドにまとめるようにする。Enterで確定？
+    // 　　・選択矩形の辺を掴んでの変形の実装
+    // 　　　・ついでにドキュメントフレームの設定も同じ仕組みを利用して指定できるように考える
+    // 　・複数レイヤー選択による複数レイヤー同時編集
+    // 　・レイヤーウィンドウでレイヤー移動時にグループの中に入れなくなっている（不具合）
+    // ・ファイル管理
+    // 　・指定フォルダ以下のファイルの列挙表示、読み込み
+    // 　・ファイルを指定してのドキュメント読み込み
+    // 　・ファイルを指定してのドキュメント保存
     // ・エクスポートの整備
     // 　・解像度を指定してエクスポート
     // 　・背景色を指定する
-    // 　・エクスポートの描画位置がバグっているので直す
-    // ・モバイル対応
-    // 　・タッチ操作をきちんとする
-    // 　・画面サイズによってはダイアログがまともに表示されない問題の対応
+    // 　・エクスポートの描画位置がバグっているので直す（不具合）
+    // ・ポージングツールの整備
+    // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
+    // 　・モデルを切り替えられるようにする（数種類でよい）
+    // 　・非表示時に入力スフィアをも非表示にする（不具合）
+    // ・Web向け？仕様
+    // 　・保存をダウンロード、読み込みをブロブにする
+    // ・アクティブ線、レイヤによる絞り込み処理と可視化
+    // 　・とりあえず無効にしておく
 
     // どこかでやる必要があること (nearest future tasks)
     // ・PNG出力、jpeg出力
@@ -37,46 +47,50 @@ namespace ManualTracingTool {
     // 　・出力ファイル名を指定するダイアログを実装する。ついでに出力範囲の値指定も同じダイアログでできるようにする
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
     // 　・影響範囲が感覚と合わないのでどうにかしたい
-    // ・線の太さを変えられるツールを追加
-    // 　・固定の太さで上書きする機能、選択中の点に上書きする
-    // 　・筆圧を線の太さに影響できるようにするとどうなるか試す
-    // ・線の太さに変化がある線を品質よく描画する
-    // ・アクティブ線、レイヤによる絞り込み処理と可視化
-    // ・現在のレイヤーが変わったときにメインツールを自動で変更する。ベクターレイヤーならスクラッチツールとドローツールのどちらかを記憶、ポージングレイヤーならポーズにする
-    // ・ドローツールで線の最後の点が重複している（リサンプリングで最後と同じ位置に点が追加されている？）
+    // ・モバイル対応
+    // 　・タッチ操作をきちんとする
+    // 　・画面サイズによってはダイアログがまともに表示されない問題の対応
 
     // 既知のバグ (remaining bugs)
     // ・現在のレイヤーが移動したときにカーソルが変な位置に出る
     // ・点の移動ツールなどで右クリックでキャンセルしたときに点の位置がモーダル中の位置で表示されつづけていた
-    // ・ポージングツール以外のツールでパンしたとき３Ⅾが更新されない
     // ・線の連続塗りつぶしで後ろの線が削除されたときにフラグを解除していない
+    // ・ドローツールで線の最後の点が重複しているときがある？（リサンプリングで最後と同じ位置に点が追加されている？）
 
     // いつかやるかも (anytime tasks)
+    // ・線の太さに変化がある線を品質よく描画する
+    // ・筆圧を利用した何か
     // ・パレット機能の拡充
     // 　・パレット編集画面にカラーピッカーを自作する
     // 　・色データを単なるRGBAではなく、表現形式や混色のベースとなる色情報まで持てるようにする
     // 　・メインライト、バックライト、フィルライトのライティングによる色作成機能
-    // ・既存の線を連続塗りつぶし設定するツール
-    // ・ラティス変形ツール
-    // ・アンカーの表示/非表示をツールで切り替えるようにする
     // ・レイヤーカラーをどこかに表示する
-    // ・レイヤーカラーとレイヤーの透明度の関係を考え直す
-    // ・レイヤー削除時に削除前に次に表示されていたレイヤーを選択する
-    // ・ポージングレイヤーの表示/非表示、透明度
-    // ・ポージングで頭の角度の入力で画面の回転に対応する
-    // ・Logic_VectorLayerをどこかよいファイルに移動する
-    // ・線の複製
-    // ・グループの複製
-    // ・レイヤーの複製
-    // ・モディファイアスタック
-    // ・線スクラッチの点削減ツールの実現
-    // 　直線上の点は削減する
-    // 　曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
-    // ・レイヤーを選択変更したときレイヤーに応じたコンテキストの状態になるようにする
-    // ・点削除＋線の非表示ツール
+    // ・塗りつぶし関連
+    // 　・既存の線を連続塗りつぶし設定するツール
+    // ・編集操作
+    // 　・線の複製
+    // 　・グループの複製
+    // 　・レイヤーの複製
+    // 　・ラティス変形ツール
+    // 　・アンカーの表示/非表示をツールで切り替えるようにする
+    // ・ポージング
+    // 　・ポージングレイヤーの透明度
+    // 　・ポージングで頭の角度の入力で画面の回転に対応する
+    // ・モディファイア
+    // ・直線の点削減アルゴリズムの改良
+    // 　・直線上の点は削減する
+    // 　・曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
 
     // 終わったもの (done)
+    // ・不具合
+    // 　・ポージングツール以外のツールでパンしたとき３Ⅾが更新されない
+    // ・線の太さを変えられるツールを追加
+    // 　・固定の太さで上書きする機能、選択中の点に上書きする
+    // 　・筆圧を線の太さに影響できるようにするとどうなるか試す
     // ・アニメーション機能
+    // 　・キーフレームウィンドウを追加
+    // 　　・キーフレームを削除できるようにする
+    // 　　・キーフレームを移動できるようにする
     // 　・ドキュメントにキーフレーム情報を追加
     // 　・レイヤーのジオメトリにキーフレーム情報を追加
     // ・エクスポートの整備
@@ -129,6 +143,7 @@ namespace ManualTracingTool {
     // ・PNG出力、jpeg出力
     // 　・出力用のCanvasを用意し、出力サイズにサイズを変更し、画像ファイルを保存する
     // ・リサンプリングツールで線の太さがビューのスケールに応じて変わってしまっている？→スムージング処理中の不具合だった
+    // ・線スクラッチの点削減ツールの実現
 
     enum MainProcessStateID {
 
@@ -286,6 +301,8 @@ namespace ManualTracingTool {
 
         tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+
+        layerPickingPositions = [[0.0, 0.0], [0.0, -2.0], [2.0, 0.0], [0.0, 2.0], [-2.0, 0.0]];
 
         viewLayerContext = new ViewLayerContext();
 
@@ -2189,7 +2206,6 @@ namespace ManualTracingTool {
 
                 this.document = this.createDefaultDocumentData();
                 this.toolContext.document = this.document;
-
                 this.toolContext.commandHistory = new CommandHistory();
 
                 this.updateLayerStructure();
@@ -2440,12 +2456,35 @@ namespace ManualTracingTool {
                     this.startShowingCurrentLayer();
                     env.setRedrawLayerWindow();
                 }
+
+                return;
             }
 
             if (key == 'w') {
 
-                this.layerPicking(this.mainWindow, this.mainWindow.toolMouseEvent.offsetX, this.mainWindow.toolMouseEvent.offsetY);
-                this.startShowingCurrentLayer();
+                let pickedLayer: Layer = null;
+                for (let pickingPosition of this.layerPickingPositions) {
+
+                    let pickX = this.mainWindow.toolMouseEvent.offsetX + pickingPosition[0];
+                    let pickY = this.mainWindow.toolMouseEvent.offsetY + pickingPosition[1];
+
+                    pickedLayer = this.layerPicking(this.mainWindow, pickX, pickY);
+
+                    if (pickedLayer != null) {
+                        break;
+                    }
+                }
+
+                if (pickedLayer != null) {
+
+                    this.startShowingCurrentLayer();
+                }
+                else {
+
+                    env.setRedrawMainWindowEditorWindow();
+                }
+
+                return;
             }
 
             if (key == 'l') {
@@ -4524,21 +4563,21 @@ namespace ManualTracingTool {
             this.canvasRender.setGlobalAlpha(1.0);
         }
 
-        private layerPicking(canvasWindow: CanvasWindow, pickLocationX: float, pickLocationY: float): int {
+        private layerPicking(canvasWindow: CanvasWindow, pickLocationX: float, pickLocationY: float): Layer {
 
             if (this.layerWindowItems == null || this.currentKeyframe == null) {
-                return -1;
+                return null;
             }
 
             let documentData = this.toolContext.document;
-
             let viewKeyframe = this.currentKeyframe;
 
+            let pickedLayer = null;
             for (let viewKeyframeLayer of viewKeyframe.layers) {
 
                 let layer = viewKeyframeLayer.layer;
 
-                if (!VectorLayer.isVectorLayer(layer)) {
+                if (!layer.isVisible || !VectorLayer.isVectorLayer(layer)) {
                     continue;
                 }
 
@@ -4554,6 +4593,7 @@ namespace ManualTracingTool {
 
                 if (this.tempColor4[3] > 0.0) {
 
+                    pickedLayer = layer;
                     this.setCurrentLayer(layer);
                     this.toolEnv.setRedrawLayerWindow();
                     break;
@@ -4561,6 +4601,8 @@ namespace ManualTracingTool {
             }
 
             this.drawMainWindow(this.mainWindow);
+
+            return pickedLayer;
         }
 
         private selectCurrentLayerAnimationTime = 0.0;
