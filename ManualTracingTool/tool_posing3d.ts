@@ -175,7 +175,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
             );
         }
 
@@ -261,7 +262,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.headLocationInputData.inputDone
             );
         }
@@ -326,7 +328,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.headRotationInputData.inputDone
             );
         }
@@ -389,7 +392,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.headLocationInputData.inputDone
                 && env.currentPosingData.headRotationInputData.inputDone
                 );
@@ -471,7 +475,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.bodyLocationInputData.inputDone
             );
         }
@@ -534,7 +539,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && (env.currentPosingData.bodyLocationInputData.inputDone || env.currentPosingData.bodyRotationInputData.inputDone)
             );
         }
@@ -668,7 +674,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.leftArm1LocationInputData.inputDone
             );
         }
@@ -694,7 +701,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.rightArm1LocationInputData.inputDone
             );
         }
@@ -720,7 +728,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.leftLeg1LocationInputData.inputDone
             );
         }
@@ -746,7 +755,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingData != null
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.rightLeg1LocationInputData.inputDone
             );
         }
