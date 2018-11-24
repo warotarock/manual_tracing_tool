@@ -5,8 +5,8 @@ namespace ManualTracingTool {
 
         none = 0,
         drawLine = 1,
-        scratchLine = 2,
-        posing = 3
+        posing = 2,
+        misc = 3
     }
 
     export enum OperationUnitID {
@@ -38,7 +38,7 @@ namespace ManualTracingTool {
 
     export enum EditModeID {
 
-        selectMode = 1,
+        editMode = 1,
         drawMode = 2
     }
 
@@ -144,7 +144,7 @@ namespace ManualTracingTool {
         mainWindow: CanvasWindow = null;
         pickingWindow: PickingWindow = null;
 
-        mouseCursorRadius = 20.0;
+        mouseCursorRadius = 12.0;
 
         resamplingUnitLength = 8.0
 
@@ -256,6 +256,11 @@ namespace ManualTracingTool {
             this.mouseCursorViewRadius = this.getViewScaledLength(this.toolContext.mouseCursorRadius);
         }
 
+        setRedrawHeaderWindow() {
+
+            this.toolContext.redrawHeaderWindow = true;
+        }
+
         setRedrawMainWindow() {
 
             this.toolContext.redrawMainWindow = true;
@@ -335,9 +340,9 @@ namespace ManualTracingTool {
             return (this.toolContext.editMode == EditModeID.drawMode);
         }
 
-        isSelectMode() {
+        isEditMode() {
 
-            return (this.toolContext.editMode == EditModeID.selectMode);
+            return (this.toolContext.editMode == EditModeID.editMode);
         }
 
         isCurrentLayerVectorLayer(): boolean {
@@ -352,7 +357,7 @@ namespace ManualTracingTool {
 
         needsDrawOperatorCursor(): boolean {
 
-            return (this.isSelectMode() || this.isCurrentLayerImageFileReferenceLayer());
+            return (this.isEditMode() || this.isCurrentLayerImageFileReferenceLayer());
         }
 
         setCurrentLayer(layer: Layer) {

@@ -39,6 +39,7 @@ namespace ManualTracingTool {
     // 　・保存をダウンロード、読み込みをブロブにする
     // ・アクティブ線、レイヤによる絞り込み処理と可視化
     // 　・とりあえず無効にしておく
+    // ・パレット１、２ボタンをレイヤーウィンドウに置く
 
     // どこかでやる必要があること (nearest future tasks)
     // ・PNG出力、jpeg出力
@@ -398,7 +399,7 @@ namespace ManualTracingTool {
             else {
 
                 this.document = new DocumentData();
-                this.startLoadingDocumentJSON(this.document, lastURL);
+                this.startLoadingDocument(this.document, lastURL);
 
                 this.updateHdeaderDocumentFileName();
             }
@@ -406,7 +407,7 @@ namespace ManualTracingTool {
             _Main.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
         }
 
-        startLoadingDocumentJSON(document: DocumentData, url: string) {
+        startLoadingDocument(document: DocumentData, url: string) {
 
             let xhr = new XMLHttpRequest();
             xhr.open('GET', url);
@@ -433,6 +434,17 @@ namespace ManualTracingTool {
             );
 
             xhr.send();
+        }
+
+        startReloadDocument() {
+
+            this.document = new DocumentData();
+            this.toolContext.document = this.document;
+
+            let fileName = this.getInputElementText(this.ID.fileName);
+            this.startLoadingDocument(this.document, fileName);
+
+            _Main.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
         }
 
         processLoadingDocumentJSON() {
@@ -968,12 +980,6 @@ namespace ManualTracingTool {
             );
 
             this.mainTools.push(
-                new MainTool().id(MainToolID.scratchLine)
-                    .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
-                    .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
-            );
-
-            this.mainTools.push(
                 new MainTool().id(MainToolID.posing)
                     .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
                     .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
@@ -988,6 +994,12 @@ namespace ManualTracingTool {
                     .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 10)
                     .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 11)
                     .subTool(this.tool_Posing3d_TwistHead, this.subToolImages[2], 12)
+            );
+
+            this.mainTools.push(
+                new MainTool().id(MainToolID.misc)
+                    .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
+                    .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
             );
 
             // Modal tools
@@ -1453,36 +1465,49 @@ namespace ManualTracingTool {
                     return;
                 }
 
-                this.setCurrentMainTool(MainToolID.drawLine);
+                let env = this.toolEnv;
+                let context = this.toolContext;
+
+                this.setCurrentMainToolForCurentLayer();
+                this.setCurrentEditMode(EditModeID.drawMode);
+
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawLayerWindow();
                 this.toolEnv.setRedrawSubtoolWindow();
+
                 e.preventDefault();
             });
 
-            this.getElement(this.ID.menu_btnScratchTool).addEventListener('mousedown', (e: Event) => {
+            this.getElement(this.ID.menu_btnEditTool).addEventListener('mousedown', (e: Event) => {
 
                 if (this.isEventDisabled()) {
                     return;
                 }
 
-                this.setCurrentMainTool(MainToolID.scratchLine);
-                this.toolEnv.setRedrawMainWindowEditorWindow();
-                this.toolEnv.setRedrawLayerWindow();
-                this.toolEnv.setRedrawSubtoolWindow();
+                let env = this.toolEnv;
+                let context = this.toolContext;
+
+                if (env.isDrawMode()) {
+
+                    this.setCurrentEditMode(EditModeID.editMode);
+                }
+
                 e.preventDefault();
             });
 
-            this.getElement(this.ID.menu_btnPoseTool).addEventListener('mousedown', (e: Event) => {
+            this.getElement(this.ID.menu_btnMiscTool).addEventListener('mousedown', (e: Event) => {
 
                 if (this.isEventDisabled()) {
                     return;
                 }
 
-                this.setCurrentMainTool(MainToolID.posing);
+                this.setCurrentMainTool(MainToolID.misc);
+                this.setCurrentEditMode(EditModeID.drawMode);
+
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawLayerWindow();
                 this.toolEnv.setRedrawSubtoolWindow();
+
                 e.preventDefault();
             });
 
@@ -1493,6 +1518,26 @@ namespace ManualTracingTool {
                 }
 
                 this.openOperationOptionModal();
+                e.preventDefault();
+            });
+
+            this.getElement(this.ID.menu_btnOpen).addEventListener('mousedown', (e: Event) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.startReloadDocument();
+                e.preventDefault();
+            });
+
+            this.getElement(this.ID.menu_btnSave).addEventListener('mousedown', (e: Event) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.saveDocument();
                 e.preventDefault();
             });
 
@@ -1606,7 +1651,7 @@ namespace ManualTracingTool {
 
                 this.currentTool.mouseDown(e, this.toolEnv);
             }
-            else if (this.toolEnv.isSelectMode()) {
+            else if (this.toolEnv.isEditMode()) {
 
                 this.currentSelectTool.mouseDown(e, this.toolEnv);
             }
@@ -1666,7 +1711,7 @@ namespace ManualTracingTool {
 
                 this.currentTool.mouseMove(e, this.toolEnv);
             }
-            else if (this.toolEnv.isSelectMode()) {
+            else if (this.toolEnv.isEditMode()) {
 
                 let isHitChanged = this.mousemoveHittest(e.location[0], e.location[1], this.toolEnv.mouseCursorViewRadius);
                 if (isHitChanged) {
@@ -1705,7 +1750,7 @@ namespace ManualTracingTool {
                 this.currentTool.mouseUp(e, this.toolEnv);
             }
             // Select mode
-            else if (this.toolEnv.isSelectMode()) {
+            else if (this.toolEnv.isEditMode()) {
 
                 this.currentSelectTool.mouseUp(e, this.toolEnv);
             }
@@ -2187,17 +2232,12 @@ namespace ManualTracingTool {
                 // Change mode
                 if (env.isDrawMode()) {
 
-                    context.editMode = EditModeID.selectMode;
+                    this.setCurrentEditMode(EditModeID.editMode);
                 }
                 else {
 
-                    context.editMode = EditModeID.drawMode;
+                    this.setCurrentEditMode(EditModeID.drawMode);
                 }
-
-                /// Update footer message
-                this.updateFooterMessage();
-
-                env.setRedrawMainWindowEditorWindow();
 
                 return;
             }
@@ -2238,8 +2278,8 @@ namespace ManualTracingTool {
 
                 if (env.isDrawMode()) {
 
-                    this.setCurrentMainTool(MainToolID.scratchLine);
-                    this.setCurrentSubTool(<int>ScrathLineToolSubToolID.scratchLine);
+                    this.setCurrentMainTool(MainToolID.drawLine);
+                    this.setCurrentSubTool(<int>DrawLineToolSubToolID.deletePointBrush);
 
                     this.updateFooterMessage();
                     env.setRedrawMainWindowEditorWindow();
@@ -2251,24 +2291,6 @@ namespace ManualTracingTool {
             }
 
             if (key == 'p') {
-
-                if (env.isDrawMode()) {
-
-                    this.setCurrentMainTool(MainToolID.posing);
-                    if (this.currentTool == this.tool_Posing3d_LocateHead) {
-
-                        this.setCurrentSubTool(<int>Posing3DSubToolID.rotateHead);
-                    }
-                    else {
-
-                        this.setCurrentSubTool(<int>Posing3DSubToolID.locateHead);
-                    }
-
-                    this.updateFooterMessage();
-                    env.setRedrawMainWindow();
-                    env.setRedrawLayerWindow();
-                    env.setRedrawSubtoolWindow();
-                }
 
                 return;
             }
@@ -2293,7 +2315,7 @@ namespace ManualTracingTool {
 
             if (key == 'Delete' || key == 'x') {
 
-                if (env.isSelectMode()) {
+                if (env.isEditMode()) {
 
                     if (this.toolContext.currentVectorLayer != null
                         && this.toolContext.currentVectorGeometry != null) {
@@ -2446,7 +2468,7 @@ namespace ManualTracingTool {
 
             if (key == 'a') {
 
-                if (env.isSelectMode()) {
+                if (env.isEditMode()) {
 
                     this.tool_SelectAllPoints.execute(env);
                 }
@@ -2488,18 +2510,6 @@ namespace ManualTracingTool {
             }
 
             if (key == 'l') {
-
-                if (env.isCtrlKeyPressing()) {
-
-                    this.document = new DocumentData();
-                    this.toolContext.document = this.document;
-
-                    let fileName = this.getInputElementText(this.ID.fileName);
-                    this.startLoadingDocumentJSON(this.document, fileName);
-
-                    _Main.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
-                    return;
-                }
             }
 
             if (key == 'g' || key == 'r' || key == 's') {
@@ -2522,7 +2532,7 @@ namespace ManualTracingTool {
                         this.currentTool.keydown(e, env);
                     }
                 }
-                else if (env.isSelectMode()) {
+                else if (env.isEditMode()) {
 
                     let modalToolID = ModalToolID.grabMove;
 
@@ -2537,7 +2547,7 @@ namespace ManualTracingTool {
 
                     if (env.isCurrentLayerVectorLayer()) {
 
-                        if (env.isSelectMode()) {
+                        if (env.isEditMode()) {
 
                             this.startVectorLayerModalTool(modalToolID);
                         }
@@ -2600,7 +2610,16 @@ namespace ManualTracingTool {
 
             if (key == 'o') {
 
-                this.currentTool.keydown(e, env);
+                if (env.isCtrlKeyPressing()) {
+
+                    this.startReloadDocument();
+                }
+                else {
+
+                    this.currentTool.keydown(e, env);
+                }
+
+                return;
             }
         }
 
@@ -2939,6 +2958,34 @@ namespace ManualTracingTool {
             return this.mainTools[<int>this.toolContext.mainToolID];
         }
 
+        private setCurrentEditMode(editModeID: EditModeID) {
+
+            var env = this.toolEnv;
+            let context = this.toolContext;
+
+            context.editMode = editModeID;
+
+            this.updateFooterMessage();
+            env.setRedrawHeaderWindow();
+            env.setRedrawMainWindowEditorWindow();
+        }
+
+        private setCurrentMainToolForCurentLayer() {
+
+            var env = this.toolEnv;
+            env.updateContext();
+
+            if (env.currentVectorLayer != null) {
+
+                this.setCurrentMainTool(MainToolID.drawLine);
+
+            }
+            else if (env.currentPosingLayer != null) {
+
+                this.setCurrentMainTool(MainToolID.posing);
+            }
+        }
+
         private setCurrentMainTool(id: MainToolID) {
 
             let isChanged = (this.toolContext.mainToolID != id);
@@ -2954,7 +3001,7 @@ namespace ManualTracingTool {
                 this.subtoolWindow_CollectViewItems();
                 this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
 
-                this.toolContext.redrawHeaderWindow = true;
+                this.toolEnv.setRedrawHeaderWindow();
             }
         }
 
@@ -3038,6 +3085,8 @@ namespace ManualTracingTool {
 
                 layer.isSelected = true;
             }
+
+            this.setCurrentMainToolForCurentLayer();
         }
 
         private selectNextOrPreviousLayer(selectNext: boolean) {
@@ -4233,7 +4282,7 @@ namespace ManualTracingTool {
                             this.drawVectorLineStroke(line, palletColor.color, 1.0, useAdjustingLocation);
                         }
                     }
-                    else if (this.toolEnv.isSelectMode()) {
+                    else if (this.toolEnv.isEditMode()) {
 
                         if (!isCurrentLayer) {
 
@@ -4648,7 +4697,7 @@ namespace ManualTracingTool {
                 this.drawOperatorCursor();
             }
 
-            if (this.toolEnv.isSelectMode()) {
+            if (this.toolEnv.isEditMode()) {
 
                 this.drawMouseCursor();
             }
@@ -4775,7 +4824,9 @@ namespace ManualTracingTool {
             this.webGLRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
             this.posing3dView.clear(env);
 
-            if (env.currentPosingLayer != null && this.toolContext.mainToolID == MainToolID.posing) {
+            if (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && this.toolContext.mainToolID == MainToolID.posing
+                ) {
 
                 let posingLayer = env.currentPosingLayer;
 
@@ -5442,9 +5493,24 @@ namespace ManualTracingTool {
 
         private updateHeaderButtons() {
 
-            this.setHeaderButtonVisual(this.ID.menu_btnDrawTool, this.toolContext.mainToolID == MainToolID.drawLine);
-            this.setHeaderButtonVisual(this.ID.menu_btnScratchTool, this.toolContext.mainToolID == MainToolID.scratchLine);
-            this.setHeaderButtonVisual(this.ID.menu_btnPoseTool, this.toolContext.mainToolID == MainToolID.posing);
+            {
+                let isButtonON = (this.toolContext.editMode == EditModeID.drawMode
+                    && (this.toolContext.mainToolID == MainToolID.drawLine
+                        || this.toolContext.mainToolID == MainToolID.posing));
+
+                this.setHeaderButtonVisual(this.ID.menu_btnDrawTool, isButtonON);
+            }
+            {
+                let isButtonON = (this.toolContext.editMode == EditModeID.editMode);
+
+                this.setHeaderButtonVisual(this.ID.menu_btnEditTool, isButtonON);
+            }
+            {
+                let isButtonON = (this.toolContext.editMode == EditModeID.drawMode
+                    && this.toolContext.mainToolID == MainToolID.misc);
+
+                this.setHeaderButtonVisual(this.ID.menu_btnMiscTool, isButtonON);
+            }
         }
 
         private setHeaderButtonVisual(elementID: string, isSelected: boolean) {
@@ -5484,7 +5550,7 @@ namespace ManualTracingTool {
 
                 modeText = 'DrawMode';
             }
-            else if (this.toolEnv.isSelectMode()) {
+            else if (this.toolEnv.isEditMode()) {
 
                 modeText = 'SelectMode';
             }
@@ -5506,7 +5572,7 @@ namespace ManualTracingTool {
                     toolText = 'Posing(Head location)';
                 }
             }
-            else if (this.toolEnv.isSelectMode()) {
+            else if (this.toolEnv.isEditMode()) {
 
                 toolText = '';
             }
@@ -5920,9 +5986,11 @@ namespace ManualTracingTool {
         timeLineCanvas = 'timeLineCanvas';
 
         menu_btnDrawTool = 'menu_btnDrawTool';
-        menu_btnScratchTool = 'menu_btnScratchTool';
-        menu_btnPoseTool = 'menu_btnPoseTool';
+        menu_btnMiscTool = 'menu_btnMiscTool';
+        menu_btnEditTool = 'menu_btnEditTool';
         menu_btnOperationOption = 'menu_btnOperationOption';
+        menu_btnOpen = 'menu_btnOpen';
+        menu_btnSave = 'menu_btnSave';
         menu_btnExport = 'menu_btnExport';
         menu_btnPalette1 = 'menu_btnPalette1';
         menu_btnPalette2 = 'menu_btnPalette2';
@@ -5997,11 +6065,13 @@ namespace ManualTracingTool {
     enum DrawLineToolSubToolID {
 
         drawLine = 0,
+        scratchLine = 1,
+        deletePointBrush = 5
     }
 
-    enum ScrathLineToolSubToolID {
+    enum EditModeSubToolID {
 
-        scratchLine = 0,
+        mainEditTool = 0,
     }
 
     enum ModalToolID {

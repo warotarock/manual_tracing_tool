@@ -15,7 +15,7 @@ namespace ManualTracingTool {
 
         onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
 
-            if (!env.isSelectMode()) {
+            if (!env.isEditMode()) {
 
                 drawEnv.editorDrawer.drawMouseCursor();
             }
