@@ -246,15 +246,15 @@ namespace ManualTracingTool {
         headTwistSphereSize = 0.26; //
 
         bodySphereSize = 0.44; // 44cm
-        bodySphereLocation = vec3.fromValues(0.0, -0.03, -0.15);
-        neckSphereLocation = vec3.fromValues(0.0, -0.03, -0.13);
+        bodySphereLocation = vec3.fromValues(0.0, -0.03, -0.19);
+        neckSphereLocation = vec3.fromValues(0.0, -0.03, -0.17);
 
         bodyRotationSphereSize = 0.22; // 11cm
         bodyRotationSphereLocation = vec3.fromValues(0.0, 0.0, -0.31);
 
         // Arms
-        leftArm1Location = vec3.fromValues(-0.135, 0.0, -0.05);
-        rightArm1Location = vec3.fromValues(+0.135, 0.0, -0.05);
+        leftArm1Location = vec3.fromValues(-0.130, 0.0, -0.05);
+        rightArm1Location = vec3.fromValues(+0.130, 0.0, -0.05);
 
         leftArm1HeadLocation = vec3.fromValues(0.0, 0.0, -0.27);
         rightArm1HeadLocation = vec3.fromValues(0.0, 0.0, -0.27);
