@@ -111,7 +111,7 @@ namespace ManualTracingTool {
         mainToolID = MainToolID.none;
         subToolIndex = 0;
         editMode = EditModeID.drawMode;
-        operationUnitID = OperationUnitID.linePoint;
+        operationUnitID = OperationUnitID.line;
 
         drawLineBaseWidth = 1.0;
         drawLineMinWidth = 0.1;

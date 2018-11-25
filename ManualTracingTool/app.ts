@@ -12,9 +12,6 @@ let fs = (typeof (require) != 'undefined') ? require('fs') : {
 namespace ManualTracingTool {
 
     // これからやろうと思っていること (current tasks)
-    // ・メインツールUIの仕様変更
-    // 　・現在のレイヤーが変わったときにメインツールを自動で変更する
-    // 　・ヘッダ部のコントロールを「Drawing」「Edit」「Misc」の三つに変更、Editのとき今までの編集モードにする。ヘッダ部クリックかTabで切り替わるようにする。
     // ・編集ツールの整備
     // 　・グループレイヤーによる複数レイヤー同時編集
     // 　　・編集モード表示の複数レイヤー対応
@@ -85,6 +82,9 @@ namespace ManualTracingTool {
     // 終わったもの (done)
     // ・不具合
     // 　・ポージングツール以外のツールでパンしたとき３Ⅾが更新されない
+    // ・メインツールUIの仕様変更
+    // 　・現在のレイヤーが変わったときにメインツールを自動で変更する
+    // 　・ヘッダ部のコントロールを「Drawing」「Edit」「Misc」の三つに変更、Editのとき今までの編集モードにする。ヘッダ部クリックかTabで切り替わるようにする。
     // ・線の太さを変えられるツールを追加
     // 　・固定の太さで上書きする機能、選択中の点に上書きする
     // 　・筆圧を線の太さに影響できるようにするとどうなるか試す
@@ -971,11 +971,11 @@ namespace ManualTracingTool {
             this.mainTools.push(
                 new MainTool().id(MainToolID.drawLine)
                     .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
+                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
                     .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                     .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
                     .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
                     .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
-                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
                     .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
             );
 
@@ -1665,12 +1665,6 @@ namespace ManualTracingTool {
 
                 this.mainWindow_MouseViewOperationEnd();
             }
-
-            if (this.toolEnv.needsDrawOperatorCursor() && this.toolEnv.isCtrlKeyPressing()) {
-
-                vec3.copy(this.toolContext.operatorCursor.location, e.location);
-                this.toolEnv.setRedrawEditorWindow();
-            }
         }
 
         private mainWindow_MouseViewOperationStart() {
@@ -2279,7 +2273,14 @@ namespace ManualTracingTool {
                 if (env.isDrawMode()) {
 
                     this.setCurrentMainTool(MainToolID.drawLine);
-                    this.setCurrentSubTool(<int>DrawLineToolSubToolID.deletePointBrush);
+                    if (context.subToolIndex != <int>DrawLineToolSubToolID.deletePointBrush) {
+
+                        this.setCurrentSubTool(<int>DrawLineToolSubToolID.deletePointBrush);
+                    }
+                    else {
+
+                        this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
+                    }
 
                     this.updateFooterMessage();
                     env.setRedrawMainWindowEditorWindow();
@@ -2464,6 +2465,12 @@ namespace ManualTracingTool {
                 }
 
                 return;
+            }
+
+            if (key == '.' && env.needsDrawOperatorCursor()) {
+
+                vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
+                this.toolEnv.setRedrawEditorWindow();
             }
 
             if (key == 'a') {
@@ -4300,7 +4307,7 @@ namespace ManualTracingTool {
                             else if (this.toolContext.operationUnitID == OperationUnitID.line) {
 
                                 let color = lineColor;
-                                if (line.isSelected) {
+                                if (line.isSelected || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
                                     color = this.drawStyle.selectedVectorLineColor;
                                 }
 
@@ -4470,7 +4477,6 @@ namespace ManualTracingTool {
 
                     let lineWidth = this.lineWidthAdjust(useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
                     let isVisibleWidth = (lineWidth > 0.0);
-
                     let isSameLineWidth = (lineWidth == currentLineWidth);
 
                     segmentEndIndex = index;
@@ -6065,8 +6071,8 @@ namespace ManualTracingTool {
     enum DrawLineToolSubToolID {
 
         drawLine = 0,
-        scratchLine = 1,
-        deletePointBrush = 5
+        scratchLine = 2,
+        deletePointBrush = 1
     }
 
     enum EditModeSubToolID {

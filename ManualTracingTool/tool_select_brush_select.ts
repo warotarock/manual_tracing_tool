@@ -111,6 +111,8 @@ namespace ManualTracingTool {
 
             this.logic_Selector.endProcess();
 
+            env.endModalTool();
+
             if (this.logic_Selector.selectionInfo.selectedLines.length == 0
                 && this.logic_Selector.selectionInfo.selectedPoints.length == 0) {
 
@@ -118,8 +120,6 @@ namespace ManualTracingTool {
             }
 
             this.executeCommand(env);
-
-            env.endModalTool();
         }
 
         protected executeCommand(env: ToolEnvironment) { // @virtual
