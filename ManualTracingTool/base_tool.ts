@@ -6,7 +6,8 @@ namespace ManualTracingTool {
         none = 0,
         drawLine = 1,
         posing = 2,
-        misc = 3
+        misc = 3,
+        edit = 4
     }
 
     export enum OperationUnitID {
@@ -52,6 +53,7 @@ namespace ManualTracingTool {
 
     export interface MainEditor {
 
+        setCurrentOperationUnitID(operationUnitID: OperationUnitID);
         setCurrentLayer(layer: Layer);
         setCurrentFrame(frame: int);
         updateLayerStructure();
@@ -111,6 +113,9 @@ namespace ManualTracingTool {
         mainToolID = MainToolID.none;
         subToolIndex = 0;
         editMode = EditModeID.drawMode;
+        drawMode_MainToolID = MainToolID.drawLine;
+        editMode_MainToolID = MainToolID.edit;
+
         operationUnitID = OperationUnitID.line;
 
         drawLineBaseWidth = 1.0;
@@ -168,6 +173,9 @@ namespace ManualTracingTool {
         mainToolID = MainToolID.posing;
         subToolIndex = 0;
         editMode = EditModeID.drawMode;
+        drawMode_MainToolID = MainToolID.drawLine;
+        editMode_MainToolID = MainToolID.edit;
+
         operationUnitID = OperationUnitID.linePoint;
 
         commandHistory: CommandHistory = null;
@@ -213,6 +221,9 @@ namespace ManualTracingTool {
             this.mainToolID = this.toolContext.mainToolID;
             this.subToolIndex = this.toolContext.subToolIndex;
             this.editMode = this.toolContext.editMode;
+            this.drawMode_MainToolID = this.toolContext.drawMode_MainToolID;
+            this.editMode_MainToolID = this.toolContext.editMode_MainToolID;
+
             this.operationUnitID = this.toolContext.operationUnitID;
 
             this.commandHistory = this.toolContext.commandHistory;
@@ -358,6 +369,11 @@ namespace ManualTracingTool {
         needsDrawOperatorCursor(): boolean {
 
             return (this.isEditMode() || this.isCurrentLayerImageFileReferenceLayer());
+        }
+
+        setCurrentOperationUnitID(operationUnitID: OperationUnitID) {
+
+            this.toolContext.mainEditor.setCurrentOperationUnitID(operationUnitID);
         }
 
         setCurrentLayer(layer: Layer) {

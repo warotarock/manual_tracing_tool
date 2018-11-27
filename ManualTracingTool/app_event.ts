@@ -353,8 +353,8 @@ namespace ManualTracingTool {
                 let env = this.toolEnv;
                 let context = this.toolContext;
 
-                this.setCurrentMainToolForCurentLayer();
                 this.setCurrentEditMode(EditModeID.drawMode);
+                this.setCurrentMainToolForCurentLayer();
 
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawLayerWindow();
@@ -386,8 +386,8 @@ namespace ManualTracingTool {
                     return;
                 }
 
-                this.setCurrentMainTool(MainToolID.misc);
                 this.setCurrentEditMode(EditModeID.drawMode);
+                this.setCurrentMainTool(MainToolID.misc);
 
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawLayerWindow();
@@ -535,22 +535,25 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
             let wnd = this.mainWindow;
+            let env = this.toolEnv;
             let e = wnd.toolMouseEvent;
 
-            this.toolEnv.updateContext();
+            env.updateContext();
 
             // Execute current tool
             if (this.isModalToolRunning()) {
 
-                this.currentTool.mouseDown(e, this.toolEnv);
-            }
-            else if (this.toolEnv.isDrawMode()) {
+                if (this.currentTool.isAvailable(env)) {
 
-                this.currentTool.mouseDown(e, this.toolEnv);
+                    this.currentTool.mouseDown(e, this.toolEnv);
+                }
             }
-            else if (this.toolEnv.isEditMode()) {
+            else {
 
-                this.currentSelectTool.mouseDown(e, this.toolEnv);
+                if (this.currentTool.isAvailable(env)) {
+
+                    this.currentTool.mouseDown(e, this.toolEnv);
+                }
             }
 
             // View operation
@@ -586,6 +589,7 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
             let wnd = this.mainWindow;
+            let env = this.toolEnv;
             let e = wnd.toolMouseEvent;
 
             this.toolEnv.updateContext();
@@ -595,7 +599,10 @@ namespace ManualTracingTool {
 
                 if (!e.isMouseDragging) {
 
-                    this.currentTool.mouseMove(e, this.toolEnv);
+                    if (this.currentTool.isAvailable(env)) {
+
+                        this.currentTool.mouseMove(e, env);
+                    }
                 }
             }
             else if (this.toolEnv.isDrawMode()) {
@@ -609,7 +616,7 @@ namespace ManualTracingTool {
                     this.toolEnv.setRedrawMainWindow();
                 }
 
-                this.currentSelectTool.mouseMove(e, this.toolEnv);
+                this.currentTool.mouseMove(e, this.toolEnv);
             }
 
             // View operation
@@ -634,17 +641,8 @@ namespace ManualTracingTool {
             let e = wnd.toolMouseEvent;
 
             this.toolEnv.updateContext();
-
-            // Draw mode
-            if (this.toolEnv.isDrawMode()) {
-
-                this.currentTool.mouseUp(e, this.toolEnv);
-            }
-            // Select mode
-            else if (this.toolEnv.isEditMode()) {
-
-                this.currentSelectTool.mouseUp(e, this.toolEnv);
-            }
+                
+            this.currentTool.mouseUp(e, this.toolEnv);
 
             this.mainWindow_MouseViewOperationEnd();
         }
@@ -727,7 +725,7 @@ namespace ManualTracingTool {
 
         protected layerWindow_mousedown_LayerItemButton(clickedX: float, clickedY: float, doubleClicked: boolean) {
 
-            let hitedButton = <LayerWindowButton>this.hitTestLayout(this.layerWindowButtons, clickedX, clickedY);
+            let hitedButton = <LayerWindowButton>this.hitTestLayout(this.layerWindowCommandButtons, clickedX, clickedY);
 
             if (hitedButton != null) {
 
@@ -797,6 +795,8 @@ namespace ManualTracingTool {
 
                         this.toolEnv.setRedrawMainWindowEditorWindow();
                     }
+
+                    this.startShowingCurrentLayer();
                 }
             }
 
@@ -838,6 +838,7 @@ namespace ManualTracingTool {
 
                     // Change current sub tool
                     this.setCurrentSubTool(selectedIndex);
+
                     this.updateFooterMessage();
                     env.setRedrawMainWindowEditorWindow();
                     env.setRedrawSubtoolWindow();
@@ -1056,6 +1057,9 @@ namespace ManualTracingTool {
 
                     this.setCurrentEditMode(EditModeID.drawMode);
                 }
+
+                env.setRedrawLayerWindow();
+                env.setRedrawSubtoolWindow();
 
                 return;
             }

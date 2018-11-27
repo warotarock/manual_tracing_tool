@@ -77,7 +77,6 @@ namespace ManualTracingTool {
         mainTools = new List<MainTool>();
 
         currentTool: ToolBase = null;
-        currentSelectTool: ToolBase = null;
         currentKeyframe: ViewKeyFrame = null;
         previousKeyframe: ViewKeyFrame = null;
         nextKeyframe: ViewKeyFrame = null;
@@ -516,7 +515,7 @@ namespace ManualTracingTool {
             this.setCurrentMainTool(MainToolID.drawLine);
             //this.setCurrentMainTool(MainToolID.posing);
 
-            this.setCurrentSelectionTool(this.toolContext.operationUnitID);
+            this.setCurrentOperationUnitID(this.toolContext.operationUnitID);
 
             this.setCurrentFrame(0);
             this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
@@ -862,6 +861,13 @@ namespace ManualTracingTool {
                     .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
             );
 
+            this.mainTools.push(
+                new MainTool().id(MainToolID.edit)
+                    .subTool(this.tool_LineBrushSelect, this.subToolImages[2], 2)
+                    .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 1)
+                    .subTool(this.tool_LinePointBrushSelect, this.subToolImages[2], 0)
+            );
+
             // Modal tools
             this.vectorLayer_ModalTools[<int>ModalToolID.none] = null;
             this.vectorLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
@@ -1143,11 +1149,6 @@ namespace ManualTracingTool {
 
         // Tools and context operations
 
-        protected getCurrentMainTool(): MainTool {
-
-            return this.mainTools[<int>this.toolContext.mainToolID];
-        }
-
         protected setCurrentEditMode(editModeID: EditModeID) {
 
             var env = this.toolEnv;
@@ -1155,9 +1156,24 @@ namespace ManualTracingTool {
 
             context.editMode = editModeID;
 
+            if (env.isDrawMode()) {
+
+                this.setCurrentMainTool(context.drawMode_MainToolID);
+            }
+            else {
+
+                this.setCurrentMainTool(context.editMode_MainToolID);
+            }
+
             this.updateFooterMessage();
             env.setRedrawHeaderWindow();
             env.setRedrawMainWindowEditorWindow();
+            env.setRedrawSubtoolWindow();
+        }
+
+        protected getCurrentMainTool(): MainTool {
+
+            return this.mainTools[<int>this.toolContext.mainToolID];
         }
 
         protected setCurrentMainToolForCurentLayer() {
@@ -1165,22 +1181,37 @@ namespace ManualTracingTool {
             var env = this.toolEnv;
             env.updateContext();
 
-            if (env.currentVectorLayer != null) {
+            if (env.isDrawMode()) {
 
-                this.setCurrentMainTool(MainToolID.drawLine);
+                if (env.currentVectorLayer != null) {
 
+                    this.setCurrentMainTool(MainToolID.drawLine);
+
+                }
+                else if (env.currentPosingLayer != null) {
+
+                    this.setCurrentMainTool(MainToolID.posing);
+                }
             }
-            else if (env.currentPosingLayer != null) {
+            else {
 
-                this.setCurrentMainTool(MainToolID.posing);
+                this.setCurrentMainTool(MainToolID.edit);
             }
         }
 
         protected setCurrentMainTool(id: MainToolID) {
 
-            let isChanged = (this.toolContext.mainToolID != id);
+            var env = this.toolEnv;
+            let context = this.toolContext;
 
-            this.toolContext.mainToolID = id;
+            let isChanged = (context.mainToolID != id);
+
+            context.mainToolID = id;
+
+            if (env.isDrawMode()) {
+
+                context.drawMode_MainToolID = id;
+            }
 
             let mainTool = this.getCurrentMainTool();
 
@@ -1213,9 +1244,9 @@ namespace ManualTracingTool {
             this.currentTool = mainTool.subTools[subToolIndex];
         }
 
-        protected setCurrentSelectionTool(operationUnitID: OperationUnitID) {
+        public setCurrentOperationUnitID(operationUnitID: OperationUnitID) { //@implements MainEditor
 
-            this.currentSelectTool = this.selectionTools[<int>(operationUnitID)];
+            this.toolContext.operationUnitID = operationUnitID;
         }
 
         public setCurrentLayer(layer: Layer) { //@implements MainEditor

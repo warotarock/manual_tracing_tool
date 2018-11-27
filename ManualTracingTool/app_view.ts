@@ -179,16 +179,16 @@ namespace ManualTracingTool {
 
         layerWindowLayoutArea = new RectangleLayoutArea();
         layerWindowItems: List<LayerWindowItem> = null;
-        layerWindowButtons: List<LayerWindowButton> = null;
+        layerWindowCommandButtons: List<LayerWindowButton> = null;
 
         private collectLayerWindowButtons() {
 
-            this.layerWindowButtons = new List<LayerWindowButton>();
+            this.layerWindowCommandButtons = new List<LayerWindowButton>();
 
-            this.layerWindowButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.addLayer));
-            this.layerWindowButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.deleteLayer));
-            this.layerWindowButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveUp));
-            this.layerWindowButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveDown));
+            this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.addLayer));
+            this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.deleteLayer));
+            this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveUp));
+            this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveDown));
         }
 
         protected collectLayerWindowItems() { //@override
@@ -272,11 +272,11 @@ namespace ManualTracingTool {
             this.layerWindowLayoutArea.copyRectangle(layerWindow);
             this.layerWindowLayoutArea.bottom = layerWindow.height - 1.0;
 
-            this.caluculateLayerWindowLayout_LayerButtons(layerWindow, this.layerWindowLayoutArea);
+            this.caluculateLayerWindowLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
 
-            if (this.layerWindowButtons.length > 0) {
+            if (this.layerWindowCommandButtons.length > 0) {
 
-                let lastButton = this.layerWindowButtons[this.layerWindowButtons.length - 1];
+                let lastButton = this.layerWindowCommandButtons[this.layerWindowCommandButtons.length - 1];
                 this.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0;// lastButton.bottom + 1.0;
             }
 
@@ -284,14 +284,16 @@ namespace ManualTracingTool {
             this.caluculateLayerWindowLayout_LayerWindowItem(layerWindow, this.layerWindowLayoutArea);
         }
 
-        protected caluculateLayerWindowLayout_LayerButtons(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
+        protected caluculateLayerWindowLayout_CommandButtons(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
 
             let currentX = layoutArea.left;
             let currentY = layerWindow.viewLocation[1]; // layoutArea.top;
             let unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
             let unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
 
-            for (let button of this.layerWindowButtons) {
+            layerWindow.layerCommandButtonButtom = unitHeight + 1.0;
+
+            for (let button of this.layerWindowCommandButtons) {
 
                 button.left = currentX;
                 button.right = currentX + unitWidth - 1;
@@ -999,9 +1001,9 @@ namespace ManualTracingTool {
                 this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth);
                 this.toolContext.drawLineMinWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineMinWidth);
 
-                this.toolContext.operationUnitID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, OperationUnitID.linePoint);
+                let operationUnitID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, OperationUnitID.linePoint);
 
-                this.setCurrentSelectionTool(this.toolContext.operationUnitID);
+                this.setCurrentOperationUnitID(operationUnitID);
             }
             else if (this.currentModalDialogID == this.ID.newLayerCommandOptionModal) {
 
@@ -1552,6 +1554,7 @@ namespace ManualTracingTool {
         layerItemButtonWidth = 64.0;
         layerItemButtonHeight = 64.0;
         layerItemButtonButtom = 64.0;
+        layerCommandButtonButtom = 0.0;
 
         layerItemHeight = 24.0;
         layerItemFontSize = 16.0;

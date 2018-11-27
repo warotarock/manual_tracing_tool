@@ -23,8 +23,7 @@ namespace ManualTracingTool {
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            if (env.currentVectorLayer == null) {
-
+            if (!this.isAvailable(env)) {
                 return;
             }
 
@@ -129,6 +128,12 @@ namespace ManualTracingTool {
 
     export class Tool_Select_BrushSelect_LinePoint extends Tool_BrushSelectLinePointBase {
 
+        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            env.setCurrentOperationUnitID(OperationUnitID.linePoint);
+            env.setRedrawMainWindow();
+        }
+
         prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
             return true;
@@ -159,10 +164,22 @@ namespace ManualTracingTool {
 
     export class Tool_Select_BrushSelect_Line extends Tool_Select_BrushSelect_LinePoint {
 
+        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            env.setCurrentOperationUnitID(OperationUnitID.line);
+            env.setRedrawMainWindow();
+        }
+
         logic_Selector: ISelector_BrushSelect = new Selector_Line_BrushSelect(); // @override
     }
 
     export class Tool_Select_BrushSelect_LineSegment extends Tool_Select_BrushSelect_LinePoint {
+
+        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            env.setCurrentOperationUnitID(OperationUnitID.lineSegment);
+            env.setRedrawMainWindow();
+        }
 
         logic_Selector: ISelector_BrushSelect = new Selector_LineSegment_BrushSelect(); // @override
     }

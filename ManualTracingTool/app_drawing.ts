@@ -114,7 +114,7 @@ namespace ManualTracingTool {
 
             let layer = viewKeyFrameLayer.layer;
 
-            if (!layer.isVisible) {
+            if (!layer.isVisible && !currentLayerOnly) {
                 return;
             }
 
@@ -223,14 +223,14 @@ namespace ManualTracingTool {
                         }
                         else {
 
-                            if (this.toolContext.operationUnitID == OperationUnitID.linePoint
-                                || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
+                            if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
 
                                 this.drawVectorLineStroke(line, lineColor, 1.0, useAdjustingLocation);
 
                                 this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
                             }
-                            else if (this.toolContext.operationUnitID == OperationUnitID.line) {
+                            else if (this.toolContext.operationUnitID == OperationUnitID.line
+                                || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
 
                                 let color = lineColor;
                                 if (line.isSelected || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
@@ -598,9 +598,9 @@ namespace ManualTracingTool {
 
                 let viewTop = layerWindow.viewLocation[1];
 
-                if (item.top < viewTop + layerWindow.layerItemHeight * 2.0) {
+                if (item.top < viewTop + layerWindow.layerCommandButtonButtom) {
 
-                    layerWindow.viewLocation[1] = item.top - layerWindow.layerItemHeight * 2.0;
+                    layerWindow.viewLocation[1] = item.top - layerWindow.layerCommandButtonButtom;
                 }
                 else if (item.top > viewTop + layerWindow.height - layerWindow.layerItemHeight * 2.0) {
 
@@ -801,17 +801,17 @@ namespace ManualTracingTool {
 
         private drawLayerWindow_LayerWindowButtons(layerWindow: LayerWindow) {
 
-            this.caluculateLayerWindowLayout_LayerButtons(layerWindow, this.layerWindowLayoutArea);
+            this.caluculateLayerWindowLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
 
-            if (this.layerWindowButtons.length > 0) {
+            if (this.layerWindowCommandButtons.length > 0) {
 
-                let button = this.layerWindowButtons[0];
+                let button = this.layerWindowCommandButtons[0];
 
                 this.canvasRender.setFillColorV(this.layerWindowBackgroundColor);
                 this.canvasRender.fillRect(0.0, button.top, layerWindow.width - 1, button.getHeight());
             }
 
-            for (let button of this.layerWindowButtons) {
+            for (let button of this.layerWindowCommandButtons) {
 
                 this.drawLayerWindow_LayerWindowButton(button);
             }
