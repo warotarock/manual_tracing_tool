@@ -1,12 +1,6 @@
 ﻿
 namespace ManualTracingTool {
 
-    export class LatticePoint {
-
-        baseLocation = vec3.fromValues(0.0, 0.0, 0.0);
-        location = vec3.fromValues(0.0, 0.0, 0.0);
-    }
-
     export class Tool_Transform_Lattice extends ModalToolBase {
 
         latticePoints: List<LatticePoint> = null;
@@ -34,7 +28,7 @@ namespace ManualTracingTool {
             // Create lattie points
             if (this.latticePoints == null) {
 
-                this.createLatticePoints(this.latticePointCount);
+                this.createLatticePoints();
             }
 
             // Current cursor location
@@ -71,11 +65,11 @@ namespace ManualTracingTool {
             return available;
         }
 
-        protected createLatticePoints(count: int) {
+        protected createLatticePoints() {
 
             this.latticePoints = new List<LatticePoint>();
 
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < this.latticePointCount; i++) {
 
                 this.latticePoints.push(new LatticePoint());
             }
@@ -99,6 +93,14 @@ namespace ManualTracingTool {
             }
         }
 
+        protected applytLatticePointBaseLocation() {
+
+            for (let latticePoint of this.latticePoints) {
+
+                vec3.copy(latticePoint.baseLocation, latticePoint.location);
+            }
+        }
+
         protected createEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
@@ -109,6 +111,7 @@ namespace ManualTracingTool {
 
             if (!env.isModalToolRunning()) {
 
+                env.setRedrawEditorWindow(); // redraw cursor
                 return;
             }
 
@@ -132,6 +135,10 @@ namespace ManualTracingTool {
         }
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            if (!env.isModalToolRunning()) {
+                return;
+            }
 
             if (e.isLeftButtonPressing()) {
 
@@ -164,19 +171,29 @@ namespace ManualTracingTool {
 
         onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
 
-            if (this.latticePoints == null) {
-
-                this.createLatticePoints(this.latticePointCount);
-                this.prepareLatticePoints(env);
-            }
-
-            this.drawLatticeLine(env, drawEnv);
+            this.drawLatticeRectangle(env, drawEnv);
         }
 
-        protected drawLatticeLine(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) {
+        private operatorCurosrLineDash = [2.0, 2.0];
+        private operatorCurosrLineDashScaled = [0.0, 0.0];
+        private operatorCurosrLineDashNone = [];
+
+        protected drawLatticeRectangle(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) {
+
+            if (this.latticePoints == null) {
+                return;
+            }
 
             drawEnv.render.setStrokeColorV(drawEnv.style.modalToolSelectedAreaLineColor);
             drawEnv.render.setStrokeWidth(env.getViewScaledLength(1.0));
+
+            // Set dash
+            let viewScale = env.getViewScaledLength(1.0);
+            this.operatorCurosrLineDashScaled[0] = this.operatorCurosrLineDash[0] * viewScale;
+            this.operatorCurosrLineDashScaled[1] = this.operatorCurosrLineDash[1] * viewScale;
+            drawEnv.render.setLineDash(this.operatorCurosrLineDashScaled);
+
+            // Draw lattice line
 
             drawEnv.render.beginPath();
 
@@ -190,16 +207,42 @@ namespace ManualTracingTool {
             }
 
             drawEnv.render.lineTo(firstPoint.location[0], firstPoint.location[1]);
-
             drawEnv.render.stroke();
+            drawEnv.render.setLineDash(this.operatorCurosrLineDashNone);
+
+        }
+
+        protected drawLatticePoints(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) {
+
+            // Draw lattice
+
+            for (let latticePoint of this.latticePoints) {
+
+                drawEnv.render.beginPath();
+
+                drawEnv.render.setStrokeColorV(drawEnv.style.modalToolSelectedAreaLineColor);
+                drawEnv.render.setStrokeWidth(env.getViewScaledLength(1.0));
+
+                drawEnv.render.circle(
+                    latticePoint.location[0], latticePoint.location[1]
+                    , env.getViewScaledLength(drawEnv.style.latticePointRadius)
+                );
+
+                drawEnv.render.stroke();
+            }
         }
     }
 
-    export class Tool_Transform_Lattice_Calcer_GrabMove {
+    export interface ITool_Transform_Lattice_Calculator {
+
+        processLatticePointMouseMove(latticePoints: List<LatticePoint>, mouseAnchorLocation: Vec3, e: ToolMouseEvent, env: ToolEnvironment);
+    }
+
+    export class GrabMove_Calculator implements ITool_Transform_Lattice_Calculator {
 
         private dLocation = vec3.create();
 
-        processLatticePointMouseMove(latticePoints: List<LatticePoint>, mouseAnchorLocation: Vec3, e: ToolMouseEvent) {
+        processLatticePointMouseMove(latticePoints: List<LatticePoint>, mouseAnchorLocation: Vec3, e: ToolMouseEvent, env: ToolEnvironment) {
 
             vec3.subtract(this.dLocation, e.location, mouseAnchorLocation);
 
@@ -210,7 +253,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Transform_Lattice_Calcer_Rotate {
+    export class Rotate_Calculator implements ITool_Transform_Lattice_Calculator {
 
         private initialAngle = 0.0;
 
@@ -232,7 +275,7 @@ namespace ManualTracingTool {
             return angle;
         }
 
-        processLatticePointMouseMove(latticePoints: List<LatticePoint>, e: ToolMouseEvent, env: ToolEnvironment) {
+        processLatticePointMouseMove(latticePoints: List<LatticePoint>, mouseAnchorLocation: Vec3, e: ToolMouseEvent, env: ToolEnvironment) {
 
             let angle = this.calulateInputAngle(e, env) - this.initialAngle;
 
@@ -251,7 +294,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Transform_Lattice_Calcer_Scale {
+    export class Scale_Calculator {
 
         private initialDistance = 0.0;
 
@@ -281,7 +324,7 @@ namespace ManualTracingTool {
             return distance;
         }
 
-        processLatticePointMouseMove(latticePoints: List<LatticePoint>, e: ToolMouseEvent, env: ToolEnvironment) {
+        processLatticePointMouseMove(latticePoints: List<LatticePoint>, mouseAnchorLocation: Vec3, e: ToolMouseEvent, env: ToolEnvironment) {
 
             let scale = this.calulateDistance(e, env) / this.initialDistance;
             vec3.set(this.scaling, scale, scale, 1.0);

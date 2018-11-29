@@ -5,7 +5,7 @@ namespace ManualTracingTool {
 
         // Events
 
-        protected setEvents() { //@override
+        protected setEvents() { // @override
 
             if (this.isEventSetDone) {
                 return;
@@ -681,7 +681,7 @@ namespace ManualTracingTool {
                 if (e.location[1] <= wnd.layerItemButtonButtom) {
 
                     // Layer window button click
-                    this.layerWindow_mousedown_LayerItemButton(clickedX, clickedY, doubleClicked);
+                    this.layerWindow_mousedown_LayerCommandButton(clickedX, clickedY, doubleClicked);
                 }
                 else if (e.location[1] < wnd.layerItemsBottom) {
 
@@ -723,7 +723,7 @@ namespace ManualTracingTool {
             this.layerWindow.endMouseDragging();
         }
 
-        protected layerWindow_mousedown_LayerItemButton(clickedX: float, clickedY: float, doubleClicked: boolean) {
+        protected layerWindow_mousedown_LayerCommandButton(clickedX: float, clickedY: float, doubleClicked: boolean) {
 
             let hitedButton = <LayerWindowButton>this.hitTestLayout(this.layerWindowCommandButtons, clickedX, clickedY);
 
@@ -775,7 +775,7 @@ namespace ManualTracingTool {
 
                 if (clickedX <= selectedItem.textLeft) {
 
-                    selectedItem.layer.isVisible = !selectedItem.layer.isVisible;
+                    this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
 
                     this.toolEnv.setRedrawMainWindowEditorWindow();
                 }
@@ -791,7 +791,14 @@ namespace ManualTracingTool {
 
                         // Select layer content
 
-                        this.setCurrentLayer(selectedLayer);
+                        if (this.toolEnv.isShiftKeyPressing()) {
+
+                            this.setLayerSelection(selectedLayer, true);
+                        }
+                        else {
+
+                            this.setCurrentLayer(selectedLayer);
+                        }
 
                         this.toolEnv.setRedrawMainWindowEditorWindow();
                     }
@@ -865,6 +872,7 @@ namespace ManualTracingTool {
                         }
                         else if (e.isLeftButtonPressing()) {
 
+                            this.activateCurrentTool();
                             this.currentTool.toolWindowItemClick(e, env);
                         }
                     }
@@ -1128,7 +1136,9 @@ namespace ManualTracingTool {
 
                 this.toolContext.commandHistory.undo(env);
 
-                env.setRedrawMainWindow();
+                this.activateCurrentTool();
+
+                env.setRedrawMainWindowEditorWindow();
 
                 return;
             }
@@ -1137,7 +1147,9 @@ namespace ManualTracingTool {
 
                 this.toolContext.commandHistory.redo(env);
 
-                env.setRedrawMainWindow();
+                this.activateCurrentTool();
+
+                env.setRedrawMainWindowEditorWindow();
 
                 return;
             }
@@ -1306,6 +1318,7 @@ namespace ManualTracingTool {
                 if (env.isEditMode()) {
 
                     this.tool_SelectAllPoints.execute(env);
+                    this.activateCurrentTool();
                 }
                 else {
 

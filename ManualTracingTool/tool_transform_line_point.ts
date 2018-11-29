@@ -230,17 +230,17 @@ namespace ManualTracingTool {
 
     export class Tool_Transform_Lattice_GrabMove extends Tool_Transform_Lattice_LinePoint {
 
-        calcer = new Tool_Transform_Lattice_Calcer_GrabMove();
+        calcer = new GrabMove_Calculator();
 
         protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         }
     }
 
     export class Tool_Transform_Lattice_Rotate extends Tool_Transform_Lattice_LinePoint {
 
-        calcer = new Tool_Transform_Lattice_Calcer_Rotate();
+        calcer = new Rotate_Calculator();
 
         protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
 
@@ -249,13 +249,13 @@ namespace ManualTracingTool {
 
         protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            this.calcer.processLatticePointMouseMove(this.latticePoints, e, env);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         }
     }
 
     export class Tool_Transform_Lattice_Scale extends Tool_Transform_Lattice_LinePoint {
 
-        calcer = new Tool_Transform_Lattice_Calcer_Scale();
+        calcer = new Scale_Calculator();
 
         protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
 
@@ -264,7 +264,7 @@ namespace ManualTracingTool {
 
         protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            this.calcer.processLatticePointMouseMove(this.latticePoints, e, env);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         }
     }
 }

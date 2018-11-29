@@ -77,9 +77,9 @@ namespace ManualTracingTool {
         mainTools = new List<MainTool>();
 
         currentTool: ToolBase = null;
-        currentKeyframe: ViewKeyFrame = null;
-        previousKeyframe: ViewKeyFrame = null;
-        nextKeyframe: ViewKeyFrame = null;
+        currentKeyframe: ViewKeyframe = null;
+        previousKeyframe: ViewKeyframe = null;
+        nextKeyframe: ViewKeyframe = null;
 
         //layerCommands = new List<Command_Layer_CommandBase>(LayerWindowButtonID.IDCount);
 
@@ -109,6 +109,7 @@ namespace ManualTracingTool {
         tool_Transform_Lattice_GrabMove = new Tool_Transform_Lattice_GrabMove();
         tool_Transform_Lattice_Rotate = new Tool_Transform_Lattice_Rotate();
         tool_Transform_Lattice_Scale = new Tool_Transform_Lattice_Scale();
+        tool_EditModeMain = new Tool_EditModeMain();
 
         // Drawing tools
         tool_DrawLine = new Tool_DrawLine();
@@ -519,6 +520,7 @@ namespace ManualTracingTool {
 
             this.setCurrentFrame(0);
             this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
+            //this.collectViewContext_CollectEditTargets();
 
             this.toolEnv.updateContext();
 
@@ -620,8 +622,8 @@ namespace ManualTracingTool {
 
                 if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {
 
-                    vectorLayer.keyframes = new List<VectorLayerKeyFrame>();
-                    let key = new VectorLayerKeyFrame();
+                    vectorLayer.keyframes = new List<VectorLayerKeyframe>();
+                    let key = new VectorLayerKeyframe();
                     key.frame = 0;
                     key.geometry = vectorLayer['geometry'];
                     vectorLayer.keyframes.push(key);
@@ -810,7 +812,7 @@ namespace ManualTracingTool {
             this.toolContext.mainEditor = this;
         }
 
-        protected initializeViews() { //@virtual
+        protected initializeViews() { // @virtual
         }
 
         protected initializeModals() {
@@ -863,9 +865,10 @@ namespace ManualTracingTool {
 
             this.mainTools.push(
                 new MainTool().id(MainToolID.edit)
-                    .subTool(this.tool_LineBrushSelect, this.subToolImages[2], 2)
-                    .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 1)
+                    .subTool(this.tool_LineBrushSelect, this.subToolImages[2], 0)
+                    .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 0)
                     .subTool(this.tool_LinePointBrushSelect, this.subToolImages[2], 0)
+                    .subTool(this.tool_EditModeMain, this.subToolImages[2], 0)
             );
 
             // Modal tools
@@ -974,7 +977,7 @@ namespace ManualTracingTool {
 
         // Events
 
-        protected setEvents() { //@virtual
+        protected setEvents() { // @virtual
         }
 
         // Core data system for layer and animation
@@ -993,23 +996,28 @@ namespace ManualTracingTool {
             let context = this.toolContext;
             let aniSetting = context.document.animationSettingData;
 
-            // Collects first keyframes for each layer
+            // Collects layers
 
             let layers = new List<Layer>();
             Layer.collectLayerRecursive(layers, this.toolContext.document.rootLayer);
 
-            // Collects identical keyframes for each keyframes
-
-            let viewKeyFrames = new List<ViewKeyFrame>();
-            this.collectViewContext_CollectKeyframes(viewKeyFrames, layers);
-
             // Creates all view-keyframes.
 
+            let viewKeyFrames = new List<ViewKeyframe>();
+            this.collectViewContext_CollectKeyframes(viewKeyFrames, layers);
             let sortedViewKeyFrames = viewKeyFrames.sort((a, b) => { return a.frame - b.frame });
+
+            this.viewLayerContext.keyframes = sortedViewKeyFrames;
+
+            // Collects layers for each view-keyframes
 
             this.collectViewContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
 
-            this.viewLayerContext.keyframes = sortedViewKeyFrames;
+            // Re-set current keyframe and collects informations
+            this.setCurrentFrame(context.document.animationSettingData.currentTimeFrame);
+
+            // Prepare lattice points
+            //this.calculateLatticePoints();
         }
 
         protected collectViewContext_CollectLayersRecursive(result: List<Layer>, parentLayer: Layer) {
@@ -1025,7 +1033,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected collectViewContext_CollectKeyframes(result: List<ViewKeyFrame>, layers: List<Layer>) {
+        protected collectViewContext_CollectKeyframes(result: List<ViewKeyframe>, layers: List<Layer>) {
 
             let keyframeDictionary = new Dictionary<boolean>();
 
@@ -1041,7 +1049,7 @@ namespace ManualTracingTool {
 
                         if (!DictionaryContainsKey(keyframeDictionary, frameText)) {
 
-                            let viewKeyframe = new ViewKeyFrame();
+                            let viewKeyframe = new ViewKeyframe();
                             viewKeyframe.frame = keyframe.frame;
                             result.push(viewKeyframe);
 
@@ -1052,7 +1060,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected collectViewContext_CollectKeyframeLayers(result: List<ViewKeyFrame>, layers: List<Layer>) {
+        protected collectViewContext_CollectKeyframeLayers(result: List<ViewKeyframe>, layers: List<Layer>) {
 
             // All view-keyframes contains view-layer info for all layer.
 
@@ -1067,7 +1075,7 @@ namespace ManualTracingTool {
 
                         let vectorLayer = <VectorLayer>layer;
 
-                        let max_KeyFrame: VectorLayerKeyFrame = null;
+                        let max_KeyFrame: VectorLayerKeyframe = null;
                         for (let keyframe of vectorLayer.keyframes) {
 
                             if (keyframe.frame > viewKeyframe.frame) {
@@ -1106,7 +1114,7 @@ namespace ManualTracingTool {
             return max_ViewKeyFrameIndex;
         }
 
-        protected findViewKeyFrame(currentFrame: int): ViewKeyFrame {
+        protected findViewKeyFrame(currentFrame: int): ViewKeyframe {
 
             let keyFrameIndex = this.findViewKeyFrameIndex(currentFrame);
 
@@ -1120,7 +1128,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected findViewKeyframeLayerIndex(viewKeyFrame: ViewKeyFrame, layer: Layer): int {
+        protected findViewKeyframeLayerIndex(viewKeyFrame: ViewKeyframe, layer: Layer): int {
 
             for (let index = 0; index < viewKeyFrame.layers.length; index++) {
 
@@ -1133,7 +1141,7 @@ namespace ManualTracingTool {
             return -1;
         }
 
-        protected findViewKeyframeLayer(viewKeyFrame: ViewKeyFrame, layer: Layer): ViewKeyframeLayer {
+        protected findViewKeyframeLayer(viewKeyFrame: ViewKeyframe, layer: Layer): ViewKeyframeLayer {
 
             let index = this.findViewKeyframeLayerIndex(viewKeyFrame, layer);
 
@@ -1146,6 +1154,58 @@ namespace ManualTracingTool {
                 return null;
             }
         }
+
+        // Integrated lattice transformation
+        /*
+        protected calculateLatticePoints(): boolean {
+
+            let env = this.toolEnv;
+
+            // Caculate lattice rectangle
+
+            let rect = this.toolContext.rectangleArea;
+
+            Logic_Edit_Points.setMinMaxToRectangleArea(rect);
+
+            let selectedOnly = true;
+
+            for (let viewKeyframeLayer of env.editableKeyframeLayers) {
+
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+
+                    for (let line of group.lines) {
+
+                        Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
+                    }
+                }
+            }
+
+            let available = Logic_Edit_Points.existsRectangleArea(rect);
+
+            // Caculate lattice points location
+
+            let latticePoints = this.toolContext.latticePoints;
+
+            vec3.set(latticePoints[0].baseLocation, rect.left, rect.top, 0.0);
+            vec3.set(latticePoints[1].baseLocation, rect.right, rect.top, 0.0);
+            vec3.set(latticePoints[2].baseLocation, rect.right, rect.bottom, 0.0);
+            vec3.set(latticePoints[3].baseLocation, rect.left, rect.bottom, 0.0);
+
+            this.resetLatticePointLocationToBaseLocation();
+
+            return available;
+        }
+
+        protected resetLatticePointLocationToBaseLocation() {
+
+            let latticePoints = this.toolContext.latticePoints;
+
+            for (let latticePoint of latticePoints) {
+
+                vec3.copy(latticePoint.location, latticePoint.baseLocation);
+            }
+        }
+        */
 
         // Tools and context operations
 
@@ -1222,6 +1282,8 @@ namespace ManualTracingTool {
                 this.subtoolWindow_CollectViewItems();
                 this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
 
+                this.activateCurrentTool();
+
                 this.toolEnv.setRedrawHeaderWindow();
             }
         }
@@ -1244,12 +1306,12 @@ namespace ManualTracingTool {
             this.currentTool = mainTool.subTools[subToolIndex];
         }
 
-        public setCurrentOperationUnitID(operationUnitID: OperationUnitID) { //@implements MainEditor
+        public setCurrentOperationUnitID(operationUnitID: OperationUnitID) { // @implements MainEditor
 
             this.toolContext.operationUnitID = operationUnitID;
         }
 
-        public setCurrentLayer(layer: Layer) { //@implements MainEditor
+        public setCurrentLayer(layer: Layer) { // @implements MainEditor
 
             let viewKeyframe = this.currentKeyframe;
 
@@ -1305,14 +1367,21 @@ namespace ManualTracingTool {
             }
 
             this.setCurrentMainToolForCurentLayer();
+
+            this.activateCurrentTool();
+            //this.collectViewContext_CollectEditTargets();
         }
 
-        public setCurrentFrame(frame: int) { //@implements MainEditor
+        public setCurrentFrame(frame: int) { // @implements MainEditor
 
             let context = this.toolContext;
             let aniSetting = context.document.animationSettingData;
 
+            let before_CurrentKeyframe = this.currentKeyframe;
+
             aniSetting.currentTimeFrame = frame;
+
+            // Find current keyframe for frame
 
             if (aniSetting.currentTimeFrame < 0) {
                 aniSetting.currentTimeFrame = 0;
@@ -1347,13 +1416,42 @@ namespace ManualTracingTool {
                 }
             }
 
+            // Update tool context
+
             if (context.currentLayer != null) {
 
                 this.setCurrentLayer(context.currentLayer);
             }
+
+            if (this.currentKeyframe != before_CurrentKeyframe) {
+
+                //this.collectViewContext_CollectEditTargets();
+            }
         }
 
-        public startModalTool(modalTool: ModalToolBase) { //@implements MainEditor
+        public setLayerSelection(layer: Layer, isSelected: boolean) {
+
+            layer.isSelected = isSelected;
+
+            //this.collectViewContext_CollectEditTargets();
+        }
+
+        protected setLayerVisiblity(layer: Layer, isVisible: boolean) {
+
+            layer.isVisible = isVisible;
+
+            //this.collectViewContext_CollectEditTargets();
+        }
+
+        protected activateCurrentTool() {
+
+            if (this.currentTool != null) {
+
+                this.currentTool.onActivated(this.toolEnv);
+            }
+        }
+
+        public startModalTool(modalTool: ModalToolBase) { // @implements MainEditor
 
             if (modalTool == null) {
 
@@ -1374,7 +1472,7 @@ namespace ManualTracingTool {
             this.currentTool = modalTool;
         }
 
-        public endModalTool() { //@implements MainEditor
+        public endModalTool() { // @implements MainEditor
 
             this.toolEnv.updateContext();
             this.currentModalTool.endModal(this.toolEnv);
@@ -1382,9 +1480,11 @@ namespace ManualTracingTool {
             this.setModalToolBefore();
 
             this.toolEnv.setRedrawMainWindowEditorWindow();
+
+            this.activateCurrentTool();
         }
 
-        public cancelModalTool() { //@implements MainEditor
+        public cancelModalTool() { // @implements MainEditor
 
             if (!this.isModalToolRunning()) {
 
@@ -1395,6 +1495,8 @@ namespace ManualTracingTool {
             this.currentModalTool.cancelModal(this.toolEnv);
 
             this.setModalToolBefore();
+
+            this.activateCurrentTool();
         }
 
         protected setModalToolBefore() {
@@ -1404,72 +1506,115 @@ namespace ManualTracingTool {
             this.modalBeforeTool = null;
         }
 
-        public isModalToolRunning(): boolean { //@implements MainEditor
+        public isModalToolRunning(): boolean { // @implements MainEditor
 
             return (this.currentModalTool != null);
         }
 
-        public openFileDialog(targetID: OpenFileDialogTargetID) { //@implements MainEditor @virtual
+        public collectEditTargetViewKeyframeLayers(): List<ViewKeyframeLayer> { // @implements MainEditor
+
+            let editableKeyframeLayers = new List<ViewKeyframeLayer>();
+
+            // Collects layers
+
+            if (this.currentKeyframe != null) {
+
+                for (let viewKeyframeLayer of this.currentKeyframe.layers) {
+
+                    let layer = viewKeyframeLayer.layer;
+
+                    if (layer.isSelected && layer.isVisible) {
+
+                        editableKeyframeLayers.push(viewKeyframeLayer);
+                    }
+                }
+            }
+
+            return editableKeyframeLayers;
         }
 
-        public openDocumentSettingDialog() { //@implements MainEditor @virtual
+        // View operations (virtual functions)
+
+        public openFileDialog(targetID: OpenFileDialogTargetID) { // @implements MainEditor @virtual
         }
 
-        // View operations
-
-        protected resizeWindows() { //@virtual
+        public openDocumentSettingDialog() { // @implements MainEditor @virtual
         }
 
-        protected updateHdeaderDocumentFileName() { //@virtual
+        protected resizeWindows() { // @virtual
         }
 
-        protected updateHeaderButtons() { //@virtual
+        protected updateHdeaderDocumentFileName() { // @virtual
         }
 
-        protected updateFooterMessage() { //@virtual
+        protected updateHeaderButtons() { // @virtual
         }
 
-        protected collectLayerWindowItems() { //@virtual
+        protected updateFooterMessage() { // @virtual
         }
 
-        protected caluculateLayerWindowLayout(layerWindow: LayerWindow) { //@virtual
+        protected collectLayerWindowItems() { // @virtual
         }
 
-        protected subtoolWindow_CollectViewItems() { //@virtual
+        protected caluculateLayerWindowLayout(layerWindow: LayerWindow) { // @virtual
         }
 
-        protected subtoolWindow_CaluculateLayout(subtoolWindow: SubtoolWindow) { //@virtual
+        protected subtoolWindow_CollectViewItems() { // @virtual
         }
 
-        protected layerWindow_UnselectAllLayer() { //@virtual
+        protected subtoolWindow_CaluculateLayout(subtoolWindow: SubtoolWindow) { // @virtual
         }
 
-        // Dialogs
+        protected layerWindow_UnselectAllLayer() { // @virtual
+        }
 
-        protected isModalShown(): boolean { //@virtual
+        protected isModalShown(): boolean { // @virtual
             return false;
         }
 
-        // MainEditorDrawer implementations
+        // MainEditorDrawer implementations (virtual functions)
 
-        drawMouseCursor() { //@implements MainEditorDrawer @virtual
+        drawMouseCursor() { // @implements MainEditorDrawer @virtual
         }
 
-        drawEditorEditLineStroke(line: VectorLine) { //@implements MainEditorDrawer @virtual
+        drawEditorEditLineStroke(line: VectorLine) { // @implements MainEditorDrawer @virtual
         }
 
-        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) { //@implements MainEditorDrawer @virtual
+        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
         }
 
-        drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { //@implements MainEditorDrawer @virtual
+        drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
         }
 
-        drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer @virtual
+        drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
         }
 
-        // HTML
-        getInputElementText(id: string): string { //@virtual
+        // HTML  (virtual functions)
+
+        getInputElementText(id: string): string { // @virtual
             return null;
         }
+    }
+
+    export enum DrawLineToolSubToolID {
+
+        drawLine = 0,
+        scratchLine = 2,
+        deletePointBrush = 1
+    }
+
+    export enum EditModeSubToolID {
+
+        mainEditTool = 0,
+    }
+
+    export enum ModalToolID {
+
+        none = 0,
+        grabMove = 1,
+        ratate = 2,
+        scale = 3,
+        latticeMove = 4,
+        countOfID = 5,
     }
 }

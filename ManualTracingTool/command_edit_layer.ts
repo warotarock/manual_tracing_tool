@@ -239,7 +239,7 @@ namespace ManualTracingTool {
             this.newLayer = new VectorLayer();
             this.newLayer.name = 'new layer';
 
-            let keyFrame = new VectorLayerKeyFrame();
+            let keyFrame = new VectorLayerKeyframe();
             keyFrame.geometry = new VectorLayerGeometry();
             this.newLayer.keyframes.push(keyFrame);
 

@@ -58,6 +58,8 @@ namespace ManualTracingTool {
         setCurrentFrame(frame: int);
         updateLayerStructure();
 
+        collectEditTargetViewKeyframeLayers(): List<ViewKeyframeLayer>;
+
         startLoadingDocumentResourcesProcess(document: DocumentData);
 
         openFileDialog(targetID: OpenFileDialogTargetID);
@@ -106,6 +108,34 @@ namespace ManualTracingTool {
         radius = 15.0;
     }
 
+    export class LatticePoint {
+
+        baseLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        location = vec3.fromValues(0.0, 0.0, 0.0);
+    }
+
+    export class ViewKeyframeLayer {
+
+        layer: Layer = null;
+        vectorLayerKeyframe: VectorLayerKeyframe = null;
+
+        hasKeyframe(): boolean {
+
+            return (this.vectorLayerKeyframe != null);
+        }
+    }
+
+    export class ViewKeyframe {
+
+        frame = 0;
+        layers = new List<ViewKeyframeLayer>();
+    }
+
+    export class ViewLayerContext {
+
+        keyframes: List<ViewKeyframe> = null;
+    }
+
     export class ToolContext {
 
         mainEditor: MainEditor = null;
@@ -124,7 +154,9 @@ namespace ManualTracingTool {
         commandHistory: CommandHistory = null;
 
         document: DocumentData = null;
+
         currentLayer: Layer = null;
+        //editableKeyframeLayers: List<ViewKeyframeLayer> = null;
 
         currentVectorLayer: VectorLayer = null;
         currentVectorGeometry: VectorLayerGeometry = null;
@@ -154,6 +186,8 @@ namespace ManualTracingTool {
         resamplingUnitLength = 8.0
 
         operatorCursor = new OperatorCursor();
+        //latticePoints = new List<LatticePoint>();
+        //rectangleArea = new Logic_Edit_Points_RectangleArea();
 
         shiftKey: boolean = false;
         altKey: boolean = false;
@@ -164,6 +198,12 @@ namespace ManualTracingTool {
 
         posing3DView: Posing3DView = null;
         posing3DLogic: Posing3DLogic = null;
+
+        //constructor() {
+        //    while (this.latticePoints.length < 4) {
+        //        this.latticePoints.push(new LatticePoint());
+        //    }
+        //}
     }
 
     export class ToolEnvironment {
@@ -181,6 +221,8 @@ namespace ManualTracingTool {
         commandHistory: CommandHistory = null;
 
         operatorCursor: OperatorCursor = null;
+        //latticePoints: List<LatticePoint> = null;
+        //rectangleArea: Logic_Edit_Points_RectangleArea = null;
 
         document: DocumentData = null;
 
@@ -188,6 +230,7 @@ namespace ManualTracingTool {
         drawLineMinWidth = 1.0;
 
         currentLayer: Layer = null;
+        //editableKeyframeLayers: List<ViewKeyframeLayer> = null;
 
         currentVectorLayer: VectorLayer = null;
         currentVectorGeometry: VectorLayerGeometry = null;
@@ -229,6 +272,8 @@ namespace ManualTracingTool {
             this.commandHistory = this.toolContext.commandHistory;
 
             this.operatorCursor = this.toolContext.operatorCursor;
+            //this.latticePoints = this.toolContext.latticePoints;
+            //this.rectangleArea = this.toolContext.rectangleArea;
 
             this.document = this.toolContext.document;
 
@@ -236,6 +281,7 @@ namespace ManualTracingTool {
             this.drawLineMinWidth = this.toolContext.drawLineMinWidth;
 
             this.currentLayer = this.toolContext.currentLayer;
+            //this.editableKeyframeLayers = this.toolContext.editableKeyframeLayers;
 
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
             this.currentVectorGeometry = this.toolContext.currentVectorGeometry;
@@ -297,7 +343,6 @@ namespace ManualTracingTool {
         updateLayerStructure() {
 
             this.toolContext.mainEditor.updateLayerStructure();
-            this.toolContext.mainEditor.setCurrentFrame(this.toolContext.document.animationSettingData.currentTimeFrame);
             this.setRedrawLayerWindow();
             this.setRedrawTimeLineWindow();
         }
@@ -428,6 +473,11 @@ namespace ManualTracingTool {
 
             return length / this.viewScale;
         }
+
+        collectEditTargetViewKeyframeLayers(): List<ViewKeyframeLayer> {
+
+            return this.toolContext.mainEditor.collectEditTargetViewKeyframeLayers();
+        }
     }
 
     export class ToolDrawingStyle {
@@ -445,6 +495,11 @@ namespace ManualTracingTool {
         operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
 
         modalToolSelectedAreaLineColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+        latticePointRadius = 4.0;
+
+        layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+        layerWindowItemActiveLayerColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
+        layerWindowItemSelectedColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
 
         timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
         timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);
@@ -609,16 +664,19 @@ namespace ManualTracingTool {
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
+        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @virtual
+        }
+
+        onActivated(env: ToolEnvironment) { // @virtual
+        }
+
+        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @virtual
+        }
+
         toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
         toolWindowItemDoubleClick(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
-        }
-
-        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @virtual
-        }
-
-        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @virtual
         }
 
         onOpenFile(filePath: string, env: ToolEnvironment) { // @virtual

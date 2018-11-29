@@ -129,7 +129,7 @@ namespace ManualTracingTool {
         groups = new List<VectorGroup>();
     }
 
-    export class VectorLayerKeyFrame {
+    export class VectorLayerKeyframe {
 
         frame = 0;
         geometry: VectorLayerGeometry = null;
@@ -153,7 +153,7 @@ namespace ManualTracingTool {
 
         type = LayerTypeID.vectorLayer;
 
-        keyframes = new List<VectorLayerKeyFrame>();
+        keyframes = new List<VectorLayerKeyframe>();
 
         drawLineType = DrawLineTypeID.palletColor;
 
@@ -195,7 +195,7 @@ namespace ManualTracingTool {
         constructor() {
             super();
 
-            let key = new VectorLayerKeyFrame();
+            let key = new VectorLayerKeyframe();
             key.frame = 0;
             key.geometry = new VectorLayerGeometry();
             this.keyframes.push(key);

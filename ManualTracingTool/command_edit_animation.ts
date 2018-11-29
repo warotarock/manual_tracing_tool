@@ -4,8 +4,8 @@ namespace ManualTracingTool {
     class Command_Animation_KeyframeListEditData {
 
         layer: VectorLayer = null;
-        oldKeyFrames: List<VectorLayerKeyFrame> = null;
-        newKeyFrames: List<VectorLayerKeyFrame> = null;
+        oldKeyFrames: List<VectorLayerKeyframe> = null;
+        newKeyFrames: List<VectorLayerKeyframe> = null;
     }
 
     export class Command_Animation_InsertKeyframeAllLayer extends CommandBase {
@@ -39,7 +39,7 @@ namespace ManualTracingTool {
                 let last_KeyFrame = vectorLayer.keyframes[keyframeIndex];
 
                 // Crete keyframe and insert
-                let newKeyframe = new VectorLayerKeyFrame();
+                let newKeyframe = new VectorLayerKeyframe();
                 newKeyframe.frame = targetFrame;
                 if (last_KeyFrame != null) {
                     newKeyframe.geometry = JSON.parse(JSON.stringify(last_KeyFrame.geometry));

@@ -84,14 +84,14 @@ namespace ManualTracingTool {
 
         // Main window drawing
 
-        protected clearWindow(canvasWindow: CanvasWindow) { //@override
+        protected clearWindow(canvasWindow: CanvasWindow) { // @override
 
             this.canvasRender.setContext(canvasWindow);
 
             this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
         }
 
-        protected drawMainWindow(canvasWindow: CanvasWindow) { //@override
+        protected drawMainWindow(canvasWindow: CanvasWindow) { // @override
 
             if (this.currentKeyframe == null) {
                 return;
@@ -265,7 +265,7 @@ namespace ManualTracingTool {
             this.drawVectorLineSegment(line, 0, line.points.length - 1, useAdjustingLocation);
         }
 
-        private drawVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
+        private drawVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
             if (line.points.length == 0) {
                 return;
@@ -364,7 +364,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@implements MainEditorDrawer
+        private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
             this.canvasRender.setLineCap(CanvasRenderLineCap.round)
 
@@ -502,7 +502,7 @@ namespace ManualTracingTool {
             return width / this.canvasRender.getViewScale();
         }
 
-        private getViewScaledSize(width: float) {
+        getViewScaledSize(width: float) { // @override
 
             return width / this.canvasRender.getViewScale();
         }
@@ -708,7 +708,7 @@ namespace ManualTracingTool {
 
         // MainEditorDrawer implementations
 
-        drawMouseCursor() { //@override
+        drawMouseCursor() { // @override
 
             this.canvasRender.beginPath();
 
@@ -724,22 +724,22 @@ namespace ManualTracingTool {
             this.canvasRender.stroke();
         }
 
-        drawEditorEditLineStroke(line: VectorLine) { //@override
+        drawEditorEditLineStroke(line: VectorLine) { // @override
 
             this.drawEditLineStroke(line);
         }
 
-        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) { //@override
+        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) { // @override
 
             this.drawVectorLineStroke(line, color, strokeWidth, useAdjustingLocation);
         }
 
-        drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { //@override
+        drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @override
 
             this.drawVectorLinePoints(line, color, useAdjustingLocation);
         }
 
-        drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { //@override
+        drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @override
 
             this.drawVectorLineSegment(line, startIndex, endIndex, useAdjustingLocation);
         }
@@ -796,9 +796,6 @@ namespace ManualTracingTool {
             this.drawLayerWindow_LayerWindowButtons(layerWindow);
         }
 
-        layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-        layerWindowItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
-
         private drawLayerWindow_LayerWindowButtons(layerWindow: LayerWindow) {
 
             this.caluculateLayerWindowLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
@@ -807,7 +804,7 @@ namespace ManualTracingTool {
 
                 let button = this.layerWindowCommandButtons[0];
 
-                this.canvasRender.setFillColorV(this.layerWindowBackgroundColor);
+                this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
                 this.canvasRender.fillRect(0.0, button.top, layerWindow.width - 1, button.getHeight());
             }
 
@@ -859,13 +856,17 @@ namespace ManualTracingTool {
 
             let depthOffset = 10.0 * item.hierarchyDepth;
 
-            if (layer.isSelected) {
+            if (layer.isSelected && layer == this.toolContext.currentLayer) {
 
-                this.canvasRender.setFillColorV(this.layerWindowItemSelectedColor);
+                this.canvasRender.setFillColorV(this.drawStyle.layerWindowItemActiveLayerColor);
+            }
+            else if (layer.isSelected) {
+
+                this.canvasRender.setFillColorV(this.drawStyle.layerWindowItemSelectedColor);
             }
             else {
 
-                this.canvasRender.setFillColorV(this.layerWindowBackgroundColor);
+                this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
             }
             this.canvasRender.fillRect(left, top, itemWidth, itemHeight);
 
@@ -929,7 +930,7 @@ namespace ManualTracingTool {
                 }
                 else {
 
-                    this.canvasRender.setFillColorV(this.layerWindowBackgroundColor);
+                    this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
                 }
                 this.canvasRender.fillRect(0, dstY, fullWidth, unitHeight * scale);
 

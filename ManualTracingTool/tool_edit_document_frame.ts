@@ -48,12 +48,12 @@ namespace ManualTracingTool {
 
             if (this.latticePoints == null) {
 
-                this.createLatticePoints(this.latticePointCount);
+                this.createLatticePoints();
             }
 
             this.prepareLatticePoints(env);
 
-            this.drawLatticeLine(env, drawEnv);
+            this.drawLatticeRectangle(env, drawEnv);
         }
 
         protected executeCommand(env: ToolEnvironment) {

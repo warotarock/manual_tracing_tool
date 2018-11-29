@@ -3,7 +3,7 @@ namespace ManualTracingTool {
 
     export class Main_View extends Main_Core {
 
-        protected initializeViews() { //@override
+        protected initializeViews() { // @override
 
             this.mainWindow.centerLocationRate[0] = 0.5;
             this.mainWindow.centerLocationRate[1] = 0.5;
@@ -17,7 +17,7 @@ namespace ManualTracingTool {
 
         // View management
 
-        protected resizeWindows() { //@override
+        protected resizeWindows() { // @override
 
             this.resizeCanvasToParent(this.mainWindow);
             this.fitCanvas(this.editorWindow, this.mainWindow);
@@ -191,7 +191,7 @@ namespace ManualTracingTool {
             this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveDown));
         }
 
-        protected collectLayerWindowItems() { //@override
+        protected collectLayerWindowItems() { // @override
 
             this.layerWindowItems = new List<LayerWindowItem>();
             this.collectLayerWindowItemsRecursive(this.layerWindowItems, this.document.rootLayer, 0);
@@ -266,7 +266,7 @@ namespace ManualTracingTool {
             return null;
         }
 
-        protected caluculateLayerWindowLayout(layerWindow: LayerWindow) { //@override
+        protected caluculateLayerWindowLayout(layerWindow: LayerWindow) { // @override
 
             // layer item buttons
             this.layerWindowLayoutArea.copyRectangle(layerWindow);
@@ -340,7 +340,7 @@ namespace ManualTracingTool {
 
         subToolViewItems: List<SubToolViewItem> = null;
 
-        protected subtoolWindow_CollectViewItems() { //@override
+        protected subtoolWindow_CollectViewItems() { // @override
 
             this.subToolViewItems = new List<SubToolViewItem>();
 
@@ -366,7 +366,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected subtoolWindow_CaluculateLayout(subtoolWindow: SubtoolWindow) { //@override
+        protected subtoolWindow_CaluculateLayout(subtoolWindow: SubtoolWindow) { // @override
 
             let scale = subtoolWindow.subToolItemScale;
             let fullWidth = subtoolWindow.width - 1;
@@ -423,7 +423,7 @@ namespace ManualTracingTool {
             };
         }
 
-        protected isModalShown(): boolean { //@override
+        protected isModalShown(): boolean { // @override
 
             return (this.currentModalDialogID != null && this.currentModalDialogID != this.ID.none);
         }
@@ -684,7 +684,7 @@ namespace ManualTracingTool {
             this.palletColorWindow_EditLayer = null;
         }
 
-        public openDocumentSettingDialog() { //@override
+        public openDocumentSettingDialog() { // @override
 
             this.openDocumentSettingModal();
         }
@@ -1041,7 +1041,7 @@ namespace ManualTracingTool {
             this.toolEnv.setRedrawSubtoolWindow();
         }
 
-        public openFileDialog(targetID: OpenFileDialogTargetID) { //@override
+        public openFileDialog(targetID: OpenFileDialogTargetID) { // @override
 
             if (targetID == OpenFileDialogTargetID.imageFileReferenceLayerFilePath) {
 
@@ -1129,7 +1129,7 @@ namespace ManualTracingTool {
 
         // Header window
 
-        protected updateHeaderButtons() { //@override
+        protected updateHeaderButtons() { // @override
 
             {
                 let isButtonON = (this.toolContext.editMode == EditModeID.drawMode
@@ -1167,7 +1167,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected updateHdeaderDocumentFileName() { //@override
+        protected updateHdeaderDocumentFileName() { // @override
 
             let filePath = window.localStorage.getItem(this.lastFilePathKey);
 
@@ -1179,7 +1179,7 @@ namespace ManualTracingTool {
         footerText: string = '';
         footerTextBefore: string = '';
 
-        protected updateFooterMessage() { //@override
+        protected updateFooterMessage() { // @override
 
             let context = this.toolContext;
             let modeText = '';
@@ -1364,7 +1364,7 @@ namespace ManualTracingTool {
             this.startModalTool(modalTool);
         }
 
-        protected layerWindow_UnselectAllLayer() { //@override
+        protected layerWindow_UnselectAllLayer() { // @override
 
             for (let item of this.layerWindowItems) {
 
@@ -1394,10 +1394,10 @@ namespace ManualTracingTool {
 
         // Drawing for export
 
-        protected clearWindow(canvasWindow: CanvasWindow) { //@virtual
+        protected clearWindow(canvasWindow: CanvasWindow) { // @virtual
         }
 
-        protected drawMainWindow(canvasWindow: CanvasWindow) { //@virtual
+        protected drawMainWindow(canvasWindow: CanvasWindow) { // @virtual
         }
 
         // HTML helper
@@ -1431,7 +1431,7 @@ namespace ManualTracingTool {
             return element;
         }
 
-        getInputElementText(id: string): string { //@override
+        getInputElementText(id: string): string { // @override
 
             let element = <HTMLInputElement>(document.getElementById(id));
 
@@ -1726,50 +1726,6 @@ namespace ManualTracingTool {
 
         LineColor = 1,
         FillColor = 2
-    }
-
-    export enum DrawLineToolSubToolID {
-
-        drawLine = 0,
-        scratchLine = 2,
-        deletePointBrush = 1
-    }
-
-    export enum EditModeSubToolID {
-
-        mainEditTool = 0,
-    }
-
-    export enum ModalToolID {
-
-        none = 0,
-        grabMove = 1,
-        ratate = 2,
-        scale = 3,
-        latticeMove = 4,
-        countOfID = 5,
-    }
-
-    export class ViewKeyframeLayer {
-
-        layer: Layer = null;
-        vectorLayerKeyframe: VectorLayerKeyFrame = null;
-
-        hasKeyframe(): boolean {
-
-            return (this.vectorLayerKeyframe != null);
-        }
-    }
-
-    export class ViewKeyFrame {
-
-        frame = 0;
-        layers = new List<ViewKeyframeLayer>();
-    }
-
-    export class ViewLayerContext {
-
-        keyframes: List<ViewKeyFrame> = null;
     }
 
     export class HTMLElementID {
