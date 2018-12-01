@@ -11,21 +11,6 @@ namespace ManualTracingTool {
         oldLocation = vec3.fromValues(0.0, 0.0, 0.0);
     }
 
-    export enum LatticeStateID {
-
-        invalid = 0,
-        defaultRentangle = 1,
-        modified = 2,
-    }
-
-    enum TransformType {
-
-        none = 0,
-        grabMove = 1,
-        rotate = 2,
-        scale = 3
-    }
-
     export class Tool_EditModeMain extends Tool_Transform_Lattice {
 
         // エディットモードメインツールクラス……最初にラティス矩形を計算し、変形ツールでもある。選択ツールをモーダル起動する、矩形は渡す。
@@ -44,21 +29,11 @@ namespace ManualTracingTool {
         // 　　r→反対側の点を中心とした４点の回転にする
         // 　なのでモーダル開始時に、辺をクリックしたときはピボットを中心にし、角の点のときは反対側の点を中心にして開始する
 
-        latticeState = LatticeStateID.invalid;
-        baseRectangleArea = new Logic_Edit_Points_RectangleArea();
-        rectangleArea = new Logic_Edit_Points_RectangleArea();
-
-        transformType = TransformType.none;
-        transformCalculator: ITool_Transform_Lattice_Calculator = null;
-        grabMove_Calculator = new GrabMove_Calculator();
-        rotate_Calculator = new Rotate_Calculator();
-        scale_Calculator = new Scale_Calculator();
+        editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
         lerpLocation1 = vec3.create();
         lerpLocation2 = vec3.create();
         lerpLocation3 = vec3.create();
-
-        editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -68,9 +43,29 @@ namespace ManualTracingTool {
             );
         }
 
-        onActivated(env: ToolEnvironment) { // @override
+        // Preparing for operation
 
-            this.prepareLatticePoints(env);
+        prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
+
+            this.clearEditData(e, env);
+
+            if (!this.checkTarget(e, env)) {
+
+                return false;
+            }
+
+            // Current cursor location
+            vec3.copy(this.mouseAnchorLocation, e.location);
+
+            // Create edit info
+            this.prepareEditData(e, env);
+
+            return true;
+        }
+
+        protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
+
+            return (this.transformType != TransformType.none);
         }
 
         protected prepareLatticePoints(env: ToolEnvironment): boolean { // @override
@@ -100,8 +95,9 @@ namespace ManualTracingTool {
 
             if (available) {
 
-                this.latticeState = LatticeStateID.defaultRentangle;
-                this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, env);
+                this.latticeState = LatticeStateID.initialState;
+                this.latticePadding = env.drawStyle.latticePointPadding;
+                this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
                 this.setLatticePointsByRectangle(this.rectangleArea);
             }
             else {
@@ -112,239 +108,9 @@ namespace ManualTracingTool {
             return available;
         }
 
-        keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
-
-            if (!env.isModalToolRunning()) {
-
-                if (e.key == 'g') {
-
-                    this.startLatticeAffineTransform(TransformType.grabMove, false, env);
-                    return true;
-                }
-                else if (e.key == 'r') {
-
-                    this.startLatticeAffineTransform(TransformType.rotate, false, env);
-                    return true;
-                }
-                else if (e.key == 's') {
-
-                    this.startLatticeAffineTransform(TransformType.scale, false, env);
-                    return true;
-                }
-            }
-            else {
-
-                if (e.key == 'Enter') {
-
-                    this.endTransform(env);
-                    return true;
-                }
-                else if (e.key == 'Escape') {
-
-                    this.cancelTransform(env);
-                    return true;
-                }
-                else if (e.key == 'g') {
-
-                    this.startLatticeAffineTransform(TransformType.grabMove, true, env);
-                    return true;
-                }
-                else if (e.key == 'r') {
-
-                    this.startLatticeAffineTransform(TransformType.rotate, true, env);
-                    return true;
-                }
-                else if (e.key == 's') {
-
-                    this.startLatticeAffineTransform(TransformType.scale, true, env);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            if (!env.isModalToolRunning()) {
-
-                this.startLatticeTransform(env);
-            }
-            else {
-
-                if (e.isRightButtonPressing()) {
-
-                    this.cancelTransform(env);
-                }
-            }
-        }
-
-        mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            if (!env.isModalToolRunning()) {
-
-            }
-            else {
-
-                if (e.isLeftButtonReleased()) {
-
-                    if (this.latticeState == LatticeStateID.modified) {
-
-                        this.endTransform(env);
-                    }
-                }
-            }
-        }
-
         protected clearEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             this.editPoints = null;
-        }
-
-        protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
-
-            return (this.transformType != TransformType.none);
-        }
-
-        protected startLatticeAffineTransform(transformType: TransformType, isContinueEdit: boolean, env: ToolEnvironment) {
-
-            for (let latticePoint of this.latticePoints) {
-
-                latticePoint.latticePointEditType = LatticePointEditTypeID.allDirection;
-            }
-
-            if (transformType == TransformType.grabMove) {
-
-                this.transformType = TransformType.grabMove;
-                this.transformCalculator = this.grabMove_Calculator;
-            }
-            else if (transformType == TransformType.rotate) {
-
-                this.transformType = TransformType.rotate;
-                this.transformCalculator = this.rotate_Calculator;
-            }
-            else if (transformType == TransformType.scale) {
-
-                this.transformType = TransformType.scale;
-                this.transformCalculator = this.scale_Calculator;
-            }
-
-            this.transformCalculator.prepare(env);
-
-            vec3.copy(this.mouseAnchorLocation, env.mouseCursorLocation);
-
-            if (isContinueEdit) {
-
-                this.applytLatticePointBaseLocation();
-            }
-            else {
-
-                env.startModalTool(this);
-            }
-        }
-
-        protected startLatticeTransform(env: ToolEnvironment) {
-
-            for (let latticePoint of this.latticePoints) {
-
-                latticePoint.latticePointEditType = LatticePointEditTypeID.none;
-            }
-
-            if (this.mouseOver_SelectedLatticePart == SelectedLatticePartID.latticePoint) {
-
-                let pointIndexH = -1;
-                let pointIndexV = -1;
-                if (this.mouseOver_PartIndex == 0) {
-
-                    pointIndexH = 3;
-                    pointIndexV = 1;
-                }
-                else if (this.mouseOver_PartIndex == 1) {
-
-                    pointIndexH = 2;
-                    pointIndexV = 0;
-                }
-                else if (this.mouseOver_PartIndex == 2) {
-
-                    pointIndexH = 1;
-                    pointIndexV = 3;
-                }
-                else if (this.mouseOver_PartIndex == 3) {
-
-                    pointIndexH = 0;
-                    pointIndexV = 2;
-                }
-
-                this.latticePoints[this.mouseOver_PartIndex].latticePointEditType = LatticePointEditTypeID.allDirection;
-                this.latticePoints[pointIndexH].latticePointEditType = LatticePointEditTypeID.horizontalOnly;
-                this.latticePoints[pointIndexV].latticePointEditType = LatticePointEditTypeID.verticalOnly;
-
-                this.transformType = TransformType.grabMove;
-                this.transformCalculator = this.grabMove_Calculator;
-                this.latticeState = LatticeStateID.defaultRentangle;
-
-                env.startModalTool(this);
-            }
-
-            if (this.mouseOver_SelectedLatticePart == SelectedLatticePartID.latticeEdge) {
-
-                let latticePointEditType: LatticePointEditTypeID;
-                if (this.mouseOver_PartIndex == 0 || this.mouseOver_PartIndex == 2) {
-
-                    latticePointEditType = LatticePointEditTypeID.verticalOnly;
-                }
-                else {
-
-                    latticePointEditType = LatticePointEditTypeID.horizontalOnly;
-                }
-
-                this.latticePoints[this.mouseOver_PartIndex].latticePointEditType = latticePointEditType;
-                this.latticePoints[this.mouseOver_PartIndexTo].latticePointEditType = latticePointEditType;
-
-                this.transformType = TransformType.grabMove;
-                this.transformCalculator = this.grabMove_Calculator;
-                this.latticeState = LatticeStateID.defaultRentangle;
-
-                env.startModalTool(this);
-            }
-        }
-
-        protected endTransform(env: ToolEnvironment) {
-
-            this.processTransform(env);
-
-            this.executeCommand(env);
-
-            this.transformType = TransformType.none;
-            this.transformCalculator = null;
-
-            env.endModalTool();
-        }
-
-        protected cancelTransform(env: ToolEnvironment) {
-
-            this.transformType = TransformType.none;
-            this.transformCalculator = null;
-
-            env.cancelModalTool();
-        }
-
-        prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
-
-            this.clearEditData(e, env);
-
-            if (!this.checkTarget(e, env)) {
-
-                return false;
-            }
-
-            // Current cursor location
-            vec3.copy(this.mouseAnchorLocation, e.location);
-
-            // Create edit info
-            this.prepareEditData(e, env);
-
-            return true;
         }
 
         protected prepareEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
@@ -390,12 +156,7 @@ namespace ManualTracingTool {
             this.editPoints = editPoints;
         }
 
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            this.transformCalculator.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
-
-            this.latticeState = LatticeStateID.modified;
-        }
+        // Operation process implementation (Override methods)
 
         protected processTransform(env: ToolEnvironment) { // @override
 
@@ -462,22 +223,6 @@ namespace ManualTracingTool {
             env.commandHistory.addCommand(command);
 
             this.editPoints = null;
-        }
-
-        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
-
-            if (this.latticeState != LatticeStateID.invalid) {
-
-                if (this.latticeState == LatticeStateID.defaultRentangle) {
-
-                    this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, env);
-                    this.setLatticePointsByRectangle(this.rectangleArea);
-                }
-
-                //drawEnv.editorDrawer.drawMouseCursor();
-                this.drawLatticeRectangle(env, drawEnv);
-                this.drawLatticePoints(env, drawEnv);
-            }
         }
     }
 }

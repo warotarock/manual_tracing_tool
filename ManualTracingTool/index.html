@@ -402,12 +402,16 @@
 
         .modalDialogWindow.exportImageFileModal {
             width: 400px;
-            height: 200px;
+            height: 220px;
         }
 
             .modalDialogWindow.exportImageFileModal div {
                 margin-bottom: 15px;
             }
+
+                .modalDialogWindow.exportImageFileModal div label input.scale {
+                    width: 50px;
+                }
 
         .modalDialogWindow.newKeyframeModal {
             width: 400px;
@@ -657,9 +661,9 @@
             </label><br />
         </div>
         <div>
-            画像形式<br />
+            画像形式　
             <label>
-                <input type="radio" name="exportImageFileModal_imageFileType" value="1">
+                <input type="radio" name="exportImageFileModal_imageFileType" value="1" checked>
                 png
             </label>
             <label>
@@ -667,6 +671,24 @@
                 jpeg
             </label>
             <br />
+        </div>
+        <div>
+            背景　　　
+            <label>
+                <input type="radio" name="exportImageFileModal_backGroundType" value="1" checked>
+                最後のパレットの色
+            </label>
+            <label>
+                <input type="radio" name="exportImageFileModal_backGroundType" value="2">
+                透過色
+            </label>
+            <br />
+        </div>
+        <div>
+            <label>
+                スケール
+                <input type="number" id="exportImageFileModal_scale" class="scale" step="0.1" />
+            </label>
         </div>
         <div class="OKCalcelButtons">
             <input type="button" id="exportImageFileModal_ok" value="エクスポート">

@@ -54,7 +54,7 @@ namespace ManualTracingTool {
 
             let available = Logic_Edit_Points.existsRectangleArea(rect);
 
-            this.addPaddingToRectangle(rect, rect, env);
+            this.addPaddingToRectangle(rect, rect, env.drawStyle.latticePointPadding, env);
             this.setLatticePointsByRectangle(rect);
 
             return available;

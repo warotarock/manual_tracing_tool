@@ -15,6 +15,8 @@ namespace ManualTracingTool {
             env.openDocumentSettingDialog();
         }
 
+        // Preparing for operation (Override methods)
+
         protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
             return true;
@@ -24,47 +26,52 @@ namespace ManualTracingTool {
 
             // calculate lattice points
 
-            vec3.set(this.latticePoints[0].baseLocation, env.document.documentFrame[0], env.document.documentFrame[1], 0.0);
-            vec3.set(this.latticePoints[1].baseLocation, env.document.documentFrame[2], env.document.documentFrame[1], 0.0);
-            vec3.set(this.latticePoints[2].baseLocation, env.document.documentFrame[2], env.document.documentFrame[3], 0.0);
-            vec3.set(this.latticePoints[3].baseLocation, env.document.documentFrame[0], env.document.documentFrame[3], 0.0);
+            this.baseRectangleArea.left = env.document.documentFrame[0];
+            this.baseRectangleArea.top = env.document.documentFrame[1];
+            this.baseRectangleArea.right = env.document.documentFrame[2];
+            this.baseRectangleArea.bottom = env.document.documentFrame[3];
 
+            this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, 0.0, env);
+            this.setLatticePointsByRectangle(this.rectangleArea);
             this.resetLatticePointLocationToBaseLocation();
 
             return true;
         }
 
+        // Operation inputs
+
         keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
 
-            // prevent modal operation
-            return false;
-        }
+            if (!env.isModalToolRunning()) {
 
-        mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+                if (e.key == 'g') {
 
-            // prevent modal operation
-        }
+                    this.startLatticeAffineTransform(TransformType.grabMove, false, env);
+                    return true;
+                }
+                else if (e.key == 'r') {
 
-        onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
+                    this.startLatticeAffineTransform(TransformType.rotate, false, env);
+                    return true;
+                }
+                else if (e.key == 's') {
 
-            if (this.latticePoints == null) {
-
-                this.createLatticePoints();
+                    this.startLatticeAffineTransform(TransformType.scale, false, env);
+                    return true;
+                }
             }
 
-            this.prepareLatticePoints(env);
-
-            this.drawLatticeRectangle(env, drawEnv);
+            return false;
         }
 
         protected executeCommand(env: ToolEnvironment) {
 
             let command = new Command_EditDocumentFrame();
             command.targetDocument = env.document;
-            command.newDocumentFrame[0] = this.latticePoints[0].baseLocation[0];
-            command.newDocumentFrame[1] = this.latticePoints[0].baseLocation[1];
-            command.newDocumentFrame[2] = this.latticePoints[2].baseLocation[0];
-            command.newDocumentFrame[3] = this.latticePoints[2].baseLocation[1];
+            command.newDocumentFrame[0] = this.latticePoints[0].location[0];
+            command.newDocumentFrame[1] = this.latticePoints[0].location[1];
+            command.newDocumentFrame[2] = this.latticePoints[2].location[0];
+            command.newDocumentFrame[3] = this.latticePoints[2].location[1];
             command.execute(env);
 
             env.commandHistory.addCommand(command);

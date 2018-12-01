@@ -832,8 +832,6 @@ namespace ManualTracingTool {
 
             this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
 
-            this.setRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
-
             this.openModal(this.ID.exportImageFileModal, null);
         }
 
@@ -849,8 +847,18 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let imageWidth = Math.floor(this.document.documentFrame[2] - this.document.documentFrame[0] + 1);
-            let imageHeight = Math.floor(this.document.documentFrame[3] - this.document.documentFrame[1] + 1);
+            let backGroundType = this.getRadioElementIntValue(this.ID.exportImageFileModal_backGroundType, 1);
+            let scale = this.getInputElementNumber(this.ID.exportImageFileModal_scale, 1.0);
+
+            let frameLeft = Math.floor(this.document.documentFrame[0]);
+            let frameTop = Math.floor(this.document.documentFrame[1]);
+            let documentWidth = Math.floor(this.document.documentFrame[2]) - frameLeft + 1;
+            let documentHeight = Math.floor(this.document.documentFrame[3]) - frameTop + 1;
+
+            let imageLeft = Math.floor(frameLeft);
+            let imageTop = Math.floor(frameTop);
+            let imageWidth = Math.floor(documentWidth * scale);
+            let imageHeight = Math.floor(documentHeight * scale);
 
             if (imageWidth > 0 && imageHeight > 0) {
 
@@ -860,13 +868,18 @@ namespace ManualTracingTool {
 
                 this.renderingWindow.width = imageWidth;
                 this.renderingWindow.height = imageHeight;
-                this.renderingWindow.viewLocation[0] = 0.0;
-                this.renderingWindow.viewLocation[1] = 0.0;
-                this.renderingWindow.viewScale = 1.0;
+                this.renderingWindow.viewLocation[0] = imageLeft;
+                this.renderingWindow.viewLocation[1] = imageTop;
+                this.renderingWindow.viewScale = scale;
                 this.renderingWindow.viewRotation = 0.0;
-                this.renderingWindow.centerLocationRate[0] = 0.5;
-                this.renderingWindow.centerLocationRate[1] = 0.5;
+                this.renderingWindow.centerLocationRate[0] = 0.0;
+                this.renderingWindow.centerLocationRate[1] = 0.0;
                 this.clearWindow(this.renderingWindow);
+                if (backGroundType == 1) {
+
+                    this.canvasRender.setFillColorV(this.document.palletColos[this.document.palletColos.length - 1].color);
+                    this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
+                }
                 this.drawMainWindow(this.renderingWindow);
 
                 let exportPath = window.localStorage.getItem(this.exportPathKey);
@@ -890,6 +903,10 @@ namespace ManualTracingTool {
                         alert(error);
                     }
                 });
+
+                // Free canvas memory
+                canvas.width = 10;
+                canvas.height = 10;
             }
         }
 
@@ -998,8 +1015,8 @@ namespace ManualTracingTool {
             }
             else if (this.currentModalDialogID == this.ID.operationOptionModal) {
 
-                this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth);
-                this.toolContext.drawLineMinWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineMinWidth);
+                this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth, 1.0);
+                this.toolContext.drawLineMinWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineMinWidth, 0.1);
 
                 let operationUnitID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, OperationUnitID.linePoint);
 
@@ -1015,10 +1032,10 @@ namespace ManualTracingTool {
             }
             else if (this.currentModalDialogID == this.ID.documentSettingModal) {
 
-                this.document.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft);
-                this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop);
-                this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight);
-                this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom);
+                this.document.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft, -512);
+                this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop, -512);
+                this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight, 512);
+                this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom, 512);
             }
             else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
 
@@ -1447,9 +1464,14 @@ namespace ManualTracingTool {
             return element;
         }
 
-        getInputElementNumber(id: string): float {
+        getInputElementNumber(id: string, defaultValue: float): float {
 
             let element = <HTMLInputElement>(document.getElementById(id));
+
+            if (element.value == '') {
+
+                return defaultValue;
+            }
 
             return Number(element.value);
         }
@@ -1798,6 +1820,8 @@ namespace ManualTracingTool {
         exportImageFileModal = '#exportImageFileModal';
         exportImageFileModal_fileName = 'exportImageFileModal_fileName';
         exportImageFileModal_imageFileType = 'exportImageFileModal_imageFileType';
+        exportImageFileModal_backGroundType = 'exportImageFileModal_backGroundType';
+        exportImageFileModal_scale = 'exportImageFileModal_scale';
         exportImageFileModal_ok = 'exportImageFileModal_ok';
         exportImageFileModal_cancel = 'exportImageFileModal_cancel';
 
