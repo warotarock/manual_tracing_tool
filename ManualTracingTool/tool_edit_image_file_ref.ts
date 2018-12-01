@@ -12,12 +12,15 @@ namespace ManualTracingTool {
             );
         }
 
-        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @override
+        keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
 
             if (e.key == 'o') {
 
                 env.openFileDialog(OpenFileDialogTargetID.imageFileReferenceLayerFilePath);
+                return true;
             }
+
+            return false;
         }
 
         toolWindowItemDoubleClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
@@ -144,8 +147,12 @@ namespace ManualTracingTool {
             return true;
         }
 
-        protected createEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        protected prepareEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
+            for (let latticePoint of this.latticePoints) {
+
+                latticePoint.latticePointEditType = LatticePointEditTypeID.allDirection;
+            }
         }
 
         protected processTransform(env: ToolEnvironment) { // @override
@@ -247,9 +254,9 @@ namespace ManualTracingTool {
 
         calcer = new Rotate_Calculator();
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            this.calcer.prepareModalExt(e, env);
+            this.calcer.prepare(env);
         }
 
         protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
@@ -262,9 +269,9 @@ namespace ManualTracingTool {
 
         calcer = new Scale_Calculator();
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            this.calcer.prepareModalExt(e, env);
+            this.calcer.prepare(env);
         }
 
         protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {

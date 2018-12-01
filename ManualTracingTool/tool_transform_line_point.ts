@@ -54,12 +54,18 @@ namespace ManualTracingTool {
 
             let available = Logic_Edit_Points.existsRectangleArea(rect);
 
+            this.addPaddingToRectangle(rect, rect, env);
             this.setLatticePointsByRectangle(rect);
 
             return available;
         }
 
-        protected createEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        protected prepareEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            for (let latticePoint of this.latticePoints) {
+
+                latticePoint.latticePointEditType = LatticePointEditTypeID.allDirection;
+            }
 
             let editPoints = new List<Tool_Transform_Lattice_EditPoint>();
 
@@ -242,9 +248,9 @@ namespace ManualTracingTool {
 
         calcer = new Rotate_Calculator();
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            this.calcer.prepareModalExt(e, env);
+            this.calcer.prepare(env);
         }
 
         protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
@@ -257,9 +263,9 @@ namespace ManualTracingTool {
 
         calcer = new Scale_Calculator();
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            this.calcer.prepareModalExt(e, env);
+            this.calcer.prepare(env);
         }
 
         protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {

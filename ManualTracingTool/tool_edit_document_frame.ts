@@ -34,9 +34,10 @@ namespace ManualTracingTool {
             return true;
         }
 
-        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @override
+        keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
 
             // prevent modal operation
+            return false;
         }
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override

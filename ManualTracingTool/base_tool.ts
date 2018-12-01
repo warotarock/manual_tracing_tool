@@ -108,8 +108,14 @@ namespace ManualTracingTool {
         radius = 15.0;
     }
 
+    export enum LatticePointEditTypeID {
+
+        none, horizontalOnly, verticalOnly, allDirection
+    }
+
     export class LatticePoint {
 
+        latticePointEditType = LatticePointEditTypeID.none;
         baseLocation = vec3.fromValues(0.0, 0.0, 0.0);
         location = vec3.fromValues(0.0, 0.0, 0.0);
     }
@@ -139,6 +145,15 @@ namespace ManualTracingTool {
     export class ToolContext {
 
         mainEditor: MainEditor = null;
+        drawStyle: ToolDrawingStyle = null;
+        commandHistory: CommandHistory = null;
+
+        document: DocumentData = null;
+
+        mainWindow: CanvasWindow = null;
+        pickingWindow: PickingWindow = null;
+        posing3DView: Posing3DView = null;
+        posing3DLogic: Posing3DLogic = null;
 
         mainToolID = MainToolID.none;
         subToolIndex = 0;
@@ -150,10 +165,6 @@ namespace ManualTracingTool {
 
         drawLineBaseWidth = 1.0;
         drawLineMinWidth = 0.1;
-
-        commandHistory: CommandHistory = null;
-
-        document: DocumentData = null;
 
         currentLayer: Layer = null;
         //editableKeyframeLayers: List<ViewKeyframeLayer> = null;
@@ -178,9 +189,6 @@ namespace ManualTracingTool {
         redrawHeaderWindow = false;
         redrawFooterWindow = false;
 
-        mainWindow: CanvasWindow = null;
-        pickingWindow: PickingWindow = null;
-
         mouseCursorRadius = 12.0;
 
         resamplingUnitLength = 8.0
@@ -196,9 +204,6 @@ namespace ManualTracingTool {
         animationPlaying = false;
         animationPlayingFPS = 24;
 
-        posing3DView: Posing3DView = null;
-        posing3DLogic: Posing3DLogic = null;
-
         //constructor() {
         //    while (this.latticePoints.length < 4) {
         //        this.latticePoints.push(new LatticePoint());
@@ -209,6 +214,7 @@ namespace ManualTracingTool {
     export class ToolEnvironment {
 
         private toolContext: ToolContext = null;
+        drawStyle: ToolDrawingStyle = null;
 
         mainToolID = MainToolID.posing;
         subToolIndex = 0;
@@ -249,10 +255,10 @@ namespace ManualTracingTool {
         posing3DView: Posing3DView = null;
         posing3DLogic: Posing3DLogic = null;
 
+        viewScale = 0.0;
+
         mouseCursorViewRadius = 0.0;
         mouseCursorLocation = vec3.fromValues(0.0, 0.0, 0.0);
-
-        viewScale = 0.0;
 
         constructor(toolContext: ToolContext) {
 
@@ -309,6 +315,7 @@ namespace ManualTracingTool {
             this.posing3DLogic = this.toolContext.posing3DLogic;
 
             this.viewScale = this.toolContext.mainWindow.viewScale;
+            this.drawStyle = this.toolContext.drawStyle;
 
             this.mouseCursorViewRadius = this.getViewScaledLength(this.toolContext.mouseCursorRadius);
         }
@@ -496,6 +503,8 @@ namespace ManualTracingTool {
 
         modalToolSelectedAreaLineColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
         latticePointRadius = 4.0;
+        latticePointHitRadius = 10.0;
+        latticePointPadding = 8.0;
 
         layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
         layerWindowItemActiveLayerColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
@@ -664,7 +673,8 @@ namespace ManualTracingTool {
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
-        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @virtual
+        keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @virtual
+            return false;
         }
 
         onActivated(env: ToolEnvironment) { // @virtual

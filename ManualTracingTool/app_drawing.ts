@@ -626,11 +626,6 @@ namespace ManualTracingTool {
                 this.drawOperatorCursor();
             }
 
-            if (this.toolEnv.isEditMode()) {
-
-                this.drawMouseCursor();
-            }
-
             if (this.toolEnv.isDrawMode()) {
 
                 if (this.currentTool == this.tool_DrawLine) {

@@ -1045,6 +1045,12 @@ namespace ManualTracingTool {
 
                 return;
             }
+            else if (env.isEditMode()) {
+
+                if (this.currentTool.keydown(e, env)) {
+                    return;
+                }
+            }
 
             if (this.activeCanvasWindow == this.timeLineWindow) {
 

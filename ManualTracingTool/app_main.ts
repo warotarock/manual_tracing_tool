@@ -800,16 +800,17 @@ namespace ManualTracingTool {
 
             this.toolContext = new ToolContext();
 
-            this.toolContext.mainWindow = this.mainWindow;
-            this.toolContext.pickingWindow = this.pickingWindow;
-
-            this.toolContext.posing3DView = this.posing3dView;
-            this.toolContext.posing3DLogic = this.posing3DLogic;
+            this.toolContext.mainEditor = this;
+            this.toolContext.drawStyle = this.drawStyle;
+            this.toolContext.commandHistory = new CommandHistory();
 
             this.toolContext.document = this.document;
 
-            this.toolContext.commandHistory = new CommandHistory();
-            this.toolContext.mainEditor = this;
+            this.toolContext.mainWindow = this.mainWindow;
+            this.toolContext.pickingWindow = this.pickingWindow;
+            this.toolContext.posing3DView = this.posing3dView;
+            this.toolContext.posing3DLogic = this.posing3DLogic;
+
         }
 
         protected initializeViews() { // @virtual

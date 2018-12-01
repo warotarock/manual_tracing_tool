@@ -11,6 +11,13 @@ namespace ManualTracingTool {
         oldLocation = vec3.fromValues(0.0, 0.0, 0.0);
     }
 
+    export enum LatticeStateID {
+
+        invalid = 0,
+        defaultRentangle = 1,
+        modified = 2,
+    }
+
     enum TransformType {
 
         none = 0,
@@ -37,6 +44,8 @@ namespace ManualTracingTool {
         // 　　r→反対側の点を中心とした４点の回転にする
         // 　なのでモーダル開始時に、辺をクリックしたときはピボットを中心にし、角の点のときは反対側の点を中心にして開始する
 
+        latticeState = LatticeStateID.invalid;
+        baseRectangleArea = new Logic_Edit_Points_RectangleArea();
         rectangleArea = new Logic_Edit_Points_RectangleArea();
 
         transformType = TransformType.none;
@@ -50,12 +59,6 @@ namespace ManualTracingTool {
         lerpLocation3 = vec3.create();
 
         editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
-
-        constructor() {
-            super();
-
-            this.createLatticePoints();
-        }
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -72,9 +75,7 @@ namespace ManualTracingTool {
 
         protected prepareLatticePoints(env: ToolEnvironment): boolean { // @override
 
-            let rect = this.rectangleArea;
-
-            Logic_Edit_Points.setMinMaxToRectangleArea(rect);
+            Logic_Edit_Points.setMinMaxToRectangleArea(this.baseRectangleArea);
 
             let selectedOnly = true;
 
@@ -90,39 +91,45 @@ namespace ManualTracingTool {
 
                     for (let line of group.lines) {
 
-                        Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
+                        Logic_Edit_Points.calculateSurroundingRectangle(this.baseRectangleArea, this.baseRectangleArea, line.points, selectedOnly);
                     }
                 }
             }
 
-            let available = Logic_Edit_Points.existsRectangleArea(rect);
+            let available = Logic_Edit_Points.existsRectangleArea(this.baseRectangleArea);
 
-            this.setLatticePointsByRectangle(rect);
+            if (available) {
+
+                this.latticeState = LatticeStateID.defaultRentangle;
+                this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, env);
+                this.setLatticePointsByRectangle(this.rectangleArea);
+            }
+            else {
+
+                this.latticeState = LatticeStateID.invalid;
+            }
 
             return available;
         }
 
-        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @override
+        keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
 
             if (!env.isModalToolRunning()) {
 
                 if (e.key == 'g') {
 
-                    this.transformType = TransformType.grabMove;
-                    this.transformCalculator = this.grabMove_Calculator;
-                    env.startModalTool(this);
+                    this.startLatticeAffineTransform(TransformType.grabMove, false, env);
+                    return true;
                 }
                 else if (e.key == 'r') {
 
-                    this.transformType = TransformType.rotate;
-                    this.transformCalculator = this.rotate_Calculator;
-                    env.startModalTool(this);
+                    this.startLatticeAffineTransform(TransformType.rotate, false, env);
+                    return true;
                 }
                 else if (e.key == 's') {
 
-                    this.transformType = TransformType.scale;
-                    this.transformCalculator = this.scale_Calculator;
-                    env.startModalTool(this);
+                    this.startLatticeAffineTransform(TransformType.scale, false, env);
+                    return true;
                 }
             }
             else {
@@ -130,44 +137,61 @@ namespace ManualTracingTool {
                 if (e.key == 'Enter') {
 
                     this.endTransform(env);
+                    return true;
                 }
                 else if (e.key == 'Escape') {
 
                     this.cancelTransform(env);
+                    return true;
                 }
                 else if (e.key == 'g') {
 
-                    this.transformType = TransformType.grabMove;
-                    this.transformCalculator = this.grabMove_Calculator;
-                    vec3.copy(this.mouseAnchorLocation, env.mouseCursorLocation);
-                    this.applytLatticePointBaseLocation();
+                    this.startLatticeAffineTransform(TransformType.grabMove, true, env);
+                    return true;
                 }
                 else if (e.key == 'r') {
 
-                    this.transformType = TransformType.rotate;
-                    this.transformCalculator = this.rotate_Calculator;
-                    this.applytLatticePointBaseLocation();
+                    this.startLatticeAffineTransform(TransformType.rotate, true, env);
+                    return true;
                 }
                 else if (e.key == 's') {
 
-                    this.transformType = TransformType.scale;
-                    this.transformCalculator = this.scale_Calculator;
-                    this.applytLatticePointBaseLocation();
+                    this.startLatticeAffineTransform(TransformType.scale, true, env);
+                    return true;
                 }
             }
+
+            return false;
         }
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            if (env.isModalToolRunning()) {
+            if (!env.isModalToolRunning()) {
 
-                if (e.isLeftButtonPressing()) {
+                this.startLatticeTransform(env);
+            }
+            else {
 
-                    this.endTransform(env);
-                }
-                else if (e.isRightButtonPressing()) {
+                if (e.isRightButtonPressing()) {
 
                     this.cancelTransform(env);
+                }
+            }
+        }
+
+        mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            if (!env.isModalToolRunning()) {
+
+            }
+            else {
+
+                if (e.isLeftButtonReleased()) {
+
+                    if (this.latticeState == LatticeStateID.modified) {
+
+                        this.endTransform(env);
+                    }
                 }
             }
         }
@@ -175,6 +199,114 @@ namespace ManualTracingTool {
         protected clearEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             this.editPoints = null;
+        }
+
+        protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
+
+            return (this.transformType != TransformType.none);
+        }
+
+        protected startLatticeAffineTransform(transformType: TransformType, isContinueEdit: boolean, env: ToolEnvironment) {
+
+            for (let latticePoint of this.latticePoints) {
+
+                latticePoint.latticePointEditType = LatticePointEditTypeID.allDirection;
+            }
+
+            if (transformType == TransformType.grabMove) {
+
+                this.transformType = TransformType.grabMove;
+                this.transformCalculator = this.grabMove_Calculator;
+            }
+            else if (transformType == TransformType.rotate) {
+
+                this.transformType = TransformType.rotate;
+                this.transformCalculator = this.rotate_Calculator;
+            }
+            else if (transformType == TransformType.scale) {
+
+                this.transformType = TransformType.scale;
+                this.transformCalculator = this.scale_Calculator;
+            }
+
+            this.transformCalculator.prepare(env);
+
+            vec3.copy(this.mouseAnchorLocation, env.mouseCursorLocation);
+
+            if (isContinueEdit) {
+
+                this.applytLatticePointBaseLocation();
+            }
+            else {
+
+                env.startModalTool(this);
+            }
+        }
+
+        protected startLatticeTransform(env: ToolEnvironment) {
+
+            for (let latticePoint of this.latticePoints) {
+
+                latticePoint.latticePointEditType = LatticePointEditTypeID.none;
+            }
+
+            if (this.mouseOver_SelectedLatticePart == SelectedLatticePartID.latticePoint) {
+
+                let pointIndexH = -1;
+                let pointIndexV = -1;
+                if (this.mouseOver_PartIndex == 0) {
+
+                    pointIndexH = 3;
+                    pointIndexV = 1;
+                }
+                else if (this.mouseOver_PartIndex == 1) {
+
+                    pointIndexH = 2;
+                    pointIndexV = 0;
+                }
+                else if (this.mouseOver_PartIndex == 2) {
+
+                    pointIndexH = 1;
+                    pointIndexV = 3;
+                }
+                else if (this.mouseOver_PartIndex == 3) {
+
+                    pointIndexH = 0;
+                    pointIndexV = 2;
+                }
+
+                this.latticePoints[this.mouseOver_PartIndex].latticePointEditType = LatticePointEditTypeID.allDirection;
+                this.latticePoints[pointIndexH].latticePointEditType = LatticePointEditTypeID.horizontalOnly;
+                this.latticePoints[pointIndexV].latticePointEditType = LatticePointEditTypeID.verticalOnly;
+
+                this.transformType = TransformType.grabMove;
+                this.transformCalculator = this.grabMove_Calculator;
+                this.latticeState = LatticeStateID.defaultRentangle;
+
+                env.startModalTool(this);
+            }
+
+            if (this.mouseOver_SelectedLatticePart == SelectedLatticePartID.latticeEdge) {
+
+                let latticePointEditType: LatticePointEditTypeID;
+                if (this.mouseOver_PartIndex == 0 || this.mouseOver_PartIndex == 2) {
+
+                    latticePointEditType = LatticePointEditTypeID.verticalOnly;
+                }
+                else {
+
+                    latticePointEditType = LatticePointEditTypeID.horizontalOnly;
+                }
+
+                this.latticePoints[this.mouseOver_PartIndex].latticePointEditType = latticePointEditType;
+                this.latticePoints[this.mouseOver_PartIndexTo].latticePointEditType = latticePointEditType;
+
+                this.transformType = TransformType.grabMove;
+                this.transformCalculator = this.grabMove_Calculator;
+                this.latticeState = LatticeStateID.defaultRentangle;
+
+                env.startModalTool(this);
+            }
         }
 
         protected endTransform(env: ToolEnvironment) {
@@ -197,7 +329,25 @@ namespace ManualTracingTool {
             env.cancelModalTool();
         }
 
-        protected createEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
+
+            this.clearEditData(e, env);
+
+            if (!this.checkTarget(e, env)) {
+
+                return false;
+            }
+
+            // Current cursor location
+            vec3.copy(this.mouseAnchorLocation, e.location);
+
+            // Create edit info
+            this.prepareEditData(e, env);
+
+            return true;
+        }
+
+        protected prepareEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             let editPoints = new List<Tool_Transform_Lattice_EditPoint>();
 
@@ -243,6 +393,8 @@ namespace ManualTracingTool {
         protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             this.transformCalculator.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+
+            this.latticeState = LatticeStateID.modified;
         }
 
         protected processTransform(env: ToolEnvironment) { // @override
@@ -314,9 +466,18 @@ namespace ManualTracingTool {
 
         onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
 
-            //drawEnv.editorDrawer.drawMouseCursor();
-            this.drawLatticeRectangle(env, drawEnv);
-            this.drawLatticePoints(env, drawEnv);
+            if (this.latticeState != LatticeStateID.invalid) {
+
+                if (this.latticeState == LatticeStateID.defaultRentangle) {
+
+                    this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, env);
+                    this.setLatticePointsByRectangle(this.rectangleArea);
+                }
+
+                //drawEnv.editorDrawer.drawMouseCursor();
+                this.drawLatticeRectangle(env, drawEnv);
+                this.drawLatticePoints(env, drawEnv);
+            }
         }
     }
 }

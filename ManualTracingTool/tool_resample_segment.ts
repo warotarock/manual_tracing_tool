@@ -26,15 +26,18 @@ namespace ManualTracingTool {
             );
         }
 
-        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @override
+        keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
 
             if (e.key == 'Enter') {
 
                 if (env.currentVectorLayer != null) {
 
                     this.executeCommand(env);
+                    return true;
                 }
             }
+
+            return false;
         }
 
         private executeCommand(env: ToolEnvironment) {

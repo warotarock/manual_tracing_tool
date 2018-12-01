@@ -142,13 +142,17 @@ namespace ManualTracingTool {
             }
         }
 
-        keydown(e: KeyboardEvent, env: ToolEnvironment) { // @override
+        keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
 
             if (e.key == 'g') {
 
-                // Finish selectiong a line
+                // Select a line
                 this.selectLine(env.mouseCursorLocation, env);
+
+                return true;
             }
+
+            return false;
         }
 
         onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
