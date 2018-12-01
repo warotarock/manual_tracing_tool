@@ -147,7 +147,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_LocateHead.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null);
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null);
         };
         Tool_Posing3d_LocateHead.prototype.executeCommand = function (env) {
             // Center of head sphere
@@ -212,7 +213,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_RotateHead.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.headLocationInputData.inputDone);
         };
         Tool_Posing3d_RotateHead.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
@@ -262,7 +264,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_TwistHead.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.headRotationInputData.inputDone);
         };
         Tool_Posing3d_TwistHead.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
@@ -310,7 +313,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_LocateBody.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.headLocationInputData.inputDone
                 && env.currentPosingData.headRotationInputData.inputDone);
         };
@@ -372,7 +376,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_RatateBody.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.bodyLocationInputData.inputDone);
         };
         Tool_Posing3d_RatateBody.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
@@ -420,7 +425,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_LocateLeftArm1.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && (env.currentPosingData.bodyLocationInputData.inputDone || env.currentPosingData.bodyRotationInputData.inputDone));
         };
         Tool_Posing3d_LocateLeftArm1.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
@@ -524,7 +530,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_LocateLeftArm2.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.leftArm1LocationInputData.inputDone);
         };
         Tool_Posing3d_LocateLeftArm2.prototype.getInputData = function (env) {
@@ -544,7 +551,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_LocateRightArm2.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.rightArm1LocationInputData.inputDone);
         };
         Tool_Posing3d_LocateRightArm2.prototype.getInputData = function (env) {
@@ -564,7 +572,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_LocateLeftLeg2.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.leftLeg1LocationInputData.inputDone);
         };
         Tool_Posing3d_LocateLeftLeg2.prototype.getInputData = function (env) {
@@ -584,7 +593,8 @@ var ManualTracingTool;
             return _this;
         }
         Tool_Posing3d_LocateRightLeg2.prototype.isAvailable = function (env) {
-            return (env.currentPosingData != null
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
                 && env.currentPosingData.rightLeg1LocationInputData.inputDone);
         };
         Tool_Posing3d_LocateRightLeg2.prototype.getInputData = function (env) {

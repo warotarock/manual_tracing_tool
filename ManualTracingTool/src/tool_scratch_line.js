@@ -117,9 +117,11 @@ var ManualTracingTool;
         };
         Tool_ScratchLine.prototype.keydown = function (e, env) {
             if (e.key == 'g') {
-                // Finish selectiong a line
+                // Select a line
                 this.selectLine(env.mouseCursorLocation, env);
+                return true;
             }
+            return false;
         };
         Tool_ScratchLine.prototype.onDrawEditor = function (env, drawEnv) {
             drawEnv.editorDrawer.drawMouseCursor();

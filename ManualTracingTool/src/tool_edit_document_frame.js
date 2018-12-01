@@ -37,16 +37,17 @@ var ManualTracingTool;
         };
         Tool_EditDocumentFrame.prototype.keydown = function (e, env) {
             // prevent modal operation
+            return false;
         };
         Tool_EditDocumentFrame.prototype.mouseDown = function (e, env) {
             // prevent modal operation
         };
         Tool_EditDocumentFrame.prototype.onDrawEditor = function (env, drawEnv) {
             if (this.latticePoints == null) {
-                this.createLatticePoints(this.latticePointCount);
+                this.createLatticePoints();
             }
             this.prepareLatticePoints(env);
-            this.drawLatticeLine(env, drawEnv);
+            this.drawLatticeRectangle(env, drawEnv);
         };
         Tool_EditDocumentFrame.prototype.executeCommand = function (env) {
             var command = new Command_EditDocumentFrame();

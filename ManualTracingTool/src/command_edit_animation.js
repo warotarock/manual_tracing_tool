@@ -43,7 +43,7 @@ var ManualTracingTool;
                 }
                 var last_KeyFrame = vectorLayer.keyframes[keyframeIndex];
                 // Crete keyframe and insert
-                var newKeyframe = new ManualTracingTool.VectorLayerKeyFrame();
+                var newKeyframe = new ManualTracingTool.VectorLayerKeyframe();
                 newKeyframe.frame = targetFrame;
                 if (last_KeyFrame != null) {
                     newKeyframe.geometry = JSON.parse(JSON.stringify(last_KeyFrame.geometry));

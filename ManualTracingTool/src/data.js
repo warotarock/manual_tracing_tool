@@ -128,14 +128,14 @@ var ManualTracingTool;
         return VectorLayerGeometry;
     }());
     ManualTracingTool.VectorLayerGeometry = VectorLayerGeometry;
-    var VectorLayerKeyFrame = /** @class */ (function () {
-        function VectorLayerKeyFrame() {
+    var VectorLayerKeyframe = /** @class */ (function () {
+        function VectorLayerKeyframe() {
             this.frame = 0;
             this.geometry = null;
         }
-        return VectorLayerKeyFrame;
+        return VectorLayerKeyframe;
     }());
-    ManualTracingTool.VectorLayerKeyFrame = VectorLayerKeyFrame;
+    ManualTracingTool.VectorLayerKeyframe = VectorLayerKeyframe;
     var DrawLineTypeID;
     (function (DrawLineTypeID) {
         DrawLineTypeID[DrawLineTypeID["none"] = 1] = "none";
@@ -159,7 +159,7 @@ var ManualTracingTool;
             _this.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             _this.line_PalletColorIndex = 0;
             _this.fill_PalletColorIndex = 1;
-            var key = new VectorLayerKeyFrame();
+            var key = new VectorLayerKeyframe();
             key.frame = 0;
             key.geometry = new VectorLayerGeometry();
             _this.keyframes.push(key);
@@ -236,13 +236,13 @@ var ManualTracingTool;
             this.headSphereSize = 0.17; // 14cm
             this.headTwistSphereSize = 0.26; //
             this.bodySphereSize = 0.44; // 44cm
-            this.bodySphereLocation = vec3.fromValues(0.0, -0.03, -0.15);
-            this.neckSphereLocation = vec3.fromValues(0.0, -0.03, -0.13);
+            this.bodySphereLocation = vec3.fromValues(0.0, -0.03, -0.19);
+            this.neckSphereLocation = vec3.fromValues(0.0, -0.03, -0.17);
             this.bodyRotationSphereSize = 0.22; // 11cm
             this.bodyRotationSphereLocation = vec3.fromValues(0.0, 0.0, -0.31);
             // Arms
-            this.leftArm1Location = vec3.fromValues(-0.135, 0.0, -0.05);
-            this.rightArm1Location = vec3.fromValues(+0.135, 0.0, -0.05);
+            this.leftArm1Location = vec3.fromValues(-0.130, 0.0, -0.05);
+            this.rightArm1Location = vec3.fromValues(+0.130, 0.0, -0.05);
             this.leftArm1HeadLocation = vec3.fromValues(0.0, 0.0, -0.27);
             this.rightArm1HeadLocation = vec3.fromValues(0.0, 0.0, -0.27);
             this.leftArm2HeadLocation = vec3.fromValues(0.0, 0.0, -0.27);

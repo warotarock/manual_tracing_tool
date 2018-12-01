@@ -23,7 +23,9 @@ var ManualTracingTool;
         Tool_EditImageFileReference.prototype.keydown = function (e, env) {
             if (e.key == 'o') {
                 env.openFileDialog(ManualTracingTool.OpenFileDialogTargetID.imageFileReferenceLayerFilePath);
+                return true;
             }
+            return false;
         };
         Tool_EditImageFileReference.prototype.toolWindowItemDoubleClick = function (e, env) {
             env.openFileDialog(ManualTracingTool.OpenFileDialogTargetID.imageFileReferenceLayerFilePath);
@@ -117,7 +119,11 @@ var ManualTracingTool;
             this.resetLatticePointLocationToBaseLocation();
             return true;
         };
-        Tool_Transform_ReferenceImage.prototype.createEditData = function (e, env) {
+        Tool_Transform_ReferenceImage.prototype.prepareEditData = function (e, env) {
+            for (var _i = 0, _a = this.latticePoints; _i < _a.length; _i++) {
+                var latticePoint = _a[_i];
+                latticePoint.latticePointEditType = ManualTracingTool.LatticePointEditTypeID.allDirection;
+            }
         };
         Tool_Transform_ReferenceImage.prototype.processTransform = function (env) {
             var image = env.currentImageFileReferenceLayer.imageResource.image;
@@ -187,11 +193,11 @@ var ManualTracingTool;
         __extends(Tool_Transform_ReferenceImage_GrabMove, _super);
         function Tool_Transform_ReferenceImage_GrabMove() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.Tool_Transform_Lattice_Calcer_GrabMove();
+            _this.calcer = new ManualTracingTool.GrabMove_Calculator();
             return _this;
         }
         Tool_Transform_ReferenceImage_GrabMove.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         };
         return Tool_Transform_ReferenceImage_GrabMove;
     }(Tool_Transform_ReferenceImage));
@@ -200,14 +206,14 @@ var ManualTracingTool;
         __extends(Tool_Transform_ReferenceImage_Rotate, _super);
         function Tool_Transform_ReferenceImage_Rotate() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.Tool_Transform_Lattice_Calcer_Rotate();
+            _this.calcer = new ManualTracingTool.Rotate_Calculator();
             return _this;
         }
         Tool_Transform_ReferenceImage_Rotate.prototype.prepareModalExt = function (e, env) {
-            this.calcer.prepareModalExt(e, env);
+            this.calcer.prepare(env);
         };
         Tool_Transform_ReferenceImage_Rotate.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, e, env);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         };
         return Tool_Transform_ReferenceImage_Rotate;
     }(Tool_Transform_ReferenceImage));
@@ -216,14 +222,14 @@ var ManualTracingTool;
         __extends(Tool_Transform_ReferenceImage_Scale, _super);
         function Tool_Transform_ReferenceImage_Scale() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.Tool_Transform_Lattice_Calcer_Scale();
+            _this.calcer = new ManualTracingTool.Scale_Calculator();
             return _this;
         }
         Tool_Transform_ReferenceImage_Scale.prototype.prepareModalExt = function (e, env) {
-            this.calcer.prepareModalExt(e, env);
+            this.calcer.prepare(env);
         };
         Tool_Transform_ReferenceImage_Scale.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, e, env);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         };
         return Tool_Transform_ReferenceImage_Scale;
     }(Tool_Transform_ReferenceImage));

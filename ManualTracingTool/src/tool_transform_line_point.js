@@ -52,17 +52,22 @@ var ManualTracingTool;
                 }
             }
             var available = ManualTracingTool.Logic_Edit_Points.existsRectangleArea(rect);
+            this.addPaddingToRectangle(rect, rect, env);
             this.setLatticePointsByRectangle(rect);
             return available;
         };
-        Tool_Transform_Lattice_LinePoint.prototype.createEditData = function (e, env) {
+        Tool_Transform_Lattice_LinePoint.prototype.prepareEditData = function (e, env) {
+            for (var _i = 0, _a = this.latticePoints; _i < _a.length; _i++) {
+                var latticePoint = _a[_i];
+                latticePoint.latticePointEditType = ManualTracingTool.LatticePointEditTypeID.allDirection;
+            }
             var editPoints = new List();
-            for (var _i = 0, _a = env.currentVectorGeometry.groups; _i < _a.length; _i++) {
-                var group = _a[_i];
-                for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
-                    var line = _c[_b];
-                    for (var _d = 0, _e = line.points; _d < _e.length; _d++) {
-                        var point = _e[_d];
+            for (var _b = 0, _c = env.currentVectorGeometry.groups; _b < _c.length; _b++) {
+                var group = _c[_b];
+                for (var _d = 0, _e = group.lines; _d < _e.length; _d++) {
+                    var line = _e[_d];
+                    for (var _f = 0, _g = line.points; _f < _g.length; _f++) {
+                        var point = _g[_f];
                         if (!point.isSelected) {
                             continue;
                         }
@@ -188,11 +193,11 @@ var ManualTracingTool;
         __extends(Tool_Transform_Lattice_GrabMove, _super);
         function Tool_Transform_Lattice_GrabMove() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.Tool_Transform_Lattice_Calcer_GrabMove();
+            _this.calcer = new ManualTracingTool.GrabMove_Calculator();
             return _this;
         }
         Tool_Transform_Lattice_GrabMove.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         };
         return Tool_Transform_Lattice_GrabMove;
     }(Tool_Transform_Lattice_LinePoint));
@@ -201,14 +206,14 @@ var ManualTracingTool;
         __extends(Tool_Transform_Lattice_Rotate, _super);
         function Tool_Transform_Lattice_Rotate() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.Tool_Transform_Lattice_Calcer_Rotate();
+            _this.calcer = new ManualTracingTool.Rotate_Calculator();
             return _this;
         }
         Tool_Transform_Lattice_Rotate.prototype.prepareModalExt = function (e, env) {
-            this.calcer.prepareModalExt(e, env);
+            this.calcer.prepare(env);
         };
         Tool_Transform_Lattice_Rotate.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, e, env);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         };
         return Tool_Transform_Lattice_Rotate;
     }(Tool_Transform_Lattice_LinePoint));
@@ -217,14 +222,14 @@ var ManualTracingTool;
         __extends(Tool_Transform_Lattice_Scale, _super);
         function Tool_Transform_Lattice_Scale() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.Tool_Transform_Lattice_Calcer_Scale();
+            _this.calcer = new ManualTracingTool.Scale_Calculator();
             return _this;
         }
         Tool_Transform_Lattice_Scale.prototype.prepareModalExt = function (e, env) {
-            this.calcer.prepareModalExt(e, env);
+            this.calcer.prepare(env);
         };
         Tool_Transform_Lattice_Scale.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, e, env);
+            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
         };
         return Tool_Transform_Lattice_Scale;
     }(Tool_Transform_Lattice_LinePoint));

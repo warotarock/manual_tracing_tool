@@ -170,7 +170,7 @@ var ManualTracingTool;
         Command_Layer_AddVectorLayerToCurrentPosition.prototype.executeCommand = function (env) {
             this.newLayer = new ManualTracingTool.VectorLayer();
             this.newLayer.name = 'new layer';
-            var keyFrame = new ManualTracingTool.VectorLayerKeyFrame();
+            var keyFrame = new ManualTracingTool.VectorLayerKeyframe();
             keyFrame.geometry = new ManualTracingTool.VectorLayerGeometry();
             this.newLayer.keyframes.push(keyFrame);
             var group = new ManualTracingTool.VectorGroup();

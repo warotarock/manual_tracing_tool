@@ -22,12 +22,10 @@ var ManualTracingTool;
                 && env.currentVectorLayer.isVisible);
         };
         Tool_BrushSelectLinePointBase.prototype.onDrawEditor = function (env, drawEnv) {
-            if (!env.isSelectMode()) {
-                drawEnv.editorDrawer.drawMouseCursor();
-            }
+            drawEnv.editorDrawer.drawMouseCursor();
         };
         Tool_BrushSelectLinePointBase.prototype.mouseDown = function (e, env) {
-            if (env.currentVectorLayer == null) {
+            if (!this.isAvailable(env)) {
                 return;
             }
             if (e.isLeftButtonPressing()) {
@@ -82,12 +80,12 @@ var ManualTracingTool;
         };
         Tool_BrushSelectLinePointBase.prototype.endSelection = function (env) {
             this.logic_Selector.endProcess();
+            env.endModalTool();
             if (this.logic_Selector.selectionInfo.selectedLines.length == 0
                 && this.logic_Selector.selectionInfo.selectedPoints.length == 0) {
                 return;
             }
             this.executeCommand(env);
-            env.endModalTool();
         };
         Tool_BrushSelectLinePointBase.prototype.executeCommand = function (env) {
         };
@@ -99,6 +97,10 @@ var ManualTracingTool;
         function Tool_Select_BrushSelect_LinePoint() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
+        Tool_Select_BrushSelect_LinePoint.prototype.toolWindowItemClick = function (e, env) {
+            env.setCurrentOperationUnitID(ManualTracingTool.OperationUnitID.linePoint);
+            env.setRedrawMainWindow();
+        };
         Tool_Select_BrushSelect_LinePoint.prototype.prepareModal = function (e, env) {
             return true;
         };
@@ -126,6 +128,10 @@ var ManualTracingTool;
             _this.logic_Selector = new ManualTracingTool.Selector_Line_BrushSelect(); // @override
             return _this;
         }
+        Tool_Select_BrushSelect_Line.prototype.toolWindowItemClick = function (e, env) {
+            env.setCurrentOperationUnitID(ManualTracingTool.OperationUnitID.line);
+            env.setRedrawMainWindow();
+        };
         return Tool_Select_BrushSelect_Line;
     }(Tool_Select_BrushSelect_LinePoint));
     ManualTracingTool.Tool_Select_BrushSelect_Line = Tool_Select_BrushSelect_Line;
@@ -136,6 +142,10 @@ var ManualTracingTool;
             _this.logic_Selector = new ManualTracingTool.Selector_LineSegment_BrushSelect(); // @override
             return _this;
         }
+        Tool_Select_BrushSelect_LineSegment.prototype.toolWindowItemClick = function (e, env) {
+            env.setCurrentOperationUnitID(ManualTracingTool.OperationUnitID.lineSegment);
+            env.setRedrawMainWindow();
+        };
         return Tool_Select_BrushSelect_LineSegment;
     }(Tool_Select_BrushSelect_LinePoint));
     ManualTracingTool.Tool_Select_BrushSelect_LineSegment = Tool_Select_BrushSelect_LineSegment;

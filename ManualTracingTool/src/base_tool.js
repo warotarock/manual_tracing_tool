@@ -14,8 +14,9 @@ var ManualTracingTool;
     (function (MainToolID) {
         MainToolID[MainToolID["none"] = 0] = "none";
         MainToolID[MainToolID["drawLine"] = 1] = "drawLine";
-        MainToolID[MainToolID["scratchLine"] = 2] = "scratchLine";
-        MainToolID[MainToolID["posing"] = 3] = "posing";
+        MainToolID[MainToolID["posing"] = 2] = "posing";
+        MainToolID[MainToolID["misc"] = 3] = "misc";
+        MainToolID[MainToolID["edit"] = 4] = "edit";
     })(MainToolID = ManualTracingTool.MainToolID || (ManualTracingTool.MainToolID = {}));
     var OperationUnitID;
     (function (OperationUnitID) {
@@ -44,7 +45,7 @@ var ManualTracingTool;
     })(Posing3DSubToolID = ManualTracingTool.Posing3DSubToolID || (ManualTracingTool.Posing3DSubToolID = {}));
     var EditModeID;
     (function (EditModeID) {
-        EditModeID[EditModeID["selectMode"] = 1] = "selectMode";
+        EditModeID[EditModeID["editMode"] = 1] = "editMode";
         EditModeID[EditModeID["drawMode"] = 2] = "drawMode";
     })(EditModeID = ManualTracingTool.EditModeID || (ManualTracingTool.EditModeID = {}));
     var OpenFileDialogTargetID;
@@ -90,18 +91,68 @@ var ManualTracingTool;
         return OperatorCursor;
     }());
     ManualTracingTool.OperatorCursor = OperatorCursor;
+    var LatticePointEditTypeID;
+    (function (LatticePointEditTypeID) {
+        LatticePointEditTypeID[LatticePointEditTypeID["none"] = 0] = "none";
+        LatticePointEditTypeID[LatticePointEditTypeID["horizontalOnly"] = 1] = "horizontalOnly";
+        LatticePointEditTypeID[LatticePointEditTypeID["verticalOnly"] = 2] = "verticalOnly";
+        LatticePointEditTypeID[LatticePointEditTypeID["allDirection"] = 3] = "allDirection";
+    })(LatticePointEditTypeID = ManualTracingTool.LatticePointEditTypeID || (ManualTracingTool.LatticePointEditTypeID = {}));
+    var LatticePoint = /** @class */ (function () {
+        function LatticePoint() {
+            this.latticePointEditType = LatticePointEditTypeID.none;
+            this.baseLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.location = vec3.fromValues(0.0, 0.0, 0.0);
+        }
+        return LatticePoint;
+    }());
+    ManualTracingTool.LatticePoint = LatticePoint;
+    var ViewKeyframeLayer = /** @class */ (function () {
+        function ViewKeyframeLayer() {
+            this.layer = null;
+            this.vectorLayerKeyframe = null;
+        }
+        ViewKeyframeLayer.prototype.hasKeyframe = function () {
+            return (this.vectorLayerKeyframe != null);
+        };
+        return ViewKeyframeLayer;
+    }());
+    ManualTracingTool.ViewKeyframeLayer = ViewKeyframeLayer;
+    var ViewKeyframe = /** @class */ (function () {
+        function ViewKeyframe() {
+            this.frame = 0;
+            this.layers = new List();
+        }
+        return ViewKeyframe;
+    }());
+    ManualTracingTool.ViewKeyframe = ViewKeyframe;
+    var ViewLayerContext = /** @class */ (function () {
+        function ViewLayerContext() {
+            this.keyframes = null;
+        }
+        return ViewLayerContext;
+    }());
+    ManualTracingTool.ViewLayerContext = ViewLayerContext;
     var ToolContext = /** @class */ (function () {
         function ToolContext() {
             this.mainEditor = null;
+            this.drawStyle = null;
+            this.commandHistory = null;
+            this.document = null;
+            this.mainWindow = null;
+            this.pickingWindow = null;
+            this.posing3DView = null;
+            this.posing3DLogic = null;
             this.mainToolID = MainToolID.none;
             this.subToolIndex = 0;
             this.editMode = EditModeID.drawMode;
-            this.operationUnitID = OperationUnitID.linePoint;
+            this.drawMode_MainToolID = MainToolID.drawLine;
+            this.editMode_MainToolID = MainToolID.edit;
+            this.operationUnitID = OperationUnitID.line;
             this.drawLineBaseWidth = 1.0;
             this.drawLineMinWidth = 0.1;
-            this.commandHistory = null;
-            this.document = null;
             this.currentLayer = null;
+            //editableKeyframeLayers: List<ViewKeyframeLayer> = null;
             this.currentVectorLayer = null;
             this.currentVectorGeometry = null;
             this.currentVectorGroup = null;
@@ -118,18 +169,21 @@ var ManualTracingTool;
             this.redrawWebGLWindow = false;
             this.redrawHeaderWindow = false;
             this.redrawFooterWindow = false;
-            this.mainWindow = null;
-            this.pickingWindow = null;
-            this.mouseCursorRadius = 20.0;
+            this.mouseCursorRadius = 12.0;
             this.resamplingUnitLength = 8.0;
             this.operatorCursor = new OperatorCursor();
+            //latticePoints = new List<LatticePoint>();
+            //rectangleArea = new Logic_Edit_Points_RectangleArea();
             this.shiftKey = false;
             this.altKey = false;
             this.ctrlKey = false;
             this.animationPlaying = false;
             this.animationPlayingFPS = 24;
-            this.posing3DView = null;
-            this.posing3DLogic = null;
+            //constructor() {
+            //    while (this.latticePoints.length < 4) {
+            //        this.latticePoints.push(new LatticePoint());
+            //    }
+            //}
         }
         return ToolContext;
     }());
@@ -137,16 +191,22 @@ var ManualTracingTool;
     var ToolEnvironment = /** @class */ (function () {
         function ToolEnvironment(toolContext) {
             this.toolContext = null;
+            this.drawStyle = null;
             this.mainToolID = MainToolID.posing;
             this.subToolIndex = 0;
             this.editMode = EditModeID.drawMode;
+            this.drawMode_MainToolID = MainToolID.drawLine;
+            this.editMode_MainToolID = MainToolID.edit;
             this.operationUnitID = OperationUnitID.linePoint;
             this.commandHistory = null;
             this.operatorCursor = null;
+            //latticePoints: List<LatticePoint> = null;
+            //rectangleArea: Logic_Edit_Points_RectangleArea = null;
             this.document = null;
             this.drawLineBaseWidth = 1.0;
             this.drawLineMinWidth = 1.0;
             this.currentLayer = null;
+            //editableKeyframeLayers: List<ViewKeyframeLayer> = null;
             this.currentVectorLayer = null;
             this.currentVectorGeometry = null;
             this.currentVectorGroup = null;
@@ -159,22 +219,27 @@ var ManualTracingTool;
             this.pickingWindow = null;
             this.posing3DView = null;
             this.posing3DLogic = null;
+            this.viewScale = 0.0;
             this.mouseCursorViewRadius = 0.0;
             this.mouseCursorLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            this.viewScale = 0.0;
             this.toolContext = toolContext;
         }
         ToolEnvironment.prototype.updateContext = function () {
             this.mainToolID = this.toolContext.mainToolID;
             this.subToolIndex = this.toolContext.subToolIndex;
             this.editMode = this.toolContext.editMode;
+            this.drawMode_MainToolID = this.toolContext.drawMode_MainToolID;
+            this.editMode_MainToolID = this.toolContext.editMode_MainToolID;
             this.operationUnitID = this.toolContext.operationUnitID;
             this.commandHistory = this.toolContext.commandHistory;
             this.operatorCursor = this.toolContext.operatorCursor;
+            //this.latticePoints = this.toolContext.latticePoints;
+            //this.rectangleArea = this.toolContext.rectangleArea;
             this.document = this.toolContext.document;
             this.drawLineBaseWidth = this.toolContext.drawLineBaseWidth;
             this.drawLineMinWidth = this.toolContext.drawLineMinWidth;
             this.currentLayer = this.toolContext.currentLayer;
+            //this.editableKeyframeLayers = this.toolContext.editableKeyframeLayers;
             this.currentVectorLayer = this.toolContext.currentVectorLayer;
             this.currentVectorGeometry = this.toolContext.currentVectorGeometry;
             this.currentVectorGroup = this.toolContext.currentVectorGroup;
@@ -194,7 +259,11 @@ var ManualTracingTool;
             this.posing3DView = this.toolContext.posing3DView;
             this.posing3DLogic = this.toolContext.posing3DLogic;
             this.viewScale = this.toolContext.mainWindow.viewScale;
+            this.drawStyle = this.toolContext.drawStyle;
             this.mouseCursorViewRadius = this.getViewScaledLength(this.toolContext.mouseCursorRadius);
+        };
+        ToolEnvironment.prototype.setRedrawHeaderWindow = function () {
+            this.toolContext.redrawHeaderWindow = true;
         };
         ToolEnvironment.prototype.setRedrawMainWindow = function () {
             this.toolContext.redrawMainWindow = true;
@@ -212,7 +281,6 @@ var ManualTracingTool;
         };
         ToolEnvironment.prototype.updateLayerStructure = function () {
             this.toolContext.mainEditor.updateLayerStructure();
-            this.toolContext.mainEditor.setCurrentFrame(this.toolContext.document.animationSettingData.currentTimeFrame);
             this.setRedrawLayerWindow();
             this.setRedrawTimeLineWindow();
         };
@@ -247,8 +315,8 @@ var ManualTracingTool;
         ToolEnvironment.prototype.isDrawMode = function () {
             return (this.toolContext.editMode == EditModeID.drawMode);
         };
-        ToolEnvironment.prototype.isSelectMode = function () {
-            return (this.toolContext.editMode == EditModeID.selectMode);
+        ToolEnvironment.prototype.isEditMode = function () {
+            return (this.toolContext.editMode == EditModeID.editMode);
         };
         ToolEnvironment.prototype.isCurrentLayerVectorLayer = function () {
             return (this.currentVectorLayer != null);
@@ -257,7 +325,10 @@ var ManualTracingTool;
             return (this.currentImageFileReferenceLayer != null);
         };
         ToolEnvironment.prototype.needsDrawOperatorCursor = function () {
-            return (this.isSelectMode() || this.isCurrentLayerImageFileReferenceLayer());
+            return (this.isEditMode() || this.isCurrentLayerImageFileReferenceLayer());
+        };
+        ToolEnvironment.prototype.setCurrentOperationUnitID = function (operationUnitID) {
+            this.toolContext.mainEditor.setCurrentOperationUnitID(operationUnitID);
         };
         ToolEnvironment.prototype.setCurrentLayer = function (layer) {
             this.toolContext.mainEditor.setCurrentLayer(layer);
@@ -291,6 +362,9 @@ var ManualTracingTool;
         ToolEnvironment.prototype.getViewScaledLength = function (length) {
             return length / this.viewScale;
         };
+        ToolEnvironment.prototype.collectEditTargetViewKeyframeLayers = function () {
+            return this.toolContext.mainEditor.collectEditTargetViewKeyframeLayers();
+        };
         return ToolEnvironment;
     }());
     ManualTracingTool.ToolEnvironment = ToolEnvironment;
@@ -306,6 +380,12 @@ var ManualTracingTool;
             this.mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
             this.operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
             this.modalToolSelectedAreaLineColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
+            this.latticePointRadius = 4.0;
+            this.latticePointHitRadius = 10.0;
+            this.latticePointPadding = 8.0;
+            this.layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            this.layerWindowItemActiveLayerColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
+            this.layerWindowItemSelectedColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
             this.timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
             this.timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);
             this.timeLineKeyFrameColor = vec4.fromValues(0.0, 0.0, 1.0, 0.1);
@@ -429,13 +509,16 @@ var ManualTracingTool;
         };
         ToolBase.prototype.mouseUp = function (e, env) {
         };
+        ToolBase.prototype.keydown = function (e, env) {
+            return false;
+        };
+        ToolBase.prototype.onActivated = function (env) {
+        };
+        ToolBase.prototype.onDrawEditor = function (env, drawEnv) {
+        };
         ToolBase.prototype.toolWindowItemClick = function (e, env) {
         };
         ToolBase.prototype.toolWindowItemDoubleClick = function (e, env) {
-        };
-        ToolBase.prototype.keydown = function (e, env) {
-        };
-        ToolBase.prototype.onDrawEditor = function (env, drawEnv) {
         };
         ToolBase.prototype.onOpenFile = function (filePath, env) {
         };

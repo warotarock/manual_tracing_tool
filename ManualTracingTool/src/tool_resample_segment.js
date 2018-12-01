@@ -39,8 +39,10 @@ var ManualTracingTool;
             if (e.key == 'Enter') {
                 if (env.currentVectorLayer != null) {
                     this.executeCommand(env);
+                    return true;
                 }
             }
+            return false;
         };
         Tool_Resample_Segment.prototype.executeCommand = function (env) {
             var command = new Command_Resample_Segment();
