@@ -99,10 +99,16 @@ namespace ManualTracingTool {
             let available = this.prepareLatticePoints(env);
 
             if (!available) {
+                this.latticeState = LatticeStateID.invalid;
                 return false;
             }
 
             this.latticeState = LatticeStateID.initialState;
+            this.latticePadding = env.drawStyle.latticePointPadding;
+            this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
+            this.setLatticePointsByRectangle(this.rectangleArea);
+
+            this.selectTransformCalculator(env);
 
             // Create edit info
             this.prepareEditData(e, env);
@@ -162,7 +168,7 @@ namespace ManualTracingTool {
 
         protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @virtual
 
-            return false;
+            return (this.transformType != TransformType.none);
         }
 
         protected prepareLatticePoints(env: ToolEnvironment): boolean { // @virtual
@@ -175,6 +181,9 @@ namespace ManualTracingTool {
         protected clearEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
+        protected selectTransformCalculator(env: ToolEnvironment) { // @virtual
+        }
+
         protected prepareEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
         }
 
@@ -183,7 +192,7 @@ namespace ManualTracingTool {
 
         // Operation functions
 
-        protected startLatticeAffineTransform(transformType: TransformType, isContinueEdit: boolean, env: ToolEnvironment) {
+        protected setLatticeAffineTransform(transformType: TransformType, env: ToolEnvironment) {
 
             for (let latticePoint of this.latticePoints) {
 
@@ -207,6 +216,11 @@ namespace ManualTracingTool {
             }
 
             this.transformCalculator.prepare(env);
+        }
+
+        protected startLatticeAffineTransform(transformType: TransformType, isContinueEdit: boolean, env: ToolEnvironment) {
+
+            this.setLatticeAffineTransform(transformType, env);
 
             vec3.copy(this.mouseAnchorLocation, env.mouseCursorLocation);
 

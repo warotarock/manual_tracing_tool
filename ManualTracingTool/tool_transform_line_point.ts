@@ -13,8 +13,6 @@ namespace ManualTracingTool {
 
     export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
 
-        rectangleArea = new Logic_Edit_Points_RectangleArea();
-
         private lerpLocation1 = vec3.create();
         private lerpLocation2 = vec3.create();
         private lerpLocation3 = vec3.create();
@@ -38,7 +36,7 @@ namespace ManualTracingTool {
 
         protected prepareLatticePoints(env: ToolEnvironment): boolean { // @override
 
-            let rect = this.rectangleArea;
+            let rect = this.baseRectangleArea;
 
             Logic_Edit_Points.setMinMaxToRectangleArea(rect);
 
@@ -53,9 +51,6 @@ namespace ManualTracingTool {
             }
 
             let available = Logic_Edit_Points.existsRectangleArea(rect);
-
-            this.addPaddingToRectangle(rect, rect, env.drawStyle.latticePointPadding, env);
-            this.setLatticePointsByRectangle(rect);
 
             return available;
         }
@@ -109,10 +104,6 @@ namespace ManualTracingTool {
             this.editPoints = null;
 
             env.setRedrawMainWindowEditorWindow();
-        }
-
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
         }
 
         protected processTransform(env: ToolEnvironment) { // @override
@@ -236,41 +227,25 @@ namespace ManualTracingTool {
 
     export class Tool_Transform_Lattice_GrabMove extends Tool_Transform_Lattice_LinePoint {
 
-        calcer = new GrabMove_Calculator();
+        protected selectTransformCalculator(env: ToolEnvironment) { // @override
 
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
-
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+            this.setLatticeAffineTransform(TransformType.grabMove, env);
         }
     }
 
     export class Tool_Transform_Lattice_Rotate extends Tool_Transform_Lattice_LinePoint {
 
-        calcer = new Rotate_Calculator();
+        protected selectTransformCalculator(env: ToolEnvironment) { // @override
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            this.calcer.prepare(env);
-        }
-
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
-
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+            this.setLatticeAffineTransform(TransformType.rotate, env);
         }
     }
 
     export class Tool_Transform_Lattice_Scale extends Tool_Transform_Lattice_LinePoint {
 
-        calcer = new Scale_Calculator();
+        protected selectTransformCalculator(env: ToolEnvironment) { // @override
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            this.calcer.prepare(env);
-        }
-
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
-
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+            this.setLatticeAffineTransform(TransformType.scale, env);
         }
     }
 }

@@ -1039,6 +1039,12 @@ namespace ManualTracingTool {
 
             env.updateContext();
 
+            if (key == '.' && env.needsDrawOperatorCursor()) {
+
+                vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
+                this.toolEnv.setRedrawEditorWindow();
+            }
+
             if (this.isModalToolRunning()) {
 
                 this.document_keydown_modalTool(key, e);
@@ -1311,12 +1317,6 @@ namespace ManualTracingTool {
                 }
 
                 return;
-            }
-
-            if (key == '.' && env.needsDrawOperatorCursor()) {
-
-                vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
-                this.toolEnv.setRedrawEditorWindow();
             }
 
             if (key == 'a') {

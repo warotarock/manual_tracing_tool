@@ -43,6 +43,11 @@ namespace ManualTracingTool {
             );
         }
 
+        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            env.setCurrentOperationUnitID(OperationUnitID.line);
+        }
+
         // Preparing for operation
 
         prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
@@ -61,11 +66,6 @@ namespace ManualTracingTool {
             this.prepareEditData(e, env);
 
             return true;
-        }
-
-        protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
-
-            return (this.transformType != TransformType.none);
         }
 
         protected prepareLatticePoints(env: ToolEnvironment): boolean { // @override
