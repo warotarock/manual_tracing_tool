@@ -776,6 +776,7 @@ namespace ManualTracingTool {
                 if (clickedX <= selectedItem.textLeft) {
 
                     this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
+                    this.activateCurrentTool();
 
                     this.toolEnv.setRedrawMainWindowEditorWindow();
                 }
@@ -794,16 +795,17 @@ namespace ManualTracingTool {
                         if (this.toolEnv.isShiftKeyPressing()) {
 
                             this.setLayerSelection(selectedLayer, true);
+                            this.activateCurrentTool();
+                            this.startShowingLayerItem(selectedItem);
                         }
                         else {
 
                             this.setCurrentLayer(selectedLayer);
+                            this.startShowingCurrentLayer();
                         }
 
                         this.toolEnv.setRedrawMainWindowEditorWindow();
                     }
-
-                    this.startShowingCurrentLayer();
                 }
             }
 
@@ -1353,6 +1355,7 @@ namespace ManualTracingTool {
 
                 if (pickedLayer != null) {
 
+                    this.setCurrentLayer(pickedLayer);
                     this.startShowingCurrentLayer();
                 }
                 else {

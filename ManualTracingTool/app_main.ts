@@ -154,6 +154,7 @@ namespace ManualTracingTool {
 
         // UI animation
 
+        selectCurrentLayerAnimationLayer: Layer = null;
         selectCurrentLayerAnimationTime = 0.0;
         selectCurrentLayerAnimationTimeMax = 0.7;
 

@@ -64,15 +64,20 @@ namespace ManualTracingTool {
 
             let selectionInfo = new VectorLayerEditorSelectionInfo();
 
-            for (let group of env.currentVectorGeometry.groups) {
+            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-                for (let line of group.lines) {
+            for (let viewKeyframeLayer of editableKeyframeLayers) {
 
-                    for (let point of line.points) {
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
-                        if (!point.isSelected) {
+                    for (let line of group.lines) {
 
-                            selectionInfo.selectPoint(line, point, SelectionEditMode.setSelected);
+                        for (let point of line.points) {
+
+                            if (!point.isSelected) {
+
+                                selectionInfo.selectPoint(line, point, SelectionEditMode.setSelected);
+                            }
                         }
                     }
                 }
@@ -85,15 +90,20 @@ namespace ManualTracingTool {
 
             let selectionInfo = new VectorLayerEditorSelectionInfo();
 
-            for (let group of env.currentVectorGeometry.groups) {
+            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-                for (let line of group.lines) {
+            for (let viewKeyframeLayer of editableKeyframeLayers) {
 
-                    for (let point of line.points) {
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
-                        if (point.isSelected) {
+                    for (let line of group.lines) {
 
-                            selectionInfo.selectPoint(line, point, SelectionEditMode.setUnselected);
+                        for (let point of line.points) {
+
+                            if (point.isSelected) {
+
+                                selectionInfo.selectPoint(line, point, SelectionEditMode.setUnselected);
+                            }
                         }
                     }
                 }

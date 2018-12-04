@@ -42,11 +42,16 @@ namespace ManualTracingTool {
 
             let selectedOnly = true;
 
-            for (let group of env.currentVectorGeometry.groups) {
+            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-                for (let line of group.lines) {
+            for (let viewKeyframeLayer of editableKeyframeLayers) {
 
-                    Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+
+                    for (let line of group.lines) {
+
+                        Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
+                    }
                 }
             }
 
@@ -64,29 +69,34 @@ namespace ManualTracingTool {
 
             let editPoints = new List<Tool_Transform_Lattice_EditPoint>();
 
-            for (let group of env.currentVectorGeometry.groups) {
+            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-                for (let line of group.lines) {
+            for (let viewKeyframeLayer of editableKeyframeLayers) {
 
-                    for (let point of line.points) {
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
-                        if (!point.isSelected) {
+                    for (let line of group.lines) {
 
-                            continue;
+                        for (let point of line.points) {
+
+                            if (!point.isSelected) {
+
+                                continue;
+                            }
+
+                            let editPoint = new Tool_Transform_Lattice_EditPoint();
+                            editPoint.targetPoint = point;
+                            editPoint.targetLine = line;
+
+                            vec3.copy(editPoint.oldLocation, point.location);
+                            vec3.copy(editPoint.newLocation, point.location);
+
+                            let xPosition = this.rectangleArea.getHorizontalPositionInRate(point.location[0]);
+                            let yPosition = this.rectangleArea.getVerticalPositionInRate(point.location[1]);
+                            vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
+
+                            editPoints.push(editPoint);
                         }
-
-                        let editPoint = new Tool_Transform_Lattice_EditPoint();
-                        editPoint.targetPoint = point;
-                        editPoint.targetLine = line;
-
-                        vec3.copy(editPoint.oldLocation, point.location);
-                        vec3.copy(editPoint.newLocation, point.location);
-
-                        let xPosition = this.rectangleArea.getHorizontalPositionInRate(point.location[0]);
-                        let yPosition = this.rectangleArea.getVerticalPositionInRate(point.location[1]);
-                        vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
-
-                        editPoints.push(editPoint);
                     }
                 }
             }

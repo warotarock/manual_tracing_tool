@@ -175,6 +175,25 @@ namespace ManualTracingTool {
             toolMouseEvent.wheelDelta = wheelDelta;
         }
 
+        protected startShowingLayerItem(item: LayerWindowItem) {
+
+            if (item != null) {
+
+                this.selectCurrentLayerAnimationLayer = item.layer;
+                this.selectCurrentLayerAnimationTime = this.selectCurrentLayerAnimationTimeMax;
+                this.toolEnv.setRedrawMainWindow();
+
+                this.setLayerWindowViewLocationToItem(item);
+            }
+        }
+
+        protected startShowingCurrentLayer() {
+
+            let item = this.findCurrentLayerLayerWindowItem();
+
+            this.startShowingLayerItem(item);
+        }
+
         // Layer window
 
         layerWindowLayoutArea = new RectangleLayoutArea();
@@ -334,6 +353,22 @@ namespace ManualTracingTool {
             }
 
             layerWindow.layerItemsBottom = currentY;
+        }
+
+        protected setLayerWindowViewLocationToItem(item: LayerWindowItem) {
+
+            let layerWindow = this.layerWindow;
+
+            let viewTop = layerWindow.viewLocation[1];
+
+            if (item.top < viewTop + layerWindow.layerCommandButtonButtom) {
+
+                layerWindow.viewLocation[1] = item.top - layerWindow.layerCommandButtonButtom;
+            }
+            else if (item.top > viewTop + layerWindow.height - layerWindow.layerItemHeight * 2.0) {
+
+                layerWindow.viewLocation[1] = item.top - layerWindow.height + layerWindow.layerItemHeight * 2.0;
+            }
         }
 
         // Subtool window

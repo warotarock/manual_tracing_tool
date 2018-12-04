@@ -3,7 +3,9 @@ namespace ManualTracingTool {
 
     export class Tool_BrushSelectLinePointBase extends ModalToolBase {
 
-        logic_Selector: ISelector_BrushSelect = new Selector_LinePoint_BrushSelect(); // @virtual
+        logic_Selector: ISelector_BrushSelect = null; // @virtual
+
+        editableKeyframeLayers: List<ViewKeyframeLayer> = null;
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -87,6 +89,8 @@ namespace ManualTracingTool {
                 this.logic_Selector.editMode = SelectionEditMode.setSelected;
             }
 
+            this.editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+
             this.onStartSelection(e, env);
 
             this.logic_Selector.startProcess();
@@ -100,12 +104,22 @@ namespace ManualTracingTool {
 
         private processSelection(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            this.logic_Selector.processLayer(env.currentVectorGeometry, e.location[0], e.location[1], env.mouseCursorViewRadius);
+            if (this.editableKeyframeLayers == null) {
+
+                return null;
+            }
+
+            for (let viewKeyframeLayer of this.editableKeyframeLayers) {
+
+                this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location[0], e.location[1], env.mouseCursorViewRadius);
+            }
         }
 
         private endSelection(env: ToolEnvironment) {
 
             this.logic_Selector.endProcess();
+
+            this.editableKeyframeLayers = null;
 
             env.endModalTool();
 
@@ -124,6 +138,8 @@ namespace ManualTracingTool {
     }
 
     export class Tool_Select_BrushSelect_LinePoint extends Tool_BrushSelectLinePointBase {
+
+        logic_Selector: ISelector_BrushSelect = new Selector_LinePoint_BrushSelect(); // @override
 
         toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
@@ -161,24 +177,24 @@ namespace ManualTracingTool {
 
     export class Tool_Select_BrushSelect_Line extends Tool_Select_BrushSelect_LinePoint {
 
+        logic_Selector: ISelector_BrushSelect = new Selector_Line_BrushSelect(); // @override
+
         toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.line);
             env.setRedrawMainWindow();
         }
-
-        logic_Selector: ISelector_BrushSelect = new Selector_Line_BrushSelect(); // @override
     }
 
     export class Tool_Select_BrushSelect_LineSegment extends Tool_Select_BrushSelect_LinePoint {
+
+        logic_Selector: ISelector_BrushSelect = new Selector_LineSegment_BrushSelect(); // @override
 
         toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.lineSegment);
             env.setRedrawMainWindow();
         }
-
-        logic_Selector: ISelector_BrushSelect = new Selector_LineSegment_BrushSelect(); // @override
     }
 
     export class Command_Select extends CommandBase {

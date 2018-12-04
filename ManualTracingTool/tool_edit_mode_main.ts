@@ -13,22 +13,6 @@ namespace ManualTracingTool {
 
     export class Tool_EditModeMain extends Tool_Transform_Lattice {
 
-        // エディットモードメインツールクラス……最初にラティス矩形を計算し、変形ツールでもある。選択ツールをモーダル起動する、矩形は渡す。
-        // 選択中の点の矩形を表示する
-        // 　staticな関数を変形ツール、選択ツールから読んで描画
-        // 　矩形に加えて角に丸を表示する
-        // 変形ツールは移動回転拡縮を連続してコマンドにするため、一つのツールに統合する。
-        // 　g、r、sキーでモーダル状態を開始する。中心はピボットで開始、４点全てが対象
-        // 　矩形の辺をクリックすると、辺の点を対象にして上下か左右どちらか固定方向でモーダルを開始する
-        // 　　モーダル中にg→固定方向を解除してフリー移動にする
-        // 　　モーダル中にr、s→ピボット中心の４点回転、スケーリングにする
-        // 　矩形の角の点は反対側の点を中心とした３点をスケーリングする
-        // 　矩形の角の点で開始してモーダル中に
-        // 　　g→角の点以外の点の除外してグラブムーブする
-        // 　　x,y→１点除外して上下か左右だけのスケーリングにする
-        // 　　r→反対側の点を中心とした４点の回転にする
-        // 　なのでモーダル開始時に、辺をクリックしたときはピボットを中心にし、角の点のときは反対側の点を中心にして開始する
-
         editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
         lerpLocation1 = vec3.create();
@@ -77,10 +61,6 @@ namespace ManualTracingTool {
             let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
             for (let viewKeyframeLayer of editableKeyframeLayers) {
-
-                if (!viewKeyframeLayer.layer.isSelected || !viewKeyframeLayer.layer.isVisible) {
-                    continue;
-                }
 
                 for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 

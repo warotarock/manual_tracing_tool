@@ -118,7 +118,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            if (currentLayerOnly && layer != this.toolContext.currentLayer) {
+            if (currentLayerOnly && layer != this.selectCurrentLayerAnimationLayer) {
                 return;
             }
 
@@ -146,7 +146,7 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
 
-            let isCurrentLayer = (layer == context.currentVectorLayer);
+            let isSelectedLayer = (layer.isSelected);
 
             // color setting
 
@@ -217,7 +217,7 @@ namespace ManualTracingTool {
                     }
                     else if (this.toolEnv.isEditMode()) {
 
-                        if (!isCurrentLayer) {
+                        if (!isSelectedLayer) {
 
                             this.drawVectorLineStroke(line, this.editOtherLayerLineColor, 1.0, useAdjustingLocation);
                         }
@@ -233,7 +233,9 @@ namespace ManualTracingTool {
                                 || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
 
                                 let color = lineColor;
-                                if (line.isSelected || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
+                                if ((line.isSelected && line.modifyFlag != VectorLineModifyFlagID.selectedToUnselected)
+                                    || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
+
                                     color = this.drawStyle.selectedVectorLineColor;
                                 }
 
@@ -575,8 +577,6 @@ namespace ManualTracingTool {
                 if (this.tempColor4[3] > 0.0) {
 
                     pickedLayer = layer;
-                    this.setCurrentLayer(layer);
-                    this.toolEnv.setRedrawLayerWindow();
                     break;
                 }
             }
@@ -584,30 +584,6 @@ namespace ManualTracingTool {
             this.drawMainWindow(this.mainWindow);
 
             return pickedLayer;
-        }
-
-        protected startShowingCurrentLayer() {
-
-            this.selectCurrentLayerAnimationTime = this.selectCurrentLayerAnimationTimeMax;
-            this.toolEnv.setRedrawMainWindow();
-
-            let layerWindow = this.layerWindow;
-
-            let item = this.findCurrentLayerLayerWindowItem();
-            if (item != null) {
-
-                let viewTop = layerWindow.viewLocation[1];
-
-                if (item.top < viewTop + layerWindow.layerCommandButtonButtom) {
-
-                    layerWindow.viewLocation[1] = item.top - layerWindow.layerCommandButtonButtom;
-                }
-                else if (item.top > viewTop + layerWindow.height - layerWindow.layerItemHeight * 2.0) {
-
-                    layerWindow.viewLocation[1] = item.top - layerWindow.height + layerWindow.layerItemHeight * 2.0;
-                }
-
-            }
         }
 
         // Editor window drawing
