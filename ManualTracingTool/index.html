@@ -364,6 +364,7 @@
 
                 .modalDialogWindow.operationOptionModal div label input.lineWidthMin {
                     width: 50px;
+                    margin-left: 5px;
                     margin-right: 8px;
                 }
 
@@ -558,13 +559,17 @@
         <div>
             <label>
                 線の太さ
-                最小<input type="number" id="operationOptionModal_LineMinWidth" class="lineWidthMin" step="0.1" />-
-                基本<input type="number" id="operationOptionModal_LineWidth" class="lineWidthMax" step="0.1" />
+                &emsp;基本<input type="number" id="operationOptionModal_LineWidth" class="lineWidthMax" step="0.1" />
+                &emsp;最小<input type="number" id="operationOptionModal_LineMinWidth" class="lineWidthMin" step="0.1" />
             </label>
             <br />
         </div>
         <div>
-            編集単位<br />
+            編集単位
+            <label>
+                <input type="radio" name="operationOptionModal_operationUnit" value="3">
+                線
+            </label>
             <label>
                 <input type="radio" name="operationOptionModal_operationUnit" value="1">
                 点
@@ -572,14 +577,6 @@
             <label>
                 <input type="radio" name="operationOptionModal_operationUnit" value="2">
                 辺
-            </label>
-            <label>
-                <input type="radio" name="operationOptionModal_operationUnit" value="3">
-                線
-            </label>
-            <label>
-                <input type="radio" name="operationOptionModal_operationUnit" value="4">
-                レイヤー
             </label>
             <br />
         </div>

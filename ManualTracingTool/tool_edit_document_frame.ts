@@ -31,11 +31,18 @@ namespace ManualTracingTool {
             this.baseRectangleArea.right = env.document.documentFrame[2];
             this.baseRectangleArea.bottom = env.document.documentFrame[3];
 
-            this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, 0.0, env);
-            this.setLatticePointsByRectangle(this.rectangleArea);
-            this.resetLatticePointLocationToBaseLocation();
+            this.setLatticeLocation(env);
 
             return true;
+        }
+
+        protected setLatticeLocation(env: ToolEnvironment) { // @override
+
+            this.latticePadding = 0.0;
+
+            this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
+
+            this.setLatticePointsByRectangle(this.rectangleArea);
         }
 
         // Operation inputs

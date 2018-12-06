@@ -104,9 +104,7 @@ namespace ManualTracingTool {
             }
 
             this.latticeState = LatticeStateID.initialState;
-            this.latticePadding = env.drawStyle.latticePointPadding;
-            this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
-            this.setLatticePointsByRectangle(this.rectangleArea);
+            this.setLatticeLocation(env);
 
             this.selectTransformCalculator(env);
 
@@ -146,6 +144,15 @@ namespace ManualTracingTool {
             vec3.set(this.latticePoints[3].baseLocation, rectangle.left, rectangle.bottom, 0.0);
 
             this.resetLatticePointLocationToBaseLocation();
+        }
+
+        protected setLatticeLocation(env: ToolEnvironment) { // @virtual
+
+            this.latticePadding = env.drawStyle.latticePointPadding;
+
+            this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
+
+            this.setLatticePointsByRectangle(this.rectangleArea);
         }
 
         protected resetLatticePointLocationToBaseLocation() {
@@ -527,8 +534,7 @@ namespace ManualTracingTool {
 
                 if (this.latticeState == LatticeStateID.initialState) {
 
-                    this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
-                    this.setLatticePointsByRectangle(this.rectangleArea);
+                    this.setLatticeLocation(env);
                 }
 
                 this.drawLatticeRectangle(env, drawEnv);

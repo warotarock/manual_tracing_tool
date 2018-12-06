@@ -76,9 +76,7 @@ namespace ManualTracingTool {
             if (available) {
 
                 this.latticeState = LatticeStateID.initialState;
-                this.latticePadding = env.drawStyle.latticePointPadding;
-                this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
-                this.setLatticePointsByRectangle(this.rectangleArea);
+                this.setLatticeLocation(env);
             }
             else {
 
