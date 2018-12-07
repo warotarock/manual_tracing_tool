@@ -7,9 +7,7 @@ namespace ManualTracingTool {
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
-            return (
-                env.currentImageFileReferenceLayer != null
-            );
+            return env.isCurrentLayerImageFileReferenceLayer();
         }
 
         keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
@@ -31,6 +29,13 @@ namespace ManualTracingTool {
         onOpenFile(filePath: string, env: ToolEnvironment) { // @override
 
             if (env.currentImageFileReferenceLayer != null) {
+
+                let lastIndex = StringLastIndexOf(filePath, '\\');
+                if (lastIndex != -1) {
+
+                    let startIndex = lastIndex + 1;
+                    filePath = StringSubstring(filePath, startIndex, filePath.length - startIndex);
+                }
 
                 if (env.currentImageFileReferenceLayer.imageFilePath != filePath) {
 
@@ -76,7 +81,11 @@ namespace ManualTracingTool {
         redo(env: ToolEnvironment) { // @override
 
             this.targetLayer.imageFilePath = this.newFilePath;
-            this.targetLayer.imageResource.loaded = false;
+
+            if (this.targetLayer.imageResource != null) {
+
+                this.targetLayer.imageResource.loaded = false;
+            }
 
             env.startLoadingCurrentDocumentResources();
         }
@@ -100,6 +109,11 @@ namespace ManualTracingTool {
         transformMatrix = mat4.create();
 
         dLocation = vec3.create();
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return env.isCurrentLayerImageFileReferenceLayer();
+        }
 
         protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
@@ -145,6 +159,11 @@ namespace ManualTracingTool {
             this.resetLatticePointLocationToBaseLocation();
 
             return true;
+        }
+
+        protected setLatticeLocation(env: ToolEnvironment) { // @override
+
+            // do nothing
         }
 
         protected prepareEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
@@ -242,41 +261,25 @@ namespace ManualTracingTool {
 
     export class Tool_Transform_ReferenceImage_GrabMove extends Tool_Transform_ReferenceImage {
 
-        calcer = new GrabMove_Calculator();
+        protected selectTransformCalculator(env: ToolEnvironment) { // @override
 
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
-
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+            this.setLatticeAffineTransform(TransformType.grabMove, env);
         }
     }
 
     export class Tool_Transform_ReferenceImage_Rotate extends Tool_Transform_ReferenceImage {
 
-        calcer = new Rotate_Calculator();
+        protected selectTransformCalculator(env: ToolEnvironment) { // @override
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            this.calcer.prepare(env);
-        }
-
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
-
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+            this.setLatticeAffineTransform(TransformType.rotate, env);
         }
     }
 
     export class Tool_Transform_ReferenceImage_Scale extends Tool_Transform_ReferenceImage {
 
-        calcer = new Scale_Calculator();
+        protected selectTransformCalculator(env: ToolEnvironment) { // @override
 
-        protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            this.calcer.prepare(env);
-        }
-
-        protected processLatticePointMouseMove(e: ToolMouseEvent, env: ToolEnvironment) {
-
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+            this.setLatticeAffineTransform(TransformType.scale, env);
         }
     }
 }

@@ -156,7 +156,7 @@ namespace ManualTracingTool {
 
         selectCurrentLayerAnimationLayer: Layer = null;
         selectCurrentLayerAnimationTime = 0.0;
-        selectCurrentLayerAnimationTimeMax = 0.7;
+        selectCurrentLayerAnimationTimeMax = 0.4;
 
         // Setting values
         drawStyle = new ToolDrawingStyle();
@@ -860,8 +860,12 @@ namespace ManualTracingTool {
             );
 
             this.mainTools.push(
-                new MainTool().id(MainToolID.misc)
+                new MainTool().id(MainToolID.imageReferenceLayer)
                     .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
+            );
+
+            this.mainTools.push(
+                new MainTool().id(MainToolID.misc)
                     .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
             );
 
@@ -1245,14 +1249,18 @@ namespace ManualTracingTool {
 
             if (env.isDrawMode()) {
 
-                if (env.currentVectorLayer != null) {
+                if (env.isCurrentLayerVectorLayer()) {
 
                     this.setCurrentMainTool(MainToolID.drawLine);
 
                 }
-                else if (env.currentPosingLayer != null) {
+                else if (env.isCurrentLayerPosingLayer()) {
 
                     this.setCurrentMainTool(MainToolID.posing);
+                }
+                else if (env.isCurrentLayerImageFileReferenceLayer()) {
+
+                    this.setCurrentMainTool(MainToolID.imageReferenceLayer);
                 }
             }
             else {

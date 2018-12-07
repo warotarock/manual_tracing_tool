@@ -1186,7 +1186,8 @@ namespace ManualTracingTool {
             {
                 let isButtonON = (this.toolContext.editMode == EditModeID.drawMode
                     && (this.toolContext.mainToolID == MainToolID.drawLine
-                        || this.toolContext.mainToolID == MainToolID.posing));
+                        || this.toolContext.mainToolID == MainToolID.posing
+                        || this.toolContext.mainToolID == MainToolID.imageReferenceLayer));
 
                 this.setHeaderButtonVisual(this.ID.menu_btnDrawTool, isButtonON);
             }

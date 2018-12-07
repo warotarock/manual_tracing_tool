@@ -1041,6 +1041,14 @@ namespace ManualTracingTool {
 
             env.updateContext();
 
+            if (this.activeCanvasWindow == this.timeLineWindow) {
+
+                if (this.document_keydown_timeLineWindow(key, e)) {
+
+                    return;
+                }
+            }
+
             if (key == '.' && env.needsDrawOperatorCursor()) {
 
                 vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
@@ -1056,14 +1064,6 @@ namespace ManualTracingTool {
             else if (env.isEditMode()) {
 
                 if (this.currentTool.keydown(e, env)) {
-                    return;
-                }
-            }
-
-            if (this.activeCanvasWindow == this.timeLineWindow) {
-
-                if (this.document_keydown_timeLineWindow(key, e)) {
-
                     return;
                 }
             }
@@ -1380,6 +1380,7 @@ namespace ManualTracingTool {
                 if (env.isDrawMode()) {
 
                     if (key == 's') {
+
                         this.selectNextOrPreviousLayer(true);
                         this.startShowingCurrentLayer();
                         env.setRedrawLayerWindow();

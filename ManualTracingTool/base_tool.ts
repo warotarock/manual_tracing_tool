@@ -6,8 +6,9 @@ namespace ManualTracingTool {
         none = 0,
         drawLine = 1,
         posing = 2,
-        misc = 3,
-        edit = 4
+        imageReferenceLayer = 3,
+        misc = 4,
+        edit = 5
     }
 
     export enum OperationUnitID {
@@ -411,6 +412,11 @@ namespace ManualTracingTool {
         isCurrentLayerVectorLayer(): boolean {
 
             return (this.currentVectorLayer != null);
+        }
+
+        isCurrentLayerPosingLayer(): boolean {
+
+            return (this.currentPosingLayer != null);
         }
 
         isCurrentLayerImageFileReferenceLayer(): boolean {
