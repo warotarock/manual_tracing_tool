@@ -76,7 +76,7 @@ namespace ManualTracingTool {
 
         drawMouseCursor();
         drawEditorEditLineStroke(line: VectorLine);
-        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean);
+        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean);
         drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean);
         drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean);
     }

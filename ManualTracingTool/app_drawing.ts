@@ -241,11 +241,11 @@ namespace ManualTracingTool {
 
                                 if (line.isCloseToMouse) {
 
-                                    this.drawVectorLineStroke(line, color, 1.0 + 2.0, useAdjustingLocation);
+                                    this.drawVectorLineStroke(line, color, 2.0, useAdjustingLocation);
                                 }
                                 else {
 
-                                    this.drawVectorLineStroke(line, color, 1.0, useAdjustingLocation);
+                                    this.drawVectorLineStroke(line, color, 0.0, useAdjustingLocation);
                                 }
 
                                 //this.drawAdjustingLinePoints(canvasWindow, line);
@@ -256,7 +256,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) {
+        private drawVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) {
 
             if (line.points.length == 0) {
                 return;
@@ -264,7 +264,7 @@ namespace ManualTracingTool {
 
             this.canvasRender.setStrokeColorV(color);
 
-            this.drawVectorLineSegment(line, 0, line.points.length - 1, useAdjustingLocation);
+            this.drawVectorLineSegment(line, 0, line.points.length - 1, strokeWidthBolding, useAdjustingLocation);
         }
 
         private drawVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
@@ -366,7 +366,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+        private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
             this.canvasRender.setLineCap(CanvasRenderLineCap.round)
 
@@ -425,7 +425,7 @@ namespace ManualTracingTool {
 
                 // draw segment
                 this.canvasRender.beginPath()
-                this.canvasRender.setStrokeWidth(currentLineWidth);
+                this.canvasRender.setStrokeWidth(currentLineWidth + this.getCurrentViewScaleLineWidth(strokeWidthBolding));
 
                 let firstLocaton = (useAdjustingLocation ? firstPoint.adjustingLocation : firstPoint.location);
                 this.canvasRender.moveTo(firstLocaton[0], firstLocaton[1]);
@@ -481,7 +481,7 @@ namespace ManualTracingTool {
             this.drawVectorLineStroke(
                 line
                 , this.drawStyle.editingLineColor
-                , this.getCurrentViewScaleLineWidth(3.0)
+                , 2.0
                 , false
             );
         }
@@ -700,9 +700,9 @@ namespace ManualTracingTool {
             this.drawEditLineStroke(line);
         }
 
-        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) { // @override
+        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @override
 
-            this.drawVectorLineStroke(line, color, strokeWidth, useAdjustingLocation);
+            this.drawVectorLineStroke(line, color, strokeWidthBolding, useAdjustingLocation);
         }
 
         drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @override
@@ -712,7 +712,7 @@ namespace ManualTracingTool {
 
         drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @override
 
-            this.drawVectorLineSegment(line, startIndex, endIndex, useAdjustingLocation);
+            this.drawVectorLineSegment(line, startIndex, endIndex, 0.0, useAdjustingLocation);
         }
 
         // WebGL window drawing

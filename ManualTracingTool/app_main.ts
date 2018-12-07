@@ -1590,7 +1590,7 @@ namespace ManualTracingTool {
         drawEditorEditLineStroke(line: VectorLine) { // @implements MainEditorDrawer @virtual
         }
 
-        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
+        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
         }
 
         drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
