@@ -16,6 +16,8 @@ namespace ManualTracingTool {
 
     export class Tool_Resample_Segment extends ToolBase {
 
+        helpText = 'エンターキーで選択中の頂点の間を画面の拡大率に合わせて再分割します。';
+
         resamplingUnitLength = 1.0;
 
         isAvailable(env: ToolEnvironment): boolean { // @override
@@ -24,6 +26,12 @@ namespace ManualTracingTool {
                 env.currentVectorLayer != null
                 && env.currentVectorLayer.isVisible
             );
+        }
+
+        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            env.setCurrentOperationUnitID(OperationUnitID.linePoint);
+            env.setRedrawMainWindow();
         }
 
         keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override

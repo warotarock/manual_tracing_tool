@@ -1089,15 +1089,16 @@ namespace ManualTracingTool {
             if (key == 'n' && env.isCtrlKeyPressing()) {
 
                 this.document = this.createDefaultDocumentData();
+
                 this.toolContext.document = this.document;
-                this.toolContext.commandHistory = new CommandHistory();
+                this.initializeContext();
 
                 this.updateLayerStructure();
                 this.setCurrentLayer(null);
                 this.setCurrentFrame(0);
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
 
-                env.setRedrawAllWindows();
+                this.toolEnv.setRedrawAllWindows();
 
                 return;
             }
@@ -1356,6 +1357,8 @@ namespace ManualTracingTool {
                 if (pickedLayer != null) {
 
                     this.setCurrentLayer(pickedLayer);
+                    env.setRedrawLayerWindow();
+                    env.setRedrawSubtoolWindow();
                     this.startShowingCurrentLayer();
                 }
                 else {
@@ -1379,11 +1382,18 @@ namespace ManualTracingTool {
 
                 if (env.isDrawMode()) {
 
-                    if (key == 's') {
+                    if (!env.needsDrawOperatorCursor()) {
 
-                        this.selectNextOrPreviousLayer(true);
-                        this.startShowingCurrentLayer();
-                        env.setRedrawLayerWindow();
+                        if (key == 's') {
+
+                            this.selectNextOrPreviousLayer(true);
+                            this.startShowingCurrentLayer();
+                            env.setRedrawLayerWindow();
+                        }
+                        else {
+
+                            this.currentTool.keydown(e, env);
+                        }
                     }
                     else {
 

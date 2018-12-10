@@ -161,6 +161,7 @@ namespace ManualTracingTool {
         editMode = EditModeID.drawMode;
         drawMode_MainToolID = MainToolID.drawLine;
         editMode_MainToolID = MainToolID.edit;
+        needsDrawOperatorCursor = false;
 
         operationUnitID = OperationUnitID.line;
 
@@ -426,7 +427,7 @@ namespace ManualTracingTool {
 
         needsDrawOperatorCursor(): boolean {
 
-            return (this.isEditMode() || this.isCurrentLayerImageFileReferenceLayer());
+            return (this.isEditMode() || this.toolContext.needsDrawOperatorCursor);
         }
 
         setCurrentOperationUnitID(operationUnitID: OperationUnitID) {
@@ -660,7 +661,8 @@ namespace ManualTracingTool {
 
     export class ToolBase {
 
-        helpText = '';
+        helpText = ''; // @virtual
+        isEditTool = false; // @virtual
 
         toolBarImage: ImageResource = null;
         toolBarImageIndex = 0;

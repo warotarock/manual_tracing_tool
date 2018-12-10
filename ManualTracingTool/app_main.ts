@@ -5,7 +5,7 @@ declare var Buffer: any;
 
 let fs = (typeof (require) != 'undefined') ? require('fs') : {
     writeFile(fileName, text) {
-        window.localStorage.setItem('Manual tracing tool save data', text);
+        window.localStorage.setItem(fileName, text);
     }
 };
 
@@ -310,12 +310,14 @@ namespace ManualTracingTool {
         startReloadDocument() {
 
             this.document = new DocumentData();
-            this.toolContext.document = this.document;
+            this.initializeContext();
 
             let fileName = this.getInputElementText(this.ID.fileName);
             this.startLoadingDocument(this.document, fileName);
 
             this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+
+            this.toolEnv.setRedrawAllWindows();
         }
 
         processLoadingDocumentJSON() {
@@ -370,7 +372,14 @@ namespace ManualTracingTool {
 
                     let refFileBasePath = window.localStorage.getItem(this.refFileBasePathKey);
 
-                    imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
+                    if (!StringIsNullOrEmpty(refFileBasePath)) {
+
+                        imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
+                    }
+                    else {
+
+                        imageResource.fileName = ifrLayer.imageFilePath;
+                    }
 
                     this.loadTexture(imageResource, imageResource.fileName);
 
@@ -485,9 +494,9 @@ namespace ManualTracingTool {
             let copy = JSON.parse(JSON.stringify(this.document));
             this.fixSaveDocumentData(copy, info);
 
-            let saveToLocalStrage = false;
+            let forceToLocalStrage = false;
 
-            if (saveToLocalStrage) {
+            if (forceToLocalStrage) {
 
                 window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(copy));
             }
@@ -501,6 +510,8 @@ namespace ManualTracingTool {
             }
 
             window.localStorage.setItem(this.lastFilePathKey, filePath);
+
+            alert('保存しました。');
         }
 
         // Starting ups
@@ -540,7 +551,7 @@ namespace ManualTracingTool {
         protected createDefaultDocumentData(): DocumentData {
 
             let saveData = window.localStorage.getItem(this.tempFileNameKey);
-            if (saveData) {
+            if (!StringIsNullOrEmpty(saveData)) {
 
                 let document = JSON.parse(saveData);
                 document.loaded = true;
@@ -812,6 +823,9 @@ namespace ManualTracingTool {
             this.toolContext.posing3DView = this.posing3dView;
             this.toolContext.posing3DLogic = this.posing3DLogic;
 
+            this.toolEnv = new ToolEnvironment(this.toolContext);
+            this.toolDrawEnv = new ToolDrawingEnvironment();
+            this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
         }
 
         protected initializeViews() { // @virtual
@@ -838,7 +852,6 @@ namespace ManualTracingTool {
                     .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                     .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
                     .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
-                    .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
                     .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
             );
 
@@ -875,6 +888,7 @@ namespace ManualTracingTool {
                     .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 0)
                     .subTool(this.tool_LinePointBrushSelect, this.subToolImages[2], 0)
                     .subTool(this.tool_EditModeMain, this.subToolImages[2], 0)
+                    .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
             );
 
             // Modal tools
@@ -893,12 +907,6 @@ namespace ManualTracingTool {
             this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
             this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
             this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
-
-            // Constructs tool environment variables
-            this.toolEnv = new ToolEnvironment(this.toolContext);
-            this.toolDrawEnv = new ToolDrawingEnvironment();
-
-            this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
 
             //this.currentTool = this.tool_DrawLine;
             //this.currentTool = this.tool_AddPoint;
@@ -1457,6 +1465,8 @@ namespace ManualTracingTool {
 
             if (this.currentTool != null) {
 
+                this.toolContext.needsDrawOperatorCursor = this.currentTool.isEditTool;
+
                 this.currentTool.onActivated(this.toolEnv);
             }
         }
@@ -1609,8 +1619,8 @@ namespace ManualTracingTool {
     export enum DrawLineToolSubToolID {
 
         drawLine = 0,
-        scratchLine = 2,
-        deletePointBrush = 1
+        deletePointBrush = 1,
+        scratchLine = 2
     }
 
     export enum EditModeSubToolID {

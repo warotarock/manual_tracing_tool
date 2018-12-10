@@ -176,10 +176,11 @@ namespace ManualTracingTool {
 
         protected processTransform(env: ToolEnvironment) { // @override
 
-            let image = env.currentImageFileReferenceLayer.imageResource.image;
+            let ifrLayer = env.currentImageFileReferenceLayer;
+            let image = ifrLayer.imageResource.image;
 
             // location
-            vec3.copy(env.currentImageFileReferenceLayer.adjustingLocation, this.latticePoints[0].location);
+            vec3.copy(ifrLayer.adjustingLocation, this.latticePoints[0].location);
 
             // scale
             vec3.subtract(this.dLocation, this.latticePoints[0].location, this.latticePoints[3].location);
@@ -188,20 +189,22 @@ namespace ManualTracingTool {
             vec3.subtract(this.dLocation, this.latticePoints[0].location, this.latticePoints[1].location);
             let scaleW = vec3.length(this.dLocation) / image.width;
 
-            vec3.set(env.currentImageFileReferenceLayer.adjustingScale, scaleW, scaleH, 0.0);
+            vec3.set(ifrLayer.adjustingScale, scaleW, scaleH, 0.0);
 
             // angle
             vec3.subtract(this.dLocation, this.latticePoints[1].location, this.latticePoints[0].location);
             let angle = Math.atan2(this.dLocation[1], this.dLocation[0]);
 
-            env.currentImageFileReferenceLayer.adjustingRotation[0] = angle;
+            ifrLayer.adjustingRotation[0] = angle;
         }
 
         protected executeCommand(env: ToolEnvironment) { // @override
 
+            let ifrLayer = env.currentImageFileReferenceLayer;
+
             // Execute the command
             let command = new Command_Transform_ReferenceImage();
-            command.targetLayer = env.currentImageFileReferenceLayer;
+            command.targetLayer = ifrLayer;
 
             vec3.copy(command.newLocation, command.targetLayer.adjustingLocation);
             vec3.copy(command.newRotation, command.targetLayer.adjustingRotation);
@@ -211,6 +214,16 @@ namespace ManualTracingTool {
 
             env.commandHistory.addCommand(command);
         }
+
+        cancelModal(env: ToolEnvironment) { // @override
+
+            let ifrLayer = env.currentImageFileReferenceLayer;
+
+            vec3.copy(ifrLayer.adjustingLocation, ifrLayer.location);
+            vec3.copy(ifrLayer.adjustingRotation, ifrLayer.rotation);
+            vec3.copy(ifrLayer.adjustingScale, ifrLayer.scale);
+        }
+
     }
 
     class Command_Transform_ReferenceImage extends CommandBase {

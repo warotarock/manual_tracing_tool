@@ -23,6 +23,8 @@ namespace ManualTracingTool {
 
     export class Tool_Transform_Lattice extends ModalToolBase {
 
+        isEditTool = true; // @override
+
         latticeState = LatticeStateID.invalid;
         baseRectangleArea = new Logic_Edit_Points_RectangleArea();
         rectangleArea = new Logic_Edit_Points_RectangleArea();

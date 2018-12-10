@@ -1608,7 +1608,7 @@ namespace ManualTracingTool {
 
     export class LayerWindow extends ToolBaseWindow {
 
-        layerItemButtonScale = 0.375;
+        layerItemButtonScale = 0.5;
         layerItemButtonWidth = 64.0;
         layerItemButtonHeight = 64.0;
         layerItemButtonButtom = 64.0;

@@ -21,6 +21,8 @@ namespace ManualTracingTool {
 
     export class Tool_ScratchLine extends ToolBase {
 
+        helpText = '右クリックで線を選択し、左クリックで線を修正します。';
+
         enableScratchEdit = true;
         enableExtrude = false;
 
@@ -740,6 +742,8 @@ namespace ManualTracingTool {
     }
 
     export class Tool_ExtrudeLine extends Tool_ScratchLine {
+
+        helpText = '右クリックで線を選択し、左クリックで線の端の近くから線を描きはじめると線が延長されます。';
 
         enableScratchEdit = false;
         enableExtrude = true;

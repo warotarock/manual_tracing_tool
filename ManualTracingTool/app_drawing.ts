@@ -206,20 +206,20 @@ namespace ManualTracingTool {
 
                         if (layer.drawLineType == DrawLineTypeID.layerColor) {
 
-                            this.drawVectorLineStroke(line, lineColor, 1.0, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, lineColor, 0.0, useAdjustingLocation);
                         }
                         else if (layer.drawLineType == DrawLineTypeID.palletColor) {
 
                             let palletColor = documentData.palletColos[layer.line_PalletColorIndex];
 
-                            this.drawVectorLineStroke(line, palletColor.color, 1.0, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, palletColor.color, 0.0, useAdjustingLocation);
                         }
                     }
                     else if (this.toolEnv.isEditMode()) {
 
                         if (!isSelectedLayer) {
 
-                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, 1.0, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, 0.0, useAdjustingLocation);
                         }
                         else {
 

@@ -3,6 +3,9 @@ namespace ManualTracingTool {
 
     export class Tool_BrushSelectLinePointBase extends ModalToolBase {
 
+        helpText = '左クリックで選択を追加、Altキーを押しながらで選択を解除します。<br />Aキーで全選択／解除します。G、R、Sキーで移動、回転、拡縮します。';
+        isEditTool = true; // @override
+
         logic_Selector: ISelector_BrushSelect = null; // @virtual
 
         editableKeyframeLayers: List<ViewKeyframeLayer> = null;
