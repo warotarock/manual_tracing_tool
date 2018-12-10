@@ -166,6 +166,18 @@ var ManualTracingTool;
             }
             toolMouseEvent.wheelDelta = wheelDelta;
         };
+        Main_View.prototype.startShowingLayerItem = function (item) {
+            if (item != null) {
+                this.selectCurrentLayerAnimationLayer = item.layer;
+                this.selectCurrentLayerAnimationTime = this.selectCurrentLayerAnimationTimeMax;
+                this.toolEnv.setRedrawMainWindow();
+                this.setLayerWindowViewLocationToItem(item);
+            }
+        };
+        Main_View.prototype.startShowingCurrentLayer = function () {
+            var item = this.findCurrentLayerLayerWindowItem();
+            this.startShowingLayerItem(item);
+        };
         Main_View.prototype.collectLayerWindowButtons = function () {
             this.layerWindowCommandButtons = new List();
             this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.addLayer));
@@ -271,6 +283,16 @@ var ManualTracingTool;
                 currentY += itemHeight;
             }
             layerWindow.layerItemsBottom = currentY;
+        };
+        Main_View.prototype.setLayerWindowViewLocationToItem = function (item) {
+            var layerWindow = this.layerWindow;
+            var viewTop = layerWindow.viewLocation[1];
+            if (item.top < viewTop + layerWindow.layerCommandButtonButtom) {
+                layerWindow.viewLocation[1] = item.top - layerWindow.layerCommandButtonButtom;
+            }
+            else if (item.top > viewTop + layerWindow.height - layerWindow.layerItemHeight * 2.0) {
+                layerWindow.viewLocation[1] = item.top - layerWindow.height + layerWindow.layerItemHeight * 2.0;
+            }
         };
         Main_View.prototype.subtoolWindow_CollectViewItems = function () {
             this.subToolViewItems = new List();
@@ -587,7 +609,6 @@ var ManualTracingTool;
                 fileName = StringSubstring(fileName, lastSeperatorIndex + 1, eperatorDotIndex - lastSeperatorIndex - 1);
             }
             this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
-            this.setRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
             this.openModal(this.ID.exportImageFileModal, null);
         };
         Main_View.prototype.onClosedExportImageFileModal = function () {
@@ -598,21 +619,33 @@ var ManualTracingTool;
             if (StringIsNullOrEmpty(fileName)) {
                 return;
             }
-            var imageWidth = Math.floor(this.document.documentFrame[2] - this.document.documentFrame[0] + 1);
-            var imageHeight = Math.floor(this.document.documentFrame[3] - this.document.documentFrame[1] + 1);
+            var backGroundType = this.getRadioElementIntValue(this.ID.exportImageFileModal_backGroundType, 1);
+            var scale = this.getInputElementNumber(this.ID.exportImageFileModal_scale, 1.0);
+            var frameLeft = Math.floor(this.document.documentFrame[0]);
+            var frameTop = Math.floor(this.document.documentFrame[1]);
+            var documentWidth = Math.floor(this.document.documentFrame[2]) - frameLeft + 1;
+            var documentHeight = Math.floor(this.document.documentFrame[3]) - frameTop + 1;
+            var imageLeft = Math.floor(frameLeft);
+            var imageTop = Math.floor(frameTop);
+            var imageWidth = Math.floor(documentWidth * scale);
+            var imageHeight = Math.floor(documentHeight * scale);
             if (imageWidth > 0 && imageHeight > 0) {
                 var canvas = this.renderingWindow.canvas;
                 canvas.width = imageWidth;
                 canvas.height = imageHeight;
                 this.renderingWindow.width = imageWidth;
                 this.renderingWindow.height = imageHeight;
-                this.renderingWindow.viewLocation[0] = 0.0;
-                this.renderingWindow.viewLocation[1] = 0.0;
-                this.renderingWindow.viewScale = 1.0;
+                this.renderingWindow.viewLocation[0] = imageLeft;
+                this.renderingWindow.viewLocation[1] = imageTop;
+                this.renderingWindow.viewScale = scale;
                 this.renderingWindow.viewRotation = 0.0;
-                this.renderingWindow.centerLocationRate[0] = 0.5;
-                this.renderingWindow.centerLocationRate[1] = 0.5;
+                this.renderingWindow.centerLocationRate[0] = 0.0;
+                this.renderingWindow.centerLocationRate[1] = 0.0;
                 this.clearWindow(this.renderingWindow);
+                if (backGroundType == 1) {
+                    this.canvasRender.setFillColorV(this.document.palletColos[this.document.palletColos.length - 1].color);
+                    this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
+                }
                 this.drawMainWindow(this.renderingWindow);
                 var exportPath = window.localStorage.getItem(this.exportPathKey);
                 var imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
@@ -633,6 +666,9 @@ var ManualTracingTool;
                         alert(error);
                     }
                 });
+                // Free canvas memory
+                canvas.width = 10;
+                canvas.height = 10;
             }
         };
         Main_View.prototype.openNewKeyframeModal = function () {
@@ -702,8 +738,8 @@ var ManualTracingTool;
                 this.onClosedPalletColorModal();
             }
             else if (this.currentModalDialogID == this.ID.operationOptionModal) {
-                this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth);
-                this.toolContext.drawLineMinWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineMinWidth);
+                this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth, 1.0);
+                this.toolContext.drawLineMinWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineMinWidth, 0.1);
                 var operationUnitID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, ManualTracingTool.OperationUnitID.linePoint);
                 this.setCurrentOperationUnitID(operationUnitID);
             }
@@ -714,10 +750,10 @@ var ManualTracingTool;
                 this.onClosedFileDialogModal();
             }
             else if (this.currentModalDialogID == this.ID.documentSettingModal) {
-                this.document.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft);
-                this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop);
-                this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight);
-                this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom);
+                this.document.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft, -512);
+                this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop, -512);
+                this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight, 512);
+                this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom, 512);
             }
             else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
                 this.onClosedExportImageFileModal();
@@ -803,7 +839,8 @@ var ManualTracingTool;
             {
                 var isButtonON = (this.toolContext.editMode == ManualTracingTool.EditModeID.drawMode
                     && (this.toolContext.mainToolID == ManualTracingTool.MainToolID.drawLine
-                        || this.toolContext.mainToolID == ManualTracingTool.MainToolID.posing));
+                        || this.toolContext.mainToolID == ManualTracingTool.MainToolID.posing
+                        || this.toolContext.mainToolID == ManualTracingTool.MainToolID.imageReferenceLayer));
                 this.setHeaderButtonVisual(this.ID.menu_btnDrawTool, isButtonON);
             }
             {
@@ -998,8 +1035,11 @@ var ManualTracingTool;
             element.value = value.toString();
             return element;
         };
-        Main_View.prototype.getInputElementNumber = function (id) {
+        Main_View.prototype.getInputElementNumber = function (id, defaultValue) {
             var element = (document.getElementById(id));
+            if (element.value == '') {
+                return defaultValue;
+            }
             return Number(element.value);
         };
         Main_View.prototype.setInputElementRangeValue = function (id, value, min, max) {
@@ -1076,7 +1116,7 @@ var ManualTracingTool;
         __extends(LayerWindow, _super);
         function LayerWindow() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.layerItemButtonScale = 0.375;
+            _this.layerItemButtonScale = 0.5;
             _this.layerItemButtonWidth = 64.0;
             _this.layerItemButtonHeight = 64.0;
             _this.layerItemButtonButtom = 64.0;
@@ -1313,6 +1353,8 @@ var ManualTracingTool;
             this.exportImageFileModal = '#exportImageFileModal';
             this.exportImageFileModal_fileName = 'exportImageFileModal_fileName';
             this.exportImageFileModal_imageFileType = 'exportImageFileModal_imageFileType';
+            this.exportImageFileModal_backGroundType = 'exportImageFileModal_backGroundType';
+            this.exportImageFileModal_scale = 'exportImageFileModal_scale';
             this.exportImageFileModal_ok = 'exportImageFileModal_ok';
             this.exportImageFileModal_cancel = 'exportImageFileModal_cancel';
             this.newKeyframeModal = '#newKeyframeModal';

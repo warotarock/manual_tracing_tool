@@ -143,7 +143,7 @@ var ManualTracingTool;
                     }
                     // Set flag to delete line
                     if (deletePointCount > 0 && line.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.none) {
-                        if (deletePointCount >= line.points.length) {
+                        if (line.points.length - deletePointCount <= 1) {
                             line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.delete;
                             deleteLineCount++;
                         }

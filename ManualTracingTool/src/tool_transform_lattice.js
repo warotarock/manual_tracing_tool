@@ -16,12 +16,35 @@ var ManualTracingTool;
         SelectedLatticePartID[SelectedLatticePartID["latticePoint"] = 1] = "latticePoint";
         SelectedLatticePartID[SelectedLatticePartID["latticeEdge"] = 2] = "latticeEdge";
     })(SelectedLatticePartID = ManualTracingTool.SelectedLatticePartID || (ManualTracingTool.SelectedLatticePartID = {}));
+    var LatticeStateID;
+    (function (LatticeStateID) {
+        LatticeStateID[LatticeStateID["invalid"] = 0] = "invalid";
+        LatticeStateID[LatticeStateID["initialState"] = 1] = "initialState";
+        LatticeStateID[LatticeStateID["modified"] = 2] = "modified";
+    })(LatticeStateID = ManualTracingTool.LatticeStateID || (ManualTracingTool.LatticeStateID = {}));
+    var TransformType;
+    (function (TransformType) {
+        TransformType[TransformType["none"] = 0] = "none";
+        TransformType[TransformType["grabMove"] = 1] = "grabMove";
+        TransformType[TransformType["rotate"] = 2] = "rotate";
+        TransformType[TransformType["scale"] = 3] = "scale";
+    })(TransformType = ManualTracingTool.TransformType || (ManualTracingTool.TransformType = {}));
     var Tool_Transform_Lattice = /** @class */ (function (_super) {
         __extends(Tool_Transform_Lattice, _super);
         function Tool_Transform_Lattice() {
             var _this = _super.call(this) || this;
+            _this.isEditTool = true; // @override
+            _this.latticeState = LatticeStateID.invalid;
+            _this.baseRectangleArea = new ManualTracingTool.Logic_Edit_Points_RectangleArea();
+            _this.rectangleArea = new ManualTracingTool.Logic_Edit_Points_RectangleArea();
             _this.latticePoints = null;
             _this.latticePointCount = 4;
+            _this.latticePadding = 0.0;
+            _this.transformType = TransformType.none;
+            _this.transformCalculator = null;
+            _this.grabMove_Calculator = new GrabMove_Calculator();
+            _this.rotate_Calculator = new Rotate_Calculator();
+            _this.scale_Calculator = new Scale_Calculator();
             _this.mouseOver_SelectedLatticePart = SelectedLatticePartID.none;
             _this.mouseOver_PartIndex = -1;
             _this.mouseOver_PartIndexTo = -1;
@@ -36,8 +59,21 @@ var ManualTracingTool;
             return (env.currentVectorLayer != null
                 && env.currentVectorLayer.isVisible);
         };
+        Tool_Transform_Lattice.prototype.onActivated = function (env) {
+            this.latticeState = LatticeStateID.invalid;
+            this.mouseOver_SelectedLatticePart = SelectedLatticePartID.none;
+            var available = this.prepareLatticePoints(env);
+            if (available) {
+                this.latticeState = LatticeStateID.initialState;
+            }
+            else {
+                this.latticeState = LatticeStateID.invalid;
+            }
+        };
+        // Preparing for operation
         Tool_Transform_Lattice.prototype.prepareModal = function (e, env) {
             this.clearEditData(e, env);
+            this.latticeState = LatticeStateID.invalid;
             if (!this.checkTarget(e, env)) {
                 return false;
             }
@@ -50,21 +86,16 @@ var ManualTracingTool;
             // Caluclate surrounding rectangle of all selected points
             var available = this.prepareLatticePoints(env);
             if (!available) {
+                this.latticeState = LatticeStateID.invalid;
                 return false;
             }
+            this.latticeState = LatticeStateID.initialState;
+            this.setLatticeLocation(env);
+            this.selectTransformCalculator(env);
             // Create edit info
             this.prepareEditData(e, env);
             this.prepareModalExt(e, env);
             return true;
-        };
-        Tool_Transform_Lattice.prototype.clearEditData = function (e, env) {
-        };
-        Tool_Transform_Lattice.prototype.checkTarget = function (e, env) {
-            return false;
-        };
-        Tool_Transform_Lattice.prototype.prepareLatticePoints = function (env) {
-            var available = false;
-            return available;
         };
         Tool_Transform_Lattice.prototype.createLatticePoints = function () {
             this.latticePoints = new List();
@@ -72,12 +103,12 @@ var ManualTracingTool;
                 this.latticePoints.push(new ManualTracingTool.LatticePoint());
             }
         };
-        Tool_Transform_Lattice.prototype.addPaddingToRectangle = function (result, rectangle, env) {
-            var padding = env.getViewScaledLength(env.drawStyle.latticePointPadding);
-            result.left = rectangle.left - padding;
-            result.top = rectangle.top - padding;
-            result.right = rectangle.right + padding;
-            result.bottom = rectangle.bottom + padding;
+        Tool_Transform_Lattice.prototype.addPaddingToRectangle = function (result, rectangle, padding, env) {
+            var viewPadding = env.getViewScaledLength(padding);
+            result.left = rectangle.left - viewPadding;
+            result.top = rectangle.top - viewPadding;
+            result.right = rectangle.right + viewPadding;
+            result.bottom = rectangle.bottom + viewPadding;
         };
         Tool_Transform_Lattice.prototype.setLatticePointsByRectangle = function (rectangle) {
             vec3.set(this.latticePoints[0].baseLocation, rectangle.left, rectangle.top, 0.0);
@@ -85,6 +116,11 @@ var ManualTracingTool;
             vec3.set(this.latticePoints[2].baseLocation, rectangle.right, rectangle.bottom, 0.0);
             vec3.set(this.latticePoints[3].baseLocation, rectangle.left, rectangle.bottom, 0.0);
             this.resetLatticePointLocationToBaseLocation();
+        };
+        Tool_Transform_Lattice.prototype.setLatticeLocation = function (env) {
+            this.latticePadding = env.drawStyle.latticePointPadding;
+            this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
+            this.setLatticePointsByRectangle(this.rectangleArea);
         };
         Tool_Transform_Lattice.prototype.resetLatticePointLocationToBaseLocation = function () {
             for (var _i = 0, _a = this.latticePoints; _i < _a.length; _i++) {
@@ -98,10 +134,113 @@ var ManualTracingTool;
                 vec3.copy(latticePoint.baseLocation, latticePoint.location);
             }
         };
+        // Preparing for operation (Override methods)
+        Tool_Transform_Lattice.prototype.checkTarget = function (e, env) {
+            return (this.transformType != TransformType.none);
+        };
+        Tool_Transform_Lattice.prototype.prepareLatticePoints = function (env) {
+            var available = false;
+            return available;
+        };
+        Tool_Transform_Lattice.prototype.clearEditData = function (e, env) {
+        };
+        Tool_Transform_Lattice.prototype.selectTransformCalculator = function (env) {
+        };
         Tool_Transform_Lattice.prototype.prepareEditData = function (e, env) {
         };
         Tool_Transform_Lattice.prototype.prepareModalExt = function (e, env) {
         };
+        // Operation functions
+        Tool_Transform_Lattice.prototype.setLatticeAffineTransform = function (transformType, env) {
+            for (var _i = 0, _a = this.latticePoints; _i < _a.length; _i++) {
+                var latticePoint = _a[_i];
+                latticePoint.latticePointEditType = ManualTracingTool.LatticePointEditTypeID.allDirection;
+            }
+            if (transformType == TransformType.grabMove) {
+                this.transformType = TransformType.grabMove;
+                this.transformCalculator = this.grabMove_Calculator;
+            }
+            else if (transformType == TransformType.rotate) {
+                this.transformType = TransformType.rotate;
+                this.transformCalculator = this.rotate_Calculator;
+            }
+            else if (transformType == TransformType.scale) {
+                this.transformType = TransformType.scale;
+                this.transformCalculator = this.scale_Calculator;
+            }
+            this.transformCalculator.prepare(env);
+        };
+        Tool_Transform_Lattice.prototype.startLatticeAffineTransform = function (transformType, isContinueEdit, env) {
+            this.setLatticeAffineTransform(transformType, env);
+            vec3.copy(this.mouseAnchorLocation, env.mouseCursorLocation);
+            if (isContinueEdit) {
+                this.applytLatticePointBaseLocation();
+            }
+            else {
+                env.startModalTool(this);
+            }
+        };
+        Tool_Transform_Lattice.prototype.startLatticeTransform = function (env) {
+            for (var _i = 0, _a = this.latticePoints; _i < _a.length; _i++) {
+                var latticePoint = _a[_i];
+                latticePoint.latticePointEditType = ManualTracingTool.LatticePointEditTypeID.none;
+            }
+            if (this.mouseOver_SelectedLatticePart == SelectedLatticePartID.latticePoint) {
+                var pointIndexH = -1;
+                var pointIndexV = -1;
+                if (this.mouseOver_PartIndex == 0) {
+                    pointIndexH = 3;
+                    pointIndexV = 1;
+                }
+                else if (this.mouseOver_PartIndex == 1) {
+                    pointIndexH = 2;
+                    pointIndexV = 0;
+                }
+                else if (this.mouseOver_PartIndex == 2) {
+                    pointIndexH = 1;
+                    pointIndexV = 3;
+                }
+                else if (this.mouseOver_PartIndex == 3) {
+                    pointIndexH = 0;
+                    pointIndexV = 2;
+                }
+                this.latticePoints[this.mouseOver_PartIndex].latticePointEditType = ManualTracingTool.LatticePointEditTypeID.allDirection;
+                this.latticePoints[pointIndexH].latticePointEditType = ManualTracingTool.LatticePointEditTypeID.horizontalOnly;
+                this.latticePoints[pointIndexV].latticePointEditType = ManualTracingTool.LatticePointEditTypeID.verticalOnly;
+                this.transformType = TransformType.grabMove;
+                this.transformCalculator = this.grabMove_Calculator;
+                this.latticeState = LatticeStateID.initialState;
+                env.startModalTool(this);
+            }
+            if (this.mouseOver_SelectedLatticePart == SelectedLatticePartID.latticeEdge) {
+                var latticePointEditType = void 0;
+                if (this.mouseOver_PartIndex == 0 || this.mouseOver_PartIndex == 2) {
+                    latticePointEditType = ManualTracingTool.LatticePointEditTypeID.verticalOnly;
+                }
+                else {
+                    latticePointEditType = ManualTracingTool.LatticePointEditTypeID.horizontalOnly;
+                }
+                this.latticePoints[this.mouseOver_PartIndex].latticePointEditType = latticePointEditType;
+                this.latticePoints[this.mouseOver_PartIndexTo].latticePointEditType = latticePointEditType;
+                this.transformType = TransformType.grabMove;
+                this.transformCalculator = this.grabMove_Calculator;
+                this.latticeState = LatticeStateID.initialState;
+                env.startModalTool(this);
+            }
+        };
+        Tool_Transform_Lattice.prototype.endTransform = function (env) {
+            this.processTransform(env);
+            this.executeCommand(env);
+            this.transformType = TransformType.none;
+            this.transformCalculator = null;
+            env.endModalTool();
+        };
+        Tool_Transform_Lattice.prototype.cancelTransform = function (env) {
+            this.transformType = TransformType.none;
+            this.transformCalculator = null;
+            env.cancelModalTool();
+        };
+        // Operation inputs
         Tool_Transform_Lattice.prototype.mouseMove = function (e, env) {
             if (env.isModalToolRunning()) {
                 // Move lattice points
@@ -161,36 +300,84 @@ var ManualTracingTool;
             }
             return resultIndex;
         };
-        Tool_Transform_Lattice.prototype.processLatticePointMouseMove = function (e, env) {
-        };
-        Tool_Transform_Lattice.prototype.processTransform = function (env) {
-        };
-        Tool_Transform_Lattice.prototype.mouseDown = function (e, env) {
-            if (!env.isModalToolRunning()) {
-                return;
-            }
-            if (e.isLeftButtonPressing()) {
-                this.processTransform(env);
-                this.executeCommand(env);
-                env.endModalTool();
-            }
-            else if (e.isRightButtonPressing()) {
-                env.cancelModalTool();
-            }
-        };
         Tool_Transform_Lattice.prototype.keydown = function (e, env) {
-            if (e.key == 'Enter') {
-                this.processTransform(env);
-                this.executeCommand(env);
-                env.endModalTool();
-                return true;
+            if (!env.isModalToolRunning()) {
+                if (e.key == 'g') {
+                    this.startLatticeAffineTransform(TransformType.grabMove, false, env);
+                    return true;
+                }
+                else if (e.key == 'r') {
+                    this.startLatticeAffineTransform(TransformType.rotate, false, env);
+                    return true;
+                }
+                else if (e.key == 's') {
+                    this.startLatticeAffineTransform(TransformType.scale, false, env);
+                    return true;
+                }
+            }
+            else {
+                if (e.key == 'Enter') {
+                    this.endTransform(env);
+                    return true;
+                }
+                else if (e.key == 'Escape') {
+                    this.cancelTransform(env);
+                    return true;
+                }
+                else if (e.key == 'g') {
+                    this.startLatticeAffineTransform(TransformType.grabMove, true, env);
+                    return true;
+                }
+                else if (e.key == 'r') {
+                    this.startLatticeAffineTransform(TransformType.rotate, true, env);
+                    return true;
+                }
+                else if (e.key == 's') {
+                    this.startLatticeAffineTransform(TransformType.scale, true, env);
+                    return true;
+                }
             }
             return false;
         };
+        Tool_Transform_Lattice.prototype.mouseDown = function (e, env) {
+            if (!env.isModalToolRunning()) {
+                this.startLatticeTransform(env);
+            }
+            else {
+                if (e.isRightButtonPressing()) {
+                    this.cancelTransform(env);
+                }
+            }
+        };
+        Tool_Transform_Lattice.prototype.mouseUp = function (e, env) {
+            if (!env.isModalToolRunning()) {
+            }
+            else {
+                if (e.isLeftButtonReleased()) {
+                    if (this.latticeState == LatticeStateID.modified) {
+                        this.endTransform(env);
+                    }
+                }
+            }
+        };
+        // Operation process implementation (Override methods)
+        Tool_Transform_Lattice.prototype.processLatticePointMouseMove = function (e, env) {
+            this.transformCalculator.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+            this.latticeState = LatticeStateID.modified;
+        };
+        Tool_Transform_Lattice.prototype.processTransform = function (env) {
+        };
         Tool_Transform_Lattice.prototype.executeCommand = function (env) {
         };
+        // Drawing
         Tool_Transform_Lattice.prototype.onDrawEditor = function (env, drawEnv) {
-            this.drawLatticeRectangle(env, drawEnv);
+            if (this.latticeState != LatticeStateID.invalid) {
+                if (this.latticeState == LatticeStateID.initialState) {
+                    this.setLatticeLocation(env);
+                }
+                this.drawLatticeRectangle(env, drawEnv);
+                this.drawLatticePoints(env, drawEnv);
+            }
         };
         Tool_Transform_Lattice.prototype.drawLatticeRectangle = function (env, drawEnv) {
             if (this.latticePoints == null) {
@@ -199,7 +386,7 @@ var ManualTracingTool;
             drawEnv.render.setStrokeColorV(drawEnv.style.modalToolSelectedAreaLineColor);
             drawEnv.render.setStrokeWidth(env.getViewScaledLength(1.0));
             // Set dash
-            var viewScale = env.getViewScaledLength(1.0 + Math.random() * 0.2);
+            var viewScale = env.getViewScaledLength(1.0);
             this.operatorCurosrLineDashScaled[0] = this.operatorCurosrLineDash[0] * viewScale;
             this.operatorCurosrLineDashScaled[1] = this.operatorCurosrLineDash[1] * viewScale;
             drawEnv.render.setLineDash(this.operatorCurosrLineDashScaled);

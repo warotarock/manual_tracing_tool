@@ -1,6 +1,6 @@
 var fs = (typeof (require) != 'undefined') ? require('fs') : {
     writeFile: function (fileName, text) {
-        window.localStorage.setItem('Manual tracing tool save data', text);
+        window.localStorage.setItem(fileName, text);
     }
 };
 var ManualTracingTool;
@@ -120,8 +120,9 @@ var ManualTracingTool;
             this.exportPathKey = 'Manual tracing tool export path';
             this.loadingDocumentImageResources = null;
             // UI animation
+            this.selectCurrentLayerAnimationLayer = null;
             this.selectCurrentLayerAnimationTime = 0.0;
-            this.selectCurrentLayerAnimationTimeMax = 0.7;
+            this.selectCurrentLayerAnimationTimeMax = 0.4;
             // Setting values
             this.drawStyle = new ManualTracingTool.ToolDrawingStyle();
             // Work variable
@@ -225,10 +226,11 @@ var ManualTracingTool;
         };
         Main_Core.prototype.startReloadDocument = function () {
             this.document = new ManualTracingTool.DocumentData();
-            this.toolContext.document = this.document;
+            this.initializeContext();
             var fileName = this.getInputElementText(this.ID.fileName);
             this.startLoadingDocument(this.document, fileName);
             this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+            this.toolEnv.setRedrawAllWindows();
         };
         Main_Core.prototype.processLoadingDocumentJSON = function () {
             if (!this.document.loaded) {
@@ -262,7 +264,12 @@ var ManualTracingTool;
                 var imageResource = ifrLayer.imageResource;
                 if (!imageResource.loaded && !StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
                     var refFileBasePath = window.localStorage.getItem(this.refFileBasePathKey);
-                    imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
+                    if (!StringIsNullOrEmpty(refFileBasePath)) {
+                        imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
+                    }
+                    else {
+                        imageResource.fileName = ifrLayer.imageFilePath;
+                    }
                     this.loadTexture(imageResource, imageResource.fileName);
                     loadingDocumentImageResources.push(imageResource);
                 }
@@ -343,8 +350,8 @@ var ManualTracingTool;
             this.fixSaveDocumentData_CopyID_Recursive(this.document.rootLayer, info);
             var copy = JSON.parse(JSON.stringify(this.document));
             this.fixSaveDocumentData(copy, info);
-            var saveToLocalStrage = false;
-            if (saveToLocalStrage) {
+            var forceToLocalStrage = false;
+            if (forceToLocalStrage) {
                 window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(copy));
             }
             else {
@@ -355,6 +362,7 @@ var ManualTracingTool;
                 });
             }
             window.localStorage.setItem(this.lastFilePathKey, filePath);
+            alert('保存しました。');
         };
         // Starting ups
         Main_Core.prototype.start = function () {
@@ -379,7 +387,7 @@ var ManualTracingTool;
         };
         Main_Core.prototype.createDefaultDocumentData = function () {
             var saveData = window.localStorage.getItem(this.tempFileNameKey);
-            if (saveData) {
+            if (!StringIsNullOrEmpty(saveData)) {
                 var document_1 = JSON.parse(saveData);
                 document_1.loaded = true;
                 return document_1;
@@ -578,6 +586,9 @@ var ManualTracingTool;
             this.toolContext.pickingWindow = this.pickingWindow;
             this.toolContext.posing3DView = this.posing3dView;
             this.toolContext.posing3DLogic = this.posing3DLogic;
+            this.toolEnv = new ManualTracingTool.ToolEnvironment(this.toolContext);
+            this.toolDrawEnv = new ManualTracingTool.ToolDrawingEnvironment();
+            this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
         };
         Main_Core.prototype.initializeViews = function () {
         };
@@ -594,7 +605,6 @@ var ManualTracingTool;
                 .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                 .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
                 .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
-                .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
                 .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.posing)
                 .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
@@ -610,14 +620,16 @@ var ManualTracingTool;
                 .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 10)
                 .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 11)
                 .subTool(this.tool_Posing3d_TwistHead, this.subToolImages[2], 12));
+            this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.imageReferenceLayer)
+                .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.misc)
-                .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
                 .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.edit)
                 .subTool(this.tool_LineBrushSelect, this.subToolImages[2], 0)
                 .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 0)
                 .subTool(this.tool_LinePointBrushSelect, this.subToolImages[2], 0)
-                .subTool(this.tool_EditModeMain, this.subToolImages[2], 0));
+                .subTool(this.tool_EditModeMain, this.subToolImages[2], 0)
+                .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4));
             // Modal tools
             this.vectorLayer_ModalTools[ModalToolID.none] = null;
             this.vectorLayer_ModalTools[ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
@@ -632,10 +644,6 @@ var ManualTracingTool;
             this.selectionTools[ManualTracingTool.OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
             this.selectionTools[ManualTracingTool.OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
             this.selectionTools[ManualTracingTool.OperationUnitID.line] = this.tool_LineBrushSelect;
-            // Constructs tool environment variables
-            this.toolEnv = new ManualTracingTool.ToolEnvironment(this.toolContext);
-            this.toolDrawEnv = new ManualTracingTool.ToolDrawingEnvironment();
-            this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
             //this.currentTool = this.tool_DrawLine;
             //this.currentTool = this.tool_AddPoint;
             //this.currentTool = this.tool_ScratchLine;
@@ -884,11 +892,14 @@ var ManualTracingTool;
             var env = this.toolEnv;
             env.updateContext();
             if (env.isDrawMode()) {
-                if (env.currentVectorLayer != null) {
+                if (env.isCurrentLayerVectorLayer()) {
                     this.setCurrentMainTool(ManualTracingTool.MainToolID.drawLine);
                 }
-                else if (env.currentPosingLayer != null) {
+                else if (env.isCurrentLayerPosingLayer()) {
                     this.setCurrentMainTool(ManualTracingTool.MainToolID.posing);
+                }
+                else if (env.isCurrentLayerImageFileReferenceLayer()) {
+                    this.setCurrentMainTool(ManualTracingTool.MainToolID.imageReferenceLayer);
                 }
             }
             else {
@@ -1012,6 +1023,7 @@ var ManualTracingTool;
         };
         Main_Core.prototype.activateCurrentTool = function () {
             if (this.currentTool != null) {
+                this.toolContext.needsDrawOperatorCursor = this.currentTool.isEditTool;
                 this.currentTool.onActivated(this.toolEnv);
             }
         };
@@ -1097,7 +1109,7 @@ var ManualTracingTool;
         };
         Main_Core.prototype.drawEditorEditLineStroke = function (line) {
         };
-        Main_Core.prototype.drawEditorVectorLineStroke = function (line, color, strokeWidth, useAdjustingLocation) {
+        Main_Core.prototype.drawEditorVectorLineStroke = function (line, color, strokeWidthBolding, useAdjustingLocation) {
         };
         Main_Core.prototype.drawEditorVectorLinePoints = function (line, color, useAdjustingLocation) {
         };
@@ -1113,8 +1125,8 @@ var ManualTracingTool;
     var DrawLineToolSubToolID;
     (function (DrawLineToolSubToolID) {
         DrawLineToolSubToolID[DrawLineToolSubToolID["drawLine"] = 0] = "drawLine";
-        DrawLineToolSubToolID[DrawLineToolSubToolID["scratchLine"] = 2] = "scratchLine";
         DrawLineToolSubToolID[DrawLineToolSubToolID["deletePointBrush"] = 1] = "deletePointBrush";
+        DrawLineToolSubToolID[DrawLineToolSubToolID["scratchLine"] = 2] = "scratchLine";
     })(DrawLineToolSubToolID = ManualTracingTool.DrawLineToolSubToolID || (ManualTracingTool.DrawLineToolSubToolID = {}));
     var EditModeSubToolID;
     (function (EditModeSubToolID) {

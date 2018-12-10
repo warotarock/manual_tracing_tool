@@ -14,7 +14,10 @@ var ManualTracingTool;
         __extends(Tool_BrushSelectLinePointBase, _super);
         function Tool_BrushSelectLinePointBase() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.logic_Selector = new ManualTracingTool.Selector_LinePoint_BrushSelect(); // @virtual
+            _this.helpText = '左クリックで選択を追加、Altキーを押しながらで選択を解除します。<br />Aキーで全選択／解除します。G、R、Sキーで移動、回転、拡縮します。';
+            _this.isEditTool = true; // @override
+            _this.logic_Selector = null; // @virtual
+            _this.editableKeyframeLayers = null;
             return _this;
         }
         Tool_BrushSelectLinePointBase.prototype.isAvailable = function (env) {
@@ -69,6 +72,7 @@ var ManualTracingTool;
             else {
                 this.logic_Selector.editMode = ManualTracingTool.SelectionEditMode.setSelected;
             }
+            this.editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
             this.onStartSelection(e, env);
             this.logic_Selector.startProcess();
             env.startModalTool(this);
@@ -76,10 +80,17 @@ var ManualTracingTool;
         Tool_BrushSelectLinePointBase.prototype.onStartSelection = function (e, env) {
         };
         Tool_BrushSelectLinePointBase.prototype.processSelection = function (e, env) {
-            this.logic_Selector.processLayer(env.currentVectorGeometry, e.location[0], e.location[1], env.mouseCursorViewRadius);
+            if (this.editableKeyframeLayers == null) {
+                return null;
+            }
+            for (var _i = 0, _a = this.editableKeyframeLayers; _i < _a.length; _i++) {
+                var viewKeyframeLayer = _a[_i];
+                this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location[0], e.location[1], env.mouseCursorViewRadius);
+            }
         };
         Tool_BrushSelectLinePointBase.prototype.endSelection = function (env) {
             this.logic_Selector.endProcess();
+            this.editableKeyframeLayers = null;
             env.endModalTool();
             if (this.logic_Selector.selectionInfo.selectedLines.length == 0
                 && this.logic_Selector.selectionInfo.selectedPoints.length == 0) {
@@ -95,7 +106,9 @@ var ManualTracingTool;
     var Tool_Select_BrushSelect_LinePoint = /** @class */ (function (_super) {
         __extends(Tool_Select_BrushSelect_LinePoint, _super);
         function Tool_Select_BrushSelect_LinePoint() {
-            return _super !== null && _super.apply(this, arguments) || this;
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.logic_Selector = new ManualTracingTool.Selector_LinePoint_BrushSelect(); // @override
+            return _this;
         }
         Tool_Select_BrushSelect_LinePoint.prototype.toolWindowItemClick = function (e, env) {
             env.setCurrentOperationUnitID(ManualTracingTool.OperationUnitID.linePoint);

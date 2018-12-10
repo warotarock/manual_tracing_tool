@@ -28,12 +28,17 @@ var ManualTracingTool;
         __extends(Tool_Resample_Segment, _super);
         function Tool_Resample_Segment() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.helpText = 'エンターキーで選択中の頂点の間を画面の拡大率に合わせて再分割します。';
             _this.resamplingUnitLength = 1.0;
             return _this;
         }
         Tool_Resample_Segment.prototype.isAvailable = function (env) {
             return (env.currentVectorLayer != null
                 && env.currentVectorLayer.isVisible);
+        };
+        Tool_Resample_Segment.prototype.toolWindowItemClick = function (e, env) {
+            env.setCurrentOperationUnitID(ManualTracingTool.OperationUnitID.linePoint);
+            env.setRedrawMainWindow();
         };
         Tool_Resample_Segment.prototype.keydown = function (e, env) {
             if (e.key == 'Enter') {

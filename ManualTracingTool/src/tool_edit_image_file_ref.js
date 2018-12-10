@@ -18,7 +18,7 @@ var ManualTracingTool;
             return _this;
         }
         Tool_EditImageFileReference.prototype.isAvailable = function (env) {
-            return (env.currentImageFileReferenceLayer != null);
+            return env.isCurrentLayerImageFileReferenceLayer();
         };
         Tool_EditImageFileReference.prototype.keydown = function (e, env) {
             if (e.key == 'o') {
@@ -32,6 +32,11 @@ var ManualTracingTool;
         };
         Tool_EditImageFileReference.prototype.onOpenFile = function (filePath, env) {
             if (env.currentImageFileReferenceLayer != null) {
+                var lastIndex = StringLastIndexOf(filePath, '\\');
+                if (lastIndex != -1) {
+                    var startIndex = lastIndex + 1;
+                    filePath = StringSubstring(filePath, startIndex, filePath.length - startIndex);
+                }
                 if (env.currentImageFileReferenceLayer.imageFilePath != filePath) {
                     this.executeCommand(filePath, env);
                 }
@@ -68,7 +73,9 @@ var ManualTracingTool;
         };
         Command_LoadReferenceImageToLayer.prototype.redo = function (env) {
             this.targetLayer.imageFilePath = this.newFilePath;
-            this.targetLayer.imageResource.loaded = false;
+            if (this.targetLayer.imageResource != null) {
+                this.targetLayer.imageResource.loaded = false;
+            }
             env.startLoadingCurrentDocumentResources();
         };
         Command_LoadReferenceImageToLayer.prototype.errorCheck = function () {
@@ -91,6 +98,9 @@ var ManualTracingTool;
             _this.dLocation = vec3.create();
             return _this;
         }
+        Tool_Transform_ReferenceImage.prototype.isAvailable = function (env) {
+            return env.isCurrentLayerImageFileReferenceLayer();
+        };
         Tool_Transform_ReferenceImage.prototype.checkTarget = function (e, env) {
             if (env.currentImageFileReferenceLayer == null) {
                 return false;
@@ -119,6 +129,9 @@ var ManualTracingTool;
             this.resetLatticePointLocationToBaseLocation();
             return true;
         };
+        Tool_Transform_ReferenceImage.prototype.setLatticeLocation = function (env) {
+            // do nothing
+        };
         Tool_Transform_ReferenceImage.prototype.prepareEditData = function (e, env) {
             for (var _i = 0, _a = this.latticePoints; _i < _a.length; _i++) {
                 var latticePoint = _a[_i];
@@ -126,29 +139,37 @@ var ManualTracingTool;
             }
         };
         Tool_Transform_ReferenceImage.prototype.processTransform = function (env) {
-            var image = env.currentImageFileReferenceLayer.imageResource.image;
+            var ifrLayer = env.currentImageFileReferenceLayer;
+            var image = ifrLayer.imageResource.image;
             // location
-            vec3.copy(env.currentImageFileReferenceLayer.adjustingLocation, this.latticePoints[0].location);
+            vec3.copy(ifrLayer.adjustingLocation, this.latticePoints[0].location);
             // scale
             vec3.subtract(this.dLocation, this.latticePoints[0].location, this.latticePoints[3].location);
             var scaleH = vec3.length(this.dLocation) / image.height;
             vec3.subtract(this.dLocation, this.latticePoints[0].location, this.latticePoints[1].location);
             var scaleW = vec3.length(this.dLocation) / image.width;
-            vec3.set(env.currentImageFileReferenceLayer.adjustingScale, scaleW, scaleH, 0.0);
+            vec3.set(ifrLayer.adjustingScale, scaleW, scaleH, 0.0);
             // angle
             vec3.subtract(this.dLocation, this.latticePoints[1].location, this.latticePoints[0].location);
             var angle = Math.atan2(this.dLocation[1], this.dLocation[0]);
-            env.currentImageFileReferenceLayer.adjustingRotation[0] = angle;
+            ifrLayer.adjustingRotation[0] = angle;
         };
         Tool_Transform_ReferenceImage.prototype.executeCommand = function (env) {
+            var ifrLayer = env.currentImageFileReferenceLayer;
             // Execute the command
             var command = new Command_Transform_ReferenceImage();
-            command.targetLayer = env.currentImageFileReferenceLayer;
+            command.targetLayer = ifrLayer;
             vec3.copy(command.newLocation, command.targetLayer.adjustingLocation);
             vec3.copy(command.newRotation, command.targetLayer.adjustingRotation);
             vec3.copy(command.newScale, command.targetLayer.adjustingScale);
             command.execute(env);
             env.commandHistory.addCommand(command);
+        };
+        Tool_Transform_ReferenceImage.prototype.cancelModal = function (env) {
+            var ifrLayer = env.currentImageFileReferenceLayer;
+            vec3.copy(ifrLayer.adjustingLocation, ifrLayer.location);
+            vec3.copy(ifrLayer.adjustingRotation, ifrLayer.rotation);
+            vec3.copy(ifrLayer.adjustingScale, ifrLayer.scale);
         };
         return Tool_Transform_ReferenceImage;
     }(ManualTracingTool.Tool_Transform_Lattice));
@@ -192,12 +213,10 @@ var ManualTracingTool;
     var Tool_Transform_ReferenceImage_GrabMove = /** @class */ (function (_super) {
         __extends(Tool_Transform_ReferenceImage_GrabMove, _super);
         function Tool_Transform_ReferenceImage_GrabMove() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.GrabMove_Calculator();
-            return _this;
+            return _super !== null && _super.apply(this, arguments) || this;
         }
-        Tool_Transform_ReferenceImage_GrabMove.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+        Tool_Transform_ReferenceImage_GrabMove.prototype.selectTransformCalculator = function (env) {
+            this.setLatticeAffineTransform(ManualTracingTool.TransformType.grabMove, env);
         };
         return Tool_Transform_ReferenceImage_GrabMove;
     }(Tool_Transform_ReferenceImage));
@@ -205,15 +224,10 @@ var ManualTracingTool;
     var Tool_Transform_ReferenceImage_Rotate = /** @class */ (function (_super) {
         __extends(Tool_Transform_ReferenceImage_Rotate, _super);
         function Tool_Transform_ReferenceImage_Rotate() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.Rotate_Calculator();
-            return _this;
+            return _super !== null && _super.apply(this, arguments) || this;
         }
-        Tool_Transform_ReferenceImage_Rotate.prototype.prepareModalExt = function (e, env) {
-            this.calcer.prepare(env);
-        };
-        Tool_Transform_ReferenceImage_Rotate.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+        Tool_Transform_ReferenceImage_Rotate.prototype.selectTransformCalculator = function (env) {
+            this.setLatticeAffineTransform(ManualTracingTool.TransformType.rotate, env);
         };
         return Tool_Transform_ReferenceImage_Rotate;
     }(Tool_Transform_ReferenceImage));
@@ -221,15 +235,10 @@ var ManualTracingTool;
     var Tool_Transform_ReferenceImage_Scale = /** @class */ (function (_super) {
         __extends(Tool_Transform_ReferenceImage_Scale, _super);
         function Tool_Transform_ReferenceImage_Scale() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.calcer = new ManualTracingTool.Scale_Calculator();
-            return _this;
+            return _super !== null && _super.apply(this, arguments) || this;
         }
-        Tool_Transform_ReferenceImage_Scale.prototype.prepareModalExt = function (e, env) {
-            this.calcer.prepare(env);
-        };
-        Tool_Transform_ReferenceImage_Scale.prototype.processLatticePointMouseMove = function (e, env) {
-            this.calcer.processLatticePointMouseMove(this.latticePoints, this.mouseAnchorLocation, e, env);
+        Tool_Transform_ReferenceImage_Scale.prototype.selectTransformCalculator = function (env) {
+            this.setLatticeAffineTransform(ManualTracingTool.TransformType.scale, env);
         };
         return Tool_Transform_ReferenceImage_Scale;
     }(Tool_Transform_ReferenceImage));

@@ -107,7 +107,7 @@ var ManualTracingTool;
             this.axisModel = modelFile.modelResourceDictionary['Axis'];
             this.zTestShpereModel = modelFile.modelResourceDictionary['ZTestSphere'];
             this.zTestShpereEdgeModel = modelFile.modelResourceDictionary['ZTestSphereEdge'];
-            this.headModel = modelFile.modelResourceDictionary['Head'];
+            this.headModel = modelFile.modelResourceDictionary['Head02'];
             this.bodyModel = modelFile.modelResourceDictionary['Body1'];
             this.leftArm1Model = modelFile.modelResourceDictionary['Arm1'];
             this.leftArm2Model = modelFile.modelResourceDictionary['Arm1'];

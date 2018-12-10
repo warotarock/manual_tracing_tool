@@ -555,6 +555,7 @@ var ManualTracingTool;
                 var selectedLayer = selectedItem.layer;
                 if (clickedX <= selectedItem.textLeft) {
                     this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
+                    this.activateCurrentTool();
                     this.toolEnv.setRedrawMainWindowEditorWindow();
                 }
                 else {
@@ -566,13 +567,15 @@ var ManualTracingTool;
                         // Select layer content
                         if (this.toolEnv.isShiftKeyPressing()) {
                             this.setLayerSelection(selectedLayer, true);
+                            this.activateCurrentTool();
+                            this.startShowingLayerItem(selectedItem);
                         }
                         else {
                             this.setCurrentLayer(selectedLayer);
+                            this.startShowingCurrentLayer();
                         }
                         this.toolEnv.setRedrawMainWindowEditorWindow();
                     }
-                    this.startShowingCurrentLayer();
                 }
             }
             this.toolEnv.setRedrawLayerWindow();
@@ -732,17 +735,21 @@ var ManualTracingTool;
             this.toolContext.altKey = e.altKey;
             this.toolContext.ctrlKey = e.ctrlKey;
             env.updateContext();
+            if (this.activeCanvasWindow == this.timeLineWindow) {
+                if (this.document_keydown_timeLineWindow(key, e)) {
+                    return;
+                }
+            }
+            if (key == '.' && env.needsDrawOperatorCursor()) {
+                vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
+                this.toolEnv.setRedrawEditorWindow();
+            }
             if (this.isModalToolRunning()) {
                 this.document_keydown_modalTool(key, e);
                 return;
             }
             else if (env.isEditMode()) {
                 if (this.currentTool.keydown(e, env)) {
-                    return;
-                }
-            }
-            if (this.activeCanvasWindow == this.timeLineWindow) {
-                if (this.document_keydown_timeLineWindow(key, e)) {
                     return;
                 }
             }
@@ -761,12 +768,12 @@ var ManualTracingTool;
             if (key == 'n' && env.isCtrlKeyPressing()) {
                 this.document = this.createDefaultDocumentData();
                 this.toolContext.document = this.document;
-                this.toolContext.commandHistory = new ManualTracingTool.CommandHistory();
+                this.initializeContext();
                 this.updateLayerStructure();
                 this.setCurrentLayer(null);
                 this.setCurrentFrame(0);
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
-                env.setRedrawAllWindows();
+                this.toolEnv.setRedrawAllWindows();
                 return;
             }
             if (key == 'b') {
@@ -922,10 +929,6 @@ var ManualTracingTool;
                 }
                 return;
             }
-            if (key == '.' && env.needsDrawOperatorCursor()) {
-                vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
-                this.toolEnv.setRedrawEditorWindow();
-            }
             if (key == 'a') {
                 if (env.isEditMode()) {
                     this.tool_SelectAllPoints.execute(env);
@@ -950,6 +953,9 @@ var ManualTracingTool;
                     }
                 }
                 if (pickedLayer != null) {
+                    this.setCurrentLayer(pickedLayer);
+                    env.setRedrawLayerWindow();
+                    env.setRedrawSubtoolWindow();
                     this.startShowingCurrentLayer();
                 }
                 else {
@@ -965,10 +971,15 @@ var ManualTracingTool;
                     return;
                 }
                 if (env.isDrawMode()) {
-                    if (key == 's') {
-                        this.selectNextOrPreviousLayer(true);
-                        this.startShowingCurrentLayer();
-                        env.setRedrawLayerWindow();
+                    if (!env.needsDrawOperatorCursor()) {
+                        if (key == 's') {
+                            this.selectNextOrPreviousLayer(true);
+                            this.startShowingCurrentLayer();
+                            env.setRedrawLayerWindow();
+                        }
+                        else {
+                            this.currentTool.keydown(e, env);
+                        }
                     }
                     else {
                         this.currentTool.keydown(e, env);

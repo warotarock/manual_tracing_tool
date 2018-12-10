@@ -35,7 +35,7 @@ var ManualTracingTool;
             this.name = null;
             this.isVisible = true;
             this.isSelected = false;
-            this.childLayers = List();
+            this.childLayers = new List();
             this.layerColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         }
         Layer.collectLayerRecursive = function (result, parentLayer) {
@@ -434,7 +434,7 @@ var ManualTracingTool;
         // This class must be created by this function for JSON.parse
         function DocumentData() {
             this.rootLayer = new Layer();
-            this.documentFrame = vec4.fromValues(-512.0, -512.0, 512.0, 512.0);
+            this.documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
             this.palletColos = new List();
             this.animationSettingData = new AnimationSettingData();
             this.loaded = false;

@@ -15,8 +15,9 @@ var ManualTracingTool;
         MainToolID[MainToolID["none"] = 0] = "none";
         MainToolID[MainToolID["drawLine"] = 1] = "drawLine";
         MainToolID[MainToolID["posing"] = 2] = "posing";
-        MainToolID[MainToolID["misc"] = 3] = "misc";
-        MainToolID[MainToolID["edit"] = 4] = "edit";
+        MainToolID[MainToolID["imageReferenceLayer"] = 3] = "imageReferenceLayer";
+        MainToolID[MainToolID["misc"] = 4] = "misc";
+        MainToolID[MainToolID["edit"] = 5] = "edit";
     })(MainToolID = ManualTracingTool.MainToolID || (ManualTracingTool.MainToolID = {}));
     var OperationUnitID;
     (function (OperationUnitID) {
@@ -148,6 +149,7 @@ var ManualTracingTool;
             this.editMode = EditModeID.drawMode;
             this.drawMode_MainToolID = MainToolID.drawLine;
             this.editMode_MainToolID = MainToolID.edit;
+            this.needsDrawOperatorCursor = false;
             this.operationUnitID = OperationUnitID.line;
             this.drawLineBaseWidth = 1.0;
             this.drawLineMinWidth = 0.1;
@@ -321,11 +323,14 @@ var ManualTracingTool;
         ToolEnvironment.prototype.isCurrentLayerVectorLayer = function () {
             return (this.currentVectorLayer != null);
         };
+        ToolEnvironment.prototype.isCurrentLayerPosingLayer = function () {
+            return (this.currentPosingLayer != null);
+        };
         ToolEnvironment.prototype.isCurrentLayerImageFileReferenceLayer = function () {
             return (this.currentImageFileReferenceLayer != null);
         };
         ToolEnvironment.prototype.needsDrawOperatorCursor = function () {
-            return (this.isEditMode() || this.isCurrentLayerImageFileReferenceLayer());
+            return (this.isEditMode() || this.toolContext.needsDrawOperatorCursor);
         };
         ToolEnvironment.prototype.setCurrentOperationUnitID = function (operationUnitID) {
             this.toolContext.mainEditor.setCurrentOperationUnitID(operationUnitID);
@@ -496,7 +501,8 @@ var ManualTracingTool;
     ManualTracingTool.ToolMouseEvent = ToolMouseEvent;
     var ToolBase = /** @class */ (function () {
         function ToolBase() {
-            this.helpText = '';
+            this.helpText = ''; // @virtual
+            this.isEditTool = false; // @virtual
             this.toolBarImage = null;
             this.toolBarImageIndex = 0;
         }

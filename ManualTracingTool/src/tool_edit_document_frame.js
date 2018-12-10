@@ -23,39 +23,49 @@ var ManualTracingTool;
         Tool_EditDocumentFrame.prototype.toolWindowItemDoubleClick = function (e, env) {
             env.openDocumentSettingDialog();
         };
+        // Preparing for operation (Override methods)
         Tool_EditDocumentFrame.prototype.checkTarget = function (e, env) {
             return true;
         };
         Tool_EditDocumentFrame.prototype.prepareLatticePoints = function (env) {
             // calculate lattice points
-            vec3.set(this.latticePoints[0].baseLocation, env.document.documentFrame[0], env.document.documentFrame[1], 0.0);
-            vec3.set(this.latticePoints[1].baseLocation, env.document.documentFrame[2], env.document.documentFrame[1], 0.0);
-            vec3.set(this.latticePoints[2].baseLocation, env.document.documentFrame[2], env.document.documentFrame[3], 0.0);
-            vec3.set(this.latticePoints[3].baseLocation, env.document.documentFrame[0], env.document.documentFrame[3], 0.0);
-            this.resetLatticePointLocationToBaseLocation();
+            this.baseRectangleArea.left = env.document.documentFrame[0];
+            this.baseRectangleArea.top = env.document.documentFrame[1];
+            this.baseRectangleArea.right = env.document.documentFrame[2];
+            this.baseRectangleArea.bottom = env.document.documentFrame[3];
+            this.setLatticeLocation(env);
             return true;
         };
+        Tool_EditDocumentFrame.prototype.setLatticeLocation = function (env) {
+            this.latticePadding = 0.0;
+            this.addPaddingToRectangle(this.rectangleArea, this.baseRectangleArea, this.latticePadding, env);
+            this.setLatticePointsByRectangle(this.rectangleArea);
+        };
+        // Operation inputs
         Tool_EditDocumentFrame.prototype.keydown = function (e, env) {
-            // prevent modal operation
-            return false;
-        };
-        Tool_EditDocumentFrame.prototype.mouseDown = function (e, env) {
-            // prevent modal operation
-        };
-        Tool_EditDocumentFrame.prototype.onDrawEditor = function (env, drawEnv) {
-            if (this.latticePoints == null) {
-                this.createLatticePoints();
+            if (!env.isModalToolRunning()) {
+                if (e.key == 'g') {
+                    this.startLatticeAffineTransform(ManualTracingTool.TransformType.grabMove, false, env);
+                    return true;
+                }
+                else if (e.key == 'r') {
+                    this.startLatticeAffineTransform(ManualTracingTool.TransformType.rotate, false, env);
+                    return true;
+                }
+                else if (e.key == 's') {
+                    this.startLatticeAffineTransform(ManualTracingTool.TransformType.scale, false, env);
+                    return true;
+                }
             }
-            this.prepareLatticePoints(env);
-            this.drawLatticeRectangle(env, drawEnv);
+            return false;
         };
         Tool_EditDocumentFrame.prototype.executeCommand = function (env) {
             var command = new Command_EditDocumentFrame();
             command.targetDocument = env.document;
-            command.newDocumentFrame[0] = this.latticePoints[0].baseLocation[0];
-            command.newDocumentFrame[1] = this.latticePoints[0].baseLocation[1];
-            command.newDocumentFrame[2] = this.latticePoints[2].baseLocation[0];
-            command.newDocumentFrame[3] = this.latticePoints[2].baseLocation[1];
+            command.newDocumentFrame[0] = this.latticePoints[0].location[0];
+            command.newDocumentFrame[1] = this.latticePoints[0].location[1];
+            command.newDocumentFrame[2] = this.latticePoints[2].location[0];
+            command.newDocumentFrame[3] = this.latticePoints[2].location[1];
             command.execute(env);
             env.commandHistory.addCommand(command);
         };

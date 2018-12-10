@@ -33,6 +33,7 @@ var ManualTracingTool;
         __extends(Tool_ScratchLine, _super);
         function Tool_ScratchLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.helpText = '右クリックで線を選択し、左クリックで線を修正します。';
             _this.enableScratchEdit = true;
             _this.enableExtrude = false;
             _this.editLine = null;
@@ -486,6 +487,7 @@ var ManualTracingTool;
         __extends(Tool_ExtrudeLine, _super);
         function Tool_ExtrudeLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.helpText = '右クリックで線を選択し、左クリックで線の端の近くから線を描きはじめると線が延長されます。';
             _this.enableScratchEdit = false;
             _this.enableExtrude = true;
             return _this;

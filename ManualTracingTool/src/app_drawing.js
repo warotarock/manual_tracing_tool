@@ -92,7 +92,7 @@ var ManualTracingTool;
             if (!layer.isVisible && !currentLayerOnly) {
                 return;
             }
-            if (currentLayerOnly && layer != this.toolContext.currentLayer) {
+            if (currentLayerOnly && layer != this.selectCurrentLayerAnimationLayer) {
                 return;
             }
             if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
@@ -112,7 +112,7 @@ var ManualTracingTool;
         };
         Main_Drawing.prototype.drawVectorLayer = function (layer, geometry, documentData) {
             var context = this.toolContext;
-            var isCurrentLayer = (layer == context.currentVectorLayer);
+            var isSelectedLayer = (layer.isSelected);
             // color setting
             var lineColor;
             if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.layerColor) {
@@ -154,16 +154,16 @@ var ManualTracingTool;
                     var line = _e[_d];
                     if (this.toolEnv.isDrawMode()) {
                         if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.layerColor) {
-                            this.drawVectorLineStroke(line, lineColor, 1.0, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, lineColor, 0.0, useAdjustingLocation);
                         }
                         else if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.palletColor) {
                             var palletColor = documentData.palletColos[layer.line_PalletColorIndex];
-                            this.drawVectorLineStroke(line, palletColor.color, 1.0, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, palletColor.color, 0.0, useAdjustingLocation);
                         }
                     }
                     else if (this.toolEnv.isEditMode()) {
-                        if (!isCurrentLayer) {
-                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, 1.0, useAdjustingLocation);
+                        if (!isSelectedLayer) {
+                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, 0.0, useAdjustingLocation);
                         }
                         else {
                             if (this.toolContext.operationUnitID == ManualTracingTool.OperationUnitID.linePoint) {
@@ -173,14 +173,15 @@ var ManualTracingTool;
                             else if (this.toolContext.operationUnitID == ManualTracingTool.OperationUnitID.line
                                 || this.toolContext.operationUnitID == ManualTracingTool.OperationUnitID.lineSegment) {
                                 var color = lineColor;
-                                if (line.isSelected || line.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.unselectedToSelected) {
+                                if ((line.isSelected && line.modifyFlag != ManualTracingTool.VectorLineModifyFlagID.selectedToUnselected)
+                                    || line.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.unselectedToSelected) {
                                     color = this.drawStyle.selectedVectorLineColor;
                                 }
                                 if (line.isCloseToMouse) {
-                                    this.drawVectorLineStroke(line, color, 1.0 + 2.0, useAdjustingLocation);
+                                    this.drawVectorLineStroke(line, color, 2.0, useAdjustingLocation);
                                 }
                                 else {
-                                    this.drawVectorLineStroke(line, color, 1.0, useAdjustingLocation);
+                                    this.drawVectorLineStroke(line, color, 0.0, useAdjustingLocation);
                                 }
                                 //this.drawAdjustingLinePoints(canvasWindow, line);
                             }
@@ -189,12 +190,12 @@ var ManualTracingTool;
                 }
             }
         };
-        Main_Drawing.prototype.drawVectorLineStroke = function (line, color, strokeWidth, useAdjustingLocation) {
+        Main_Drawing.prototype.drawVectorLineStroke = function (line, color, strokeWidthBolding, useAdjustingLocation) {
             if (line.points.length == 0) {
                 return;
             }
             this.canvasRender.setStrokeColorV(color);
-            this.drawVectorLineSegment(line, 0, line.points.length - 1, useAdjustingLocation);
+            this.drawVectorLineSegment(line, 0, line.points.length - 1, strokeWidthBolding, useAdjustingLocation);
         };
         Main_Drawing.prototype.drawVectorLinePoints = function (line, color, useAdjustingLocation) {
             if (line.points.length == 0) {
@@ -264,7 +265,7 @@ var ManualTracingTool;
                 this.canvasRender.fill();
             }
         };
-        Main_Drawing.prototype.drawVectorLineSegment = function (line, startIndex, endIndex, useAdjustingLocation) {
+        Main_Drawing.prototype.drawVectorLineSegment = function (line, startIndex, endIndex, strokeWidthBolding, useAdjustingLocation) {
             this.canvasRender.setLineCap(ManualTracingTool.CanvasRenderLineCap.round);
             for (var pointIndex = startIndex; pointIndex <= endIndex;) {
                 // search first visible point
@@ -305,7 +306,7 @@ var ManualTracingTool;
                 }
                 // draw segment
                 this.canvasRender.beginPath();
-                this.canvasRender.setStrokeWidth(currentLineWidth);
+                this.canvasRender.setStrokeWidth(currentLineWidth + this.getCurrentViewScaleLineWidth(strokeWidthBolding));
                 var firstLocaton = (useAdjustingLocation ? firstPoint.adjustingLocation : firstPoint.location);
                 this.canvasRender.moveTo(firstLocaton[0], firstLocaton[1]);
                 for (var index = segmentStartIndex + 1; index <= segmentEndIndex; index++) {
@@ -340,7 +341,7 @@ var ManualTracingTool;
             this.canvasRender.fill();
         };
         Main_Drawing.prototype.drawEditLineStroke = function (line) {
-            this.drawVectorLineStroke(line, this.drawStyle.editingLineColor, this.getCurrentViewScaleLineWidth(3.0), false);
+            this.drawVectorLineStroke(line, this.drawStyle.editingLineColor, 2.0, false);
         };
         Main_Drawing.prototype.drawEditLinePoints = function (canvasWindow, line, color) {
             this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
@@ -398,28 +399,11 @@ var ManualTracingTool;
                 this.canvasRender.pickColor(this.tempColor4, canvasWindow, pickLocationX, pickLocationY);
                 if (this.tempColor4[3] > 0.0) {
                     pickedLayer = layer;
-                    this.setCurrentLayer(layer);
-                    this.toolEnv.setRedrawLayerWindow();
                     break;
                 }
             }
             this.drawMainWindow(this.mainWindow);
             return pickedLayer;
-        };
-        Main_Drawing.prototype.startShowingCurrentLayer = function () {
-            this.selectCurrentLayerAnimationTime = this.selectCurrentLayerAnimationTimeMax;
-            this.toolEnv.setRedrawMainWindow();
-            var layerWindow = this.layerWindow;
-            var item = this.findCurrentLayerLayerWindowItem();
-            if (item != null) {
-                var viewTop = layerWindow.viewLocation[1];
-                if (item.top < viewTop + layerWindow.layerCommandButtonButtom) {
-                    layerWindow.viewLocation[1] = item.top - layerWindow.layerCommandButtonButtom;
-                }
-                else if (item.top > viewTop + layerWindow.height - layerWindow.layerItemHeight * 2.0) {
-                    layerWindow.viewLocation[1] = item.top - layerWindow.height + layerWindow.layerItemHeight * 2.0;
-                }
-            }
         };
         // Editor window drawing
         Main_Drawing.prototype.drawEditorWindow = function (editorWindow, mainWindow) {
@@ -486,14 +470,14 @@ var ManualTracingTool;
         Main_Drawing.prototype.drawEditorEditLineStroke = function (line) {
             this.drawEditLineStroke(line);
         };
-        Main_Drawing.prototype.drawEditorVectorLineStroke = function (line, color, strokeWidth, useAdjustingLocation) {
-            this.drawVectorLineStroke(line, color, strokeWidth, useAdjustingLocation);
+        Main_Drawing.prototype.drawEditorVectorLineStroke = function (line, color, strokeWidthBolding, useAdjustingLocation) {
+            this.drawVectorLineStroke(line, color, strokeWidthBolding, useAdjustingLocation);
         };
         Main_Drawing.prototype.drawEditorVectorLinePoints = function (line, color, useAdjustingLocation) {
             this.drawVectorLinePoints(line, color, useAdjustingLocation);
         };
         Main_Drawing.prototype.drawEditorVectorLineSegment = function (line, startIndex, endIndex, useAdjustingLocation) {
-            this.drawVectorLineSegment(line, startIndex, endIndex, useAdjustingLocation);
+            this.drawVectorLineSegment(line, startIndex, endIndex, 0.0, useAdjustingLocation);
         };
         // WebGL window drawing
         Main_Drawing.prototype.drawWebGLWindow = function (mainWindow, webglWindow, pickingWindow) {
