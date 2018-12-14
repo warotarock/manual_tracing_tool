@@ -917,7 +917,7 @@ namespace ManualTracingTool {
                 }
                 this.drawMainWindow(this.renderingWindow);
 
-                let exportPath = window.localStorage.getItem(this.exportPathKey);
+                let exportPath = this.localSetting.exportPath;
                 let imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
                 let extText = '.png';
                 if (imageType == 2) {
@@ -1222,7 +1222,7 @@ namespace ManualTracingTool {
 
         protected updateHdeaderDocumentFileName() { // @override
 
-            let filePath = window.localStorage.getItem(this.lastFilePathKey);
+            let filePath = this.localSetting.lastUsedFilePaths[0];
 
             this.setInputElementText(this.ID.fileName, filePath);
         }

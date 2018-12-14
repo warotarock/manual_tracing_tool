@@ -145,10 +145,9 @@ namespace ManualTracingTool {
 
         // Document data
         document: DocumentData = null;
+        localSetting = new LocalSetting();
+        localStorage_SettingKey = 'MTT-Settings';
         tempFileNameKey = 'Manual tracing tool save data';
-        lastFilePathKey = 'Manual tracing tool last used file url';
-        refFileBasePathKey = 'Manual tracing tool reference base path';
-        exportPathKey = 'Manual tracing tool export path';
 
         loadingDocumentImageResources: List<ImageResource> = null;
 
@@ -197,6 +196,8 @@ namespace ManualTracingTool {
         }
 
         onLoad() {
+
+            this.loadSettings();
 
             this.initializeDevices();
 
@@ -261,7 +262,7 @@ namespace ManualTracingTool {
 
             // Start loading document data
 
-            let lastURL = window.localStorage.getItem(this.lastFilePathKey);
+            let lastURL = this.localSetting.lastUsedFilePaths[0];
 
             if (StringIsNullOrEmpty(lastURL)) {
 
@@ -370,7 +371,7 @@ namespace ManualTracingTool {
 
                 if (!imageResource.loaded && !StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
 
-                    let refFileBasePath = window.localStorage.getItem(this.refFileBasePathKey);
+                    let refFileBasePath = this.localSetting.referenceDirectoryPath;
 
                     if (!StringIsNullOrEmpty(refFileBasePath)) {
 
@@ -507,11 +508,38 @@ namespace ManualTracingTool {
                         alert('error : ' + error);
                     }
                 });
+
+                for (let index = 0; index < this.localSetting.lastUsedFilePaths.length; index++) {
+
+                    if (this.localSetting.lastUsedFilePaths[index] == filePath) {
+
+                        ListRemoveAt(this.localSetting.lastUsedFilePaths, index);
+                    }
+                }
+
+                ListInsertAt(this.localSetting.lastUsedFilePaths, 0, filePath);
             }
 
-            window.localStorage.setItem(this.lastFilePathKey, filePath);
+            this.saveSettings();
 
             alert('保存しました。');
+        }
+
+        // Settings
+
+        loadSettings() {
+
+            let localSettingText = window.localStorage.getItem(this.localStorage_SettingKey);
+
+            if (!StringIsNullOrEmpty(localSettingText)) {
+
+                this.localSetting = JSON.parse(localSettingText);
+            }
+        }
+
+        saveSettings() {
+
+            window.localStorage.setItem(this.localStorage_SettingKey, JSON.stringify(this.localSetting));
         }
 
         // Starting ups

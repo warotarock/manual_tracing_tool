@@ -1,6 +1,15 @@
 ﻿
 namespace ManualTracingTool {
 
+    // Setting
+
+    export class LocalSetting {
+
+        exportPath: string = null;
+        lastUsedFilePaths: List<string> = null;
+        referenceDirectoryPath: string = null;
+    }
+
     // Color
 
     export class PalletColor {
