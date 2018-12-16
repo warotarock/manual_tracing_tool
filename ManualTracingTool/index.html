@@ -389,17 +389,30 @@
 
         .modalDialogWindow.documentSettingModal {
             width: 400px;
-            height: 200px;
+            height: 230px;
         }
 
-            .modalDialogWindow.documentSettingModal input {
-                margin-left: 15px;
-                margin-top: 10px;
+            .modalDialogWindow.documentSettingModal div {
+                margin-bottom: 10px;
             }
 
-            .modalDialogWindow.documentSettingModal div label input.location {
-                width: 60px;
-            }
+                .modalDialogWindow.documentSettingModal div label {
+                    margin-left: 10px;
+                }
+
+                .modalDialogWindow.documentSettingModal div label input.lineWidthMax {
+                    width: 50px;
+                    margin-left: 5px;
+                }
+
+                .modalDialogWindow.documentSettingModal input {
+                    margin-left: 15px;
+                    margin-top: 10px;
+                }
+
+                .modalDialogWindow.documentSettingModal div label input.location {
+                    width: 60px;
+                }
 
         .modalDialogWindow.exportImageFileModal {
             width: 400px;
@@ -440,6 +453,7 @@
         <div class="fileCommandButton" id="menu_btnOpen"><img class="mainMenuButtonImage" src="./res/icons8-opened-folder-100.png" /></div>
         <div class="fileCommandButton" id="menu_btnSave"><img class="mainMenuButtonImage" src="./res/icons8-save-filled-100.png" /></div>
         <div class="fileCommandButton" id="menu_btnExport"><img class="mainMenuButtonImage" src="./res/icons8-export-96.png" /></div>
+        <div class="fileCommandButton" id="menu_btnProperty"><img class="mainMenuButtonImage" src="./res/icons8-settings-100.png" /></div>
         <div class="fileNameText" id="menu_btnSystem"><input type="text" id="fileName" /></div>
         <div class="mainToolButton" id="menu_btnMiscTool">Setting</div>
         <div class="mainToolButton" id="menu_btnEditTool">Edit</div>
@@ -631,6 +645,22 @@
     </div>
 
     <div id="documentSettingModal" class="modalDialogWindow documentSettingModal">
+        <div>
+            ビュー<br />
+            <label>
+                基本の拡大率
+                <input type="number" id="documentSettingModal_ViewScale" class="lineWidthMax" step="0.01" />
+            </label>
+            <br />
+        </div>
+        <div>
+            描画設定<br />
+            <label>
+                線の基本太さ（倍率で指定）
+                <input type="number" id="documentSettingModal_LineWidth" class="lineWidthMax" step="0.1" />
+            </label>
+            <br />
+        </div>
         <div>
             エクスポート範囲<br />
             <label>

@@ -840,12 +840,28 @@ namespace ManualTracingTool {
                 return;
             }
 
+            this.setInputElementNumber(this.ID.documentSettingModal_ViewScale, this.document.defaultViewScale);
+            this.setInputElementNumber(this.ID.documentSettingModal_LineWidth, this.document.lineWidthBiasRate);
             this.setInputElementNumber(this.ID.documentSettingModal_FrameLeft, this.document.documentFrame[0]);
             this.setInputElementNumber(this.ID.documentSettingModal_FrameTop, this.document.documentFrame[1]);
             this.setInputElementNumber(this.ID.documentSettingModal_FrameRight, this.document.documentFrame[2]);
             this.setInputElementNumber(this.ID.documentSettingModal_FrameBottom, this.document.documentFrame[3]);
 
             this.openModal(this.ID.documentSettingModal, null);
+        }
+
+        protected onClosedDocumentSettingModal() {
+
+            this.document.defaultViewScale = this.getInputElementNumber(this.ID.documentSettingModal_ViewScale, 1.0);
+            if (this.document.defaultViewScale < this.mainWindow.minViewScale) {
+
+                this.document.defaultViewScale = this.mainWindow.minViewScale;
+            }
+            this.document.lineWidthBiasRate = this.getInputElementNumber(this.ID.documentSettingModal_LineWidth, 1.0);
+            this.document.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft, -512);
+            this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop, -512);
+            this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight, 512);
+            this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom, 512);
         }
 
         protected openExportImageFileModal() {
@@ -1067,10 +1083,7 @@ namespace ManualTracingTool {
             }
             else if (this.currentModalDialogID == this.ID.documentSettingModal) {
 
-                this.document.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft, -512);
-                this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop, -512);
-                this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight, 512);
-                this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom, 512);
+                this.onClosedDocumentSettingModal();
             }
             else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
 
@@ -1806,6 +1819,7 @@ namespace ManualTracingTool {
         menu_btnOpen = 'menu_btnOpen';
         menu_btnSave = 'menu_btnSave';
         menu_btnExport = 'menu_btnExport';
+        menu_btnProperty = 'menu_btnProperty';
         menu_btnPalette1 = 'menu_btnPalette1';
         menu_btnPalette2 = 'menu_btnPalette2';
 
@@ -1848,6 +1862,8 @@ namespace ManualTracingTool {
         newLayerCommandOptionModal_cancel = 'newLayerCommandOptionModal_cancel';
 
         documentSettingModal = '#documentSettingModal';
+        documentSettingModal_ViewScale = 'documentSettingModal_ViewScale';
+        documentSettingModal_LineWidth = 'documentSettingModal_LineWidth';
         documentSettingModal_FrameLeft = 'documentSettingModal_FrameLeft';
         documentSettingModal_FrameTop = 'documentSettingModal_FrameTop';
         documentSettingModal_FrameRight = 'documentSettingModal_FrameRight';

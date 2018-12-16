@@ -444,6 +444,7 @@ namespace ManualTracingTool {
 
         rootLayer = new Layer();
         documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
+        defaultViewScale = 1.0;
         lineWidthBiasRate = 1.0;
         palletColos = new List<PalletColor>();
         animationSettingData = new AnimationSettingData();

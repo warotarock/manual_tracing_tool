@@ -436,6 +436,16 @@ namespace ManualTracingTool {
                 e.preventDefault();
             });
 
+            this.getElement(this.ID.menu_btnProperty).addEventListener('mousedown', (e: Event) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.openDocumentSettingDialog();
+                e.preventDefault();
+            });
+
             this.getElement(this.ID.menu_btnPalette1).addEventListener('mousedown', (e: Event) => {
 
                 if (this.isEventDisabled()) {
@@ -1194,7 +1204,7 @@ namespace ManualTracingTool {
 
                 this.mainWindow.viewLocation[0] = 0.0;
                 this.mainWindow.viewLocation[1] = 0.0;
-                this.mainWindow.viewScale = 1.0;
+                this.mainWindow.viewScale = context.document.defaultViewScale;
                 this.mainWindow.viewRotation = 0.0;
 
                 env.setRedrawMainWindowEditorWindow();

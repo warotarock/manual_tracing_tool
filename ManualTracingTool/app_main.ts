@@ -299,6 +299,8 @@ namespace ManualTracingTool {
                     document.rootLayer = data.rootLayer;
                     document.documentFrame = data.documentFrame;
                     document.palletColos = data.palletColos;
+                    document.defaultViewScale = data.defaultViewScale;
+                    document.lineWidthBiasRate = data.lineWidthBiasRate;
                     document.animationSettingData = data.animationSettingData;
 
                     document.loaded = true;
@@ -619,6 +621,10 @@ namespace ManualTracingTool {
 
             if (document.animationSettingData == undefined) {
                 document.animationSettingData = new AnimationSettingData();
+            }
+
+            if (document.defaultViewScale == undefined) {
+                document.defaultViewScale = 1.0;
             }
 
             if (document.lineWidthBiasRate == undefined) {
