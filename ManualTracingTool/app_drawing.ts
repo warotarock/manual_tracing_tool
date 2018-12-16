@@ -99,6 +99,8 @@ namespace ManualTracingTool {
 
             let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
 
+            let env = this.toolEnv;
+
             this.canvasRender.setContext(canvasWindow);
 
             let viewKeyframe = this.currentKeyframe;
@@ -107,6 +109,15 @@ namespace ManualTracingTool {
                 let viewKeyFrameLayer = viewKeyframe.layers[i];
 
                 this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document)
+            }
+
+            if (env.isEditMode()) {
+
+                for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
+                    let viewKeyFrameLayer = viewKeyframe.layers[i];
+
+                    this.drawLayerForEditMode(viewKeyFrameLayer, currentLayerOnly, this.document)
+                }
             }
         }
 
@@ -142,50 +153,43 @@ namespace ManualTracingTool {
             }
         }
 
+        private drawLayerForEditMode(viewKeyFrameLayer: ViewKeyframeLayer, currentLayerOnly: boolean, documentData: DocumentData) {
+
+            let layer = viewKeyFrameLayer.layer;
+
+            if (!layer.isVisible && !currentLayerOnly) {
+                return;
+            }
+
+            if (currentLayerOnly) {
+                return;
+            }
+
+            if (VectorLayer.isVectorLayer(layer)) {
+
+                let vectorLayer = <VectorLayer>layer;
+                this.drawVectorLayerForEditMode(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData);
+            }
+        }
+
         private drawVectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData) {
 
             let context = this.toolContext;
+            let env = this.toolEnv;
 
             let isSelectedLayer = (layer.isSelected);
 
             // color setting
 
-            let lineColor: Vec4;
-            if (layer.drawLineType == DrawLineTypeID.layerColor) {
-
-                lineColor = layer.layerColor;
-            }
-            else if (layer.drawLineType == DrawLineTypeID.palletColor) {
-
-                let palletColor = documentData.palletColos[layer.line_PalletColorIndex];
-                lineColor = palletColor.color;
-            }
-            else {
-
-                lineColor = layer.layerColor;
-            }
-
-            let fillColor: Vec4;
-            if (layer.fillAreaType == FillAreaTypeID.fillColor) {
-
-                fillColor = layer.fillColor;
-            }
-            else if (layer.fillAreaType == FillAreaTypeID.palletColor) {
-
-                let palletColor = documentData.palletColos[layer.fill_PalletColorIndex];
-                fillColor = palletColor.color;
-            }
-            else {
-
-                fillColor = layer.fillColor;
-            }
+            let lineColor = this.getLineColor(layer, documentData);
+            let fillColor = this.getFillColor(layer, documentData);
 
             vec4.copy(this.editOtherLayerLineColor, lineColor);
             this.editOtherLayerLineColor[3] *= 0.3;
 
-            let useAdjustingLocation = this.isModalToolRunning();
+            // drawing geometry lines
 
-            // drawing geometry
+            let useAdjustingLocation = this.isModalToolRunning();
 
             for (let group of geometry.groups) {
 
@@ -194,62 +198,73 @@ namespace ManualTracingTool {
 
                     if (layer.fillAreaType != FillAreaTypeID.none) {
 
-                        this.drawVectorLineFill(line, fillColor, 1.0, useAdjustingLocation, continuousFill);
+                        this.drawVectorLineFill(line, fillColor, useAdjustingLocation, continuousFill);
 
                         continuousFill = line.continuousFill;
                     }
                 }
 
+                if (env.isDrawMode() && layer.drawLineType != DrawLineTypeID.none) {
+
+                    for (let line of group.lines) {
+
+                        this.drawVectorLineStroke(line, lineColor, 0.0, useAdjustingLocation);
+                    }
+                }
+            }
+        }
+
+        private drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData) {
+
+            let context = this.toolContext;
+
+            let isSelectedLayer = (layer.isSelected);
+
+            // color setting
+
+            let lineColor = this.getLineColor(layer, documentData);
+            let fillColor = this.getFillColor(layer, documentData);
+
+            // drawing geometry lines
+
+            let useAdjustingLocation = this.isModalToolRunning();
+
+            for (let group of geometry.groups) {
+
                 for (let line of group.lines) {
 
-                    if (this.toolEnv.isDrawMode()) {
+                    if (!isSelectedLayer) {
 
-                        if (layer.drawLineType == DrawLineTypeID.layerColor) {
-
-                            this.drawVectorLineStroke(line, lineColor, 0.0, useAdjustingLocation);
-                        }
-                        else if (layer.drawLineType == DrawLineTypeID.palletColor) {
-
-                            let palletColor = documentData.palletColos[layer.line_PalletColorIndex];
-
-                            this.drawVectorLineStroke(line, palletColor.color, 0.0, useAdjustingLocation);
-                        }
-                    }
-                    else if (this.toolEnv.isEditMode()) {
-
-                        if (!isSelectedLayer) {
+                        if (layer.drawLineType != DrawLineTypeID.none) {
 
                             this.drawVectorLineStroke(line, this.editOtherLayerLineColor, 0.0, useAdjustingLocation);
                         }
-                        else {
+                    }
+                    else {
 
-                            if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
+                        if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
 
-                                this.drawVectorLineStroke(line, lineColor, 1.0, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, lineColor, 0.0, useAdjustingLocation);
 
-                                this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
+                            this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
+                        }
+                        else if (this.toolContext.operationUnitID == OperationUnitID.line
+                            || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
+
+                            let color: Vec3;
+                            if ((line.isSelected && line.modifyFlag != VectorLineModifyFlagID.selectedToUnselected)
+                                || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
+
+                                color = this.drawStyle.selectedVectorLineColor;
                             }
-                            else if (this.toolContext.operationUnitID == OperationUnitID.line
-                                || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
+                            else {
 
-                                let color = lineColor;
-                                if ((line.isSelected && line.modifyFlag != VectorLineModifyFlagID.selectedToUnselected)
-                                    || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
-
-                                    color = this.drawStyle.selectedVectorLineColor;
-                                }
-
-                                if (line.isCloseToMouse) {
-
-                                    this.drawVectorLineStroke(line, color, 2.0, useAdjustingLocation);
-                                }
-                                else {
-
-                                    this.drawVectorLineStroke(line, color, 0.0, useAdjustingLocation);
-                                }
-
-                                //this.drawAdjustingLinePoints(canvasWindow, line);
+                                color = lineColor;
                             }
+
+                            let lineWidthBolding = (line.isCloseToMouse ? 2.0 : 0.0);
+
+                            this.drawVectorLineStroke(line, color, lineWidthBolding, useAdjustingLocation);
                         }
                     }
                 }
@@ -298,7 +313,7 @@ namespace ManualTracingTool {
             return Math.floor(width * 5) / 5;
         }
 
-        private drawVectorLineFill(line: VectorLine, color: Vec4, strokeWidth: float, useAdjustingLocation: boolean, isFillContinuing: boolean) {
+        private drawVectorLineFill(line: VectorLine, color: Vec4, useAdjustingLocation: boolean, isFillContinuing: boolean) {
 
             if (line.points.length <= 1) {
                 return;
@@ -497,6 +512,46 @@ namespace ManualTracingTool {
 
                 this.drawVectorLinePoint(point, color, false);
             }
+        }
+
+        private getLineColor(layer: VectorLayer, documentData: DocumentData) {
+
+            let color: Vec4;
+            if (layer.drawLineType == DrawLineTypeID.layerColor) {
+
+                color = layer.layerColor;
+            }
+            else if (layer.drawLineType == DrawLineTypeID.palletColor) {
+
+                let palletColor = documentData.palletColos[layer.line_PalletColorIndex];
+                color = palletColor.color;
+            }
+            else {
+
+                color = layer.layerColor;
+            }
+
+            return color;
+        }
+
+        private getFillColor(layer: VectorLayer, documentData: DocumentData) {
+
+            let color: Vec4;
+            if (layer.fillAreaType == FillAreaTypeID.fillColor) {
+
+                color = layer.fillColor;
+            }
+            else if (layer.fillAreaType == FillAreaTypeID.palletColor) {
+
+                let palletColor = documentData.palletColos[layer.fill_PalletColorIndex];
+                color = palletColor.color;
+            }
+            else {
+
+                color = layer.fillColor;
+            }
+
+            return color;
         }
 
         private getCurrentViewScaleLineWidth(width: float) {

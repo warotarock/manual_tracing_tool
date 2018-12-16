@@ -621,6 +621,10 @@ namespace ManualTracingTool {
                 document.animationSettingData = new AnimationSettingData();
             }
 
+            if (document.lineWidthBiasRate == undefined) {
+                document.lineWidthBiasRate = 1.0;
+            }
+
             this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
         }
 
