@@ -32,7 +32,7 @@ namespace ManualTracingTool {
 
         addViewScale(addScale: float) {
 
-            this.viewScale += addScale;
+            this.viewScale *= addScale;
 
             if (this.viewScale >= this.maxViewScale) {
 

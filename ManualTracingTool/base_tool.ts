@@ -525,7 +525,7 @@ namespace ManualTracingTool {
 
         generalLinePointRadius = 2.0;
         selectedLinePointRadius = 3.0;
-        viewZoomAdjustingSpeedRate = 3.0;
+        viewZoomAdjustingSpeedRate = 0.2;
     }
 
     export class ToolDrawingEnvironment {

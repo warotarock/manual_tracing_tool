@@ -666,7 +666,11 @@ namespace ManualTracingTool {
             if (e.wheelDelta != 0.0
                 && !e.isMouseDragging) {
 
-                this.mainWindow.addViewScale(e.wheelDelta * 0.1);
+                let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate * 0.5;
+                if (e.wheelDelta < 0.0) {
+                    addScale = 1.0 / addScale;
+                }
+                this.mainWindow.addViewScale(addScale);
 
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawWebGLWindow();
@@ -1237,9 +1241,9 @@ namespace ManualTracingTool {
 
             if (key == 'f' || key == 'd') {
 
-                let addScale = 0.1 * this.drawStyle.viewZoomAdjustingSpeedRate;
+                let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate;
                 if (key == 'd') {
-                    addScale = -addScale;
+                    addScale = 1 / addScale;
                 }
 
                 this.mainWindow.addViewScale(addScale);
