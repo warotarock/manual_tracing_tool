@@ -371,7 +371,7 @@ namespace ManualTracingTool {
             let headTwistInputData = env.currentPosingData.headTwistInputData;
 
             // Set inputs
-            vec3.copy(headTwistInputData.inputLocation, inputLocation);
+            vec3.copy(headTwistInputData.tempInputLocation, inputLocation);
             headTwistInputData.editLine = this.editLine;
             headTwistInputData.inputDone = true;
 
@@ -588,10 +588,15 @@ namespace ManualTracingTool {
 
         protected executeCalculation(env: ToolEnvironment) {
 
-            env.posing3DLogic.calculateLeftArm1Direction(
+            env.posing3DLogic.calculateAll(
                 env.currentPosingData
                 , env.currentPosingModel
             );
+
+            //env.posing3DLogic.calculateLeftArm1Direction(
+            //    env.currentPosingData
+            //    , env.currentPosingModel
+            //);
         }
 
         protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
@@ -621,14 +626,6 @@ namespace ManualTracingTool {
 
             return env.currentPosingData.rightArm1LocationInputData;
         }
-
-        protected executeCalculation(env: ToolEnvironment) {
-
-            env.posing3DLogic.calculateRightArm1Direction(
-                env.currentPosingData
-                , env.currentPosingModel
-            );
-        }
     }
 
     export class Tool_Posing3d_LocateLeftLeg1 extends Tool_Posing3d_LocateLeftArm1 {
@@ -639,14 +636,6 @@ namespace ManualTracingTool {
 
             return env.currentPosingData.leftLeg1LocationInputData;
         }
-
-        protected executeCalculation(env: ToolEnvironment) {
-
-            env.posing3DLogic.calculateLeftLeg1Direction(
-                env.currentPosingData
-                , env.currentPosingModel
-            );
-        }
     }
 
     export class Tool_Posing3d_LocateRightLeg1 extends Tool_Posing3d_LocateLeftArm1 {
@@ -656,14 +645,6 @@ namespace ManualTracingTool {
         protected getInputData(env: ToolEnvironment): DirectionInputData {
 
             return env.currentPosingData.rightLeg1LocationInputData;
-        }
-
-        protected executeCalculation(env: ToolEnvironment) {
-
-            env.posing3DLogic.calculateRightLeg1Direction(
-                env.currentPosingData
-                , env.currentPosingModel
-            );
         }
     }
 
@@ -684,14 +665,6 @@ namespace ManualTracingTool {
 
             return env.currentPosingData.leftArm2LocationInputData;
         }
-
-        protected executeCalculation(env: ToolEnvironment) {
-
-            env.posing3DLogic.calculateLeftArm2Direction(
-                env.currentPosingData
-                , env.currentPosingModel
-            );
-        }
     }
 
     export class Tool_Posing3d_LocateRightArm2 extends Tool_Posing3d_LocateLeftArm1 {
@@ -710,14 +683,6 @@ namespace ManualTracingTool {
         protected getInputData(env: ToolEnvironment): DirectionInputData {
 
             return env.currentPosingData.rightArm2LocationInputData;
-        }
-
-        protected executeCalculation(env: ToolEnvironment) {
-
-            env.posing3DLogic.calculateRightArm2Direction(
-                env.currentPosingData
-                , env.currentPosingModel
-            );
         }
     }
 
@@ -738,14 +703,6 @@ namespace ManualTracingTool {
 
             return env.currentPosingData.leftLeg2LocationInputData;
         }
-
-        protected executeCalculation(env: ToolEnvironment) {
-
-            env.posing3DLogic.calculateLeftLeg2Direction(
-                env.currentPosingData
-                , env.currentPosingModel
-            );
-        }
     }
 
     export class Tool_Posing3d_LocateRightLeg2 extends Tool_Posing3d_LocateLeftArm1 {
@@ -764,14 +721,6 @@ namespace ManualTracingTool {
         protected getInputData(env: ToolEnvironment): DirectionInputData {
 
             return env.currentPosingData.rightLeg2LocationInputData;
-        }
-
-        protected executeCalculation(env: ToolEnvironment) {
-
-            env.posing3DLogic.calculateRightLeg2Direction(
-                env.currentPosingData
-                , env.currentPosingModel
-            );
         }
     }
 

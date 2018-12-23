@@ -245,7 +245,7 @@ namespace ManualTracingTool {
                 unit.aName = "headTwistInputData";
                 unit.targetData = posingData.headTwistInputData;
                 unit.dependentInputData = posingData.headRotationInputData;
-                unit.parentMatrix = posingData.headLocationInputData.neckSphereMatrix;
+                unit.parentMatrix = posingData.headRotationInputData.neckSphereMatrix;
                 unit.subToolID = Posing3DSubToolID.twistHead;
                 unit.hitTestSphereRadius = posingModel.headTwistSphereSize;
                 unit.drawModel = false;

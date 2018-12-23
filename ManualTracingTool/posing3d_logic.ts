@@ -87,6 +87,61 @@ namespace ManualTracingTool {
 
         // Caluculation methods for each part od body
 
+        calculateAll(posingData: PosingData, posingModel: PosingModel) {
+
+            if (posingData.headLocationInputData.inputDone) {
+                this.calculateHeadLocation(posingData, posingModel);
+            }
+
+            if (posingData.headRotationInputData.inputDone) {
+                this.calculateHeadRotation(posingData, posingModel);
+            }
+
+            if (posingData.bodyLocationInputData.inputDone) {
+                this.calculateBodyLocation(posingData, posingModel, Posing3D_BodyLocateMode.keepFrontUp);
+            }
+
+            if (posingData.bodyRotationInputData.inputDone) {
+                this.calculateBodyRotation(posingData, posingModel);
+            }
+
+            if (posingData.leftArm1LocationInputData.inputDone) {
+                this.calculateLeftArm1Direction(posingData, posingModel);
+            }
+
+            if (posingData.leftArm2LocationInputData.inputDone) {
+                this.calculateLeftArm2Direction(posingData, posingModel);
+            }
+
+            if (posingData.rightArm1LocationInputData.inputDone) {
+                this.calculateRightArm1Direction(posingData, posingModel);
+            }
+
+            if (posingData.rightArm2LocationInputData.inputDone) {
+                this.calculateRightArm2Direction(posingData, posingModel);
+            }
+
+            if (posingData.leftLeg1LocationInputData.inputDone) {
+                this.calculateLeftLeg1Direction(posingData, posingModel);
+            }
+
+            if (posingData.leftLeg2LocationInputData.inputDone) {
+                this.calculateLeftLeg2Direction(posingData, posingModel);
+            }
+
+            if (posingData.rightLeg1LocationInputData.inputDone) {
+                this.calculateRightLeg1Direction(posingData, posingModel);
+            }
+
+            if (posingData.rightLeg2LocationInputData.inputDone) {
+                this.calculateRightLeg2Direction(posingData, posingModel);
+            }
+
+            if (posingData.headTwistInputData.inputDone) {
+                this.calculateHeadTwist(posingData, posingModel);
+            }
+        }
+
         calculateHeadLocation(posingData: PosingData, posingModel: PosingModel) {
 
             let headLocationInputData = posingData.headLocationInputData;
@@ -106,17 +161,7 @@ namespace ManualTracingTool {
             this.calculateHeadSubLocations(posingData, posingModel, headLocationInputData.matrix);
 
             // Affect to after process
-            let headRotationInputData = posingData.headRotationInputData;
-            if (headRotationInputData.inputDone) {
-
-                headRotationInputData.matrix[12] = headLocationInputData.center[0];
-                headRotationInputData.matrix[13] = headLocationInputData.center[1];
-                headRotationInputData.matrix[14] = headLocationInputData.center[2];
-            }
-            else {
-
-                this.calculateHeadRotation(posingData, posingModel);
-            }
+            this.calculateHeadRotation(posingData, posingModel);
         }
 
         calculateHeadRotation(posingData: PosingData, posingModel: PosingModel) {
@@ -142,6 +187,9 @@ namespace ManualTracingTool {
                 mat4.copy(headRotationInputData.matrix, headLocationInputData.matrix);
             }
 
+            mat4.translate(headRotationInputData.neckSphereMatrix, headRotationInputData.matrix, posingModel.neckSphereLocation);
+            //mat4.rotateX(headLocationInputData.neckSphereMatrix, headLocationInputData.neckSphereMatrix, Math.PI / 2);
+
             // Calclates sub locations
             this.calculateHeadSubLocations(posingData, posingModel, headRotationInputData.matrix);
 
@@ -159,15 +207,15 @@ namespace ManualTracingTool {
             // Main calculation
             if (headTwistInputData.inputDone) {
 
-                mat4.invert(this.invMatrix, headLocationInputData.neckSphereMatrix);
+                mat4.invert(this.invMatrix, headRotationInputData.neckSphereMatrix);
 
-                vec3.transformMat4(this.relativeInputLocation, headTwistInputData.inputLocation, this.invMatrix);
+                vec3.transformMat4(this.relativeInputLocation, headTwistInputData.tempInputLocation, this.invMatrix);
                 vec3.scale(this.relativeInputLocation, this.relativeInputLocation, -1.0);
-                vec3.transformMat4(headTwistInputData.inputLocation, this.relativeInputLocation, headLocationInputData.neckSphereMatrix);
+                vec3.transformMat4(headTwistInputData.inputLocation, this.relativeInputLocation, headRotationInputData.neckSphereMatrix);
 
                 this.calculateBodyPartDirection(
                     headTwistInputData
-                    , headLocationInputData.neckSphereMatrix
+                    , headRotationInputData.neckSphereMatrix
                     , Posing3D_BodyLocateMode.keepFrontUp
                 );
 
@@ -181,7 +229,8 @@ namespace ManualTracingTool {
             }
 
             // Calclates sub locations
-            this.calculateHeadSubLocations(posingData, posingModel, headTwistInputData.matrix);
+            //this.calculateHeadSubLocations(posingData, posingModel, headTwistInputData.matrix);
+            mat4.copy(headLocationInputData.headMatrix, headTwistInputData.matrix);
         }
 
         calculateHeadSubLocations(posingData: PosingData, posingModel: PosingModel, rootMatrix: Mat4) {
@@ -192,9 +241,6 @@ namespace ManualTracingTool {
             mat4.copy(headLocationInputData.headMatrix, rootMatrix);
 
             mat4.translate(headLocationInputData.bodyRootMatrix, rootMatrix, posingModel.bodySphereLocation);
-
-            mat4.translate(headLocationInputData.neckSphereMatrix, headRotationInputData.matrix, posingModel.neckSphereLocation);
-            //mat4.rotateX(headLocationInputData.neckSphereMatrix, headLocationInputData.neckSphereMatrix, Math.PI / 2);
         }
 
         calculateBodyLocation(posingData: PosingData, posingModel: PosingModel, mode: Posing3D_BodyLocateMode) {

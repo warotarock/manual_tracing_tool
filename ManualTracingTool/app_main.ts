@@ -769,6 +769,24 @@ namespace ManualTracingTool {
                 let posingLayer = <PosingLayer>layer;
 
                 posingLayer.drawingUnits = null;
+
+                if (posingLayer.posingData.headLocationInputData['neckSphereMatrix']) {
+
+                    delete posingLayer.posingData.headLocationInputData['neckSphereMatrix'];
+                }
+
+                if (posingLayer.posingData.headRotationInputData.neckSphereMatrix == undefined) {
+
+                    posingLayer.posingData.headRotationInputData.neckSphereMatrix = mat4.create();
+                    mat4.identity(posingLayer.posingData.headRotationInputData.neckSphereMatrix);
+                }
+
+                if (posingLayer.posingData.headTwistInputData.tempInputLocation == undefined) {
+
+                    posingLayer.posingData.headTwistInputData.tempInputLocation = vec3.create();
+                }
+
+                posingLayer.posingModel = new PosingModel();
             }            
 
             for (let childLayer of layer.childLayers) {
