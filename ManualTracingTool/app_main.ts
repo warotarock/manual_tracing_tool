@@ -147,15 +147,22 @@ namespace ManualTracingTool {
         document: DocumentData = null;
         localSetting = new LocalSetting();
         localStorage_SettingKey = 'MTT-Settings';
+        localStorage_SettingIndexKey = 'MTT-Settings Index';
         tempFileNameKey = 'Manual tracing tool save data';
 
         loadingDocumentImageResources: List<ImageResource> = null;
 
-        // UI animation
+        // UI states
 
         selectCurrentLayerAnimationLayer: Layer = null;
         selectCurrentLayerAnimationTime = 0.0;
         selectCurrentLayerAnimationTimeMax = 0.4;
+
+        isViewLocationMoved = false;
+        homeViewLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        lastViewLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        lastViewScale = 1.0;
+        lastViewRotation = 0.0;
 
         // Setting values
         drawStyle = new ToolDrawingStyle();
@@ -531,7 +538,8 @@ namespace ManualTracingTool {
 
         loadSettings() {
 
-            let localSettingText = window.localStorage.getItem(this.localStorage_SettingKey);
+            let index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
+            let localSettingText = window.localStorage.getItem(this.localStorage_SettingKey + index);
 
             if (!StringIsNullOrEmpty(localSettingText)) {
 
@@ -541,7 +549,9 @@ namespace ManualTracingTool {
 
         saveSettings() {
 
-            window.localStorage.setItem(this.localStorage_SettingKey, JSON.stringify(this.localSetting));
+            let index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
+
+            window.localStorage.setItem(this.localStorage_SettingKey + index, JSON.stringify(this.localSetting));
         }
 
         // Starting ups
@@ -1642,6 +1652,9 @@ namespace ManualTracingTool {
         }
 
         drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
+        }
+
+        drawEditorVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
         }
 
         drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual

@@ -24,6 +24,7 @@ namespace ManualTracingTool {
     export class Tool_HideLinePoint_BrushSelect extends Tool_BrushSelectLinePointBase {
 
         helpText = '線の太さに最大の太さに設定します。<br />Shiftキーで最小の太さに設定します。Ctrlキーで線をの太さを０にします。';
+        isEditTool = false; // @override
 
         logic_Selector: ISelector_BrushSelect = new Selector_HideLinePoint_BrushSelect(); // @override
 

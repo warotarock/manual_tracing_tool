@@ -171,14 +171,36 @@ namespace ManualTracingTool {
 
             if (this.tool_ScratchLine_TargetLine_Visible) {
 
+                var drawPointsAll = false;
+
                 if (env.currentVectorLine != null
                     && env.currentVectorLayer != null) {
 
-                    drawEnv.editorDrawer.drawEditorVectorLinePoints(
-                        env.currentVectorLine
-                        , env.currentVectorLayer.layerColor
-                        , true
-                    );
+                    if (drawPointsAll) {
+
+                        drawEnv.editorDrawer.drawEditorVectorLinePoints(
+                            env.currentVectorLine
+                            , env.currentVectorLayer.layerColor
+                            , false
+                        );
+                    }
+                    else {
+
+                        if (env.currentVectorLine.points.length >= 2) {
+
+                            drawEnv.editorDrawer.drawEditorVectorLinePoint(
+                                env.currentVectorLine.points[0]
+                                , env.drawStyle.sampledPointColor
+                                , false
+                            );
+
+                            drawEnv.editorDrawer.drawEditorVectorLinePoint(
+                                env.currentVectorLine.points[env.currentVectorLine.points.length - 1]
+                                , env.drawStyle.sampledPointColor
+                                , false
+                            );
+                        }
+                    }
                 }
             }
 

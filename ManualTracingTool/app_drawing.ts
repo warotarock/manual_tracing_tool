@@ -763,6 +763,11 @@ namespace ManualTracingTool {
             this.drawVectorLinePoints(line, color, useAdjustingLocation);
         }
 
+        drawEditorVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) { // @override
+
+            this.drawVectorLinePoint(point, color, useAdjustingLocation);
+        }
+
         drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @override
 
             this.drawVectorLineSegment(line, startIndex, endIndex, 1.0, 0.0, useAdjustingLocation);

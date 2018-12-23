@@ -17,6 +17,7 @@ namespace ManualTracingTool {
     export class Tool_DeletePoints_BrushSelect extends Tool_BrushSelectLinePointBase {
 
         helpText = 'ブラシ選択で点を削除します。';
+        isEditTool = false; // @override
 
         logic_Selector: ISelector_BrushSelect = new Selector_DeleteLinePoint_BrushSelect(); // @override
 

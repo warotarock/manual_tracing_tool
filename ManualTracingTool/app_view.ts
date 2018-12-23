@@ -194,6 +194,41 @@ namespace ManualTracingTool {
             this.startShowingLayerItem(item);
         }
 
+        private copyLastViewLocation(setUpdate: boolean) {
+
+            this.isViewLocationMoved = setUpdate;
+            vec3.copy(this.lastViewLocation, this.mainWindow.viewLocation);
+            this.lastViewScale = this.mainWindow.viewScale;
+            this.lastViewRotation = this.mainWindow.viewRotation;
+        }
+
+        protected setViewRotation(rotation: float) {
+
+            var env = this.toolEnv;
+
+            this.copyLastViewLocation(true);
+
+            if (this.mainWindow.viewRotation >= 360.0) {
+                this.mainWindow.viewRotation -= 360.0;
+            }
+            if (this.mainWindow.viewRotation <= 0.0) {
+                this.mainWindow.viewRotation += 360.0;
+            }
+
+            env.setRedrawMainWindowEditorWindow();
+        }
+
+        protected addViewScale(addScale: float) {
+
+            var env = this.toolEnv;
+
+            this.copyLastViewLocation(true);
+
+            this.mainWindow.addViewScale(addScale);
+
+            env.setRedrawMainWindowEditorWindow();
+        }
+
         // Layer window
 
         layerWindowLayoutArea = new RectangleLayoutArea();
