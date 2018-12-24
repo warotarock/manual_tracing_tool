@@ -251,7 +251,7 @@ namespace ManualTracingTool {
     export class PosingModel {
 
         // Head to body
-        headSphereSize = 0.17; // 14cm
+        headSphereSize = 0.12; // 14cm
         headTwistSphereSize = 0.26; //
 
         bodySphereSize = 0.44; // 44cm
@@ -303,16 +303,6 @@ namespace ManualTracingTool {
 
         headMatrix = mat4.create();
         bodyRootMatrix = mat4.create();
-        neckSphereMatrix = mat4.create();
-    }
-
-    export class HeadRotationInputData extends PosingInputData {
-
-        inputSideID = InputSideID.front;
-        inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-        editLine: VectorLine = null;
-
-        matrix = mat4.create();
     }
 
     export class DirectionInputData extends PosingInputData {
@@ -322,6 +312,16 @@ namespace ManualTracingTool {
         editLine: VectorLine = null;
 
         matrix = mat4.create();
+    }
+
+    export class HeadRotationInputData extends DirectionInputData {
+
+        neckSphereMatrix = mat4.create();
+    }
+
+    export class HeadTwistInputData extends DirectionInputData {
+
+        tempInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
     }
 
     export class BodyLocationInputData extends DirectionInputData {
@@ -355,7 +355,7 @@ namespace ManualTracingTool {
         real3DViewHalfWidth = 1.0;
         headLocationInputData = new HeadLocationInputData();
         headRotationInputData = new HeadRotationInputData();
-        headTwistInputData = new HeadRotationInputData();
+        headTwistInputData = new HeadTwistInputData();
 
         bodyLocationInputData = new BodyLocationInputData();
         bodyRotationInputData = new BodyRotationInputData();
