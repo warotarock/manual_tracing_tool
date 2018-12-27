@@ -188,7 +188,6 @@ namespace ManualTracingTool {
             }
 
             mat4.translate(headRotationInputData.neckSphereMatrix, headRotationInputData.matrix, posingModel.neckSphereLocation);
-            //mat4.rotateX(headLocationInputData.neckSphereMatrix, headLocationInputData.neckSphereMatrix, Math.PI / 2);
 
             // Calclates sub locations
             this.calculateHeadSubLocations(posingData, posingModel, headRotationInputData.matrix);

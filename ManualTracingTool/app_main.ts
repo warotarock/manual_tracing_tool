@@ -174,6 +174,9 @@ namespace ManualTracingTool {
         tempVec4 = vec4.create();
         tempColor4 = vec4.create();
         tempMat4 = mat4.create();
+        fromLocation = vec3.create();
+        toLocation = vec3.create();
+        upVector = vec3.create();
 
         editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
 
@@ -479,11 +482,104 @@ namespace ManualTracingTool {
                         modelFile.modelResourceDictionary[modelData.name] = modelResource;
                     }
 
+                    for (let modelData of data.skin_models) {
+
+                        modelFile.posingModelDictionary[modelData.name] = this.createPosingModel(modelData);
+                    }
+
                     modelFile.loaded = true;
                 }
             );
 
             xhr.send();
+        }
+
+        private createPosingModel(modelData: any): PosingModel {
+
+            let posingModel = new PosingModel();
+
+            for (let index = 0; index < modelData.bones.length; index++) {
+                let bone = modelData.bones[index];
+
+                bone.worldMat = mat4.create();
+                if (bone.parent == -1) {
+                    mat4.copy(bone.worldMat, bone.matrix);
+                }
+                else {
+                    mat4.multiply(bone.worldMat, modelData.bones[bone.parent].worldMat, bone.matrix);
+                }
+
+                bone.invMat = mat4.create();
+                mat4.invert(bone.invMat, bone.worldMat);
+            }
+
+            let head = this.findBone(modelData.bones, 'head');
+            let headCenter = this.findBone(modelData.bones, 'headCenter');
+            let chest = this.findBone(modelData.bones, 'chest');
+            let neck2 = this.findBone(modelData.bones, 'neck2');
+
+            this.translationOf(this.toLocation, neck2.worldMat);
+            vec3.transformMat4(posingModel.neckSphereLocation, this.toLocation, head.invMat);
+
+            this.translationOf(this.toLocation, neck2.worldMat);
+            vec3.transformMat4(posingModel.bodySphereLocation, this.toLocation, headCenter.invMat);
+
+            this.translationOf(this.fromLocation, neck2.worldMat);
+            this.translationOf(this.toLocation, chest.worldMat);
+            vec3.set(this.upVector, 0.0, 0.0, 1.0);
+            mat4.lookAt(this.tempMat4, this.fromLocation, this.toLocation, this.upVector);
+            mat4.multiply(posingModel.chestModelConvertMatrix, this.tempMat4, chest.worldMat);
+
+            vec3.subtract(this.tempVec3, this.fromLocation, this.toLocation);
+            posingModel.bodySphereSize = vec3.length(this.tempVec3);
+
+            let arm1L = this.findBone(modelData.bones, 'arm1.L');
+            this.translationOf(this.toLocation, arm1L.worldMat);
+            vec3.transformMat4(posingModel.leftArm1Location, this.toLocation, this.tempMat4);
+
+            let arm1R = this.findBone(modelData.bones, 'arm1.R');
+            this.translationOf(this.toLocation, arm1R.worldMat);
+            vec3.transformMat4(posingModel.rightArm1Location, this.toLocation, this.tempMat4);
+
+            let arm2L = this.findBone(modelData.bones, 'arm2.L');
+            posingModel.leftArm1HeadLocation[2] = -arm2L.matrix[13];
+
+            let arm2R = this.findBone(modelData.bones, 'arm2.R');
+            posingModel.rightArm1HeadLocation[2] = -arm2R.matrix[13];
+
+            let leg1L = this.findBone(modelData.bones, 'leg1.L');
+            this.translationOf(this.toLocation, leg1L.worldMat);
+            vec3.transformMat4(posingModel.leftLeg1Location, this.toLocation, this.tempMat4);
+
+            let leg1R = this.findBone(modelData.bones, 'leg1.R');
+            this.translationOf(this.toLocation, leg1R.worldMat);
+            vec3.transformMat4(posingModel.rightLeg1Location, this.toLocation, this.tempMat4);
+
+            let leg2L = this.findBone(modelData.bones, 'leg2.L');
+            posingModel.leftLeg1HeadLocation[2] = -leg2L.matrix[13];
+
+            let leg2R = this.findBone(modelData.bones, 'leg2.R');
+            posingModel.rightLeg1HeadLocation[2] = -leg2R.matrix[13];
+
+            return posingModel;
+        }
+
+        private translationOf(vec: Vec3, mat: Mat4) {
+
+            vec3.set(vec, mat[12], mat[13], mat[14]);
+        }
+
+        private findBone(bones: List<any>, boneName: string) {
+
+            for (let bone of bones) {
+
+                if (bone.name == boneName) {
+
+                    return bone;
+                }
+            }
+
+            return null;
         }
 
         // Saving 
@@ -786,7 +882,7 @@ namespace ManualTracingTool {
                     posingLayer.posingData.headTwistInputData.tempInputLocation = vec3.create();
                 }
 
-                posingLayer.posingModel = new PosingModel();
+                posingLayer.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
             }            
 
             for (let childLayer of layer.childLayers) {

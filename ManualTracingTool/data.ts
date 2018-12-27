@@ -252,9 +252,9 @@ namespace ManualTracingTool {
 
         // Head to body
         headSphereSize = 0.12; // 14cm
-        headTwistSphereSize = 0.26; //
+        headTwistSphereSize = 0.18; //
 
-        bodySphereSize = 0.44; // 44cm
+        bodySphereSize = 0.30; // 44cm
         bodySphereLocation = vec3.fromValues(0.0, -0.03, -0.19);
         neckSphereLocation = vec3.fromValues(0.0, -0.03, -0.17);
 
@@ -280,6 +280,9 @@ namespace ManualTracingTool {
 
         leftLeg2HeadLocation = vec3.fromValues(0.0, 0.0, -0.39);
         rightLeg2HeadLocation = vec3.fromValues(0.0, 0.0, -0.39);
+
+        // runtime
+        chestModelConvertMatrix = mat4.create();
     }
 
     export enum InputSideID {
@@ -375,12 +378,13 @@ namespace ManualTracingTool {
 
     export class JointPartDrawingUnit {
 
-        aName = "";
+        name = "";
 
         targetData: DirectionInputData = null;
 
         dependentInputData: PosingInputData = null;
         parentMatrix: Mat4 = null;
+        convertMatrix: Mat4 = null;
 
         subToolID: Posing3DSubToolID;
 

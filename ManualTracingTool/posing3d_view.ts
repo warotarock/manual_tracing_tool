@@ -36,6 +36,7 @@ namespace ManualTracingTool {
         fileName: string = null;
         modelResources = new List<ModelResource>();
         modelResourceDictionary = new Dictionary<ModelResource>();
+        posingModelDictionary = new Dictionary<PosingModel>();
         loaded = false;
 
         file(fileName: string): ModelFile {
@@ -125,9 +126,9 @@ namespace ManualTracingTool {
             this.rightArm2Model = modelFile.modelResourceDictionary['Arm1'];
 
             this.leftLeg1Model = modelFile.modelResourceDictionary['Leg1'];
-            this.leftLeg2Model = modelFile.modelResourceDictionary['Leg1'];
+            this.leftLeg2Model = modelFile.modelResourceDictionary['Leg2'];
             this.rightLeg1Model = modelFile.modelResourceDictionary['Leg1'];
-            this.rightLeg2Model = modelFile.modelResourceDictionary['Leg1'];
+            this.rightLeg2Model = modelFile.modelResourceDictionary['Leg2'];
 
             this.imageResurces.push(imageResurces[0]);
         }
@@ -142,7 +143,7 @@ namespace ManualTracingTool {
             // Left arms
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "leftArm1LocationInputData";
+                unit.name = "leftArm1LocationInputData";
                 unit.targetData = posingData.leftArm1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
                 unit.parentMatrix = posingData.bodyLocationInputData.leftArm1RootMatrix;
@@ -154,7 +155,7 @@ namespace ManualTracingTool {
 
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "leftArm2LocationInputData";
+                unit.name = "leftArm2LocationInputData";
                 unit.targetData = posingData.leftArm2LocationInputData;
                 unit.dependentInputData = posingData.leftArm1LocationInputData;
                 unit.parentMatrix = posingData.leftArm1LocationInputData.childJointRootMatrix;
@@ -167,7 +168,7 @@ namespace ManualTracingTool {
             // Right arm
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "rightArm1LocationInputData";
+                unit.name = "rightArm1LocationInputData";
                 unit.targetData = posingData.rightArm1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
                 unit.parentMatrix = posingData.bodyLocationInputData.rightArm1RootMatrix;
@@ -179,7 +180,7 @@ namespace ManualTracingTool {
 
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "rightArm2LocationInputData";
+                unit.name = "rightArm2LocationInputData";
                 unit.targetData = posingData.rightArm2LocationInputData;
                 unit.dependentInputData = posingData.rightArm1LocationInputData;
                 unit.parentMatrix = posingData.rightArm1LocationInputData.childJointRootMatrix;
@@ -192,7 +193,7 @@ namespace ManualTracingTool {
             // Left leg
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "leftLeg1LocationInputData";
+                unit.name = "leftLeg1LocationInputData";
                 unit.targetData = posingData.leftLeg1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
                 unit.parentMatrix = posingData.bodyLocationInputData.leftLeg1RootMatrix;
@@ -204,7 +205,7 @@ namespace ManualTracingTool {
 
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "rightLeg2LocationInputData";
+                unit.name = "rightLeg2LocationInputData";
                 unit.targetData = posingData.leftLeg2LocationInputData;
                 unit.dependentInputData = posingData.leftLeg1LocationInputData;
                 unit.parentMatrix = posingData.leftLeg1LocationInputData.childJointRootMatrix;
@@ -217,7 +218,7 @@ namespace ManualTracingTool {
             // Right leg
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "rightLeg1LocationInputData";
+                unit.name = "rightLeg1LocationInputData";
                 unit.targetData = posingData.rightLeg1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
                 unit.parentMatrix = posingData.bodyLocationInputData.rightLeg1RootMatrix;
@@ -229,7 +230,7 @@ namespace ManualTracingTool {
 
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "rightLeg2LocationInputData";
+                unit.name = "rightLeg2LocationInputData";
                 unit.targetData = posingData.rightLeg2LocationInputData;
                 unit.dependentInputData = posingData.rightLeg1LocationInputData;
                 unit.parentMatrix = posingData.rightLeg1LocationInputData.childJointRootMatrix;
@@ -242,7 +243,7 @@ namespace ManualTracingTool {
             // Head twist
             {
                 let unit = new JointPartDrawingUnit();
-                unit.aName = "headTwistInputData";
+                unit.name = "headTwistInputData";
                 unit.targetData = posingData.headTwistInputData;
                 unit.dependentInputData = posingData.headRotationInputData;
                 unit.parentMatrix = posingData.headRotationInputData.neckSphereMatrix;
@@ -323,7 +324,9 @@ namespace ManualTracingTool {
 
             if (this.isBodyDrawable(posingData)) {
 
-                this.setShaderParameters(posingData.bodyLocationInputData.bodyMatrix, false, this.posingFigureShader);
+                mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.chestModelConvertMatrix);
+
+                this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
                 this.posingFigureShader.setAlpha(1.0);
                 this.drawModel(this.bodyModel.model, this.imageResurces[0].image);
 
