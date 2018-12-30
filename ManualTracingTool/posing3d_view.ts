@@ -142,6 +142,20 @@ namespace ManualTracingTool {
 
             let drawingUnits = new List<JointPartDrawingUnit>();
 
+            // Head top to neck
+            {
+                let unit = new JointPartDrawingUnit();
+                unit.name = "headLocationInputData";
+                unit.targetData = posingData.headRotationInputData;
+                unit.dependentInputData = posingData.headLocationInputData;
+                unit.parentMatrix = posingData.neckSphereMatrix;
+                unit.subToolID = Posing3DSubToolID.rotateHead;
+                unit.hitTestSphereRadius = vec3.length(posingModel.headTopToNeckVector);
+                unit.modelResource = this.headModel;
+                unit.drawModel = false;
+                drawingUnits.push(unit);
+            }
+
             // Left arms
             {
                 let unit = new JointPartDrawingUnit();
@@ -248,7 +262,7 @@ namespace ManualTracingTool {
                 unit.name = "headTwistInputData";
                 unit.targetData = posingData.headTwistInputData;
                 unit.dependentInputData = posingData.headRotationInputData;
-                unit.parentMatrix = posingData.headRotationInputData.neckSphereMatrix;
+                unit.parentMatrix = posingData.neckSphereMatrix;
                 unit.subToolID = Posing3DSubToolID.twistHead;
                 unit.hitTestSphereRadius = posingModel.headTwistSphereSize;
                 unit.drawModel = false;
@@ -318,8 +332,7 @@ namespace ManualTracingTool {
             this.render.clearDepthBuffer();
 
             if (this.isHeadDrawable(posingData)) {
-
-                this.setShaderParameters(posingData.headLocationInputData.headMatrix, false, this.posingFigureShader);
+                this.setShaderParameters(posingData.headMatrix, false, this.posingFigureShader);
                 this.posingFigureShader.setAlpha(1.0);
                 this.drawModel(this.headModel.model, this.imageResurces[0].image);
             }
@@ -431,14 +444,14 @@ namespace ManualTracingTool {
             let needsDrawing = (
                 posingData != null
                 && posingData.headLocationInputData.inputDone
-                && (env.subToolIndex == Posing3DSubToolID.locateHead || env.subToolIndex == Posing3DSubToolID.rotateHead)
+                && env.subToolIndex == Posing3DSubToolID.locateHead
             );
 
             if (!needsDrawing) {
                 return
             }
 
-            mat4.copy(this.locationMatrix, posingData.headLocationInputData.matrix);
+            mat4.copy(this.locationMatrix, posingData.rootMatrix);
             let scale = posingModel.headSphereSize;
             mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
 
@@ -548,7 +561,8 @@ namespace ManualTracingTool {
         private isHeadDrawable(posingData: PosingData): boolean {
 
             return (posingData != null
-                && posingData.headRotationInputData.inputDone);
+                && (posingData.headLocationInputData.inputDone
+                    || posingData.headRotationInputData.inputDone));
         }
 
         private isBodyDrawable(posingData: PosingData): boolean {

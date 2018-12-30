@@ -253,12 +253,15 @@ namespace ManualTracingTool {
         // Head to body
         headSphereSize = 0.12; // 14cm
         headTwistSphereSize = 0.18; //
+        headCenterLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        headTopLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        headTopToNeckVector = vec3.fromValues(0.0, 0.0, 0.0);
 
         bodySphereSize = 0.30; // 44cm
         bodySphereLocation = vec3.fromValues(0.0, -0.03, -0.19);
         neckSphereLocation = vec3.fromValues(0.0, -0.03, -0.17);
 
-        bodyRotationSphereSize = 0.22; // 11cm
+        bodyRotationSphereSize = 0.15; // 11cm
         bodyRotationSphereLocation = vec3.fromValues(0.0, 0.0, -0.31);
 
         // Arms
@@ -357,8 +360,20 @@ namespace ManualTracingTool {
     export class PosingData {
 
         real3DViewHalfWidth = 1.0;
+
+        rootMatrix = mat4.create();
+
+        headMatrix = mat4.create();
+        headTopMatrix = mat4.create();
+        neckSphereMatrix = mat4.create();
+
+        leftArm1RootMatrix = mat4.create();
+        rightArm1RootMatrix = mat4.create();
+        leftLeg1RootMatrix = mat4.create();
+        rightLeg1RootMatrix = mat4.create();
+
         headLocationInputData = new HeadLocationInputData();
-        headRotationInputData = new HeadRotationInputData();
+        headRotationInputData = new JointPartInputData();
         headTwistInputData = new HeadTwistInputData();
 
         bodyLocationInputData = new BodyLocationInputData();

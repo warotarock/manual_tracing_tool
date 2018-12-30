@@ -515,15 +515,24 @@ namespace ManualTracingTool {
 
             let head = this.findBone(modelData.bones, 'head');
             let headCenter = this.findBone(modelData.bones, 'headCenter');
+            let headTop = this.findBone(modelData.bones, 'headTop');
+            let headBottom = this.findBone(modelData.bones, 'headBottom');
             let chest = this.findBone(modelData.bones, 'chest');
             let hips = this.findBone(modelData.bones, 'hips');
             let neck2 = this.findBone(modelData.bones, 'neck2');
 
+            this.translationOf(this.toLocation, headCenter.worldMat);
+            vec3.transformMat4(posingModel.headCenterLocation, this.toLocation, head.invMat);
+
+            mat4.multiply(this.tempMat4, headTop.worldMat, head.invMat);
+            this.translationOf(posingModel.headTopLocation, this.tempMat4);
+
             this.translationOf(this.toLocation, neck2.worldMat);
             vec3.transformMat4(posingModel.neckSphereLocation, this.toLocation, head.invMat);
 
+            this.translationOf(this.fromLocation, headTop.worldMat);
             this.translationOf(this.toLocation, neck2.worldMat);
-            vec3.transformMat4(posingModel.bodySphereLocation, this.toLocation, headCenter.invMat);
+            vec3.subtract(posingModel.headTopToNeckVector, this.fromLocation, this.toLocation);
 
             this.translationOf(this.fromLocation, neck2.worldMat);
             this.translationOf(this.toLocation, chest.worldMat);
@@ -531,6 +540,9 @@ namespace ManualTracingTool {
             mat4.lookAt(this.tempMat4, this.fromLocation, this.toLocation, this.upVector);
             mat4.multiply(posingModel.chestModelConvertMatrix, this.tempMat4, chest.worldMat);
             mat4.multiply(posingModel.hipsModelConvertMatrix, this.tempMat4, hips.worldMat);
+
+            this.translationOf(this.toLocation, hips.worldMat);
+            vec3.transformMat4(posingModel.bodyRotationSphereLocation, this.toLocation, this.tempMat4);
 
             vec3.subtract(this.tempVec3, this.fromLocation, this.toLocation);
             posingModel.bodySphereSize = vec3.length(this.tempVec3);
@@ -714,6 +726,7 @@ namespace ManualTracingTool {
                 let layer1 = new PosingLayer();
                 layer1.name = 'posing1'
                 rootLayer.childLayers.push(layer1);
+                layer1.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
             }
 
             document.loaded = true;
@@ -873,10 +886,10 @@ namespace ManualTracingTool {
                     delete posingLayer.posingData.headLocationInputData['neckSphereMatrix'];
                 }
 
-                if (posingLayer.posingData.headRotationInputData.neckSphereMatrix == undefined) {
+                if (posingLayer.posingData.neckSphereMatrix == undefined) {
 
-                    posingLayer.posingData.headRotationInputData.neckSphereMatrix = mat4.create();
-                    mat4.identity(posingLayer.posingData.headRotationInputData.neckSphereMatrix);
+                    posingLayer.posingData.neckSphereMatrix = mat4.create();
+                    mat4.identity(posingLayer.posingData.neckSphereMatrix);
                 }
 
                 if (posingLayer.posingData.headTwistInputData.tempInputLocation == undefined) {

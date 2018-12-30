@@ -46,7 +46,7 @@ namespace ManualTracingTool {
 
     export class Tool_Posing3d_PointInputToolBase extends Tool_Posing3d_ToolBase {
 
-        inputSideOptionCount = 0;
+        inputSideOptionCount = 1;
 
         private targetLocation = vec3.create();
 
@@ -78,6 +78,47 @@ namespace ManualTracingTool {
             this.execute(e, env);
         }
 
+        setInputSide(buttonIndex: int, inputSideID: InputSideID, env: ToolEnvironment): boolean { // @override
+
+            if (env.currentPosingData != null) {
+
+                let inputData = this.getInputData(env);
+
+                if (buttonIndex == 0) {
+
+                    if (inputSideID == InputSideID.front) {
+                        inputData.inputSideID = InputSideID.back;
+                    }
+                    else {
+                        inputData.inputSideID = InputSideID.front;
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        getInputSideID(buttonIndex: int, env: ToolEnvironment): InputSideID { // @override
+
+            if (env.currentPosingData != null) {
+
+                let inputData = this.getInputData(env);
+
+                return inputData.inputSideID;
+            }
+            else {
+
+                return InputSideID.none;
+            }
+        }
+
+        protected getInputData(env: ToolEnvironment): DirectionInputData { // @virtual
+
+            throw ('Tool_Posing3d_ToolBase: not implemented!');
+        }
+
         private execute(e: ToolMouseEvent, env: ToolEnvironment) {
 
             this.copyInputLocationToPoint(e);
@@ -97,7 +138,30 @@ namespace ManualTracingTool {
             this.executeCommand(this.targetLocation, env);
         }
 
-        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
+        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) { // @virtual
+
+            throw ('Tool_Posing3d_ToolBase: not implemented!');
+        }
+    }
+
+    export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInputToolBase {
+
+        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) { // @override
+
+            let inputData = this.getInputData(env);
+
+            // Set inputs
+            vec3.copy(inputData.inputLocation, inputLocation);
+            inputData.editLine = this.editLine;
+            inputData.inputDone = true;
+
+            // Calculate
+            env.posing3DLogic.calculateAll(env.currentPosingData, env.currentPosingModel);
+
+            // Update dependent input
+
+            env.setRedrawWebGLWindow();
+            env.setRedrawSubtoolWindow();
         }
     }
 
@@ -245,6 +309,8 @@ namespace ManualTracingTool {
             headLocationInputData.editLine = this.editLine;
             headLocationInputData.inputDone = true;
 
+            env.currentPosingData.headRotationInputData.inputDone = false;
+
             // Calculate
             env.posing3DLogic.calculateHeadLocation(env.currentPosingData, env.currentPosingModel);
 
@@ -257,8 +323,6 @@ namespace ManualTracingTool {
 
         helpText = '画面に表示された球のどこかをクリックすると頭の向きが決まります。<br />画面右のパネルで「手前」となっているボタンをクリックすると奥側を指定できるようになります。';
 
-        inputSideOptionCount = 1;
-
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
@@ -268,36 +332,9 @@ namespace ManualTracingTool {
             );
         }
 
-        setInputSide(buttonIndex: int, inputSideID: InputSideID, env: ToolEnvironment): boolean { // @virtual
+        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
 
-            if (env.currentPosingData != null) {
-
-                if (buttonIndex == 0) {
-
-                    if (inputSideID == InputSideID.front) {
-                        env.currentPosingData.headRotationInputData.inputSideID = InputSideID.back;
-                    }
-                    else {
-                        env.currentPosingData.headRotationInputData.inputSideID = InputSideID.front;
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        getInputSideID(buttonIndex: int, env: ToolEnvironment): InputSideID { // @virtual
-
-            if (env.currentPosingData != null) {
-
-                return env.currentPosingData.headRotationInputData.inputSideID;
-            }
-            else {
-
-                return InputSideID.none;
-            }
+            return env.currentPosingData.headRotationInputData;
         }
 
         protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
@@ -334,36 +371,9 @@ namespace ManualTracingTool {
             );
         }
 
-        setInputSide(buttonIndex: int, inputSideID: InputSideID, env: ToolEnvironment): boolean { // @virtual
+        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
 
-            if (env.currentPosingData != null) {
-
-                if (buttonIndex == 0) {
-
-                    if (inputSideID == InputSideID.front) {
-                        env.currentPosingData.headTwistInputData.inputSideID = InputSideID.back;
-                    }
-                    else {
-                        env.currentPosingData.headTwistInputData.inputSideID = InputSideID.front;
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        getInputSideID(buttonIndex: int, env: ToolEnvironment): InputSideID { // @virtual
-
-            if (env.currentPosingData != null) {
-
-                return env.currentPosingData.headTwistInputData.inputSideID;
-            }
-            else {
-
-                return InputSideID.none;
-            }
+            return env.currentPosingData.headTwistInputData;
         }
 
         protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
@@ -442,24 +452,7 @@ namespace ManualTracingTool {
             bodyLocationInputData.inputDone = true;
             bodyRotationInputData.inputDone = false;
 
-            // Calculate
-            env.posing3DLogic.calculateBodyLocation(
-                env.currentPosingData
-                , env.currentPosingModel
-                , Posing3D_BodyLocateMode.keepFrontUp
-            );
-
-            // Update dependent input
-            let resetRotation = true;
-            if (resetRotation) {
-                mat4.copy(env.currentPosingData.bodyRotationInputData.matrix, env.currentPosingData.bodyLocationInputData.matrix);
-                env.currentPosingData.bodyRotationInputData.inputDone = false;
-            }
-            else {
-                if (env.currentPosingData.bodyRotationInputData.inputDone) {
-                    env.posing3DLogic.calculateBodyRotation(env.currentPosingData, env.currentPosingModel);
-                }
-            }
+            env.posing3DLogic.calculateAll(env.currentPosingData, env.currentPosingModel);
 
             env.setRedrawWebGLWindow();
             env.setRedrawSubtoolWindow();
@@ -475,42 +468,16 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                env.currentPosingLayer != null
+                && env.currentPosingLayer.isVisible
                 && env.currentPosingData != null
                 && env.currentPosingData.bodyLocationInputData.inputDone
             );
         }
 
-        setInputSide(buttonIndex: int, inputSideID: InputSideID, env: ToolEnvironment): boolean { // @virtual
+        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
 
-            if (env.currentPosingData != null) {
-
-                if (buttonIndex == 0) {
-
-                    if (inputSideID == InputSideID.front) {
-                        env.currentPosingData.bodyRotationInputData.inputSideID = InputSideID.back;
-                    }
-                    else {
-                        env.currentPosingData.bodyRotationInputData.inputSideID = InputSideID.front;
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        getInputSideID(buttonIndex: int, env: ToolEnvironment): InputSideID { // @virtual
-
-            if (env.currentPosingData != null) {
-
-                return env.currentPosingData.bodyRotationInputData.inputSideID;
-            }
-            else {
-
-                return InputSideID.none;
-            }
+            return env.currentPosingData.bodyRotationInputData;
         }
 
         protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
@@ -523,18 +490,16 @@ namespace ManualTracingTool {
             bodyRotationInputData.inputDone = true;
 
             // Calculate
-            env.posing3DLogic.calculateBodyRotation(env.currentPosingData, env.currentPosingModel);
+            env.posing3DLogic.calculateAll(env.currentPosingData, env.currentPosingModel);
 
             env.setRedrawWebGLWindow();
             env.setRedrawSubtoolWindow();
         }
     }
 
-    export class Tool_Posing3d_LocateLeftArm1 extends Tool_Posing3d_PointInputToolBase {
+    export class Tool_Posing3d_LocateLeftArm1 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = 'ヒジのあたりの位置を指定して上腕を配置します。';
-
-        inputSideOptionCount = 1;
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -545,80 +510,13 @@ namespace ManualTracingTool {
             );
         }
 
-        setInputSide(buttonIndex: int, inputSideID: InputSideID, env: ToolEnvironment): boolean { // @virtual
-
-            if (env.currentPosingData != null) {
-
-                let inputData = this.getInputData(env);
-
-                if (buttonIndex == 0) {
-
-                    if (inputSideID == InputSideID.front) {
-                        inputData.inputSideID = InputSideID.back;
-                    }
-                    else {
-                        inputData.inputSideID = InputSideID.front;
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        getInputSideID(buttonIndex: int, env: ToolEnvironment): InputSideID { // @virtual
-
-            if (env.currentPosingData != null) {
-
-                let inputData = this.getInputData(env);
-
-                return inputData.inputSideID;
-            }
-            else {
-
-                return InputSideID.none;
-            }
-        }
-
-        protected getInputData(env: ToolEnvironment): DirectionInputData {
+        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
 
             return env.currentPosingData.leftArm1LocationInputData;
         }
-
-        protected executeCalculation(env: ToolEnvironment) {
-
-            env.posing3DLogic.calculateAll(
-                env.currentPosingData
-                , env.currentPosingModel
-            );
-
-            //env.posing3DLogic.calculateLeftArm1Direction(
-            //    env.currentPosingData
-            //    , env.currentPosingModel
-            //);
-        }
-
-        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
-
-            let inputData = this.getInputData(env);
-
-            // Set inputs
-            vec3.copy(inputData.inputLocation, inputLocation);
-            inputData.editLine = this.editLine;
-            inputData.inputDone = true;
-
-            // Calculate
-            this.executeCalculation(env);
-
-            // Update dependent input
-
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
-        }
     }
 
-    export class Tool_Posing3d_LocateRightArm1 extends Tool_Posing3d_LocateLeftArm1 {
+    export class Tool_Posing3d_LocateRightArm1 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = 'ヒジのあたりの位置を指定して上腕を配置します。';
 
@@ -628,7 +526,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Posing3d_LocateLeftLeg1 extends Tool_Posing3d_LocateLeftArm1 {
+    export class Tool_Posing3d_LocateLeftLeg1 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = 'ヒザのあたりの位置を指定して上脚を配置します。';
 
@@ -638,7 +536,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Posing3d_LocateRightLeg1 extends Tool_Posing3d_LocateLeftArm1 {
+    export class Tool_Posing3d_LocateRightLeg1 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = 'ヒザのあたりの位置を指定して上脚を配置します。';
 
@@ -648,7 +546,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Posing3d_LocateLeftArm2 extends Tool_Posing3d_LocateLeftArm1 {
+    export class Tool_Posing3d_LocateLeftArm2 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = '手首のあたりの位置を指定して下腕を配置します。';
 
@@ -667,7 +565,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Posing3d_LocateRightArm2 extends Tool_Posing3d_LocateLeftArm1 {
+    export class Tool_Posing3d_LocateRightArm2 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = '手首のあたりの位置を指定して下腕を配置します。';
 
@@ -686,7 +584,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Posing3d_LocateLeftLeg2 extends Tool_Posing3d_LocateLeftArm1 {
+    export class Tool_Posing3d_LocateLeftLeg2 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = '足首のあたりの位置を指定して下脚を配置します。';
 
@@ -705,7 +603,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Posing3d_LocateRightLeg2 extends Tool_Posing3d_LocateLeftArm1 {
+    export class Tool_Posing3d_LocateRightLeg2 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = '足首のあたりの位置を指定して下脚を配置します。';
 

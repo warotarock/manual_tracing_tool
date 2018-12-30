@@ -89,6 +89,8 @@ namespace ManualTracingTool {
 
         calculateAll(posingData: PosingData, posingModel: PosingModel) {
 
+            mat4.identity(posingData.rootMatrix);
+
             if (posingData.headLocationInputData.inputDone) {
                 this.calculateHeadLocation(posingData, posingModel);
             }
@@ -98,7 +100,7 @@ namespace ManualTracingTool {
             }
 
             if (posingData.bodyLocationInputData.inputDone) {
-                this.calculateBodyLocation(posingData, posingModel, Posing3D_BodyLocateMode.keepFrontUp);
+                this.calculateBodyLocation(posingData, posingModel);
             }
 
             if (posingData.bodyRotationInputData.inputDone) {
@@ -146,54 +148,62 @@ namespace ManualTracingTool {
 
             let headLocationInputData = posingData.headLocationInputData;
 
-            // Main calculation
+            // Input matrix
             if (headLocationInputData.inputDone) {
 
-                mat4.identity(headLocationInputData.matrix);
-                mat4.translate(headLocationInputData.matrix, headLocationInputData.matrix, headLocationInputData.center);
+                mat4.identity(posingData.rootMatrix);
+                mat4.translate(posingData.rootMatrix, posingData.rootMatrix, headLocationInputData.center);
             }
             else {
 
-                mat4.identity(headLocationInputData.matrix);
+                mat4.identity(posingData.rootMatrix);
             }
 
-            // Calclates sub locations
-            this.calculateHeadSubLocations(posingData, posingModel, headLocationInputData.matrix);
+            // Result loacation
+            vec3.scale(this.tmpVec3, posingModel.headCenterLocation, -1.0);
+            mat4.translate(posingData.headMatrix, posingData.rootMatrix, this.tmpVec3);
 
-            // Affect to after process
-            this.calculateHeadRotation(posingData, posingModel);
+            mat4.translate(posingData.headTopMatrix, posingData.headMatrix, posingModel.headTopLocation);
+
+            mat4.translate(posingData.neckSphereMatrix, posingData.headMatrix, posingModel.neckSphereLocation);
+
+            // Sub locations
+            this.calculateHeadSubLocations(posingData, posingModel);
         }
 
         calculateHeadRotation(posingData: PosingData, posingModel: PosingModel) {
 
             let headRotationInputData = posingData.headRotationInputData;
 
-            let headLocationInputData = posingData.headLocationInputData;
+            // Input matrix
+            //if (headRotationInputData.inputDone) {
+            //    vec3.copy(this.inputLocation, headRotationInputData.inputLocation);
+            //    // Calculates head matrix
+            //    vec3.set(this.upVector, 0.0, 0.0, 1.0);
+            //    vec3.set(this.tmpVec3, posingData.headTopMatrix[12], posingData.headTopMatrix[13], posingData.headTopMatrix[14]);
+            //    mat4.lookAt(this.headMatrix, this.tmpVec3, this.inputLocation, this.upVector);
+            //    mat4.invert(this.headMatrix, this.headMatrix);
+            //    mat4.rotateX(this.headMatrix, this.headMatrix, -Math.PI / 2);
+            //    mat4.copy(headRotationInputData.matrix, this.headMatrix);
+            //}
+            //else {
+            //    mat4.copy(headRotationInputData.matrix, posingData.headTopMatrix);
+            //}
 
-            // Main calculation
             if (headRotationInputData.inputDone) {
-
-                vec3.copy(this.inputLocation, headRotationInputData.inputLocation);
-
-                // Calculates head matrix
-                vec3.set(this.upVector, 0.0, 0.0, 1.0);
-                mat4.lookAt(this.headMatrix, headLocationInputData.center, this.inputLocation, this.upVector);
-                mat4.invert(this.headMatrix, this.headMatrix);
-                mat4.rotateX(this.headMatrix, this.headMatrix, -Math.PI / 2);
-                mat4.copy(headRotationInputData.matrix, this.headMatrix);
+                this.calculateBodyPartDirection(headRotationInputData, posingData.neckSphereMatrix, Posing3D_BodyLocateMode.keepFrontUp);
             }
             else {
-
-                mat4.copy(headRotationInputData.matrix, headLocationInputData.matrix);
+                mat4.copy(headRotationInputData.matrix, posingData.neckSphereMatrix);
             }
 
-            mat4.translate(headRotationInputData.neckSphereMatrix, headRotationInputData.matrix, posingModel.neckSphereLocation);
+            // Result loacation
+            vec3.scale(this.tmpVec3, posingModel.neckSphereLocation, 1.0);
+            mat4.translate(posingData.headMatrix, headRotationInputData.matrix, this.tmpVec3);
+            mat4.rotateX(posingData.headMatrix, posingData.headMatrix, Math.PI);
 
-            // Calclates sub locations
-            this.calculateHeadSubLocations(posingData, posingModel, headRotationInputData.matrix);
-
-            // Affect to after process
-            this.calculateHeadTwist(posingData, posingModel);
+            // Sub locations
+            this.calculateHeadSubLocations(posingData, posingModel);
         }
 
         calculateHeadTwist(posingData: PosingData, posingModel: PosingModel) {
@@ -206,15 +216,15 @@ namespace ManualTracingTool {
             // Main calculation
             if (headTwistInputData.inputDone) {
 
-                mat4.invert(this.invMatrix, headRotationInputData.neckSphereMatrix);
+                mat4.invert(this.invMatrix, posingData.neckSphereMatrix);
 
                 vec3.transformMat4(this.relativeInputLocation, headTwistInputData.tempInputLocation, this.invMatrix);
                 vec3.scale(this.relativeInputLocation, this.relativeInputLocation, -1.0);
-                vec3.transformMat4(headTwistInputData.inputLocation, this.relativeInputLocation, headRotationInputData.neckSphereMatrix);
+                vec3.transformMat4(headTwistInputData.inputLocation, this.relativeInputLocation, posingData.neckSphereMatrix);
 
                 this.calculateBodyPartDirection(
                     headTwistInputData
-                    , headRotationInputData.neckSphereMatrix
+                    , posingData.neckSphereMatrix
                     , Posing3D_BodyLocateMode.keepFrontUp
                 );
 
@@ -232,24 +242,22 @@ namespace ManualTracingTool {
             mat4.copy(headLocationInputData.headMatrix, headTwistInputData.matrix);
         }
 
-        calculateHeadSubLocations(posingData: PosingData, posingModel: PosingModel, rootMatrix: Mat4) {
+        calculateHeadSubLocations(posingData: PosingData, posingModel: PosingModel) {
 
             let headLocationInputData = posingData.headLocationInputData;
             let headRotationInputData = posingData.headRotationInputData;
 
-            mat4.copy(headLocationInputData.headMatrix, rootMatrix);
-
-            mat4.translate(headLocationInputData.bodyRootMatrix, rootMatrix, posingModel.bodySphereLocation);
+            mat4.translate(headLocationInputData.bodyRootMatrix, posingData.headMatrix, posingModel.neckSphereLocation);
         }
 
-        calculateBodyLocation(posingData: PosingData, posingModel: PosingModel, mode: Posing3D_BodyLocateMode) {
+        calculateBodyLocation(posingData: PosingData, posingModel: PosingModel) {
 
             let bodyLocationInputData = posingData.bodyLocationInputData;
 
             // Main calculation
             if (bodyLocationInputData.inputDone) {
 
-                this.calculateBodyPartDirection(bodyLocationInputData, posingData.headLocationInputData.bodyRootMatrix, mode);
+                this.calculateBodyPartDirection(bodyLocationInputData, posingData.headLocationInputData.bodyRootMatrix, Posing3D_BodyLocateMode.keepFrontUp);
             }
             else {
 
@@ -258,9 +266,6 @@ namespace ManualTracingTool {
 
             // Calclates sub locations
             this.calculateBodySubLocations(posingData, posingModel, bodyLocationInputData.matrix);
-
-            // Affect to after process
-            this.calculateBodyRotation(posingData, posingModel);
         }
 
         calculateBodyRotation(posingData: PosingData, posingModel: PosingModel) {
