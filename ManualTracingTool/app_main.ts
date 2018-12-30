@@ -516,6 +516,7 @@ namespace ManualTracingTool {
             let head = this.findBone(modelData.bones, 'head');
             let headCenter = this.findBone(modelData.bones, 'headCenter');
             let chest = this.findBone(modelData.bones, 'chest');
+            let hips = this.findBone(modelData.bones, 'hips');
             let neck2 = this.findBone(modelData.bones, 'neck2');
 
             this.translationOf(this.toLocation, neck2.worldMat);
@@ -529,6 +530,7 @@ namespace ManualTracingTool {
             vec3.set(this.upVector, 0.0, 0.0, 1.0);
             mat4.lookAt(this.tempMat4, this.fromLocation, this.toLocation, this.upVector);
             mat4.multiply(posingModel.chestModelConvertMatrix, this.tempMat4, chest.worldMat);
+            mat4.multiply(posingModel.hipsModelConvertMatrix, this.tempMat4, hips.worldMat);
 
             vec3.subtract(this.tempVec3, this.fromLocation, this.toLocation);
             posingModel.bodySphereSize = vec3.length(this.tempVec3);

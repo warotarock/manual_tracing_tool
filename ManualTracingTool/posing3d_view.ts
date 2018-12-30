@@ -69,7 +69,8 @@ namespace ManualTracingTool {
         zTestShpereModel: ModelResource = null;
         zTestShpereEdgeModel: ModelResource = null;
         headModel: ModelResource = null;
-        bodyModel: ModelResource = null;
+        chestModel: ModelResource = null;
+        hipsModel: ModelResource = null;
         leftArm1Model: ModelResource = null;
         leftArm2Model: ModelResource = null;
         rightArm1Model: ModelResource = null;
@@ -118,7 +119,8 @@ namespace ManualTracingTool {
             this.zTestShpereEdgeModel = modelFile.modelResourceDictionary['ZTestSphereEdge'];
 
             this.headModel = modelFile.modelResourceDictionary['Head02'];
-            this.bodyModel = modelFile.modelResourceDictionary['Body1'];
+            this.chestModel = modelFile.modelResourceDictionary['Chest'];
+            this.hipsModel = modelFile.modelResourceDictionary['Hips'];
 
             this.leftArm1Model = modelFile.modelResourceDictionary['Arm1'];
             this.leftArm2Model = modelFile.modelResourceDictionary['Arm1'];
@@ -325,10 +327,14 @@ namespace ManualTracingTool {
             if (this.isBodyDrawable(posingData)) {
 
                 mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.chestModelConvertMatrix);
-
                 this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
                 this.posingFigureShader.setAlpha(1.0);
-                this.drawModel(this.bodyModel.model, this.imageResurces[0].image);
+                this.drawModel(this.chestModel.model, this.imageResurces[0].image);
+
+                mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.hipsModelConvertMatrix);
+                this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
+                this.posingFigureShader.setAlpha(1.0);
+                this.drawModel(this.hipsModel.model, this.imageResurces[0].image);
 
                 let debugDraw = false;
                 if (debugDraw) {

@@ -283,6 +283,7 @@ namespace ManualTracingTool {
 
         // runtime
         chestModelConvertMatrix = mat4.create();
+        hipsModelConvertMatrix = mat4.create();
     }
 
     export enum InputSideID {
