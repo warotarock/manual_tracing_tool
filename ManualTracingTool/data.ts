@@ -264,6 +264,8 @@ namespace ManualTracingTool {
         bodyRotationSphereSize = 0.15; // 11cm
         bodyRotationSphereLocation = vec3.fromValues(0.0, 0.0, -0.31);
 
+        hipsSphereSize = 0.30; // 44cm
+
         // Arms
         leftArm1Location = vec3.fromValues(-0.130, 0.0, -0.05);
         rightArm1Location = vec3.fromValues(+0.130, 0.0, -0.05);
@@ -367,6 +369,14 @@ namespace ManualTracingTool {
         headTopMatrix = mat4.create();
         neckSphereMatrix = mat4.create();
 
+        chestRootMatrix = mat4.create();
+        chestMatrix = mat4.create();
+
+        hipsRootMatrix = mat4.create();
+        hipsMatrix = mat4.create();
+
+        bodyRotationCenterMatrix = mat4.create();
+
         leftArm1RootMatrix = mat4.create();
         rightArm1RootMatrix = mat4.create();
         leftLeg1RootMatrix = mat4.create();
@@ -376,8 +386,10 @@ namespace ManualTracingTool {
         headRotationInputData = new JointPartInputData();
         headTwistInputData = new HeadTwistInputData();
 
-        bodyLocationInputData = new BodyLocationInputData();
+        bodyLocationInputData = new JointPartInputData();
         bodyRotationInputData = new BodyRotationInputData();
+
+        hipsLocationInputData = new JointPartInputData();
 
         leftArm1LocationInputData = new JointPartInputData();
         leftArm2LocationInputData = new JointPartInputData();
@@ -400,7 +412,7 @@ namespace ManualTracingTool {
 
         dependentInputData: PosingInputData = null;
         parentMatrix: Mat4 = null;
-        convertMatrix: Mat4 = null;
+        modelConvertMatrix: Mat4 = null;
 
         subToolID: Posing3DSubToolID;
 
@@ -470,6 +482,7 @@ namespace ManualTracingTool {
         animationSettingData = new AnimationSettingData();
 
         loaded = false;
+        hasErrorOnLoading = false;
 
         // This class must be created by this function for JSON.parse
         constructor() {

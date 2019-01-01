@@ -156,13 +156,40 @@ namespace ManualTracingTool {
                 drawingUnits.push(unit);
             }
 
+            // Chest and hips
+            {
+                let unit = new JointPartDrawingUnit();
+                unit.name = "bodyLocationInputData";
+                unit.targetData = posingData.bodyLocationInputData;
+                unit.dependentInputData = posingData.headLocationInputData;
+                unit.parentMatrix = posingData.chestRootMatrix;
+                unit.modelConvertMatrix = posingModel.chestModelConvertMatrix;
+                unit.subToolID = Posing3DSubToolID.locateBody;
+                unit.hitTestSphereRadius = posingModel.bodySphereSize;
+                unit.modelResource = this.chestModel;
+                drawingUnits.push(unit);
+            }
+
+            {
+                let unit = new JointPartDrawingUnit();
+                unit.name = "hipsLocationInputData";
+                unit.targetData = posingData.hipsLocationInputData;
+                unit.dependentInputData = posingData.bodyLocationInputData;
+                unit.parentMatrix = posingData.hipsRootMatrix;
+                unit.modelConvertMatrix = posingModel.hipsModelConvertMatrix;
+                unit.subToolID = Posing3DSubToolID.rotateBody;
+                unit.hitTestSphereRadius = posingModel.hipsSphereSize;
+                unit.modelResource = this.hipsModel;
+                drawingUnits.push(unit);
+            }
+
             // Left arms
             {
                 let unit = new JointPartDrawingUnit();
                 unit.name = "leftArm1LocationInputData";
                 unit.targetData = posingData.leftArm1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.bodyLocationInputData.leftArm1RootMatrix;
+                unit.parentMatrix = posingData.leftArm1RootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateLeftArm1;
                 unit.hitTestSphereRadius = vec3.length(posingModel.leftArm1HeadLocation);
                 unit.modelResource = this.leftArm1Model;
@@ -187,7 +214,7 @@ namespace ManualTracingTool {
                 unit.name = "rightArm1LocationInputData";
                 unit.targetData = posingData.rightArm1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.bodyLocationInputData.rightArm1RootMatrix;
+                unit.parentMatrix = posingData.rightArm1RootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateRightArm1;
                 unit.hitTestSphereRadius = vec3.length(posingModel.rightArm1HeadLocation);
                 unit.modelResource = this.rightArm1Model;
@@ -212,7 +239,7 @@ namespace ManualTracingTool {
                 unit.name = "leftLeg1LocationInputData";
                 unit.targetData = posingData.leftLeg1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.bodyLocationInputData.leftLeg1RootMatrix;
+                unit.parentMatrix = posingData.leftLeg1RootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateLeftLeg1;
                 unit.hitTestSphereRadius = vec3.length(posingModel.leftLeg1HeadLocation);
                 unit.modelResource = this.leftLeg1Model;
@@ -237,7 +264,7 @@ namespace ManualTracingTool {
                 unit.name = "rightLeg1LocationInputData";
                 unit.targetData = posingData.rightLeg1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.bodyLocationInputData.rightLeg1RootMatrix;
+                unit.parentMatrix = posingData.rightLeg1RootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateRightLeg1;
                 unit.hitTestSphereRadius = vec3.length(posingModel.rightLeg1HeadLocation);
                 unit.modelResource = this.rightLeg1Model;
@@ -298,9 +325,9 @@ namespace ManualTracingTool {
 
             this.drawHeadSphere(DrawImageType.visualImage, posingLayer, env);
 
-            this.drawBodySphere(DrawImageType.visualImage, posingLayer, env);
+            //this.drawBodySphere(DrawImageType.visualImage, posingLayer, env);
 
-            this.drawBodyRotationSphere(DrawImageType.visualImage, posingLayer, env);
+            //this.drawBodyRotationSphere(DrawImageType.visualImage, posingLayer, env);
 
             for (let drawingUnit of posingLayer.drawingUnits) {
 
@@ -339,22 +366,22 @@ namespace ManualTracingTool {
 
             if (this.isBodyDrawable(posingData)) {
 
-                mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.chestModelConvertMatrix);
-                this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
-                this.posingFigureShader.setAlpha(1.0);
-                this.drawModel(this.chestModel.model, this.imageResurces[0].image);
+                //mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.chestModelConvertMatrix);
+                //this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
+                //this.posingFigureShader.setAlpha(1.0);
+                //this.drawModel(this.chestModel.model, this.imageResurces[0].image);
 
-                mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.hipsModelConvertMatrix);
-                this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
-                this.posingFigureShader.setAlpha(1.0);
-                this.drawModel(this.hipsModel.model, this.imageResurces[0].image);
+                //mat4.multiply(this.tmpMatrix, posingData.chestMatrix, posingModel.hipsModelConvertMatrix);
+                //this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
+                //this.posingFigureShader.setAlpha(1.0);
+                //this.drawModel(this.hipsModel.model, this.imageResurces[0].image);
 
                 let debugDraw = false;
                 if (debugDraw) {
-                    this.drawAxis(posingData.bodyLocationInputData.leftArm1RootMatrix, 0.1, 0.5, env);
-                    this.drawAxis(posingData.bodyLocationInputData.rightArm1RootMatrix, 0.1, 0.5, env);
-                    this.drawAxis(posingData.bodyLocationInputData.leftLeg1RootMatrix, 0.1, 0.5, env);
-                    this.drawAxis(posingData.bodyLocationInputData.rightLeg1RootMatrix, 0.1, 0.5, env);
+                    this.drawAxis(posingData.leftArm1RootMatrix, 0.1, 0.5, env);
+                    this.drawAxis(posingData.rightArm1RootMatrix, 0.1, 0.5, env);
+                    this.drawAxis(posingData.leftLeg1RootMatrix, 0.1, 0.5, env);
+                    this.drawAxis(posingData.rightLeg1RootMatrix, 0.1, 0.5, env);
                 }
             }
 
@@ -362,7 +389,16 @@ namespace ManualTracingTool {
 
                 if (drawingUnit.drawModel && drawingUnit.targetData.inputDone) {
 
-                    this.setShaderParameters(drawingUnit.targetData.matrix, false, this.posingFigureShader);
+                    if (drawingUnit.modelConvertMatrix != null) {
+
+                        mat4.multiply(this.tmpMatrix, drawingUnit.targetData.matrix, drawingUnit.modelConvertMatrix);
+                    }
+                    else {
+
+                        mat4.copy(this.tmpMatrix, drawingUnit.targetData.matrix);
+                    }
+
+                    this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
                     this.posingFigureShader.setAlpha(drawingUnit.visualModelAlpha);
                     this.drawModel(drawingUnit.modelResource.model, this.imageResurces[0].image);
 
@@ -475,7 +511,6 @@ namespace ManualTracingTool {
             let needsDrawing = (
                 posingData != null
                 && posingData.headLocationInputData.inputDone
-                && posingData.headRotationInputData.inputDone
                 && env.subToolIndex == Posing3DSubToolID.locateBody
             );
 
@@ -483,7 +518,7 @@ namespace ManualTracingTool {
                 return
             }
 
-            Maths.getTranslationMat4(this.tempVec3, posingData.headLocationInputData.bodyRootMatrix);
+            Maths.getTranslationMat4(this.tempVec3, posingData.chestRootMatrix);
             mat4.identity(this.tmpMatrix);
             mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
 
@@ -517,7 +552,7 @@ namespace ManualTracingTool {
                 return
             }
 
-            Maths.getTranslationMat4(this.tempVec3, posingData.bodyLocationInputData.rotationCenterMatrix);
+            Maths.getTranslationMat4(this.tempVec3, posingData.bodyRotationCenterMatrix);
             mat4.identity(this.tmpMatrix);
             mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
 

@@ -107,6 +107,10 @@ namespace ManualTracingTool {
                 this.calculateBodyRotation(posingData, posingModel);
             }
 
+            if (posingData.hipsLocationInputData.inputDone) {
+                this.calculateHipsLocation(posingData, posingModel);
+            }
+
             if (posingData.leftArm1LocationInputData.inputDone) {
                 this.calculateLeftArm1Direction(posingData, posingModel);
             }
@@ -159,7 +163,7 @@ namespace ManualTracingTool {
                 mat4.identity(posingData.rootMatrix);
             }
 
-            // Result loacation
+            // Result location
             vec3.scale(this.tmpVec3, posingModel.headCenterLocation, -1.0);
             mat4.translate(posingData.headMatrix, posingData.rootMatrix, this.tmpVec3);
 
@@ -191,15 +195,16 @@ namespace ManualTracingTool {
             //}
 
             if (headRotationInputData.inputDone) {
+
                 this.calculateBodyPartDirection(headRotationInputData, posingData.neckSphereMatrix, Posing3D_BodyLocateMode.keepFrontUp);
             }
             else {
+
                 mat4.copy(headRotationInputData.matrix, posingData.neckSphereMatrix);
             }
 
-            // Result loacation
-            vec3.scale(this.tmpVec3, posingModel.neckSphereLocation, 1.0);
-            mat4.translate(posingData.headMatrix, headRotationInputData.matrix, this.tmpVec3);
+            // Result location
+            mat4.translate(posingData.headMatrix, headRotationInputData.matrix, posingModel.neckSphereLocation);
             mat4.rotateX(posingData.headMatrix, posingData.headMatrix, Math.PI);
 
             // Sub locations
@@ -244,28 +249,23 @@ namespace ManualTracingTool {
 
         calculateHeadSubLocations(posingData: PosingData, posingModel: PosingModel) {
 
-            let headLocationInputData = posingData.headLocationInputData;
-            let headRotationInputData = posingData.headRotationInputData;
-
-            mat4.translate(headLocationInputData.bodyRootMatrix, posingData.headMatrix, posingModel.neckSphereLocation);
+            mat4.translate(posingData.chestRootMatrix, posingData.headMatrix, posingModel.neckSphereLocation);
         }
 
         calculateBodyLocation(posingData: PosingData, posingModel: PosingModel) {
 
-            let bodyLocationInputData = posingData.bodyLocationInputData;
-
             // Main calculation
-            if (bodyLocationInputData.inputDone) {
+            this.calculateBodyPartDirection(
+                posingData.bodyLocationInputData
+                , posingData.chestRootMatrix
+                , Posing3D_BodyLocateMode.keepFrontUp
+            );
 
-                this.calculateBodyPartDirection(bodyLocationInputData, posingData.headLocationInputData.bodyRootMatrix, Posing3D_BodyLocateMode.keepFrontUp);
-            }
-            else {
-
-                mat4.copy(bodyLocationInputData.matrix, posingData.headLocationInputData.bodyRootMatrix);
-            }
+            // Result location
+            mat4.copy(posingData.chestMatrix, posingData.bodyLocationInputData.matrix);
 
             // Calclates sub locations
-            this.calculateBodySubLocations(posingData, posingModel, bodyLocationInputData.matrix);
+            this.calculateBodySubLocations(posingData, posingModel);
         }
 
         calculateBodyRotation(posingData: PosingData, posingModel: PosingModel) {
@@ -277,7 +277,7 @@ namespace ManualTracingTool {
 
                 vec3.copy(this.inputLocation, bodyRotationInputData.inputLocation);
 
-                mat4.invert(this.tmpMatrix, posingData.bodyLocationInputData.rotationCenterMatrix);
+                mat4.invert(this.tmpMatrix, posingData.bodyRotationCenterMatrix);
 
                 vec3.transformMat4(this.relativeInputLocation, this.inputLocation, this.tmpMatrix);
                 this.relativeInputLocation[2] = 0.0;
@@ -297,46 +297,65 @@ namespace ManualTracingTool {
             }
 
             // Calclates sub locations
-            this.calculateBodySubLocations(posingData, posingModel, bodyRotationInputData.matrix);
+            this.calculateBodySubLocations(posingData, posingModel);
         }
 
-        calculateBodySubLocations(posingData: PosingData, posingModel: PosingModel, rootMatrix: Mat4) {
+        calculateHipsLocation(posingData: PosingData, posingModel: PosingModel) {
 
-            // Main visual matrix
-            mat4.copy(posingData.bodyLocationInputData.bodyMatrix, rootMatrix);
+            // Main calculation
+            this.calculateBodyPartDirection(
+                posingData.hipsLocationInputData
+                , posingData.hipsRootMatrix
+                , Posing3D_BodyLocateMode.keepFrontUp
+            );
+
+            // Result location
+            mat4.copy(posingData.hipsMatrix, posingData.hipsLocationInputData.matrix);
+
+            // Calclates sub locations
+            this.calculateBodySubLocations(posingData, posingModel);
+        }
+
+        calculateBodySubLocations(posingData: PosingData, posingModel: PosingModel) {
 
             // Body rotation
             mat4.translate(
-                posingData.bodyLocationInputData.rotationCenterMatrix
+                posingData.bodyRotationCenterMatrix
                 , posingData.bodyLocationInputData.matrix
+                , posingModel.bodyRotationSphereLocation);
+
+            // Hips
+            mat4.translate(
+                posingData.hipsRootMatrix
+                , posingData.chestMatrix
                 , posingModel.bodyRotationSphereLocation);
 
             // Left arm root
             mat4.translate(
-                posingData.bodyLocationInputData.leftArm1RootMatrix
-                , rootMatrix
+                posingData.leftArm1RootMatrix
+                , posingData.chestMatrix
                 , posingModel.leftArm1Location);
 
             mat4.rotateZ(
-                posingData.bodyLocationInputData.leftArm1RootMatrix
-                , posingData.bodyLocationInputData.leftArm1RootMatrix
+                posingData.leftArm1RootMatrix
+                , posingData.leftArm1RootMatrix
                 , Math.PI / 2);
 
             // Right arm root
             mat4.translate(
-                posingData.bodyLocationInputData.rightArm1RootMatrix
-                , rootMatrix
+                posingData.rightArm1RootMatrix
+                , posingData.chestMatrix
                 , posingModel.rightArm1Location);
 
             mat4.rotateZ(
-                posingData.bodyLocationInputData.rightArm1RootMatrix
-                , posingData.bodyLocationInputData.rightArm1RootMatrix
+                posingData.rightArm1RootMatrix
+                , posingData.rightArm1RootMatrix
                 , -Math.PI / 2);
 
             // Left leg root
             mat4.translate(
-                posingData.bodyLocationInputData.leftLeg1RootMatrix
-                , rootMatrix
+                posingData.leftLeg1RootMatrix
+                , posingData.hipsMatrix
                 , posingModel.leftLeg1Location);
 
             //mat4.rotateX(
@@ -346,8 +365,8 @@ namespace ManualTracingTool {
 
             // Right leg root
             mat4.translate(
-                posingData.bodyLocationInputData.rightLeg1RootMatrix
-                , rootMatrix
+                posingData.rightLeg1RootMatrix
+                , posingData.hipsMatrix
                 , posingModel.rightLeg1Location);
 
             //mat4.rotateX(
@@ -361,7 +380,7 @@ namespace ManualTracingTool {
             // Main calculation
             this.calculateBodyPartDirection(
                 posingData.leftArm1LocationInputData
-                , posingData.bodyLocationInputData.leftArm1RootMatrix
+                , posingData.leftArm1RootMatrix
                 , Posing3D_BodyLocateMode.yawPitch
             );
 
@@ -374,7 +393,7 @@ namespace ManualTracingTool {
             // Main calculation
             this.calculateBodyPartDirection(
                 posingData.rightArm1LocationInputData
-                , posingData.bodyLocationInputData.rightArm1RootMatrix
+                , posingData.rightArm1RootMatrix
                 , Posing3D_BodyLocateMode.yawPitch
             );
 
@@ -387,7 +406,7 @@ namespace ManualTracingTool {
             // Main calculation
             this.calculateBodyPartDirection(
                 posingData.leftLeg1LocationInputData
-                , posingData.bodyLocationInputData.leftLeg1RootMatrix
+                , posingData.leftLeg1RootMatrix
                 , Posing3D_BodyLocateMode.keepFrontUp
             );
 
@@ -412,7 +431,7 @@ namespace ManualTracingTool {
             // Main calculation
             this.calculateBodyPartDirection(
                 posingData.rightLeg1LocationInputData
-                , posingData.bodyLocationInputData.rightLeg1RootMatrix
+                , posingData.rightLeg1RootMatrix
                 , Posing3D_BodyLocateMode.keepFrontUp
             );
 

@@ -986,7 +986,7 @@ namespace ManualTracingTool {
 
                 fs.writeFile(fileFullPath, buf, (error) => {
                     if (error) {
-                        alert(error);
+                        this.showMessageBox(error);
                     }
                 });
 
@@ -1270,9 +1270,16 @@ namespace ManualTracingTool {
 
         protected updateHdeaderDocumentFileName() { // @override
 
-            let filePath = this.localSetting.lastUsedFilePaths[0];
+            if (this.localSetting.lastUsedFilePaths.length > 0) {
 
-            this.setInputElementText(this.ID.fileName, filePath);
+                let filePath = this.localSetting.lastUsedFilePaths[0];
+
+                this.setInputElementText(this.ID.fileName, filePath);
+            }
+            else {
+
+                this.setInputElementText(this.ID.fileName, 'new_document.json');
+            }
         }
 
         // Footer window

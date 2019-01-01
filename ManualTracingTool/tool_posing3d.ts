@@ -405,7 +405,6 @@ namespace ManualTracingTool {
                 env.currentPosingLayer != null && env.currentPosingLayer.isVisible
                 && env.currentPosingData != null
                 && env.currentPosingData.headLocationInputData.inputDone
-                && env.currentPosingData.headRotationInputData.inputDone
                 );
         }
 
@@ -497,6 +496,25 @@ namespace ManualTracingTool {
         }
     }
 
+    export class Tool_Posing3d_LocateHips extends Tool_Posing3d_JointPartInputToolBase {
+
+        helpText = '腰を配置します。';
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
+                && env.currentPosingData.bodyLocationInputData.inputDone
+            );
+        }
+
+        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
+
+            return env.currentPosingData.hipsLocationInputData;
+        }
+    }
+
     export class Tool_Posing3d_LocateLeftArm1 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = 'ヒジのあたりの位置を指定して上腕を配置します。';
@@ -516,7 +534,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Posing3d_LocateRightArm1 extends Tool_Posing3d_JointPartInputToolBase {
+    export class Tool_Posing3d_LocateRightArm1 extends Tool_Posing3d_LocateLeftArm1 {
 
         helpText = 'ヒジのあたりの位置を指定して上腕を配置します。';
 
@@ -530,13 +548,22 @@ namespace ManualTracingTool {
 
         helpText = 'ヒザのあたりの位置を指定して上脚を配置します。';
 
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
+                && env.currentPosingData.hipsLocationInputData.inputDone
+            );
+        }
+
         protected getInputData(env: ToolEnvironment): DirectionInputData {
 
             return env.currentPosingData.leftLeg1LocationInputData;
         }
     }
 
-    export class Tool_Posing3d_LocateRightLeg1 extends Tool_Posing3d_JointPartInputToolBase {
+    export class Tool_Posing3d_LocateRightLeg1 extends Tool_Posing3d_LocateLeftLeg1 {
 
         helpText = 'ヒザのあたりの位置を指定して上脚を配置します。';
 

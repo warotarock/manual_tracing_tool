@@ -130,7 +130,7 @@ namespace ManualTracingTool {
         tool_Posing3d_RotateHead = new Tool_Posing3d_RotateHead();
         tool_Posing3d_TwistHead = new Tool_Posing3d_TwistHead();
         tool_Posing3d_LocateBody = new Tool_Posing3d_LocateBody();
-        tool_Posing3d_RatateBody = new Tool_Posing3d_RatateBody();
+        tool_Posing3d_LocateHips = new Tool_Posing3d_LocateHips();
         tool_Posing3d_LocateLeftArm1 = new Tool_Posing3d_LocateLeftArm1();
         tool_Posing3d_LocateLeftArm2 = new Tool_Posing3d_LocateLeftArm2();
         tool_Posing3d_LocateRightArm1 = new Tool_Posing3d_LocateRightArm1();
@@ -178,6 +178,9 @@ namespace ManualTracingTool {
         toLocation = vec3.create();
         upVector = vec3.create();
 
+        chestInvMat4 = mat4.create();
+        hipsInvMat4 = mat4.create();
+
         editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
 
         tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
@@ -203,6 +206,11 @@ namespace ManualTracingTool {
             this.subToolImages.push(this.imageResurces[3]);
             this.subToolImages.push(this.imageResurces[4]);
             this.layerButtonImage = this.imageResurces[5];
+        }
+
+        showMessageBox(text: string) {
+
+            alert(text);
         }
 
         onLoad() {
@@ -272,13 +280,14 @@ namespace ManualTracingTool {
 
             // Start loading document data
 
-            let lastURL = this.localSetting.lastUsedFilePaths[0];
-
-            if (StringIsNullOrEmpty(lastURL)) {
+            if (this.localSetting.lastUsedFilePaths.length > 0
+                && StringIsNullOrEmpty(this.localSetting.lastUsedFilePaths[0])) {
 
                 this.document = this.createDefaultDocumentData();
             }
             else {
+
+                let lastURL = this.localSetting.lastUsedFilePaths[0];
 
                 this.document = new DocumentData();
                 this.startLoadingDocument(this.document, lastURL);
@@ -294,6 +303,7 @@ namespace ManualTracingTool {
             let xhr = new XMLHttpRequest();
             xhr.open('GET', url);
             xhr.responseType = 'json';
+            xhr.timeout = 3000;
 
             xhr.addEventListener('load',
                 (e: Event) => {
@@ -317,6 +327,20 @@ namespace ManualTracingTool {
                 }
             );
 
+            xhr.addEventListener('timeout',
+                (e: Event) => {
+
+                    document.hasErrorOnLoading = true;
+                }
+            );
+
+            xhr.addEventListener('error',
+                (e: Event) => {
+
+                    document.hasErrorOnLoading = true;
+                }
+            );
+
             xhr.send();
         }
 
@@ -334,6 +358,15 @@ namespace ManualTracingTool {
         }
 
         processLoadingDocumentJSON() {
+
+            if (this.document.hasErrorOnLoading) {
+
+                //this.showMessageBox('ドキュメントの読み込みに失敗しました。デフォルトのドキュメントを開きます。');
+
+                this.document = this.createDefaultDocumentData();
+
+                this.mainProcessState = MainProcessStateID.Running;
+            }
 
             if (!this.document.loaded) {
                 return;
@@ -519,6 +552,8 @@ namespace ManualTracingTool {
             let headBottom = this.findBone(modelData.bones, 'headBottom');
             let chest = this.findBone(modelData.bones, 'chest');
             let hips = this.findBone(modelData.bones, 'hips');
+            let hipsTop = this.findBone(modelData.bones, 'hipsTop');
+            let hipL = this.findBone(modelData.bones, 'hip.L');
             let neck2 = this.findBone(modelData.bones, 'neck2');
 
             this.translationOf(this.toLocation, headCenter.worldMat);
@@ -537,23 +572,34 @@ namespace ManualTracingTool {
             this.translationOf(this.fromLocation, neck2.worldMat);
             this.translationOf(this.toLocation, chest.worldMat);
             vec3.set(this.upVector, 0.0, 0.0, 1.0);
-            mat4.lookAt(this.tempMat4, this.fromLocation, this.toLocation, this.upVector);
-            mat4.multiply(posingModel.chestModelConvertMatrix, this.tempMat4, chest.worldMat);
-            mat4.multiply(posingModel.hipsModelConvertMatrix, this.tempMat4, hips.worldMat);
+            mat4.lookAt(this.chestInvMat4, this.fromLocation, this.toLocation, this.upVector);
+            mat4.multiply(posingModel.chestModelConvertMatrix, this.chestInvMat4, chest.worldMat);
 
             this.translationOf(this.toLocation, hips.worldMat);
-            vec3.transformMat4(posingModel.bodyRotationSphereLocation, this.toLocation, this.tempMat4);
+            vec3.transformMat4(posingModel.bodyRotationSphereLocation, this.toLocation, this.chestInvMat4);
 
             vec3.subtract(this.tempVec3, this.fromLocation, this.toLocation);
             posingModel.bodySphereSize = vec3.length(this.tempVec3);
 
+            this.translationOf(this.fromLocation, hips.worldMat);
+            this.translationOf(this.toLocation, hipL.worldMat);
+            vec3.set(this.upVector, 0.0, 0.0, 1.0);
+            mat4.lookAt(this.hipsInvMat4, this.fromLocation, this.toLocation, this.upVector);
+            mat4.multiply(posingModel.hipsModelConvertMatrix, this.hipsInvMat4, hips.worldMat);
+            mat4.rotateY(posingModel.hipsModelConvertMatrix, posingModel.hipsModelConvertMatrix, Math.PI);
+
+            this.translationOf(this.fromLocation, hips.worldMat);
+            this.translationOf(this.toLocation, hipsTop.worldMat);
+            vec3.subtract(this.tempVec3, this.fromLocation, this.toLocation);
+            posingModel.hipsSphereSize = vec3.length(this.tempVec3);
+
             let arm1L = this.findBone(modelData.bones, 'arm1.L');
             this.translationOf(this.toLocation, arm1L.worldMat);
-            vec3.transformMat4(posingModel.leftArm1Location, this.toLocation, this.tempMat4);
+            vec3.transformMat4(posingModel.leftArm1Location, this.toLocation, this.chestInvMat4);
 
             let arm1R = this.findBone(modelData.bones, 'arm1.R');
             this.translationOf(this.toLocation, arm1R.worldMat);
-            vec3.transformMat4(posingModel.rightArm1Location, this.toLocation, this.tempMat4);
+            vec3.transformMat4(posingModel.rightArm1Location, this.toLocation, this.chestInvMat4);
 
             let arm2L = this.findBone(modelData.bones, 'arm2.L');
             posingModel.leftArm1HeadLocation[2] = -arm2L.matrix[13];
@@ -563,11 +609,11 @@ namespace ManualTracingTool {
 
             let leg1L = this.findBone(modelData.bones, 'leg1.L');
             this.translationOf(this.toLocation, leg1L.worldMat);
-            vec3.transformMat4(posingModel.leftLeg1Location, this.toLocation, this.tempMat4);
+            vec3.transformMat4(posingModel.leftLeg1Location, this.toLocation, this.hipsInvMat4);
 
             let leg1R = this.findBone(modelData.bones, 'leg1.R');
             this.translationOf(this.toLocation, leg1R.worldMat);
-            vec3.transformMat4(posingModel.rightLeg1Location, this.toLocation, this.tempMat4);
+            vec3.transformMat4(posingModel.rightLeg1Location, this.toLocation, this.hipsInvMat4);
 
             let leg2L = this.findBone(modelData.bones, 'leg2.L');
             posingModel.leftLeg1HeadLocation[2] = -leg2L.matrix[13];
@@ -603,7 +649,7 @@ namespace ManualTracingTool {
             let filePath = this.getInputElementText(this.ID.fileName);
             if (StringIsNullOrEmpty(filePath)) {
 
-                alert('ファイル名が指定されていません。');
+                this.showMessageBox('ファイル名が指定されていません。');
                 return;
             }
 
@@ -624,7 +670,7 @@ namespace ManualTracingTool {
 
                 fs.writeFile(filePath, JSON.stringify(copy), function (error) {
                     if (error != null) {
-                        alert('error : ' + error);
+                        this.showMessageBox('error : ' + error);
                     }
                 });
 
@@ -641,7 +687,7 @@ namespace ManualTracingTool {
 
             this.saveSettings();
 
-            alert('保存しました。');
+            this.showMessageBox('保存しました。');
         }
 
         // Settings
@@ -892,6 +938,11 @@ namespace ManualTracingTool {
                     mat4.identity(posingLayer.posingData.neckSphereMatrix);
                 }
 
+                if (posingLayer.posingData.chestRootMatrix == undefined) {
+
+                    posingLayer.posingData.chestRootMatrix = mat4.create();
+                }
+
                 if (posingLayer.posingData.headTwistInputData.tempInputLocation == undefined) {
 
                     posingLayer.posingData.headTwistInputData.tempInputLocation = vec3.create();
@@ -1037,7 +1088,7 @@ namespace ManualTracingTool {
                     .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
                     .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
                     .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
-                    .subTool(this.tool_Posing3d_RatateBody, this.subToolImages[2], 3)
+                    .subTool(this.tool_Posing3d_LocateHips, this.subToolImages[2], 3)
                     .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
                     .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
                     .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 6)
