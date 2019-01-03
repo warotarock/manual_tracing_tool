@@ -70,6 +70,8 @@ namespace ManualTracingTool {
         zTestShpereEdgeModel: ModelResource = null;
         headModel: ModelResource = null;
         chestModel: ModelResource = null;
+        leftSholderModel: ModelResource = null;
+        rightSholderModel: ModelResource = null;
         hipsModel: ModelResource = null;
         leftArm1Model: ModelResource = null;
         leftArm2Model: ModelResource = null;
@@ -120,6 +122,8 @@ namespace ManualTracingTool {
 
             this.headModel = modelFile.modelResourceDictionary['Head02'];
             this.chestModel = modelFile.modelResourceDictionary['Chest'];
+            this.leftSholderModel = modelFile.modelResourceDictionary['LeftShoulder'];
+            this.rightSholderModel = modelFile.modelResourceDictionary['LeftShoulder'];
             this.hipsModel = modelFile.modelResourceDictionary['Hips'];
 
             this.leftArm1Model = modelFile.modelResourceDictionary['Arm1'];
@@ -186,6 +190,18 @@ namespace ManualTracingTool {
             // Left arms
             {
                 let unit = new JointPartDrawingUnit();
+                unit.name = "leftShoulderLocationInputData";
+                unit.targetData = posingData.leftShoulderLocationInputData;
+                unit.dependentInputData = posingData.bodyLocationInputData;
+                unit.parentMatrix = posingData.shoulderRootMatrix;
+                unit.subToolID = Posing3DSubToolID.locateLeftShoulder;
+                unit.hitTestSphereRadius = vec3.length(posingModel.leftArm1Location);
+                unit.modelResource = this.leftSholderModel;
+                drawingUnits.push(unit);
+            }
+
+            {
+                let unit = new JointPartDrawingUnit();
                 unit.name = "leftArm1LocationInputData";
                 unit.targetData = posingData.leftArm1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
@@ -209,6 +225,18 @@ namespace ManualTracingTool {
             }
 
             // Right arm
+            {
+                let unit = new JointPartDrawingUnit();
+                unit.name = "rightShoulderLocationInputData";
+                unit.targetData = posingData.rightShoulderLocationInputData;
+                unit.dependentInputData = posingData.bodyLocationInputData;
+                unit.parentMatrix = posingData.shoulderRootMatrix;
+                unit.subToolID = Posing3DSubToolID.locateRightShoulder;
+                unit.hitTestSphereRadius = vec3.length(posingModel.rightArm1Location);
+                unit.modelResource = this.rightSholderModel;
+                drawingUnits.push(unit);
+            }
+
             {
                 let unit = new JointPartDrawingUnit();
                 unit.name = "rightArm1LocationInputData";

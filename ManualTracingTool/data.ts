@@ -261,6 +261,8 @@ namespace ManualTracingTool {
         bodySphereLocation = vec3.fromValues(0.0, -0.03, -0.19);
         neckSphereLocation = vec3.fromValues(0.0, -0.03, -0.17);
 
+        shoulderSphereLocation = vec3.fromValues(0.0, -0.03, -0.17);
+
         bodyRotationSphereSize = 0.15; // 11cm
         bodyRotationSphereLocation = vec3.fromValues(0.0, 0.0, -0.31);
 
@@ -289,6 +291,14 @@ namespace ManualTracingTool {
         // runtime
         chestModelConvertMatrix = mat4.create();
         hipsModelConvertMatrix = mat4.create();
+    }
+
+    export class PosingModelBoneInputSetting {
+
+        inputName = '';
+        inputType = ''; //  baseSize, direction
+        modelName = '';
+        dependentInputName = '';
     }
 
     export enum InputSideID {
@@ -372,6 +382,8 @@ namespace ManualTracingTool {
         chestRootMatrix = mat4.create();
         chestMatrix = mat4.create();
 
+        shoulderRootMatrix = mat4.create();
+
         hipsRootMatrix = mat4.create();
         hipsMatrix = mat4.create();
 
@@ -390,6 +402,9 @@ namespace ManualTracingTool {
         bodyRotationInputData = new BodyRotationInputData();
 
         hipsLocationInputData = new JointPartInputData();
+
+        leftShoulderLocationInputData = new JointPartInputData();
+        rightShoulderLocationInputData = new JointPartInputData();
 
         leftArm1LocationInputData = new JointPartInputData();
         leftArm2LocationInputData = new JointPartInputData();

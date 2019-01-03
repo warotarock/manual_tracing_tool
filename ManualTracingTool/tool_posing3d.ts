@@ -515,6 +515,33 @@ namespace ManualTracingTool {
         }
     }
 
+    export class Tool_Posing3d_LocateLeftShoulder extends Tool_Posing3d_JointPartInputToolBase {
+
+        helpText = 'ヒジのあたりの位置を指定して肩を配置します。';
+
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
+                && (env.currentPosingData.bodyLocationInputData.inputDone || env.currentPosingData.bodyRotationInputData.inputDone)
+            );
+        }
+
+        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
+
+            return env.currentPosingData.leftShoulderLocationInputData;
+        }
+    }
+
+    export class Tool_Posing3d_LocateRightShoulder extends Tool_Posing3d_LocateLeftShoulder {
+
+        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
+
+            return env.currentPosingData.rightShoulderLocationInputData;
+        }
+    }
+
     export class Tool_Posing3d_LocateLeftArm1 extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = 'ヒジのあたりの位置を指定して上腕を配置します。';

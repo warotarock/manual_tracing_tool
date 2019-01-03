@@ -33,7 +33,7 @@ namespace ManualTracingTool {
 
         // Common caluculation methods for input
 
-        calculateBodyPartDirection(inputData: DirectionInputData, rootMatrix: Mat4, mode: Posing3D_BodyLocateMode) {
+        private calculateBodyPartDirection(inputData: DirectionInputData, rootMatrix: Mat4, mode: Posing3D_BodyLocateMode) {
 
             if (!inputData.inputDone) {
 
@@ -85,6 +85,11 @@ namespace ManualTracingTool {
             mat4.copy(inputData.matrix, this.bodyMatrix);
         }
 
+        private translationOf(vec: Vec3, mat: Mat4) {
+
+            vec3.set(vec, mat[12], mat[13], mat[14]);
+        }
+
         // Caluculation methods for each part od body
 
         calculateAll(posingData: PosingData, posingModel: PosingModel) {
@@ -105,6 +110,14 @@ namespace ManualTracingTool {
 
             if (posingData.bodyRotationInputData.inputDone) {
                 this.calculateBodyRotation(posingData, posingModel);
+            }
+
+            if (posingData.leftShoulderLocationInputData.inputDone) {
+                this.calculateLeftShoulderDirection(posingData, posingModel);
+            }
+
+            if (posingData.rightShoulderLocationInputData.inputDone) {
+                this.calculateRightShoulderDirection(posingData, posingModel);
             }
 
             if (posingData.hipsLocationInputData.inputDone) {
@@ -324,6 +337,12 @@ namespace ManualTracingTool {
                 , posingData.bodyLocationInputData.matrix
                 , posingModel.bodyRotationSphereLocation);
 
+            // Shoulder
+            mat4.translate(
+                posingData.shoulderRootMatrix
+                , posingData.chestMatrix
+                , posingModel.shoulderSphereLocation);
+
             // Hips
             mat4.translate(
                 posingData.hipsRootMatrix
@@ -331,26 +350,26 @@ namespace ManualTracingTool {
                 , posingModel.bodyRotationSphereLocation);
 
             // Left arm root
-            mat4.translate(
-                posingData.leftArm1RootMatrix
-                , posingData.chestMatrix
-                , posingModel.leftArm1Location);
+            if (!posingData.leftShoulderLocationInputData.inputDone) {
 
-            mat4.rotateZ(
-                posingData.leftArm1RootMatrix
-                , posingData.leftArm1RootMatrix
-                , Math.PI / 2);
+                mat4.translate(
+                    posingData.leftArm1RootMatrix
+                    , posingData.chestMatrix
+                    , posingModel.leftArm1Location);
+
+                //this.translationOf(posingData.leftShoulderLocationInputData.inputLocation, posingData.leftArm1RootMatrix);
+            }
 
             // Right arm root
-            mat4.translate(
-                posingData.rightArm1RootMatrix
-                , posingData.chestMatrix
-                , posingModel.rightArm1Location);
+            if (!posingData.rightShoulderLocationInputData.inputDone) {
 
-            mat4.rotateZ(
-                posingData.rightArm1RootMatrix
-                , posingData.rightArm1RootMatrix
-                , -Math.PI / 2);
+                mat4.translate(
+                    posingData.rightArm1RootMatrix
+                    , posingData.chestMatrix
+                    , posingModel.rightArm1Location);
+
+                //this.translationOf(posingData.rightShoulderLocationInputData.inputLocation, posingData.rightArm1RootMatrix);
+            }
 
             // Left leg root
             mat4.translate(
@@ -373,6 +392,34 @@ namespace ManualTracingTool {
             //    posingData.bodyLocationInputData.rightLeg1RootMatrix
             //    , posingData.bodyLocationInputData.rightLeg1RootMatrix
             //    , Math.PI / 2);
+        }
+
+        calculateLeftShoulderDirection(posingData: PosingData, posingModel: PosingModel) {
+
+            // Main calculation
+            this.calculateBodyPartDirection(
+                posingData.leftShoulderLocationInputData
+                , posingData.shoulderRootMatrix
+                , Posing3D_BodyLocateMode.yawPitch
+            );
+
+            // Result location
+            vec3.set(this.tmpVec3, 0.0, 0.0, -vec3.length(posingModel.leftArm1Location));
+            mat4.translate(posingData.leftArm1RootMatrix, posingData.leftShoulderLocationInputData.matrix, this.tmpVec3);
+        }
+
+        calculateRightShoulderDirection(posingData: PosingData, posingModel: PosingModel) {
+
+            // Main calculation
+            this.calculateBodyPartDirection(
+                posingData.rightShoulderLocationInputData
+                , posingData.shoulderRootMatrix
+                , Posing3D_BodyLocateMode.yawPitch
+            );
+
+            // Result location
+            vec3.set(this.tmpVec3, 0.0, 0.0, -vec3.length(posingModel.rightArm1Location));
+            mat4.translate(posingData.rightArm1RootMatrix, posingData.rightShoulderLocationInputData.matrix, this.tmpVec3);
         }
 
         calculateLeftArm1Direction(posingData: PosingData, posingModel: PosingModel) {

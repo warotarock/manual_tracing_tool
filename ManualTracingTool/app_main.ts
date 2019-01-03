@@ -131,6 +131,8 @@ namespace ManualTracingTool {
         tool_Posing3d_TwistHead = new Tool_Posing3d_TwistHead();
         tool_Posing3d_LocateBody = new Tool_Posing3d_LocateBody();
         tool_Posing3d_LocateHips = new Tool_Posing3d_LocateHips();
+        tool_Posing3d_LocateLeftShoulder = new Tool_Posing3d_LocateLeftShoulder();
+        tool_Posing3d_LocateRightShoulder = new Tool_Posing3d_LocateRightShoulder();
         tool_Posing3d_LocateLeftArm1 = new Tool_Posing3d_LocateLeftArm1();
         tool_Posing3d_LocateLeftArm2 = new Tool_Posing3d_LocateLeftArm2();
         tool_Posing3d_LocateRightArm1 = new Tool_Posing3d_LocateRightArm1();
@@ -554,6 +556,7 @@ namespace ManualTracingTool {
             let hips = this.findBone(modelData.bones, 'hips');
             let hipsTop = this.findBone(modelData.bones, 'hipsTop');
             let hipL = this.findBone(modelData.bones, 'hip.L');
+            let neck1 = this.findBone(modelData.bones, 'neck1');
             let neck2 = this.findBone(modelData.bones, 'neck2');
 
             this.translationOf(this.toLocation, headCenter.worldMat);
@@ -592,6 +595,9 @@ namespace ManualTracingTool {
             this.translationOf(this.toLocation, hipsTop.worldMat);
             vec3.subtract(this.tempVec3, this.fromLocation, this.toLocation);
             posingModel.hipsSphereSize = vec3.length(this.tempVec3);
+
+            this.translationOf(this.toLocation, neck1.worldMat);
+            vec3.transformMat4(posingModel.shoulderSphereLocation, this.toLocation, this.chestInvMat4);
 
             let arm1L = this.findBone(modelData.bones, 'arm1.L');
             this.translationOf(this.toLocation, arm1L.worldMat);
@@ -1089,14 +1095,16 @@ namespace ManualTracingTool {
                     .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
                     .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
                     .subTool(this.tool_Posing3d_LocateHips, this.subToolImages[2], 3)
-                    .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
-                    .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
+                    .subTool(this.tool_Posing3d_LocateLeftShoulder, this.subToolImages[2], 6)
                     .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 6)
                     .subTool(this.tool_Posing3d_LocateLeftArm2, this.subToolImages[2], 7)
-                    .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 8)
-                    .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 9)
-                    .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 10)
-                    .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 11)
+                    .subTool(this.tool_Posing3d_LocateRightShoulder, this.subToolImages[2], 4)
+                    .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
+                    .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
+                    .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 8)
+                    .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 9)
+                    .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 10)
+                    .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 11)
                     .subTool(this.tool_Posing3d_TwistHead, this.subToolImages[2], 12)
             );
 
