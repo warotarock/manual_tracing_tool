@@ -83,6 +83,23 @@ namespace ManualTracingTool {
             }
 
             mat4.copy(inputData.matrix, this.bodyMatrix);
+
+            // Calculates location for roll input
+            if (!inputData.rollInputDone) {
+
+                //this.translationOf(this.rootLocation, rootMatrix);
+                //vec3.subtract(this.relativeInputLocation, this.inputLocation, this.rootLocation);
+                //vec3.scale(this.relativeInputLocation, this.relativeInputLocation, 0.5);
+                //vec3.set(this.vecY, 0.0, vec3.length(this.relativeInputLocation), 0.0);
+                //mat4.translate(inputData.rollInputRootMatrix, inputData.matrix, this.vecY);
+
+                //vec3.set(this.vecZ, 0.0, 0.0, -vec3.length(this.vecY));
+                //vec3.transformMat4(inputData.rollInputLocation, this.vecZ, inputData.rollInputRootMatrix);
+            }
+            else {
+
+                mat4.rotateZ(inputData.matrix, inputData.matrix, inputData.rollInputAngle);
+            }
         }
 
         private translationOf(vec: Vec3, mat: Mat4) {
@@ -400,7 +417,7 @@ namespace ManualTracingTool {
             this.calculateBodyPartDirection(
                 posingData.leftShoulderLocationInputData
                 , posingData.shoulderRootMatrix
-                , Posing3D_BodyLocateMode.yawPitch
+                , Posing3D_BodyLocateMode.keepFrontUp
             );
 
             // Result location
@@ -414,7 +431,7 @@ namespace ManualTracingTool {
             this.calculateBodyPartDirection(
                 posingData.rightShoulderLocationInputData
                 , posingData.shoulderRootMatrix
-                , Posing3D_BodyLocateMode.yawPitch
+                , Posing3D_BodyLocateMode.keepFrontUp
             );
 
             // Result location
@@ -428,7 +445,7 @@ namespace ManualTracingTool {
             this.calculateBodyPartDirection(
                 posingData.leftArm1LocationInputData
                 , posingData.leftArm1RootMatrix
-                , Posing3D_BodyLocateMode.yawPitch
+                , Posing3D_BodyLocateMode.keepFrontUp
             );
 
             // Calclates sub locations
@@ -441,7 +458,7 @@ namespace ManualTracingTool {
             this.calculateBodyPartDirection(
                 posingData.rightArm1LocationInputData
                 , posingData.rightArm1RootMatrix
-                , Posing3D_BodyLocateMode.yawPitch
+                , Posing3D_BodyLocateMode.keepFrontUp
             );
 
             // Calclates sub locations

@@ -526,6 +526,12 @@ namespace ManualTracingTool {
         timeLineLayerKeyFrameColor = vec4.fromValues(0.8, 0.8, 0.0, 1.0);
         timeLineOutOfLoopingColor = vec4.fromValues(0.0, 0.0, 0.0, 0.1);
 
+        posing3DBoneGrayColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
+        posing3DBoneHeadColor = vec4.fromValues(0.2, 0.2, 1.0, 1.0);
+        posing3DBoneForwardColor = vec4.fromValues(0.2, 1.0, 0.2, 1.0);
+        posing3DBoneInputCircleRadius = 15.0;
+        posing3DBoneInputCircleHitRadius = 1.8;
+
         generalLinePointRadius = 2.0;
         selectedLinePointRadius = 3.0;
         viewZoomAdjustingSpeedRate = 0.2;
@@ -548,6 +554,25 @@ namespace ManualTracingTool {
         setVariables(canvasWindow: CanvasWindow) {
 
             this.canvasWindow = canvasWindow;
+        }
+
+        drawLine(locationFrom: Vec3, locationTo: Vec3, strokeWidth: float, color: Vec4) {
+
+            this.render.setStrokeColorV(color);
+            this.render.setStrokeWidth(strokeWidth);
+            this.render.beginPath();
+            this.render.moveTo(locationFrom[0], locationFrom[1]);
+            this.render.lineTo(locationTo[0], locationTo[1]);
+            this.render.stroke();
+        }
+
+        drawCircle(center: Vec3, raduis: float, strokeWidth: float, color: Vec4) {
+
+            this.render.setStrokeColorV(color);
+            this.render.setStrokeWidth(strokeWidth);
+            this.render.beginPath();
+            this.render.circle(center[0], center[1], raduis);
+            this.render.stroke();
         }
     }
 

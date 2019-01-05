@@ -782,6 +782,9 @@ namespace ManualTracingTool {
             this.webGLRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
             this.posing3dView.clear(env);
 
+            mainWindow.copyTransformTo(pickingWindow);
+            mainWindow.copyTransformTo(webglWindow);
+
             if (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
                 && this.toolContext.mainToolID == MainToolID.posing
             ) {
@@ -791,7 +794,6 @@ namespace ManualTracingTool {
                 this.posing3dView.prepareDrawingStructures(posingLayer);
                 this.posing3dView.drawPickingImage(posingLayer, env);
 
-                mainWindow.copyTransformTo(pickingWindow);
                 pickingWindow.context.clearRect(0, 0, pickingWindow.width, pickingWindow.height);
                 pickingWindow.context.drawImage(webglWindow.canvas, 0, 0, webglWindow.width, webglWindow.height);
 

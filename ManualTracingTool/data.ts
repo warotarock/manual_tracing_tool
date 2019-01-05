@@ -328,7 +328,11 @@ namespace ManualTracingTool {
 
         inputSideID = InputSideID.front;
         inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-        editLine: VectorLine = null;
+
+        directionInputDone = false;
+        rollInputDone = false;
+        rollInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        rollInputAngle = 0.0;
 
         matrix = mat4.create();
     }
@@ -355,11 +359,10 @@ namespace ManualTracingTool {
         rightLeg1RootMatrix = mat4.create();
     }
 
-    export class BodyRotationInputData extends PosingInputData {
+    export class BodyRotationInputData extends DirectionInputData {
 
         inputSideID = InputSideID.front;
         inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-        editLine: VectorLine = null;
 
         matrix = mat4.create();
     }

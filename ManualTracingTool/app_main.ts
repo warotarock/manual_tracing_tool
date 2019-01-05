@@ -248,7 +248,7 @@ namespace ManualTracingTool {
                 throw ('３Ｄ機能を初期化できませんでした。');
             }
 
-            this.posing3dView.initialize(this.webGLRender, this.pickingWindow);
+            this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
         }
 
         // Loading

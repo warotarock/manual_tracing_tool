@@ -59,7 +59,8 @@ namespace ManualTracingTool {
 
         // Rendering
         render: WebGLRender = null;
-        pickingWindow: CanvasWindow = null;
+        webglWindow: CanvasWindow = null;
+        pickingWindow: PickingWindow = null;
         posingFigureShader = new PosingFigureShader();
         depthShader = new DepthShader();
 
@@ -96,15 +97,18 @@ namespace ManualTracingTool {
         projectionInvMatrix = mat4.create();
         cameraMatrix = mat4.create();
 
+        real3DProjectionMatrix = mat4.create();
+
         locationMatrix = mat4.create();
         tempVec3 = vec3.create();
         invProjectedVec3 = vec3.create();
         tmpMatrix = mat4.create();
         screenLocation = vec3.create();
 
-        initialize(render: WebGLRender, pickingWindow: PickingWindow) {
+        initialize(render: WebGLRender, webglWindow: CanvasWindow, pickingWindow: PickingWindow) {
 
             this.render = render;
+            this.webglWindow = webglWindow;
             this.pickingWindow = pickingWindow;
 
             this.render.initializeShader(this.posingFigureShader);
@@ -347,7 +351,7 @@ namespace ManualTracingTool {
             let posingData = posingLayer.posingData;
             let posingModel = posingLayer.posingModel;
 
-            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth, env.mainWindow);
+            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth);
 
             // Draws input manipulaters
 
@@ -382,7 +386,7 @@ namespace ManualTracingTool {
             let posingData = posingLayer.posingData;
             let posingModel = posingLayer.posingModel;
 
-            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth, env.mainWindow);
+            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth);
 
             this.render.clearDepthBuffer();
 
@@ -761,7 +765,9 @@ namespace ManualTracingTool {
             this.render.drawElements(model);
         }
 
-        caluculateCameraMatrix(real3DViewHalfWidth: float, canvasWindow: CanvasWindow) {
+        caluculateCameraMatrix(real3DViewHalfWidth: float) {
+
+            let wnd = this.webglWindow;
 
             // Tareget position
             vec3.set(this.modelLocation, 0.0, 0.0, 0.0);
@@ -772,20 +778,21 @@ namespace ManualTracingTool {
             vec3.set(this.eyeLocation, 0.0, 0.0, 0.0);
 
             // 2D scale
-            let viewScale = canvasWindow.viewScale;
-            let real2DViewHalfWidth = canvasWindow.width / 2 / viewScale;
-            let real2DViewHalfHeight = canvasWindow.height / 2 / viewScale;
+            let viewScale = wnd.viewScale;
+            let real2DViewHalfWidth = wnd.width / 2 / viewScale;
+            let real2DViewHalfHeight = wnd.height / 2 / viewScale;
 
             // Projection
-            let aspect = canvasWindow.height / canvasWindow.width;
+            let aspect = wnd.height / wnd.width;
             let orthoWidth = real3DViewHalfWidth / viewScale;
+            mat4.ortho(this.real3DProjectionMatrix, -real3DViewHalfWidth, real3DViewHalfWidth, -real3DViewHalfWidth, real3DViewHalfWidth, 0.1, 10.0);
             mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, -orthoWidth, orthoWidth, 0.1, 10.0);
 
-            let viewOffsetX = -(canvasWindow.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
-            let viewOffsetY = (canvasWindow.viewLocation[1]) / real2DViewHalfHeight;
+            let viewOffsetX = -(wnd.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
+            let viewOffsetY = (wnd.viewLocation[1]) / real2DViewHalfHeight;
             mat4.identity(this.tmpMatrix);
             mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, aspect, 1.0, 1.0));
-            mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -canvasWindow.viewRotation * Math.PI / 180.0);
+            mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -wnd.viewRotation * Math.PI / 180.0);
             mat4.translate(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, viewOffsetX / aspect, viewOffsetY, 0.0));
 
             mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
@@ -797,14 +804,16 @@ namespace ManualTracingTool {
             mat4.invert(this.cameraMatrix, this.viewMatrix);
         }
 
-        calculate3DLocationFrom2DLocation(result: Vec3, real2DLocation: Vec3, depth: float, real3DViewHalfWidth: float, canvasWindow: CanvasWindow) {
+        calculate3DLocationFrom2DLocation(result: Vec3, real2DLocation: Vec3, depth: float, real3DViewHalfWidth: float) {
 
-            this.caluculateCameraMatrix(real3DViewHalfWidth, canvasWindow);
+            let wnd = this.webglWindow;
 
-            vec3.transformMat4(this.screenLocation, real2DLocation, canvasWindow.transformMatrix);
+            this.caluculateCameraMatrix(real3DViewHalfWidth);
 
-            let viewHalfWidth = canvasWindow.width / 2;
-            let viewHalfHeight = canvasWindow.height / 2;
+            vec3.transformMat4(this.screenLocation, real2DLocation, wnd.transformMatrix);
+
+            let viewHalfWidth = wnd.width / 2;
+            let viewHalfHeight = wnd.height / 2;
             this.screenLocation[0] = (this.screenLocation[0] - viewHalfWidth) / viewHalfWidth;
             this.screenLocation[1] = -(this.screenLocation[1] - viewHalfHeight) / viewHalfHeight;
             this.screenLocation[2] = 0.0;
@@ -813,6 +822,19 @@ namespace ManualTracingTool {
             this.invProjectedVec3[2] = -depth;
 
             vec3.transformMat4(result, this.invProjectedVec3, this.cameraMatrix);
+        }
+
+        calculate2DLocationFrom3DLocation(result: Vec3, real3DLocation: Vec3, real3DViewHalfWidth: float) {
+
+            let wnd = this.webglWindow;
+
+            this.caluculateCameraMatrix(real3DViewHalfWidth);
+
+            vec3.transformMat4(result, real3DLocation, this.viewMatrix);
+            vec3.transformMat4(result, result, this.real3DProjectionMatrix);
+
+            result[0] *= (wnd.height / 2.0);
+            result[1] *= -(wnd.height / 2.0);
         }
 
         pick3DLocationFromDepthImage(result: Vec3, location2d: Vec3, real3DViewHalfWidth: float, pickingWindow: PickingWindow): boolean {
@@ -839,7 +861,7 @@ namespace ManualTracingTool {
 
             depth *= pickingWindow.maxDepth;
 
-            this.calculate3DLocationFrom2DLocation(result, location2d, depth, real3DViewHalfWidth, pickingWindow);
+            this.calculate3DLocationFrom2DLocation(result, location2d, depth, real3DViewHalfWidth);
 
             return true;
         }
