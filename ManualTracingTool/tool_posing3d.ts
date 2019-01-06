@@ -119,13 +119,11 @@ namespace ManualTracingTool {
             throw ('Tool_Posing3d_ToolBase: not implemented!');
         }
 
-        protected processMouseInputLocation(result: Vec3, e: ToolMouseEvent, env: ToolEnvironment): boolean {
-
-            this.copyInputLocationToPoint(e);
+        protected processMouseInputLocation(result: Vec3, location2D: Vec3, env: ToolEnvironment): boolean {
 
             let hited = env.posing3DView.pick3DLocationFromDepthImage(
                 result
-                , this.editPoint.location
+                , location2D
                 , env.currentPosingData.real3DViewHalfWidth
                 , env.pickingWindow);
 
@@ -134,7 +132,7 @@ namespace ManualTracingTool {
 
         protected execute(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            let hited = this.processMouseInputLocation(this.targetLocation, e, env);
+            let hited = this.processMouseInputLocation(this.targetLocation, e.location, env);
 
             if (!hited) {
                 return;
@@ -165,6 +163,8 @@ namespace ManualTracingTool {
 
         protected jointPartInputMode = JointPartInputMode.none;
         protected mouseOnInputMode = JointPartInputMode.none;
+        protected inputLocation = vec3.create();
+        protected relativeMouseLocation = vec3.create();
 
         protected tmpMatrix = mat4.create();
         protected vecZ = vec3.create();
@@ -175,7 +175,7 @@ namespace ManualTracingTool {
         protected startAngle = 0.0;
         protected lastAngle = 0.0;
 
-        protected getInputModeForMouseLocation(env: ToolEnvironment): JointPartInputMode {
+        protected getInputModeForMouseLocation(resultRelativeMouseLocation: Vec3, env: ToolEnvironment): JointPartInputMode {
 
             let inputData = this.getInputData(env);
 
@@ -191,6 +191,11 @@ namespace ManualTracingTool {
 
                     env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, inputData.inputLocation, env.currentPosingData.real3DViewHalfWidth);
                     let distance = vec3.distance(env.mouseCursorLocation, this.location2D);
+
+                    if (resultRelativeMouseLocation != null) {
+
+                        vec3.subtract(resultRelativeMouseLocation, this.location2D, env.mouseCursorLocation);
+                    }
 
                     if (distance <= circleRadius) {
 
@@ -218,13 +223,13 @@ namespace ManualTracingTool {
 
             env.setRedrawEditorWindow();
 
-            let jointPartInputMode = this.getInputModeForMouseLocation(env);
+            let jointPartInputMode = this.getInputModeForMouseLocation(this.relativeMouseLocation, env);
 
             if (jointPartInputMode == JointPartInputMode.rollInput) {
 
                 let inputData = this.getInputData(env);
 
-                let hited = this.processMouseInputLocation(inputData.rollInputLocation, e, env);
+                let hited = this.processMouseInputLocation(inputData.rollInputLocation, e.location, env);
 
                 if (!hited) {
                     return;
@@ -249,7 +254,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let jointPartInputMode = this.getInputModeForMouseLocation(env);
+            let jointPartInputMode = this.getInputModeForMouseLocation(null, env);
 
             if (jointPartInputMode != this.mouseOnInputMode) {
                 this.mouseOnInputMode = jointPartInputMode;
@@ -267,7 +272,7 @@ namespace ManualTracingTool {
             else if (this.jointPartInputMode == JointPartInputMode.rollInput) {
 
                 let inputData = this.getInputData(env);
-                let hited = this.processMouseInputLocation(inputData.rollInputLocation, e, env);
+                let hited = this.processMouseInputLocation(inputData.rollInputLocation, e.location, env);
 
                 if (hited) {
 
@@ -311,13 +316,13 @@ namespace ManualTracingTool {
                 vec3.set(this.location3D, inputData.matrix[12], inputData.matrix[13], inputData.matrix[14]);
                 env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData.real3DViewHalfWidth);
                 env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.inputLocation, env.currentPosingData.real3DViewHalfWidth);
-                drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(2.0), drawEnv.style.posing3DBoneGrayColor);
+                drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
 
                 vec3.set(this.location3D, this.rollInputRootMatrix[12], this.rollInputRootMatrix[13], this.rollInputRootMatrix[14]);
                 env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData.real3DViewHalfWidth);
                 env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.rollInputLocation, env.currentPosingData.real3DViewHalfWidth);
                 drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(2.0), drawEnv.style.posing3DBoneGrayColor);
-                drawEnv.drawCircle(this.location2D, env.getViewScaledLength(5.0), env.getViewScaledLength(2.0), drawEnv.style.posing3DBoneGrayColor);
+                drawEnv.drawCircle(this.location2D, env.getViewScaledLength(2.0), env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
 
                 let strokeWidth = (this.mouseOnInputMode == JointPartInputMode.rollInput) ? 4.0 : 2.0;
                 drawEnv.drawCircle(this.location2DTo, env.getViewScaledLength(5.0), env.getViewScaledLength(strokeWidth), drawEnv.style.posing3DBoneForwardColor);
@@ -333,6 +338,18 @@ namespace ManualTracingTool {
             mat4.translate(this.rollInputRootMatrix, this.lastMatrix, this.vecZ);
 
             return Math.atan2(this.relativeInputLocation[1], this.relativeInputLocation[0]);
+        }
+
+        protected execute(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            vec3.add(this.location2D, e.location, this.relativeMouseLocation);
+            let hited = this.processMouseInputLocation(this.inputLocation, this.location2D, env);
+
+            if (!hited) {
+                return;
+            }
+
+            this.executeCommand(this.inputLocation, env);
         }
 
         protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) { // @override
@@ -366,9 +383,15 @@ namespace ManualTracingTool {
             // Calculate
             env.posing3DLogic.calculateAll(env.currentPosingData, env.currentPosingModel);
 
+            this.updateAdditionalPart(inputLocation, env);
+
             env.setRedrawWebGLWindow();
             env.setRedrawEditorWindow();
             env.setRedrawSubtoolWindow();
+        }
+
+        protected updateAdditionalPart(inputLocation: Vec3, env: ToolEnvironment) { // @virtual
+
         }
     }
 
@@ -525,7 +548,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Tool_Posing3d_RotateHead extends Tool_Posing3d_PointInputToolBase {
+    export class Tool_Posing3d_RotateHead extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = '画面に表示された球のどこかをクリックすると頭の向きが決まります。<br />画面右のパネルで「手前」となっているボタンをクリックすると奥側を指定できるようになります。';
 
@@ -542,66 +565,11 @@ namespace ManualTracingTool {
 
             return env.currentPosingData.headRotationInputData;
         }
-
-        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
-
-            let headRotationInputData = env.currentPosingData.headRotationInputData;
-            let headTwistInputData = env.currentPosingData.headTwistInputData;
-
-            // Set inputs
-            vec3.copy(headRotationInputData.inputLocation, inputLocation);
-            headRotationInputData.inputDone = true;
-            headTwistInputData.inputDone = false;
-
-            // Calculate
-            env.posing3DLogic.calculateHeadRotation(env.currentPosingData, env.currentPosingModel);
-
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
-        }
-    }
-
-    export class Tool_Posing3d_TwistHead extends Tool_Posing3d_PointInputToolBase {
-
-        helpText = '追加の頭の角度指定です。<br />使いづらくてゴメン…。';
-
-        inputSideOptionCount = 1;
-
-        isAvailable(env: ToolEnvironment): boolean { // @override
-
-            return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isVisible
-                && env.currentPosingData != null
-                && env.currentPosingData.headRotationInputData.inputDone
-            );
-        }
-
-        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
-
-            return env.currentPosingData.headTwistInputData;
-        }
-
-        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
-
-            let headTwistInputData = env.currentPosingData.headTwistInputData;
-
-            // Set inputs
-            vec3.copy(headTwistInputData.tempInputLocation, inputLocation);
-            headTwistInputData.inputDone = true;
-
-            // Calculate
-            env.posing3DLogic.calculateHeadTwist(env.currentPosingData, env.currentPosingModel);
-
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
-        }
     }
 
     export class Tool_Posing3d_LocateBody extends Tool_Posing3d_JointPartInputToolBase {
 
         helpText = '半透明の球のどこかをクリックすると頭の向きを正面として胴が配置されます。<br />少し外側をクリックすると画面に対して真横を指定できます。';
-
-        inputSideOptionCount = 1;
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -612,78 +580,9 @@ namespace ManualTracingTool {
                 );
         }
 
-        setInputSide(buttonIndex: int, inputSideID: InputSideID, env: ToolEnvironment): boolean { // @virtual
-
-            if (env.currentPosingData != null) {
-
-                if (buttonIndex == 0) {
-
-                    if (inputSideID == InputSideID.front) {
-                        env.currentPosingData.bodyLocationInputData.inputSideID = InputSideID.back;
-                    }
-                    else {
-                        env.currentPosingData.bodyLocationInputData.inputSideID = InputSideID.front;
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        getInputSideID(buttonIndex: int, env: ToolEnvironment): InputSideID { // @virtual
-
-            if (env.currentPosingData != null) {
-
-                return env.currentPosingData.bodyLocationInputData.inputSideID;
-            }
-            else {
-
-                return InputSideID.none;
-            }
-        }
-
         protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
 
             return env.currentPosingData.bodyLocationInputData;
-        }
-    }
-
-    export class Tool_Posing3d_RatateBody extends Tool_Posing3d_PointInputToolBase {
-
-        helpText = '半透明の球のどこかをクリックすると胴の水平方向の向きを変えられます。';
-
-        inputSideOptionCount = 1;
-
-        isAvailable(env: ToolEnvironment): boolean { // @override
-
-            return (
-                env.currentPosingLayer != null
-                && env.currentPosingLayer.isVisible
-                && env.currentPosingData != null
-                && env.currentPosingData.bodyLocationInputData.inputDone
-            );
-        }
-
-        protected getInputData(env: ToolEnvironment): DirectionInputData { // @override
-
-            return env.currentPosingData.bodyRotationInputData;
-        }
-
-        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) {
-
-            // Set inputs
-            let bodyRotationInputData = env.currentPosingData.bodyRotationInputData;
-
-            vec3.copy(bodyRotationInputData.inputLocation, inputLocation);
-            bodyRotationInputData.inputDone = true;
-
-            // Calculate
-            env.posing3DLogic.calculateAll(env.currentPosingData, env.currentPosingModel);
-
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
         }
     }
 
@@ -750,6 +649,11 @@ namespace ManualTracingTool {
 
             return env.currentPosingData.leftArm1LocationInputData;
         }
+
+        protected updateAdditionalPart(inputLocation: Vec3, env: ToolEnvironment) { // @override
+
+            env.currentPosingData.leftShoulderLocationInputData.inputDone = true;
+        }
     }
 
     export class Tool_Posing3d_LocateRightArm1 extends Tool_Posing3d_LocateLeftArm1 {
@@ -759,6 +663,11 @@ namespace ManualTracingTool {
         protected getInputData(env: ToolEnvironment): DirectionInputData {
 
             return env.currentPosingData.rightArm1LocationInputData;
+        }
+
+        protected updateAdditionalPart(inputLocation: Vec3, env: ToolEnvironment) { // @override
+
+            env.currentPosingData.rightShoulderLocationInputData.inputDone = true;
         }
     }
 
@@ -778,6 +687,11 @@ namespace ManualTracingTool {
         protected getInputData(env: ToolEnvironment): DirectionInputData {
 
             return env.currentPosingData.leftLeg1LocationInputData;
+        }
+
+        protected executeCommandExt(inputLocation: Vec3, env: ToolEnvironment) { // @override
+
+            env.currentPosingData.leftShoulderLocationInputData.inputDone = true;
         }
     }
 

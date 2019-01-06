@@ -128,7 +128,6 @@ namespace ManualTracingTool {
         posing3DLogic = new Posing3DLogic();
         tool_Posing3d_LocateHead = new Tool_Posing3d_LocateHead();
         tool_Posing3d_RotateHead = new Tool_Posing3d_RotateHead();
-        tool_Posing3d_TwistHead = new Tool_Posing3d_TwistHead();
         tool_Posing3d_LocateBody = new Tool_Posing3d_LocateBody();
         tool_Posing3d_LocateHips = new Tool_Posing3d_LocateHips();
         tool_Posing3d_LocateLeftShoulder = new Tool_Posing3d_LocateLeftShoulder();
@@ -1105,7 +1104,6 @@ namespace ManualTracingTool {
                     .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 9)
                     .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 10)
                     .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 11)
-                    .subTool(this.tool_Posing3d_TwistHead, this.subToolImages[2], 12)
             );
 
             this.mainTools.push(
