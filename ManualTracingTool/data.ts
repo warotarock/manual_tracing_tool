@@ -310,6 +310,10 @@ namespace ManualTracingTool {
     export class PosingInputData {
 
         inputDone = false;
+
+        // runtime
+        parentMatrix: Mat4 = null;
+        hitTestSphereRadius: float = 0.0;
     }
 
     export class HeadLocationInputData extends PosingInputData {
@@ -328,6 +332,7 @@ namespace ManualTracingTool {
 
         inputSideID = InputSideID.front;
         inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        inputLocation2D = vec3.fromValues(0.0, 0.0, 0.0);
 
         directionInputDone = false;
         rollInputDone = false;
@@ -429,15 +434,13 @@ namespace ManualTracingTool {
         targetData: DirectionInputData = null;
 
         dependentInputData: PosingInputData = null;
-        parentMatrix: Mat4 = null;
-        modelConvertMatrix: Mat4 = null;
 
         subToolID: Posing3DSubToolID;
 
         drawModel = true;
         modelResource: ModelResource = null;
+        modelConvertMatrix: Mat4 = null;
         visualModelAlpha = 1.0;
-        hitTestSphereRadius = 0.0;
         hitTestSphereAlpha = 0.5;
     }
 

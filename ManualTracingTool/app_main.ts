@@ -1034,6 +1034,14 @@ namespace ManualTracingTool {
                 delete ifrLayer.adjustingRotation;
                 delete ifrLayer.adjustingScale;
             }
+            else if (layer.type == LayerTypeID.posingLayer) {
+
+                let posingLayer = <PosingLayer>layer;
+
+                // TODO: 他のデータも削除する
+                delete posingLayer.posingData.bodyLocationInputData.parentMatrix;
+                delete posingLayer.posingData.bodyLocationInputData.hitTestSphereRadius;
+            }
 
             for (let childLayer of layer.childLayers) {
 

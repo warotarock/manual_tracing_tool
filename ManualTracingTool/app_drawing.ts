@@ -792,12 +792,11 @@ namespace ManualTracingTool {
                 let posingLayer = env.currentPosingLayer;
 
                 this.posing3dView.prepareDrawingStructures(posingLayer);
-                this.posing3dView.drawPickingImage(posingLayer, env);
+                //this.posing3dView.drawPickingImage(posingLayer, env);
+                //pickingWindow.context.clearRect(0, 0, pickingWindow.width, pickingWindow.height);
+                //pickingWindow.context.drawImage(webglWindow.canvas, 0, 0, webglWindow.width, webglWindow.height);
 
-                pickingWindow.context.clearRect(0, 0, pickingWindow.width, pickingWindow.height);
-                pickingWindow.context.drawImage(webglWindow.canvas, 0, 0, webglWindow.width, webglWindow.height);
-
-                this.posing3dView.clear(env);
+                //this.posing3dView.clear(env);
                 this.posing3dView.drawManipulaters(posingLayer, env);
             }
 

@@ -48,7 +48,7 @@ namespace ManualTracingTool {
 
         inputSideOptionCount = 1;
 
-        private targetLocation = vec3.create();
+        private tempTargetLocation = vec3.create();
 
         mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
@@ -119,29 +119,25 @@ namespace ManualTracingTool {
             throw ('Tool_Posing3d_ToolBase: not implemented!');
         }
 
-        protected processMouseInputLocation(result: Vec3, location2D: Vec3, env: ToolEnvironment): boolean {
-
-            let hited = env.posing3DView.pick3DLocationFromDepthImage(
-                result
-                , location2D
-                , env.currentPosingData.real3DViewHalfWidth
-                , env.pickingWindow);
-
-            return hited;
-        }
-
         protected execute(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            let hited = this.processMouseInputLocation(this.targetLocation, e.location, env);
+            let inputData = this.getInputData(env);
+            let hited = env.posing3DLogic.processMouseInputLocation(
+                this.tempTargetLocation
+                , e.location
+                , inputData
+                , env.currentPosingData
+                , env.posing3DView
+            );
 
             if (!hited) {
                 return;
             }
 
-            this.executeCommand(this.targetLocation, env);
+            this.executeCommand(this.tempTargetLocation, e, env);
         }
 
-        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) { // @virtual
+        protected executeCommand(inputLocation: Vec3, e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
 
             throw ('Tool_Posing3d_ToolBase: not implemented!');
         }
@@ -228,8 +224,13 @@ namespace ManualTracingTool {
             if (jointPartInputMode == JointPartInputMode.rollInput) {
 
                 let inputData = this.getInputData(env);
-
-                let hited = this.processMouseInputLocation(inputData.rollInputLocation, e.location, env);
+                let hited = env.posing3DLogic.processMouseInputLocation(
+                    inputData.rollInputLocation
+                    , e.location
+                    , inputData
+                    , env.currentPosingData
+                    , env.posing3DView
+                );
 
                 if (!hited) {
                     return;
@@ -272,7 +273,13 @@ namespace ManualTracingTool {
             else if (this.jointPartInputMode == JointPartInputMode.rollInput) {
 
                 let inputData = this.getInputData(env);
-                let hited = this.processMouseInputLocation(inputData.rollInputLocation, e.location, env);
+                let hited = env.posing3DLogic.processMouseInputLocation(
+                    inputData.rollInputLocation
+                    , e.location
+                    , inputData
+                    , env.currentPosingData
+                    , env.posing3DView
+                );
 
                 if (hited) {
 
@@ -343,16 +350,24 @@ namespace ManualTracingTool {
         protected execute(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             vec3.add(this.location2D, e.location, this.relativeMouseLocation);
-            let hited = this.processMouseInputLocation(this.inputLocation, this.location2D, env);
+
+            let inputData = this.getInputData(env);
+            let hited = env.posing3DLogic.processMouseInputLocation(
+                this.inputLocation
+                , this.location2D
+                , inputData
+                , env.currentPosingData
+                , env.posing3DView
+            );
 
             if (!hited) {
                 return;
             }
 
-            this.executeCommand(this.inputLocation, env);
+            this.executeCommand(this.inputLocation, e, env);
         }
 
-        protected executeCommand(inputLocation: Vec3, env: ToolEnvironment) { // @override
+        protected executeCommand(inputLocation: Vec3, e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             let inputData = this.getInputData(env);
 
@@ -360,6 +375,7 @@ namespace ManualTracingTool {
             if (this.jointPartInputMode == JointPartInputMode.directionInput) {
 
                 vec3.copy(inputData.inputLocation, inputLocation);
+                vec3.copy(inputData.inputLocation2D, e.location);
                 inputData.inputDone = true;
                 inputData.directionInputDone = true;
             }
@@ -376,12 +392,10 @@ namespace ManualTracingTool {
                 if (inputData.rollInputAngle >= Math.PI * 2.0) {
                     inputData.rollInputAngle -= Math.PI * 2.0;
                 }
-
-                env.posing3DLogic.calculateBodyLocation(env.currentPosingData, env.currentPosingModel);
             }
 
             // Calculate
-            env.posing3DLogic.calculateAll(env.currentPosingData, env.currentPosingModel);
+            env.posing3DLogic.calculateAll(env.currentPosingData, env.currentPosingModel, env.posing3DView);
 
             this.updateAdditionalPart(inputLocation, env);
 

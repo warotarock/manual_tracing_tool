@@ -156,11 +156,11 @@ namespace ManualTracingTool {
                 unit.name = "headLocationInputData";
                 unit.targetData = posingData.headRotationInputData;
                 unit.dependentInputData = posingData.headLocationInputData;
-                unit.parentMatrix = posingData.neckSphereMatrix;
                 unit.subToolID = Posing3DSubToolID.rotateHead;
-                unit.hitTestSphereRadius = vec3.length(posingModel.headTopToNeckVector);
                 unit.modelResource = this.headModel;
                 unit.drawModel = false;
+                unit.targetData.parentMatrix = posingData.neckSphereMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.headTopToNeckVector);
                 drawingUnits.push(unit);
             }
 
@@ -170,11 +170,11 @@ namespace ManualTracingTool {
                 unit.name = "bodyLocationInputData";
                 unit.targetData = posingData.bodyLocationInputData;
                 unit.dependentInputData = posingData.headLocationInputData;
-                unit.parentMatrix = posingData.chestRootMatrix;
                 unit.modelConvertMatrix = posingModel.chestModelConvertMatrix;
                 unit.subToolID = Posing3DSubToolID.locateBody;
-                unit.hitTestSphereRadius = posingModel.bodySphereSize;
                 unit.modelResource = this.chestModel;
+                unit.targetData.parentMatrix = posingData.chestRootMatrix;
+                unit.targetData.hitTestSphereRadius = posingModel.bodySphereSize;
                 drawingUnits.push(unit);
             }
 
@@ -183,11 +183,11 @@ namespace ManualTracingTool {
                 unit.name = "hipsLocationInputData";
                 unit.targetData = posingData.hipsLocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.hipsRootMatrix;
                 unit.modelConvertMatrix = posingModel.hipsModelConvertMatrix;
                 unit.subToolID = Posing3DSubToolID.rotateBody;
-                unit.hitTestSphereRadius = posingModel.hipsSphereSize;
                 unit.modelResource = this.hipsModel;
+                unit.targetData.parentMatrix = posingData.hipsRootMatrix;
+                unit.targetData.hitTestSphereRadius = posingModel.hipsSphereSize;
                 drawingUnits.push(unit);
             }
 
@@ -197,10 +197,10 @@ namespace ManualTracingTool {
                 unit.name = "leftShoulderLocationInputData";
                 unit.targetData = posingData.leftShoulderLocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.shoulderRootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateLeftShoulder;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftArm1Location);
                 unit.modelResource = this.leftSholderModel;
+                unit.targetData.parentMatrix = posingData.shoulderRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm1Location);
                 drawingUnits.push(unit);
             }
 
@@ -209,10 +209,10 @@ namespace ManualTracingTool {
                 unit.name = "leftArm1LocationInputData";
                 unit.targetData = posingData.leftArm1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.leftArm1RootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateLeftArm1;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftArm1HeadLocation);
                 unit.modelResource = this.leftArm1Model;
+                unit.targetData.parentMatrix = posingData.leftArm1RootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm1HeadLocation);
                 drawingUnits.push(unit);
             }
 
@@ -221,10 +221,10 @@ namespace ManualTracingTool {
                 unit.name = "leftArm2LocationInputData";
                 unit.targetData = posingData.leftArm2LocationInputData;
                 unit.dependentInputData = posingData.leftArm1LocationInputData;
-                unit.parentMatrix = posingData.leftArm1LocationInputData.childJointRootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateLeftArm2;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftArm2HeadLocation);
                 unit.modelResource = this.leftArm2Model;
+                unit.targetData.parentMatrix = posingData.leftArm1LocationInputData.childJointRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm2HeadLocation);
                 drawingUnits.push(unit);
             }
 
@@ -234,10 +234,10 @@ namespace ManualTracingTool {
                 unit.name = "rightShoulderLocationInputData";
                 unit.targetData = posingData.rightShoulderLocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.shoulderRootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateRightShoulder;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightArm1Location);
                 unit.modelResource = this.rightSholderModel;
+                unit.targetData.parentMatrix = posingData.shoulderRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm1Location);
                 drawingUnits.push(unit);
             }
 
@@ -246,10 +246,10 @@ namespace ManualTracingTool {
                 unit.name = "rightArm1LocationInputData";
                 unit.targetData = posingData.rightArm1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.rightArm1RootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateRightArm1;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightArm1HeadLocation);
                 unit.modelResource = this.rightArm1Model;
+                unit.targetData.parentMatrix = posingData.rightArm1RootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm1HeadLocation);
                 drawingUnits.push(unit);
             }
 
@@ -258,10 +258,10 @@ namespace ManualTracingTool {
                 unit.name = "rightArm2LocationInputData";
                 unit.targetData = posingData.rightArm2LocationInputData;
                 unit.dependentInputData = posingData.rightArm1LocationInputData;
-                unit.parentMatrix = posingData.rightArm1LocationInputData.childJointRootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateRightArm2;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightArm2HeadLocation);
                 unit.modelResource = this.rightArm2Model;
+                unit.targetData.parentMatrix = posingData.rightArm1LocationInputData.childJointRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm2HeadLocation);
                 drawingUnits.push(unit);
             }
 
@@ -271,10 +271,10 @@ namespace ManualTracingTool {
                 unit.name = "leftLeg1LocationInputData";
                 unit.targetData = posingData.leftLeg1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.leftLeg1RootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateLeftLeg1;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftLeg1HeadLocation);
                 unit.modelResource = this.leftLeg1Model;
+                unit.targetData.parentMatrix = posingData.leftLeg1RootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftLeg1HeadLocation);
                 drawingUnits.push(unit);
             }
 
@@ -283,10 +283,10 @@ namespace ManualTracingTool {
                 unit.name = "rightLeg2LocationInputData";
                 unit.targetData = posingData.leftLeg2LocationInputData;
                 unit.dependentInputData = posingData.leftLeg1LocationInputData;
-                unit.parentMatrix = posingData.leftLeg1LocationInputData.childJointRootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateLeftLeg2;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftLeg2HeadLocation);
                 unit.modelResource = this.leftLeg2Model;
+                unit.targetData.parentMatrix = posingData.leftLeg1LocationInputData.childJointRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftLeg2HeadLocation);
                 drawingUnits.push(unit);
             }
 
@@ -296,10 +296,10 @@ namespace ManualTracingTool {
                 unit.name = "rightLeg1LocationInputData";
                 unit.targetData = posingData.rightLeg1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.rightLeg1RootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateRightLeg1;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightLeg1HeadLocation);
                 unit.modelResource = this.rightLeg1Model;
+                unit.targetData.parentMatrix = posingData.rightLeg1RootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightLeg1HeadLocation);
                 drawingUnits.push(unit);
             }
 
@@ -308,10 +308,10 @@ namespace ManualTracingTool {
                 unit.name = "rightLeg2LocationInputData";
                 unit.targetData = posingData.rightLeg2LocationInputData;
                 unit.dependentInputData = posingData.rightLeg1LocationInputData;
-                unit.parentMatrix = posingData.rightLeg1LocationInputData.childJointRootMatrix;
                 unit.subToolID = Posing3DSubToolID.locateRightLeg2;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightLeg2HeadLocation);
                 unit.modelResource = this.rightLeg2Model;
+                unit.targetData.parentMatrix = posingData.rightLeg1LocationInputData.childJointRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightLeg2HeadLocation);
                 drawingUnits.push(unit);
             }
 
@@ -321,10 +321,10 @@ namespace ManualTracingTool {
                 unit.name = "headTwistInputData";
                 unit.targetData = posingData.headTwistInputData;
                 unit.dependentInputData = posingData.headRotationInputData;
-                unit.parentMatrix = posingData.neckSphereMatrix;
                 unit.subToolID = Posing3DSubToolID.twistHead;
-                unit.hitTestSphereRadius = posingModel.headTwistSphereSize;
                 unit.drawModel = false;
+                unit.targetData.parentMatrix = posingData.neckSphereMatrix;
+                unit.targetData.hitTestSphereRadius = posingModel.headTwistSphereSize;
                 drawingUnits.push(unit);
             }
 
@@ -357,20 +357,16 @@ namespace ManualTracingTool {
 
             this.drawHeadSphere(DrawImageType.visualImage, posingLayer, env);
 
-            //this.drawBodySphere(DrawImageType.visualImage, posingLayer, env);
-
-            //this.drawBodyRotationSphere(DrawImageType.visualImage, posingLayer, env);
-
             for (let drawingUnit of posingLayer.drawingUnits) {
 
                 if (env.subToolIndex == drawingUnit.subToolID) {
 
                     //this.drawAxis(drawingUnit.parentMatrix, 0.3, 0.5, env);
 
-                    this.drawArmLegSphere(DrawImageType.visualImage
+                    this.drawSphere(DrawImageType.visualImage
                         , drawingUnit.targetData.inputSideID
-                        , drawingUnit.parentMatrix
-                        , drawingUnit.hitTestSphereRadius
+                        , drawingUnit.targetData.parentMatrix
+                        , drawingUnit.targetData.hitTestSphereRadius
                         , posingLayer
                         , env);
                 }
@@ -453,55 +449,29 @@ namespace ManualTracingTool {
 
                 if (env.subToolIndex == drawingUnit.subToolID) {
 
-                    this.drawArmLegSphere(DrawImageType.depthImage
+                    this.drawSphere(DrawImageType.depthImage
                         , drawingUnit.targetData.inputSideID
-                        , drawingUnit.parentMatrix
-                        , drawingUnit.hitTestSphereRadius
+                        , drawingUnit.targetData.parentMatrix
+                        , drawingUnit.targetData.hitTestSphereRadius
                         , posingLayer
                         , env);
                 }
             }
 
-            //let posingModel = env.currentPosingModel;
-            //let posingData = env.currentPosingData;
-
-            //if (env.subToolIndex == Posing3DSubToolID.lodcateLeftArm1) {
-
-            //    this.drawArmLegSphere(DrawImageType.depthImage
-            //        , posingData.leftArm1LocationInputData.inputSideID
-            //        , posingData.bodyRotationInputData.leftArm1RootMatrix
-            //        , vec3.length(posingModel.leftArm1HeadLocation)
-            //        , env);
-            //}
-
-            //if (env.subToolIndex == Posing3DSubToolID.lodcateRightArm1) {
-
-            //    this.drawArmLegSphere(DrawImageType.depthImage
-            //        , posingData.rightArm1LocationInputData.inputSideID
-            //        , posingData.bodyRotationInputData.rightArm1RootMatrix
-            //        , vec3.length(posingModel.rightArm1HeadLocation)
-            //        , env);
-            //}
-
-            //if (env.subToolIndex == Posing3DSubToolID.lodcateLeftLeg1) {
-
-            //    this.drawArmLegSphere(DrawImageType.depthImage
-            //        , posingData.leftLeg1LocationInputData.inputSideID
-            //        , posingData.bodyRotationInputData.leftLeg1RootMatrix
-            //        , vec3.length(posingModel.leftLeg1HeadLocation)
-            //        , env);
-            //}
-
-            //if (env.subToolIndex == Posing3DSubToolID.lodcateRightLeg1) {
-
-            //    this.drawArmLegSphere(DrawImageType.depthImage
-            //        , posingData.rightLeg1LocationInputData.inputSideID
-            //        , posingData.bodyRotationInputData.rightLeg1RootMatrix
-            //        , vec3.length(posingModel.rightLeg1HeadLocation)
-            //        , env);
-            //}
-
             this.render.setBlendType(WebGLRenderBlendType.blend);
+        }
+
+        getCurrentDrawingUnit(env: ToolEnvironment): JointPartDrawingUnit {
+
+            for (let drawingUnit of env.currentPosingLayer.drawingUnits) {
+
+                if (env.subToolIndex == drawingUnit.subToolID) {
+
+                    return drawingUnit;
+                }
+            }
+
+            return null;
         }
 
         private drawHeadSphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
@@ -603,7 +573,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawArmLegSphere(drawImageType: DrawImageType, inputSideID: InputSideID, rootMatrix: Mat4, scale: float, posingLayer: PosingLayer, env: ToolEnvironment) {
+        private drawSphere(drawImageType: DrawImageType, inputSideID: InputSideID, rootMatrix: Mat4, scale: float, posingLayer: PosingLayer, env: ToolEnvironment) {
 
             let posingData = posingLayer.posingData;
 
@@ -741,16 +711,6 @@ namespace ManualTracingTool {
             this.posingFigureShader.setAlpha(alpha);
 
             this.drawModel(this.axisModel.model, this.imageResurces[0].image);
-        }
-
-        private drawSphere(locationMatrix: Mat4, scale: float, alpha: float, env: ToolEnvironment) {
-
-            mat4.copy(this.locationMatrix, locationMatrix);
-            mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
-
-            this.posingFigureShader.setAlpha(alpha);
-
-            this.drawZTestSphere(this.locationMatrix, InputSideID.front, env);
         }
 
         private drawModel(model: RenderModel, image: RenderImage) {
