@@ -281,7 +281,7 @@ namespace ManualTracingTool {
 
             // Start loading document data
 
-            if (this.localSetting.lastUsedFilePaths.length > 0
+            if (this.localSetting.lastUsedFilePaths.length == 0
                 && StringIsNullOrEmpty(this.localSetting.lastUsedFilePaths[0])) {
 
                 this.document = this.createDefaultDocumentData();
