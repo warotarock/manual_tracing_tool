@@ -116,7 +116,8 @@ namespace ManualTracingTool {
         tool_AddPoint = new Tool_AddPoint();
         tool_ScratchLine = new Tool_ScratchLine();
         tool_ExtrudeLine = new Tool_ExtrudeLine();
-        tool_ScratchLineWidth = new Tool_ScratchLineWidth();
+        //tool_OverWriteLineWidth = new Tool_OverWriteLineWidth();
+        tool_OverWriteLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
         tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
         tool_EditLinePointWidth_BrushSelect = new Tool_HideLinePoint_BrushSelect();
@@ -1094,7 +1095,7 @@ namespace ManualTracingTool {
                     .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
                     .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                     .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
-                    .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
+                    .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
                     .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
             );
 
@@ -1161,7 +1162,7 @@ namespace ManualTracingTool {
             this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
             this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
             this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ScratchLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            this.tool_OverWriteLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength;
             this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         }
 
@@ -1861,27 +1862,5 @@ namespace ManualTracingTool {
         getInputElementText(id: string): string { // @virtual
             return null;
         }
-    }
-
-    export enum DrawLineToolSubToolID {
-
-        drawLine = 0,
-        deletePointBrush = 1,
-        scratchLine = 2
-    }
-
-    export enum EditModeSubToolID {
-
-        mainEditTool = 0,
-    }
-
-    export enum ModalToolID {
-
-        none = 0,
-        grabMove = 1,
-        ratate = 2,
-        scale = 3,
-        latticeMove = 4,
-        countOfID = 5,
     }
 }

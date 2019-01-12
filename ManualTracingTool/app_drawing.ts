@@ -313,7 +313,8 @@ namespace ManualTracingTool {
 
         private lineWidthAdjust(width: float) {
 
-            return Math.floor(width * 5) / 5;
+            //return Math.floor(width * 5) / 5;
+            return width;
         }
 
         private drawVectorLineFill(line: VectorLine, color: Vec4, useAdjustingLocation: boolean, isFillContinuing: boolean) {

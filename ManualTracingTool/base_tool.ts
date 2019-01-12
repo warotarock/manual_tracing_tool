@@ -11,14 +11,29 @@ namespace ManualTracingTool {
         edit = 5
     }
 
-    export enum OperationUnitID {
+    export enum DrawLineToolSubToolID {
+
+        drawLine = 0,
+        deletePointBrush = 1,
+        scratchLine = 2,
+        extrudeLine = 3,
+        overWriteLineWidth = 4,
+        editLinePointWidth_BrushSelect = 5
+    }
+
+    export enum EditModeSubToolID {
+
+        mainEditTool = 0,
+    }
+
+    export enum ModalToolID {
 
         none = 0,
-        linePoint = 1,
-        lineSegment = 2,
-        line = 3,
-        layer = 4,
-        countOfID = 5
+        grabMove = 1,
+        ratate = 2,
+        scale = 3,
+        latticeMove = 4,
+        countOfID = 5,
     }
 
     export enum Posing3DSubToolID {
@@ -44,6 +59,16 @@ namespace ManualTracingTool {
 
         editMode = 1,
         drawMode = 2
+    }
+
+    export enum OperationUnitID {
+
+        none = 0,
+        linePoint = 1,
+        lineSegment = 2,
+        line = 3,
+        layer = 4,
+        countOfID = 5
     }
 
     export enum OpenFileDialogTargetID {

@@ -7,14 +7,15 @@ namespace ManualTracingTool {
 
         newLineWidth = 0.0;
         oldLineWidth = 0.0;
+        newLocation = vec3.create();
+        oldLocation = vec3.create();
     }
 
-    export class Tool_ScratchLineWidth extends ManualTracingTool.Tool_ScratchLine {
+    export class Tool_OverWriteLineWidth extends ManualTracingTool.Tool_ScratchLine {
 
         helpText = '線を最大の太さに近づけます。Shiftキーで線を細くします。<br />Ctrlキーで最大の太さ固定になります。';
 
-        enableScratchEdit = false;
-        enableExtrude = false;
+        editFalloffRadiusContainsLineWidth = true;
 
         protected executeCommand(env: ToolEnvironment) { // @override
 
@@ -32,6 +33,7 @@ namespace ManualTracingTool {
                 , this.resampledLine
                 , editFalloffRadiusMin
                 , editFalloffRadiusMax
+                , this.editFalloffRadiusContainsLineWidth
             );
 
             if (candidatePointPairs != null && candidatePointPairs.length > 0) {
@@ -39,25 +41,15 @@ namespace ManualTracingTool {
                 let command = new Command_ScratchLineWidth();
                 command.targetLine = targetLine;
 
-                if (env.isCtrlKeyPressing()) {
-
-                    command.fixedOverWriting = true;
-                    command.fixedOverWritingLineWidth = env.drawLineBaseWidth;
-                }
-
                 for (let pair of candidatePointPairs) {
 
                     let editPoint = new Tool_ScratchLineWidth_EditPoint();
                     editPoint.pair = pair;
 
-                    if (env.isShiftKeyPressing()) {
+                    editPoint.oldLineWidth = editPoint.pair.targetPoint.lineWidth;
+                    vec3.copy(editPoint.oldLocation, editPoint.pair.targetPoint.location);
 
-                        editPoint.pair.candidatePoint.lineWidth = env.drawLineMinWidth;
-                    }
-                    else {
-
-                        editPoint.pair.candidatePoint.lineWidth = env.drawLineBaseWidth;
-                    }
+                    this.processPoint(editPoint, env);
 
                     command.editPoints.push(editPoint);
                 }
@@ -67,6 +59,105 @@ namespace ManualTracingTool {
                 env.commandHistory.addCommand(command);
             }
         }
+
+        protected processPoint(editPoint: Tool_ScratchLineWidth_EditPoint, env: ToolEnvironment) { // @virtual
+
+            let setTo_LineWidth = env.drawLineBaseWidth;
+            if (env.isShiftKeyPressing()) {
+
+                setTo_LineWidth = env.drawLineMinWidth;
+            }
+
+            let fixedOverWriting = false;
+            if (env.isCtrlKeyPressing()) {
+
+                fixedOverWriting = true;
+            }
+
+            let candidatePoint = editPoint.pair.candidatePoint;
+            let targetPoint = editPoint.pair.targetPoint;
+
+            vec3.copy(editPoint.newLocation, editPoint.pair.targetPoint.location);
+
+            if (editPoint.pair.influence > 0.0) {
+
+                if (fixedOverWriting) {
+
+                    editPoint.newLineWidth = setTo_LineWidth;
+                }
+                else {
+
+                    editPoint.newLineWidth = Maths.lerp(
+                        editPoint.pair.influence * 0.5
+                        , editPoint.pair.targetPoint.lineWidth
+                        , setTo_LineWidth);
+                }
+            }
+            else {
+
+                editPoint.newLineWidth = editPoint.pair.targetPoint.lineWidth;
+            }
+        }
+    }
+
+    export class Tool_ScratchLineWidth extends Tool_OverWriteLineWidth {
+
+        helpText = '線の太さを足します。Shiftキーで減らします。';
+
+        editFalloffRadiusMinRate = 0.15;
+        editFalloffRadiusMaxRate = 1.0;
+
+        subtructVector = vec3.create();
+        moveVector = vec3.create();
+
+        protected processPoint(editPoint: Tool_ScratchLineWidth_EditPoint, env: ToolEnvironment) { // @override
+
+            let targetPoint = editPoint.pair.targetPoint;
+            let candidatePoint = editPoint.pair.candidatePoint;
+
+            let targetPointRadius = targetPoint.lineWidth * 0.5;
+            let candidatePointRadius = candidatePoint.lineWidth * 0.5;
+
+            let distance = vec3.distance(targetPoint.location, candidatePoint.location);
+            let totalRadius = targetPointRadius + candidatePointRadius;
+
+            let available = (distance < totalRadius);
+            let addRadius = candidatePointRadius;
+            if (!env.isShiftKeyPressing()) {
+
+                available = available && (distance > targetPointRadius - candidatePointRadius);
+                addRadius *= -1;
+            }
+
+            if (available) {
+
+
+                let newRadius = (targetPointRadius + distance - addRadius) / 2.0;
+
+                editPoint.newLineWidth = newRadius * 2.0;
+
+                if (editPoint.newLineWidth >= 0.01) {
+
+                    vec3.subtract(this.subtructVector, candidatePoint.location, targetPoint.location);
+                    vec3.normalize(this.subtructVector, this.subtructVector);
+                    vec3.scale(this.moveVector, this.subtructVector, -targetPointRadius + newRadius);
+                    vec3.add(editPoint.newLocation, targetPoint.location, this.moveVector);
+                }
+                else {
+
+                    editPoint.newLineWidth = 0.0;
+                    vec3.copy(editPoint.newLocation, targetPoint.location);
+                }
+            }
+            else {
+
+                editPoint.newLineWidth = targetPoint.lineWidth;
+                vec3.copy(editPoint.newLocation, targetPoint.location);
+            }
+
+            //editPoint.newLineWidth = distance * 2.0;
+            //vec3.copy(editPoint.newLocation, targetPoint.location);
+        }
     }
 
     export class Command_ScratchLineWidth extends CommandBase {
@@ -74,46 +165,11 @@ namespace ManualTracingTool {
         targetLine: VectorLine = null;
         editPoints = new List<Tool_ScratchLineWidth_EditPoint>();
 
-        fixedOverWriting = false;
-        fixedOverWritingLineWidth = 0.0;
-
         execute(env: ToolEnvironment) { // @override
 
             this.errorCheck();
 
-            this.prepareEditPoints();
-
             this.redo(env);
-        }
-
-        private prepareEditPoints() {
-
-            for (let editPoint of this.editPoints) {
-
-                let candidatePoint = editPoint.pair.candidatePoint;
-                let targetPoint = editPoint.pair.targetPoint;
-
-                editPoint.oldLineWidth = editPoint.pair.targetPoint.lineWidth;
-
-                if (editPoint.pair.influence > 0.0) {
-
-                    if (this.fixedOverWriting) {
-
-                        editPoint.newLineWidth = this.fixedOverWritingLineWidth;
-                    }
-                    else {
-
-                        editPoint.newLineWidth = Maths.lerp(
-                            editPoint.pair.influence * 0.5
-                            , editPoint.pair.targetPoint.lineWidth
-                            , editPoint.pair.candidatePoint.lineWidth);
-                    }
-                }
-                else {
-
-                    editPoint.newLineWidth = editPoint.pair.targetPoint.lineWidth;
-                }
-            }
         }
 
         undo(env: ToolEnvironment) { // @override
@@ -122,7 +178,10 @@ namespace ManualTracingTool {
                 let targetPoint = editPoint.pair.targetPoint;
 
                 targetPoint.lineWidth = editPoint.oldLineWidth;
-                targetPoint.adjustingLineWidth = targetPoint.lineWidth;
+                targetPoint.adjustingLineWidth = editPoint.oldLineWidth;
+
+                vec3.copy(targetPoint.location, editPoint.oldLocation);
+                vec3.copy(targetPoint.adjustingLocation, editPoint.oldLocation);
             }
 
             Logic_Edit_Line.calculateParameters(this.targetLine);
@@ -134,7 +193,10 @@ namespace ManualTracingTool {
                 let targetPoint = editPoint.pair.targetPoint;
 
                 targetPoint.lineWidth = editPoint.newLineWidth;
-                targetPoint.adjustingLineWidth = targetPoint.lineWidth;
+                targetPoint.adjustingLineWidth = editPoint.newLineWidth;
+
+                vec3.copy(targetPoint.location, editPoint.newLocation);
+                vec3.copy(targetPoint.adjustingLocation, editPoint.newLocation);
             }
 
             Logic_Edit_Line.calculateParameters(this.targetLine);
