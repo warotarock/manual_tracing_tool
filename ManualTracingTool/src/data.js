@@ -14,7 +14,7 @@ var ManualTracingTool;
     var LocalSetting = /** @class */ (function () {
         function LocalSetting() {
             this.exportPath = null;
-            this.lastUsedFilePaths = null;
+            this.lastUsedFilePaths = new List();
             this.referenceDirectoryPath = null;
         }
         return LocalSetting;
