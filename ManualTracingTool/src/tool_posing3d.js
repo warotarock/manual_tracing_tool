@@ -48,8 +48,8 @@ var ManualTracingTool;
         __extends(Tool_Posing3d_PointInputToolBase, _super);
         function Tool_Posing3d_PointInputToolBase() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.inputSideOptionCount = 0;
-            _this.targetLocation = vec3.create();
+            _this.inputSideOptionCount = 1;
+            _this.tempTargetLocation = vec3.create();
             return _this;
         }
         Tool_Posing3d_PointInputToolBase.prototype.mouseDown = function (e, env) {
@@ -71,20 +71,227 @@ var ManualTracingTool;
             }
             this.execute(e, env);
         };
+        Tool_Posing3d_PointInputToolBase.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
+            if (env.currentPosingData != null) {
+                var inputData = this.getInputData(env);
+                if (buttonIndex == 0) {
+                    if (inputSideID == ManualTracingTool.InputSideID.front) {
+                        inputData.inputSideID = ManualTracingTool.InputSideID.back;
+                    }
+                    else {
+                        inputData.inputSideID = ManualTracingTool.InputSideID.front;
+                    }
+                    return true;
+                }
+            }
+            return false;
+        };
+        Tool_Posing3d_PointInputToolBase.prototype.getInputSideID = function (buttonIndex, env) {
+            if (env.currentPosingData != null) {
+                var inputData = this.getInputData(env);
+                return inputData.inputSideID;
+            }
+            else {
+                return ManualTracingTool.InputSideID.none;
+            }
+        };
+        Tool_Posing3d_PointInputToolBase.prototype.getInputData = function (env) {
+            throw ('Tool_Posing3d_ToolBase: not implemented!');
+        };
         Tool_Posing3d_PointInputToolBase.prototype.execute = function (e, env) {
-            this.copyInputLocationToPoint(e);
-            var targetPoint = this.editPoint;
-            var hited = env.posing3DView.pick3DLocationFromDepthImage(this.targetLocation, targetPoint.location, env.currentPosingData.real3DViewHalfWidth, env.pickingWindow);
+            var inputData = this.getInputData(env);
+            var hited = env.posing3DLogic.processMouseInputLocation(this.tempTargetLocation, e.location, inputData, env.currentPosingData, env.posing3DView);
             if (!hited) {
                 return;
             }
-            this.executeCommand(this.targetLocation, env);
+            this.executeCommand(this.tempTargetLocation, e, env);
         };
-        Tool_Posing3d_PointInputToolBase.prototype.executeCommand = function (inputLocation, env) {
+        Tool_Posing3d_PointInputToolBase.prototype.executeCommand = function (inputLocation, e, env) {
+            throw ('Tool_Posing3d_ToolBase: not implemented!');
         };
         return Tool_Posing3d_PointInputToolBase;
     }(Tool_Posing3d_ToolBase));
     ManualTracingTool.Tool_Posing3d_PointInputToolBase = Tool_Posing3d_PointInputToolBase;
+    var JointPartInputMode;
+    (function (JointPartInputMode) {
+        JointPartInputMode[JointPartInputMode["none"] = 0] = "none";
+        JointPartInputMode[JointPartInputMode["directionInput"] = 1] = "directionInput";
+        JointPartInputMode[JointPartInputMode["rollInput"] = 2] = "rollInput";
+    })(JointPartInputMode || (JointPartInputMode = {}));
+    var Tool_Posing3d_JointPartInputToolBase = /** @class */ (function (_super) {
+        __extends(Tool_Posing3d_JointPartInputToolBase, _super);
+        function Tool_Posing3d_JointPartInputToolBase() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.location3D = vec3.create();
+            _this.location2D = vec3.create();
+            _this.location2DTo = vec3.create();
+            _this.enableDirectionInput = true;
+            _this.enableRollInput = true;
+            _this.jointPartInputMode = JointPartInputMode.none;
+            _this.mouseOnInputMode = JointPartInputMode.none;
+            _this.inputLocation = vec3.create();
+            _this.relativeMouseLocation = vec3.create();
+            _this.tmpMatrix = mat4.create();
+            _this.vecZ = vec3.create();
+            _this.relativeInputLocation = vec3.create();
+            _this.rollInputRootMatrix = mat4.create();
+            _this.rollInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            _this.lastMatrix = mat4.create();
+            _this.startAngle = 0.0;
+            _this.lastAngle = 0.0;
+            return _this;
+        }
+        Tool_Posing3d_JointPartInputToolBase.prototype.getInputModeForMouseLocation = function (resultRelativeMouseLocation, env) {
+            var inputData = this.getInputData(env);
+            var circleRadius = this.getBoneInputCircleRadius(env) * env.drawStyle.posing3DBoneInputCircleHitRadius;
+            if (!inputData.inputDone) {
+                return JointPartInputMode.directionInput;
+            }
+            else {
+                if (inputData.inputDone && inputData.directionInputDone) {
+                    env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, inputData.inputLocation, env.currentPosingData.real3DViewHalfWidth);
+                    var distance = vec3.distance(env.mouseCursorLocation, this.location2D);
+                    if (resultRelativeMouseLocation != null) {
+                        vec3.subtract(resultRelativeMouseLocation, this.location2D, env.mouseCursorLocation);
+                    }
+                    if (distance <= circleRadius) {
+                        return JointPartInputMode.directionInput;
+                    }
+                    else {
+                        return JointPartInputMode.rollInput;
+                    }
+                }
+            }
+            return JointPartInputMode.none;
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.mouseDown = function (e, env) {
+            if (env.currentPosingData == null) {
+                return;
+            }
+            if (!e.isLeftButtonPressing()) {
+                return;
+            }
+            env.setRedrawEditorWindow();
+            var jointPartInputMode = this.getInputModeForMouseLocation(this.relativeMouseLocation, env);
+            if (jointPartInputMode == JointPartInputMode.rollInput) {
+                var inputData = this.getInputData(env);
+                var hited = env.posing3DLogic.processMouseInputLocation(inputData.rollInputLocation, e.location, inputData, env.currentPosingData, env.posing3DView);
+                if (!hited) {
+                    return;
+                }
+                mat4.copy(this.lastMatrix, inputData.matrix);
+                this.startAngle = this.calculateAngle(inputData);
+                this.lastAngle = inputData.rollInputAngle;
+            }
+            if (jointPartInputMode != JointPartInputMode.none) {
+                this.jointPartInputMode = jointPartInputMode;
+                this.execute(e, env);
+            }
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.mouseMove = function (e, env) {
+            if (env.currentPosingData == null) {
+                return;
+            }
+            var jointPartInputMode = this.getInputModeForMouseLocation(null, env);
+            if (jointPartInputMode != this.mouseOnInputMode) {
+                this.mouseOnInputMode = jointPartInputMode;
+                env.setRedrawEditorWindow();
+            }
+            if (!e.isLeftButtonPressing()) {
+                return;
+            }
+            if (this.jointPartInputMode == JointPartInputMode.directionInput) {
+                this.execute(e, env);
+            }
+            else if (this.jointPartInputMode == JointPartInputMode.rollInput) {
+                var inputData = this.getInputData(env);
+                var hited = env.posing3DLogic.processMouseInputLocation(inputData.rollInputLocation, e.location, inputData, env.currentPosingData, env.posing3DView);
+                if (hited) {
+                    this.execute(e, env);
+                }
+            }
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.mouseUp = function (e, env) {
+            this.jointPartInputMode = JointPartInputMode.none;
+            env.setRedrawWebGLWindow();
+            env.setRedrawEditorWindow();
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.getBoneInputCircleRadius = function (env) {
+            return env.getViewScaledLength(env.drawStyle.posing3DBoneInputCircleRadius);
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.onDrawEditor = function (env, drawEnv) {
+            var inputData = this.getInputData(env);
+            if (!inputData.inputDone) {
+                return;
+            }
+            var circleRadius = this.getBoneInputCircleRadius(env);
+            if (this.enableDirectionInput && inputData.directionInputDone) {
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, inputData.inputLocation, env.currentPosingData.real3DViewHalfWidth);
+                var strokeWidth = (this.mouseOnInputMode == JointPartInputMode.directionInput) ? 4.0 : 2.0;
+                drawEnv.drawCircle(this.location2D, circleRadius, env.getViewScaledLength(strokeWidth), drawEnv.style.posing3DBoneHeadColor);
+            }
+            if (this.enableRollInput && this.jointPartInputMode == JointPartInputMode.rollInput) {
+                vec3.set(this.location3D, inputData.matrix[12], inputData.matrix[13], inputData.matrix[14]);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData.real3DViewHalfWidth);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.inputLocation, env.currentPosingData.real3DViewHalfWidth);
+                drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
+                vec3.set(this.location3D, this.rollInputRootMatrix[12], this.rollInputRootMatrix[13], this.rollInputRootMatrix[14]);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData.real3DViewHalfWidth);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.rollInputLocation, env.currentPosingData.real3DViewHalfWidth);
+                drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(2.0), drawEnv.style.posing3DBoneGrayColor);
+                drawEnv.drawCircle(this.location2D, env.getViewScaledLength(2.0), env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
+                var strokeWidth = (this.mouseOnInputMode == JointPartInputMode.rollInput) ? 4.0 : 2.0;
+                drawEnv.drawCircle(this.location2DTo, env.getViewScaledLength(5.0), env.getViewScaledLength(strokeWidth), drawEnv.style.posing3DBoneForwardColor);
+            }
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.calculateAngle = function (inputData) {
+            mat4.invert(this.tmpMatrix, this.lastMatrix);
+            vec3.transformMat4(this.relativeInputLocation, inputData.rollInputLocation, this.tmpMatrix);
+            vec3.set(this.vecZ, 0.0, 0.0, this.relativeInputLocation[2]);
+            mat4.translate(this.rollInputRootMatrix, this.lastMatrix, this.vecZ);
+            return Math.atan2(this.relativeInputLocation[1], this.relativeInputLocation[0]);
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.execute = function (e, env) {
+            vec3.add(this.location2D, e.location, this.relativeMouseLocation);
+            var inputData = this.getInputData(env);
+            var hited = env.posing3DLogic.processMouseInputLocation(this.inputLocation, this.location2D, inputData, env.currentPosingData, env.posing3DView);
+            if (!hited) {
+                return;
+            }
+            this.executeCommand(this.inputLocation, e, env);
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.executeCommand = function (inputLocation, e, env) {
+            var inputData = this.getInputData(env);
+            // Set inputs
+            if (this.jointPartInputMode == JointPartInputMode.directionInput) {
+                vec3.copy(inputData.inputLocation, inputLocation);
+                vec3.copy(inputData.inputLocation2D, e.location);
+                inputData.inputDone = true;
+                inputData.directionInputDone = true;
+            }
+            else if (this.jointPartInputMode == JointPartInputMode.rollInput) {
+                var angle = this.calculateAngle(inputData);
+                inputData.rollInputDone = true;
+                inputData.rollInputAngle = this.lastAngle + (angle - this.startAngle);
+                if (inputData.rollInputAngle <= 0.0) {
+                    inputData.rollInputAngle += Math.PI * 2.0;
+                }
+                if (inputData.rollInputAngle >= Math.PI * 2.0) {
+                    inputData.rollInputAngle -= Math.PI * 2.0;
+                }
+            }
+            // Calculate
+            env.posing3DLogic.calculateAll(env.currentPosingData, env.currentPosingModel, env.posing3DView);
+            this.updateAdditionalPart(inputLocation, env);
+            env.setRedrawWebGLWindow();
+            env.setRedrawEditorWindow();
+            env.setRedrawSubtoolWindow();
+        };
+        Tool_Posing3d_JointPartInputToolBase.prototype.updateAdditionalPart = function (inputLocation, env) {
+        };
+        return Tool_Posing3d_JointPartInputToolBase;
+    }(Tool_Posing3d_PointInputToolBase));
+    ManualTracingTool.Tool_Posing3d_JointPartInputToolBase = Tool_Posing3d_JointPartInputToolBase;
     var Tool_Posing3d_LineInputToolBase = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LineInputToolBase, _super);
         function Tool_Posing3d_LineInputToolBase() {
@@ -189,13 +396,14 @@ var ManualTracingTool;
             //}
             // debug
             env.posing3DView.calculate3DLocationFrom2DLocation(this.centerLocation, this.centerLocationSum, 2.0 // 2.0m
-            , env.currentPosingData.real3DViewHalfWidth, env.mainWindow);
+            , env.currentPosingData.real3DViewHalfWidth);
             // Set inputs
             var headLocationInputData = env.currentPosingData.headLocationInputData;
             vec3.copy(headLocationInputData.center, this.centerLocation);
             headLocationInputData.radius = radiusSum;
             headLocationInputData.editLine = this.editLine;
             headLocationInputData.inputDone = true;
+            env.currentPosingData.headRotationInputData.inputDone = false;
             // Calculate
             env.posing3DLogic.calculateHeadLocation(env.currentPosingData, env.currentPosingModel);
             env.setRedrawWebGLWindow();
@@ -209,7 +417,6 @@ var ManualTracingTool;
         function Tool_Posing3d_RotateHead() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.helpText = '画面に表示された球のどこかをクリックすると頭の向きが決まります。<br />画面右のパネルで「手前」となっているボタンをクリックすると奥側を指定できるようになります。';
-            _this.inputSideOptionCount = 1;
             return _this;
         }
         Tool_Posing3d_RotateHead.prototype.isAvailable = function (env) {
@@ -217,211 +424,82 @@ var ManualTracingTool;
                 && env.currentPosingData != null
                 && env.currentPosingData.headLocationInputData.inputDone);
         };
-        Tool_Posing3d_RotateHead.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
-            if (env.currentPosingData != null) {
-                if (buttonIndex == 0) {
-                    if (inputSideID == ManualTracingTool.InputSideID.front) {
-                        env.currentPosingData.headRotationInputData.inputSideID = ManualTracingTool.InputSideID.back;
-                    }
-                    else {
-                        env.currentPosingData.headRotationInputData.inputSideID = ManualTracingTool.InputSideID.front;
-                    }
-                    return true;
-                }
-            }
-            return false;
-        };
-        Tool_Posing3d_RotateHead.prototype.getInputSideID = function (buttonIndex, env) {
-            if (env.currentPosingData != null) {
-                return env.currentPosingData.headRotationInputData.inputSideID;
-            }
-            else {
-                return ManualTracingTool.InputSideID.none;
-            }
-        };
-        Tool_Posing3d_RotateHead.prototype.executeCommand = function (inputLocation, env) {
-            var headRotationInputData = env.currentPosingData.headRotationInputData;
-            var headTwistInputData = env.currentPosingData.headTwistInputData;
-            // Set inputs
-            vec3.copy(headRotationInputData.inputLocation, inputLocation);
-            headRotationInputData.editLine = this.editLine;
-            headRotationInputData.inputDone = true;
-            headTwistInputData.inputDone = false;
-            // Calculate
-            env.posing3DLogic.calculateHeadRotation(env.currentPosingData, env.currentPosingModel);
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
+        Tool_Posing3d_RotateHead.prototype.getInputData = function (env) {
+            return env.currentPosingData.headRotationInputData;
         };
         return Tool_Posing3d_RotateHead;
-    }(Tool_Posing3d_PointInputToolBase));
+    }(Tool_Posing3d_JointPartInputToolBase));
     ManualTracingTool.Tool_Posing3d_RotateHead = Tool_Posing3d_RotateHead;
-    var Tool_Posing3d_TwistHead = /** @class */ (function (_super) {
-        __extends(Tool_Posing3d_TwistHead, _super);
-        function Tool_Posing3d_TwistHead() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.helpText = '追加の頭の角度指定です。<br />使いづらくてゴメン…。';
-            _this.inputSideOptionCount = 1;
-            return _this;
-        }
-        Tool_Posing3d_TwistHead.prototype.isAvailable = function (env) {
-            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
-                && env.currentPosingData != null
-                && env.currentPosingData.headRotationInputData.inputDone);
-        };
-        Tool_Posing3d_TwistHead.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
-            if (env.currentPosingData != null) {
-                if (buttonIndex == 0) {
-                    if (inputSideID == ManualTracingTool.InputSideID.front) {
-                        env.currentPosingData.headTwistInputData.inputSideID = ManualTracingTool.InputSideID.back;
-                    }
-                    else {
-                        env.currentPosingData.headTwistInputData.inputSideID = ManualTracingTool.InputSideID.front;
-                    }
-                    return true;
-                }
-            }
-            return false;
-        };
-        Tool_Posing3d_TwistHead.prototype.getInputSideID = function (buttonIndex, env) {
-            if (env.currentPosingData != null) {
-                return env.currentPosingData.headTwistInputData.inputSideID;
-            }
-            else {
-                return ManualTracingTool.InputSideID.none;
-            }
-        };
-        Tool_Posing3d_TwistHead.prototype.executeCommand = function (inputLocation, env) {
-            var headTwistInputData = env.currentPosingData.headTwistInputData;
-            // Set inputs
-            vec3.copy(headTwistInputData.inputLocation, inputLocation);
-            headTwistInputData.editLine = this.editLine;
-            headTwistInputData.inputDone = true;
-            // Calculate
-            env.posing3DLogic.calculateHeadTwist(env.currentPosingData, env.currentPosingModel);
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
-        };
-        return Tool_Posing3d_TwistHead;
-    }(Tool_Posing3d_PointInputToolBase));
-    ManualTracingTool.Tool_Posing3d_TwistHead = Tool_Posing3d_TwistHead;
     var Tool_Posing3d_LocateBody = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateBody, _super);
         function Tool_Posing3d_LocateBody() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.helpText = '半透明の球のどこかをクリックすると頭の向きを正面として胴が配置されます。<br />少し外側をクリックすると画面に対して真横を指定できます。';
-            _this.inputSideOptionCount = 1;
             return _this;
         }
         Tool_Posing3d_LocateBody.prototype.isAvailable = function (env) {
             return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
                 && env.currentPosingData != null
-                && env.currentPosingData.headLocationInputData.inputDone
-                && env.currentPosingData.headRotationInputData.inputDone);
+                && env.currentPosingData.headLocationInputData.inputDone);
         };
-        Tool_Posing3d_LocateBody.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
-            if (env.currentPosingData != null) {
-                if (buttonIndex == 0) {
-                    if (inputSideID == ManualTracingTool.InputSideID.front) {
-                        env.currentPosingData.bodyLocationInputData.inputSideID = ManualTracingTool.InputSideID.back;
-                    }
-                    else {
-                        env.currentPosingData.bodyLocationInputData.inputSideID = ManualTracingTool.InputSideID.front;
-                    }
-                    return true;
-                }
-            }
-            return false;
-        };
-        Tool_Posing3d_LocateBody.prototype.getInputSideID = function (buttonIndex, env) {
-            if (env.currentPosingData != null) {
-                return env.currentPosingData.bodyLocationInputData.inputSideID;
-            }
-            else {
-                return ManualTracingTool.InputSideID.none;
-            }
-        };
-        Tool_Posing3d_LocateBody.prototype.executeCommand = function (inputLocation, env) {
-            var bodyLocationInputData = env.currentPosingData.bodyLocationInputData;
-            var bodyRotationInputData = env.currentPosingData.bodyRotationInputData;
-            // Set inputs
-            vec3.copy(bodyLocationInputData.inputLocation, inputLocation);
-            bodyLocationInputData.editLine = this.editLine;
-            bodyLocationInputData.inputDone = true;
-            bodyRotationInputData.inputDone = false;
-            // Calculate
-            env.posing3DLogic.calculateBodyLocation(env.currentPosingData, env.currentPosingModel, ManualTracingTool.Posing3D_BodyLocateMode.keepFrontUp);
-            // Update dependent input
-            var resetRotation = true;
-            if (resetRotation) {
-                mat4.copy(env.currentPosingData.bodyRotationInputData.matrix, env.currentPosingData.bodyLocationInputData.matrix);
-                env.currentPosingData.bodyRotationInputData.inputDone = false;
-            }
-            else {
-                if (env.currentPosingData.bodyRotationInputData.inputDone) {
-                    env.posing3DLogic.calculateBodyRotation(env.currentPosingData, env.currentPosingModel);
-                }
-            }
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
+        Tool_Posing3d_LocateBody.prototype.getInputData = function (env) {
+            return env.currentPosingData.bodyLocationInputData;
         };
         return Tool_Posing3d_LocateBody;
-    }(Tool_Posing3d_PointInputToolBase));
+    }(Tool_Posing3d_JointPartInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateBody = Tool_Posing3d_LocateBody;
-    var Tool_Posing3d_RatateBody = /** @class */ (function (_super) {
-        __extends(Tool_Posing3d_RatateBody, _super);
-        function Tool_Posing3d_RatateBody() {
+    var Tool_Posing3d_LocateHips = /** @class */ (function (_super) {
+        __extends(Tool_Posing3d_LocateHips, _super);
+        function Tool_Posing3d_LocateHips() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.helpText = '半透明の球のどこかをクリックすると胴の水平方向の向きを変えられます。';
-            _this.inputSideOptionCount = 1;
+            _this.helpText = '腰を配置します。';
             return _this;
         }
-        Tool_Posing3d_RatateBody.prototype.isAvailable = function (env) {
+        Tool_Posing3d_LocateHips.prototype.isAvailable = function (env) {
             return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
                 && env.currentPosingData != null
                 && env.currentPosingData.bodyLocationInputData.inputDone);
         };
-        Tool_Posing3d_RatateBody.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
-            if (env.currentPosingData != null) {
-                if (buttonIndex == 0) {
-                    if (inputSideID == ManualTracingTool.InputSideID.front) {
-                        env.currentPosingData.bodyRotationInputData.inputSideID = ManualTracingTool.InputSideID.back;
-                    }
-                    else {
-                        env.currentPosingData.bodyRotationInputData.inputSideID = ManualTracingTool.InputSideID.front;
-                    }
-                    return true;
-                }
-            }
-            return false;
+        Tool_Posing3d_LocateHips.prototype.getInputData = function (env) {
+            return env.currentPosingData.hipsLocationInputData;
         };
-        Tool_Posing3d_RatateBody.prototype.getInputSideID = function (buttonIndex, env) {
-            if (env.currentPosingData != null) {
-                return env.currentPosingData.bodyRotationInputData.inputSideID;
-            }
-            else {
-                return ManualTracingTool.InputSideID.none;
-            }
+        return Tool_Posing3d_LocateHips;
+    }(Tool_Posing3d_JointPartInputToolBase));
+    ManualTracingTool.Tool_Posing3d_LocateHips = Tool_Posing3d_LocateHips;
+    var Tool_Posing3d_LocateLeftShoulder = /** @class */ (function (_super) {
+        __extends(Tool_Posing3d_LocateLeftShoulder, _super);
+        function Tool_Posing3d_LocateLeftShoulder() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.helpText = 'ヒジのあたりの位置を指定して肩を配置します。';
+            return _this;
+        }
+        Tool_Posing3d_LocateLeftShoulder.prototype.isAvailable = function (env) {
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
+                && (env.currentPosingData.bodyLocationInputData.inputDone || env.currentPosingData.bodyRotationInputData.inputDone));
         };
-        Tool_Posing3d_RatateBody.prototype.executeCommand = function (inputLocation, env) {
-            // Set inputs
-            var bodyRotationInputData = env.currentPosingData.bodyRotationInputData;
-            vec3.copy(bodyRotationInputData.inputLocation, inputLocation);
-            bodyRotationInputData.editLine = this.editLine;
-            bodyRotationInputData.inputDone = true;
-            // Calculate
-            env.posing3DLogic.calculateBodyRotation(env.currentPosingData, env.currentPosingModel);
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
+        Tool_Posing3d_LocateLeftShoulder.prototype.getInputData = function (env) {
+            return env.currentPosingData.leftShoulderLocationInputData;
         };
-        return Tool_Posing3d_RatateBody;
-    }(Tool_Posing3d_PointInputToolBase));
-    ManualTracingTool.Tool_Posing3d_RatateBody = Tool_Posing3d_RatateBody;
+        return Tool_Posing3d_LocateLeftShoulder;
+    }(Tool_Posing3d_JointPartInputToolBase));
+    ManualTracingTool.Tool_Posing3d_LocateLeftShoulder = Tool_Posing3d_LocateLeftShoulder;
+    var Tool_Posing3d_LocateRightShoulder = /** @class */ (function (_super) {
+        __extends(Tool_Posing3d_LocateRightShoulder, _super);
+        function Tool_Posing3d_LocateRightShoulder() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Tool_Posing3d_LocateRightShoulder.prototype.getInputData = function (env) {
+            return env.currentPosingData.rightShoulderLocationInputData;
+        };
+        return Tool_Posing3d_LocateRightShoulder;
+    }(Tool_Posing3d_LocateLeftShoulder));
+    ManualTracingTool.Tool_Posing3d_LocateRightShoulder = Tool_Posing3d_LocateRightShoulder;
     var Tool_Posing3d_LocateLeftArm1 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateLeftArm1, _super);
         function Tool_Posing3d_LocateLeftArm1() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.helpText = 'ヒジのあたりの位置を指定して上腕を配置します。';
-            _this.inputSideOptionCount = 1;
             return _this;
         }
         Tool_Posing3d_LocateLeftArm1.prototype.isAvailable = function (env) {
@@ -429,50 +507,14 @@ var ManualTracingTool;
                 && env.currentPosingData != null
                 && (env.currentPosingData.bodyLocationInputData.inputDone || env.currentPosingData.bodyRotationInputData.inputDone));
         };
-        Tool_Posing3d_LocateLeftArm1.prototype.setInputSide = function (buttonIndex, inputSideID, env) {
-            if (env.currentPosingData != null) {
-                var inputData = this.getInputData(env);
-                if (buttonIndex == 0) {
-                    if (inputSideID == ManualTracingTool.InputSideID.front) {
-                        inputData.inputSideID = ManualTracingTool.InputSideID.back;
-                    }
-                    else {
-                        inputData.inputSideID = ManualTracingTool.InputSideID.front;
-                    }
-                    return true;
-                }
-            }
-            return false;
-        };
-        Tool_Posing3d_LocateLeftArm1.prototype.getInputSideID = function (buttonIndex, env) {
-            if (env.currentPosingData != null) {
-                var inputData = this.getInputData(env);
-                return inputData.inputSideID;
-            }
-            else {
-                return ManualTracingTool.InputSideID.none;
-            }
-        };
         Tool_Posing3d_LocateLeftArm1.prototype.getInputData = function (env) {
             return env.currentPosingData.leftArm1LocationInputData;
         };
-        Tool_Posing3d_LocateLeftArm1.prototype.executeCalculation = function (env) {
-            env.posing3DLogic.calculateLeftArm1Direction(env.currentPosingData, env.currentPosingModel);
-        };
-        Tool_Posing3d_LocateLeftArm1.prototype.executeCommand = function (inputLocation, env) {
-            var inputData = this.getInputData(env);
-            // Set inputs
-            vec3.copy(inputData.inputLocation, inputLocation);
-            inputData.editLine = this.editLine;
-            inputData.inputDone = true;
-            // Calculate
-            this.executeCalculation(env);
-            // Update dependent input
-            env.setRedrawWebGLWindow();
-            env.setRedrawSubtoolWindow();
+        Tool_Posing3d_LocateLeftArm1.prototype.updateAdditionalPart = function (inputLocation, env) {
+            env.currentPosingData.leftShoulderLocationInputData.inputDone = true;
         };
         return Tool_Posing3d_LocateLeftArm1;
-    }(Tool_Posing3d_PointInputToolBase));
+    }(Tool_Posing3d_JointPartInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateLeftArm1 = Tool_Posing3d_LocateLeftArm1;
     var Tool_Posing3d_LocateRightArm1 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateRightArm1, _super);
@@ -484,8 +526,8 @@ var ManualTracingTool;
         Tool_Posing3d_LocateRightArm1.prototype.getInputData = function (env) {
             return env.currentPosingData.rightArm1LocationInputData;
         };
-        Tool_Posing3d_LocateRightArm1.prototype.executeCalculation = function (env) {
-            env.posing3DLogic.calculateRightArm1Direction(env.currentPosingData, env.currentPosingModel);
+        Tool_Posing3d_LocateRightArm1.prototype.updateAdditionalPart = function (inputLocation, env) {
+            env.currentPosingData.rightShoulderLocationInputData.inputDone = true;
         };
         return Tool_Posing3d_LocateRightArm1;
     }(Tool_Posing3d_LocateLeftArm1));
@@ -497,14 +539,19 @@ var ManualTracingTool;
             _this.helpText = 'ヒザのあたりの位置を指定して上脚を配置します。';
             return _this;
         }
+        Tool_Posing3d_LocateLeftLeg1.prototype.isAvailable = function (env) {
+            return (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+                && env.currentPosingData != null
+                && env.currentPosingData.hipsLocationInputData.inputDone);
+        };
         Tool_Posing3d_LocateLeftLeg1.prototype.getInputData = function (env) {
             return env.currentPosingData.leftLeg1LocationInputData;
         };
-        Tool_Posing3d_LocateLeftLeg1.prototype.executeCalculation = function (env) {
-            env.posing3DLogic.calculateLeftLeg1Direction(env.currentPosingData, env.currentPosingModel);
+        Tool_Posing3d_LocateLeftLeg1.prototype.executeCommandExt = function (inputLocation, env) {
+            env.currentPosingData.leftShoulderLocationInputData.inputDone = true;
         };
         return Tool_Posing3d_LocateLeftLeg1;
-    }(Tool_Posing3d_LocateLeftArm1));
+    }(Tool_Posing3d_JointPartInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateLeftLeg1 = Tool_Posing3d_LocateLeftLeg1;
     var Tool_Posing3d_LocateRightLeg1 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateRightLeg1, _super);
@@ -516,11 +563,8 @@ var ManualTracingTool;
         Tool_Posing3d_LocateRightLeg1.prototype.getInputData = function (env) {
             return env.currentPosingData.rightLeg1LocationInputData;
         };
-        Tool_Posing3d_LocateRightLeg1.prototype.executeCalculation = function (env) {
-            env.posing3DLogic.calculateRightLeg1Direction(env.currentPosingData, env.currentPosingModel);
-        };
         return Tool_Posing3d_LocateRightLeg1;
-    }(Tool_Posing3d_LocateLeftArm1));
+    }(Tool_Posing3d_LocateLeftLeg1));
     ManualTracingTool.Tool_Posing3d_LocateRightLeg1 = Tool_Posing3d_LocateRightLeg1;
     var Tool_Posing3d_LocateLeftArm2 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateLeftArm2, _super);
@@ -537,11 +581,8 @@ var ManualTracingTool;
         Tool_Posing3d_LocateLeftArm2.prototype.getInputData = function (env) {
             return env.currentPosingData.leftArm2LocationInputData;
         };
-        Tool_Posing3d_LocateLeftArm2.prototype.executeCalculation = function (env) {
-            env.posing3DLogic.calculateLeftArm2Direction(env.currentPosingData, env.currentPosingModel);
-        };
         return Tool_Posing3d_LocateLeftArm2;
-    }(Tool_Posing3d_LocateLeftArm1));
+    }(Tool_Posing3d_JointPartInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateLeftArm2 = Tool_Posing3d_LocateLeftArm2;
     var Tool_Posing3d_LocateRightArm2 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateRightArm2, _super);
@@ -558,11 +599,8 @@ var ManualTracingTool;
         Tool_Posing3d_LocateRightArm2.prototype.getInputData = function (env) {
             return env.currentPosingData.rightArm2LocationInputData;
         };
-        Tool_Posing3d_LocateRightArm2.prototype.executeCalculation = function (env) {
-            env.posing3DLogic.calculateRightArm2Direction(env.currentPosingData, env.currentPosingModel);
-        };
         return Tool_Posing3d_LocateRightArm2;
-    }(Tool_Posing3d_LocateLeftArm1));
+    }(Tool_Posing3d_JointPartInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateRightArm2 = Tool_Posing3d_LocateRightArm2;
     var Tool_Posing3d_LocateLeftLeg2 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateLeftLeg2, _super);
@@ -579,11 +617,8 @@ var ManualTracingTool;
         Tool_Posing3d_LocateLeftLeg2.prototype.getInputData = function (env) {
             return env.currentPosingData.leftLeg2LocationInputData;
         };
-        Tool_Posing3d_LocateLeftLeg2.prototype.executeCalculation = function (env) {
-            env.posing3DLogic.calculateLeftLeg2Direction(env.currentPosingData, env.currentPosingModel);
-        };
         return Tool_Posing3d_LocateLeftLeg2;
-    }(Tool_Posing3d_LocateLeftArm1));
+    }(Tool_Posing3d_JointPartInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateLeftLeg2 = Tool_Posing3d_LocateLeftLeg2;
     var Tool_Posing3d_LocateRightLeg2 = /** @class */ (function (_super) {
         __extends(Tool_Posing3d_LocateRightLeg2, _super);
@@ -600,11 +635,8 @@ var ManualTracingTool;
         Tool_Posing3d_LocateRightLeg2.prototype.getInputData = function (env) {
             return env.currentPosingData.rightLeg2LocationInputData;
         };
-        Tool_Posing3d_LocateRightLeg2.prototype.executeCalculation = function (env) {
-            env.posing3DLogic.calculateRightLeg2Direction(env.currentPosingData, env.currentPosingModel);
-        };
         return Tool_Posing3d_LocateRightLeg2;
-    }(Tool_Posing3d_LocateLeftArm1));
+    }(Tool_Posing3d_JointPartInputToolBase));
     ManualTracingTool.Tool_Posing3d_LocateRightLeg2 = Tool_Posing3d_LocateRightLeg2;
     var Command_Posing3d_LocateHead = /** @class */ (function (_super) {
         __extends(Command_Posing3d_LocateHead, _super);

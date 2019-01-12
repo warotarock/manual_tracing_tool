@@ -98,9 +98,10 @@ var ManualTracingTool;
             this.posing3DLogic = new ManualTracingTool.Posing3DLogic();
             this.tool_Posing3d_LocateHead = new ManualTracingTool.Tool_Posing3d_LocateHead();
             this.tool_Posing3d_RotateHead = new ManualTracingTool.Tool_Posing3d_RotateHead();
-            this.tool_Posing3d_TwistHead = new ManualTracingTool.Tool_Posing3d_TwistHead();
             this.tool_Posing3d_LocateBody = new ManualTracingTool.Tool_Posing3d_LocateBody();
-            this.tool_Posing3d_RatateBody = new ManualTracingTool.Tool_Posing3d_RatateBody();
+            this.tool_Posing3d_LocateHips = new ManualTracingTool.Tool_Posing3d_LocateHips();
+            this.tool_Posing3d_LocateLeftShoulder = new ManualTracingTool.Tool_Posing3d_LocateLeftShoulder();
+            this.tool_Posing3d_LocateRightShoulder = new ManualTracingTool.Tool_Posing3d_LocateRightShoulder();
             this.tool_Posing3d_LocateLeftArm1 = new ManualTracingTool.Tool_Posing3d_LocateLeftArm1();
             this.tool_Posing3d_LocateLeftArm2 = new ManualTracingTool.Tool_Posing3d_LocateLeftArm2();
             this.tool_Posing3d_LocateRightArm1 = new ManualTracingTool.Tool_Posing3d_LocateRightArm1();
@@ -114,15 +115,20 @@ var ManualTracingTool;
             this.modelResources = new List();
             // Document data
             this.document = null;
+            this.localSetting = new ManualTracingTool.LocalSetting();
+            this.localStorage_SettingKey = 'MTT-Settings';
+            this.localStorage_SettingIndexKey = 'MTT-Settings Index';
             this.tempFileNameKey = 'Manual tracing tool save data';
-            this.lastFilePathKey = 'Manual tracing tool last used file url';
-            this.refFileBasePathKey = 'Manual tracing tool reference base path';
-            this.exportPathKey = 'Manual tracing tool export path';
             this.loadingDocumentImageResources = null;
-            // UI animation
+            // UI states
             this.selectCurrentLayerAnimationLayer = null;
             this.selectCurrentLayerAnimationTime = 0.0;
             this.selectCurrentLayerAnimationTimeMax = 0.4;
+            this.isViewLocationMoved = false;
+            this.homeViewLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.lastViewLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.lastViewScale = 1.0;
+            this.lastViewRotation = 0.0;
             // Setting values
             this.drawStyle = new ManualTracingTool.ToolDrawingStyle();
             // Work variable
@@ -132,6 +138,11 @@ var ManualTracingTool;
             this.tempVec4 = vec4.create();
             this.tempColor4 = vec4.create();
             this.tempMat4 = mat4.create();
+            this.fromLocation = vec3.create();
+            this.toLocation = vec3.create();
+            this.upVector = vec3.create();
+            this.chestInvMat4 = mat4.create();
+            this.hipsInvMat4 = mat4.create();
             this.editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
             this.tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
             this.tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
@@ -150,7 +161,11 @@ var ManualTracingTool;
             this.subToolImages.push(this.imageResurces[4]);
             this.layerButtonImage = this.imageResurces[5];
         }
+        Main_Core.prototype.showMessageBox = function (text) {
+            alert(text);
+        };
         Main_Core.prototype.onLoad = function () {
+            this.loadSettings();
             this.initializeDevices();
             this.startLoadingSystemResources();
             this.mainProcessState = MainProcessStateID.SystemResourceLoading;
@@ -170,7 +185,7 @@ var ManualTracingTool;
             if (this.webGLRender.initializeWebGL(this.webglWindow.canvas)) {
                 throw ('３Ｄ機能を初期化できませんでした。');
             }
-            this.posing3dView.initialize(this.webGLRender, this.pickingWindow);
+            this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
         };
         // Loading
         Main_Core.prototype.startLoadingSystemResources = function () {
@@ -193,21 +208,24 @@ var ManualTracingTool;
             }
             // Loading finished
             // Start loading document data
-            var lastURL = window.localStorage.getItem(this.lastFilePathKey);
-            if (StringIsNullOrEmpty(lastURL)) {
+            if (this.localSetting.lastUsedFilePaths.length > 0
+                && StringIsNullOrEmpty(this.localSetting.lastUsedFilePaths[0])) {
                 this.document = this.createDefaultDocumentData();
             }
             else {
+                var lastURL = this.localSetting.lastUsedFilePaths[0];
                 this.document = new ManualTracingTool.DocumentData();
                 this.startLoadingDocument(this.document, lastURL);
                 this.updateHdeaderDocumentFileName();
             }
             this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
         };
-        Main_Core.prototype.startLoadingDocument = function (document, url) {
+        Main_Core.prototype.startLoadingDocument = function (documentData, url) {
+            var _this = this;
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url);
             xhr.responseType = 'json';
+            xhr.timeout = 3000;
             xhr.addEventListener('load', function (e) {
                 var data;
                 if (xhr.responseType == 'json') {
@@ -216,13 +234,24 @@ var ManualTracingTool;
                 else {
                     data = JSON.parse(xhr.response);
                 }
-                document.rootLayer = data.rootLayer;
-                document.documentFrame = data.documentFrame;
-                document.palletColos = data.palletColos;
-                document.animationSettingData = data.animationSettingData;
-                document.loaded = true;
+                _this.storeLoadedDocument(documentData, data);
+            });
+            xhr.addEventListener('timeout', function (e) {
+                documentData.hasErrorOnLoading = true;
+            });
+            xhr.addEventListener('error', function (e) {
+                documentData.hasErrorOnLoading = true;
             });
             xhr.send();
+        };
+        Main_Core.prototype.storeLoadedDocument = function (documentData, loadedData) {
+            documentData.rootLayer = loadedData.rootLayer;
+            documentData.documentFrame = loadedData.documentFrame;
+            documentData.palletColos = loadedData.palletColos;
+            documentData.defaultViewScale = loadedData.defaultViewScale;
+            documentData.lineWidthBiasRate = loadedData.lineWidthBiasRate;
+            documentData.animationSettingData = loadedData.animationSettingData;
+            documentData.loaded = true;
         };
         Main_Core.prototype.startReloadDocument = function () {
             this.document = new ManualTracingTool.DocumentData();
@@ -232,7 +261,20 @@ var ManualTracingTool;
             this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
             this.toolEnv.setRedrawAllWindows();
         };
+        Main_Core.prototype.startReloadDocumentFromText = function (textData) {
+            this.document = new ManualTracingTool.DocumentData();
+            this.initializeContext();
+            var data = JSON.parse(textData);
+            this.storeLoadedDocument(this.document, data);
+            this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+            this.toolEnv.setRedrawAllWindows();
+        };
         Main_Core.prototype.processLoadingDocumentJSON = function () {
+            if (this.document.hasErrorOnLoading) {
+                //this.showMessageBox('ドキュメントの読み込みに失敗しました。デフォルトのドキュメントを開きます。');
+                this.document = this.createDefaultDocumentData();
+                this.mainProcessState = MainProcessStateID.Running;
+            }
             if (!this.document.loaded) {
                 return;
             }
@@ -263,7 +305,7 @@ var ManualTracingTool;
                 // Load an image file
                 var imageResource = ifrLayer.imageResource;
                 if (!imageResource.loaded && !StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
-                    var refFileBasePath = window.localStorage.getItem(this.refFileBasePathKey);
+                    var refFileBasePath = this.localSetting.referenceDirectoryPath;
                     if (!StringIsNullOrEmpty(refFileBasePath)) {
                         imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
                     }
@@ -334,15 +376,107 @@ var ManualTracingTool;
                     modelFile.modelResources.push(modelResource);
                     modelFile.modelResourceDictionary[modelData.name] = modelResource;
                 }
+                for (var _b = 0, _c = data.skin_models; _b < _c.length; _b++) {
+                    var modelData = _c[_b];
+                    modelFile.posingModelDictionary[modelData.name] = _this.createPosingModel(modelData);
+                }
                 modelFile.loaded = true;
             });
             xhr.send();
+        };
+        Main_Core.prototype.createPosingModel = function (modelData) {
+            var posingModel = new ManualTracingTool.PosingModel();
+            for (var index = 0; index < modelData.bones.length; index++) {
+                var bone = modelData.bones[index];
+                bone.worldMat = mat4.create();
+                if (bone.parent == -1) {
+                    mat4.copy(bone.worldMat, bone.matrix);
+                }
+                else {
+                    mat4.multiply(bone.worldMat, modelData.bones[bone.parent].worldMat, bone.matrix);
+                }
+                bone.invMat = mat4.create();
+                mat4.invert(bone.invMat, bone.worldMat);
+            }
+            var head = this.findBone(modelData.bones, 'head');
+            var headCenter = this.findBone(modelData.bones, 'headCenter');
+            var headTop = this.findBone(modelData.bones, 'headTop');
+            var headBottom = this.findBone(modelData.bones, 'headBottom');
+            var chest = this.findBone(modelData.bones, 'chest');
+            var hips = this.findBone(modelData.bones, 'hips');
+            var hipsTop = this.findBone(modelData.bones, 'hipsTop');
+            var hipL = this.findBone(modelData.bones, 'hip.L');
+            var neck1 = this.findBone(modelData.bones, 'neck1');
+            var neck2 = this.findBone(modelData.bones, 'neck2');
+            this.translationOf(this.toLocation, headCenter.worldMat);
+            vec3.transformMat4(posingModel.headCenterLocation, this.toLocation, head.invMat);
+            mat4.multiply(this.tempMat4, headTop.worldMat, head.invMat);
+            this.translationOf(posingModel.headTopLocation, this.tempMat4);
+            this.translationOf(this.toLocation, neck2.worldMat);
+            vec3.transformMat4(posingModel.neckSphereLocation, this.toLocation, head.invMat);
+            this.translationOf(this.fromLocation, headTop.worldMat);
+            this.translationOf(this.toLocation, neck2.worldMat);
+            vec3.subtract(posingModel.headTopToNeckVector, this.fromLocation, this.toLocation);
+            this.translationOf(this.fromLocation, neck2.worldMat);
+            this.translationOf(this.toLocation, chest.worldMat);
+            vec3.set(this.upVector, 0.0, 0.0, 1.0);
+            mat4.lookAt(this.chestInvMat4, this.fromLocation, this.toLocation, this.upVector);
+            mat4.multiply(posingModel.chestModelConvertMatrix, this.chestInvMat4, chest.worldMat);
+            this.translationOf(this.toLocation, hips.worldMat);
+            vec3.transformMat4(posingModel.bodyRotationSphereLocation, this.toLocation, this.chestInvMat4);
+            vec3.subtract(this.tempVec3, this.fromLocation, this.toLocation);
+            posingModel.bodySphereSize = vec3.length(this.tempVec3);
+            this.translationOf(this.fromLocation, hips.worldMat);
+            this.translationOf(this.toLocation, hipL.worldMat);
+            vec3.set(this.upVector, 0.0, 0.0, 1.0);
+            mat4.lookAt(this.hipsInvMat4, this.fromLocation, this.toLocation, this.upVector);
+            mat4.multiply(posingModel.hipsModelConvertMatrix, this.hipsInvMat4, hips.worldMat);
+            mat4.rotateY(posingModel.hipsModelConvertMatrix, posingModel.hipsModelConvertMatrix, Math.PI);
+            this.translationOf(this.fromLocation, hips.worldMat);
+            this.translationOf(this.toLocation, hipsTop.worldMat);
+            vec3.subtract(this.tempVec3, this.fromLocation, this.toLocation);
+            posingModel.hipsSphereSize = vec3.length(this.tempVec3);
+            this.translationOf(this.toLocation, neck1.worldMat);
+            vec3.transformMat4(posingModel.shoulderSphereLocation, this.toLocation, this.chestInvMat4);
+            var arm1L = this.findBone(modelData.bones, 'arm1.L');
+            this.translationOf(this.toLocation, arm1L.worldMat);
+            vec3.transformMat4(posingModel.leftArm1Location, this.toLocation, this.chestInvMat4);
+            var arm1R = this.findBone(modelData.bones, 'arm1.R');
+            this.translationOf(this.toLocation, arm1R.worldMat);
+            vec3.transformMat4(posingModel.rightArm1Location, this.toLocation, this.chestInvMat4);
+            var arm2L = this.findBone(modelData.bones, 'arm2.L');
+            posingModel.leftArm1HeadLocation[2] = -arm2L.matrix[13];
+            var arm2R = this.findBone(modelData.bones, 'arm2.R');
+            posingModel.rightArm1HeadLocation[2] = -arm2R.matrix[13];
+            var leg1L = this.findBone(modelData.bones, 'leg1.L');
+            this.translationOf(this.toLocation, leg1L.worldMat);
+            vec3.transformMat4(posingModel.leftLeg1Location, this.toLocation, this.hipsInvMat4);
+            var leg1R = this.findBone(modelData.bones, 'leg1.R');
+            this.translationOf(this.toLocation, leg1R.worldMat);
+            vec3.transformMat4(posingModel.rightLeg1Location, this.toLocation, this.hipsInvMat4);
+            var leg2L = this.findBone(modelData.bones, 'leg2.L');
+            posingModel.leftLeg1HeadLocation[2] = -leg2L.matrix[13];
+            var leg2R = this.findBone(modelData.bones, 'leg2.R');
+            posingModel.rightLeg1HeadLocation[2] = -leg2R.matrix[13];
+            return posingModel;
+        };
+        Main_Core.prototype.translationOf = function (vec, mat) {
+            vec3.set(vec, mat[12], mat[13], mat[14]);
+        };
+        Main_Core.prototype.findBone = function (bones, boneName) {
+            for (var _i = 0, bones_1 = bones; _i < bones_1.length; _i++) {
+                var bone = bones_1[_i];
+                if (bone.name == boneName) {
+                    return bone;
+                }
+            }
+            return null;
         };
         // Saving 
         Main_Core.prototype.saveDocument = function () {
             var filePath = this.getInputElementText(this.ID.fileName);
             if (StringIsNullOrEmpty(filePath)) {
-                alert('ファイル名が指定されていません。');
+                this.showMessageBox('ファイル名が指定されていません。');
                 return;
             }
             var info = new ManualTracingTool.DocumentDataSaveInfo();
@@ -357,12 +491,30 @@ var ManualTracingTool;
             else {
                 fs.writeFile(filePath, JSON.stringify(copy), function (error) {
                     if (error != null) {
-                        alert('error : ' + error);
+                        this.showMessageBox('error : ' + error);
                     }
                 });
+                for (var index = 0; index < this.localSetting.lastUsedFilePaths.length; index++) {
+                    if (this.localSetting.lastUsedFilePaths[index] == filePath) {
+                        ListRemoveAt(this.localSetting.lastUsedFilePaths, index);
+                    }
+                }
+                ListInsertAt(this.localSetting.lastUsedFilePaths, 0, filePath);
             }
-            window.localStorage.setItem(this.lastFilePathKey, filePath);
-            alert('保存しました。');
+            this.saveSettings();
+            this.showMessageBox('保存しました。');
+        };
+        // Settings
+        Main_Core.prototype.loadSettings = function () {
+            var index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
+            var localSettingText = window.localStorage.getItem(this.localStorage_SettingKey + index);
+            if (!StringIsNullOrEmpty(localSettingText)) {
+                this.localSetting = JSON.parse(localSettingText);
+            }
+        };
+        Main_Core.prototype.saveSettings = function () {
+            var index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
+            window.localStorage.setItem(this.localStorage_SettingKey + index, JSON.stringify(this.localSetting));
         };
         // Starting ups
         Main_Core.prototype.start = function () {
@@ -406,6 +558,7 @@ var ManualTracingTool;
                 var layer1 = new ManualTracingTool.PosingLayer();
                 layer1.name = 'posing1';
                 rootLayer.childLayers.push(layer1);
+                layer1.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
             }
             document.loaded = true;
             return document;
@@ -416,6 +569,12 @@ var ManualTracingTool;
             }
             if (document.animationSettingData == undefined) {
                 document.animationSettingData = new ManualTracingTool.AnimationSettingData();
+            }
+            if (document.defaultViewScale == undefined) {
+                document.defaultViewScale = 1.0;
+            }
+            if (document.lineWidthBiasRate == undefined) {
+                document.lineWidthBiasRate = 1.0;
             }
             this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
         };
@@ -511,6 +670,10 @@ var ManualTracingTool;
             else if (layer.type == ManualTracingTool.LayerTypeID.posingLayer) {
                 var posingLayer = layer;
                 posingLayer.drawingUnits = null;
+                if (posingLayer.posingData.rootMatrix == undefined) {
+                    posingLayer.posingData = new ManualTracingTool.PosingData();
+                }
+                posingLayer.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
             }
             for (var _h = 0, _j = layer.childLayers; _h < _j.length; _h++) {
                 var childLayer = _j[_h];
@@ -571,6 +734,12 @@ var ManualTracingTool;
                 delete ifrLayer.adjustingRotation;
                 delete ifrLayer.adjustingScale;
             }
+            else if (layer.type == ManualTracingTool.LayerTypeID.posingLayer) {
+                var posingLayer = layer;
+                // TODO: 他のデータも削除する
+                delete posingLayer.posingData.bodyLocationInputData.parentMatrix;
+                delete posingLayer.posingData.bodyLocationInputData.hitTestSphereRadius;
+            }
             for (var _h = 0, _j = layer.childLayers; _h < _j.length; _h++) {
                 var childLayer = _j[_h];
                 this.fixSaveDocumentData_FixLayer_Recursive(childLayer, info);
@@ -610,16 +779,17 @@ var ManualTracingTool;
                 .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
                 .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
                 .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
-                .subTool(this.tool_Posing3d_RatateBody, this.subToolImages[2], 3)
-                .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
-                .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
+                .subTool(this.tool_Posing3d_LocateHips, this.subToolImages[2], 3)
+                .subTool(this.tool_Posing3d_LocateLeftShoulder, this.subToolImages[2], 6)
                 .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 6)
                 .subTool(this.tool_Posing3d_LocateLeftArm2, this.subToolImages[2], 7)
-                .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 8)
-                .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 9)
-                .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 10)
-                .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 11)
-                .subTool(this.tool_Posing3d_TwistHead, this.subToolImages[2], 12));
+                .subTool(this.tool_Posing3d_LocateRightShoulder, this.subToolImages[2], 4)
+                .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
+                .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
+                .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 8)
+                .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 9)
+                .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 10)
+                .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 11));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.imageReferenceLayer)
                 .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1));
             this.mainTools.push(new ManualTracingTool.MainTool().id(ManualTracingTool.MainToolID.misc)
@@ -1112,6 +1282,8 @@ var ManualTracingTool;
         Main_Core.prototype.drawEditorVectorLineStroke = function (line, color, strokeWidthBolding, useAdjustingLocation) {
         };
         Main_Core.prototype.drawEditorVectorLinePoints = function (line, color, useAdjustingLocation) {
+        };
+        Main_Core.prototype.drawEditorVectorLinePoint = function (point, color, useAdjustingLocation) {
         };
         Main_Core.prototype.drawEditorVectorLineSegment = function (line, startIndex, endIndex, useAdjustingLocation) {
         };

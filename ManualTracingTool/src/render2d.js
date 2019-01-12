@@ -23,7 +23,7 @@ var ManualTracingTool;
             mat4.copy(targetWindow.transformMatrix, this.transformMatrix);
         };
         CanvasWindow.prototype.addViewScale = function (addScale) {
-            this.viewScale += addScale;
+            this.viewScale *= addScale;
             if (this.viewScale >= this.maxViewScale) {
                 this.viewScale = this.maxViewScale;
             }

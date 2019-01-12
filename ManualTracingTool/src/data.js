@@ -10,6 +10,16 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ManualTracingTool;
 (function (ManualTracingTool) {
+    // Setting
+    var LocalSetting = /** @class */ (function () {
+        function LocalSetting() {
+            this.exportPath = null;
+            this.lastUsedFilePaths = null;
+            this.referenceDirectoryPath = null;
+        }
+        return LocalSetting;
+    }());
+    ManualTracingTool.LocalSetting = LocalSetting;
     // Color
     var PalletColor = /** @class */ (function () {
         function PalletColor() {
@@ -233,13 +243,18 @@ var ManualTracingTool;
     var PosingModel = /** @class */ (function () {
         function PosingModel() {
             // Head to body
-            this.headSphereSize = 0.17; // 14cm
-            this.headTwistSphereSize = 0.26; //
-            this.bodySphereSize = 0.44; // 44cm
+            this.headSphereSize = 0.12; // 14cm
+            this.headTwistSphereSize = 0.18; //
+            this.headCenterLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.headTopLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.headTopToNeckVector = vec3.fromValues(0.0, 0.0, 0.0);
+            this.bodySphereSize = 0.30; // 44cm
             this.bodySphereLocation = vec3.fromValues(0.0, -0.03, -0.19);
             this.neckSphereLocation = vec3.fromValues(0.0, -0.03, -0.17);
-            this.bodyRotationSphereSize = 0.22; // 11cm
+            this.shoulderSphereLocation = vec3.fromValues(0.0, -0.03, -0.17);
+            this.bodyRotationSphereSize = 0.15; // 11cm
             this.bodyRotationSphereLocation = vec3.fromValues(0.0, 0.0, -0.31);
+            this.hipsSphereSize = 0.30; // 44cm
             // Arms
             this.leftArm1Location = vec3.fromValues(-0.130, 0.0, -0.05);
             this.rightArm1Location = vec3.fromValues(+0.130, 0.0, -0.05);
@@ -254,10 +269,23 @@ var ManualTracingTool;
             this.rightLeg1HeadLocation = vec3.fromValues(0.0, 0.0, -0.39);
             this.leftLeg2HeadLocation = vec3.fromValues(0.0, 0.0, -0.39);
             this.rightLeg2HeadLocation = vec3.fromValues(0.0, 0.0, -0.39);
+            // runtime
+            this.chestModelConvertMatrix = mat4.create();
+            this.hipsModelConvertMatrix = mat4.create();
         }
         return PosingModel;
     }());
     ManualTracingTool.PosingModel = PosingModel;
+    var PosingModelBoneInputSetting = /** @class */ (function () {
+        function PosingModelBoneInputSetting() {
+            this.inputName = '';
+            this.inputType = ''; //  baseSize, direction
+            this.modelName = '';
+            this.dependentInputName = '';
+        }
+        return PosingModelBoneInputSetting;
+    }());
+    ManualTracingTool.PosingModelBoneInputSetting = PosingModelBoneInputSetting;
     var InputSideID;
     (function (InputSideID) {
         InputSideID[InputSideID["none"] = 0] = "none";
@@ -267,6 +295,9 @@ var ManualTracingTool;
     var PosingInputData = /** @class */ (function () {
         function PosingInputData() {
             this.inputDone = false;
+            // runtime
+            this.parentMatrix = null;
+            this.hitTestSphereRadius = 0.0;
         }
         return PosingInputData;
     }());
@@ -281,38 +312,48 @@ var ManualTracingTool;
             _this.matrix = mat4.create();
             _this.headMatrix = mat4.create();
             _this.bodyRootMatrix = mat4.create();
-            _this.neckSphereMatrix = mat4.create();
             return _this;
         }
         return HeadLocationInputData;
     }(PosingInputData));
     ManualTracingTool.HeadLocationInputData = HeadLocationInputData;
-    var HeadRotationInputData = /** @class */ (function (_super) {
-        __extends(HeadRotationInputData, _super);
-        function HeadRotationInputData() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.inputSideID = InputSideID.front;
-            _this.inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.editLine = null;
-            _this.matrix = mat4.create();
-            return _this;
-        }
-        return HeadRotationInputData;
-    }(PosingInputData));
-    ManualTracingTool.HeadRotationInputData = HeadRotationInputData;
     var DirectionInputData = /** @class */ (function (_super) {
         __extends(DirectionInputData, _super);
         function DirectionInputData() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.inputSideID = InputSideID.front;
             _this.inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.editLine = null;
+            _this.inputLocation2D = vec3.fromValues(0.0, 0.0, 0.0);
+            _this.directionInputDone = false;
+            _this.rollInputDone = false;
+            _this.rollInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            _this.rollInputAngle = 0.0;
             _this.matrix = mat4.create();
             return _this;
         }
         return DirectionInputData;
     }(PosingInputData));
     ManualTracingTool.DirectionInputData = DirectionInputData;
+    var HeadRotationInputData = /** @class */ (function (_super) {
+        __extends(HeadRotationInputData, _super);
+        function HeadRotationInputData() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.neckSphereMatrix = mat4.create();
+            return _this;
+        }
+        return HeadRotationInputData;
+    }(DirectionInputData));
+    ManualTracingTool.HeadRotationInputData = HeadRotationInputData;
+    var HeadTwistInputData = /** @class */ (function (_super) {
+        __extends(HeadTwistInputData, _super);
+        function HeadTwistInputData() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.tempInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            return _this;
+        }
+        return HeadTwistInputData;
+    }(DirectionInputData));
+    ManualTracingTool.HeadTwistInputData = HeadTwistInputData;
     var BodyLocationInputData = /** @class */ (function (_super) {
         __extends(BodyLocationInputData, _super);
         function BodyLocationInputData() {
@@ -334,12 +375,11 @@ var ManualTracingTool;
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.inputSideID = InputSideID.front;
             _this.inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.editLine = null;
             _this.matrix = mat4.create();
             return _this;
         }
         return BodyRotationInputData;
-    }(PosingInputData));
+    }(DirectionInputData));
     ManualTracingTool.BodyRotationInputData = BodyRotationInputData;
     var JointPartInputData = /** @class */ (function (_super) {
         __extends(JointPartInputData, _super);
@@ -354,11 +394,28 @@ var ManualTracingTool;
     var PosingData = /** @class */ (function () {
         function PosingData() {
             this.real3DViewHalfWidth = 1.0;
+            this.rootMatrix = mat4.create();
+            this.headMatrix = mat4.create();
+            this.headTopMatrix = mat4.create();
+            this.neckSphereMatrix = mat4.create();
+            this.chestRootMatrix = mat4.create();
+            this.chestMatrix = mat4.create();
+            this.shoulderRootMatrix = mat4.create();
+            this.hipsRootMatrix = mat4.create();
+            this.hipsMatrix = mat4.create();
+            this.bodyRotationCenterMatrix = mat4.create();
+            this.leftArm1RootMatrix = mat4.create();
+            this.rightArm1RootMatrix = mat4.create();
+            this.leftLeg1RootMatrix = mat4.create();
+            this.rightLeg1RootMatrix = mat4.create();
             this.headLocationInputData = new HeadLocationInputData();
-            this.headRotationInputData = new HeadRotationInputData();
-            this.headTwistInputData = new HeadRotationInputData();
-            this.bodyLocationInputData = new BodyLocationInputData();
+            this.headRotationInputData = new JointPartInputData();
+            this.headTwistInputData = new HeadTwistInputData();
+            this.bodyLocationInputData = new JointPartInputData();
             this.bodyRotationInputData = new BodyRotationInputData();
+            this.hipsLocationInputData = new JointPartInputData();
+            this.leftShoulderLocationInputData = new JointPartInputData();
+            this.rightShoulderLocationInputData = new JointPartInputData();
             this.leftArm1LocationInputData = new JointPartInputData();
             this.leftArm2LocationInputData = new JointPartInputData();
             this.rightArm1LocationInputData = new JointPartInputData();
@@ -373,14 +430,13 @@ var ManualTracingTool;
     ManualTracingTool.PosingData = PosingData;
     var JointPartDrawingUnit = /** @class */ (function () {
         function JointPartDrawingUnit() {
-            this.aName = "";
+            this.name = "";
             this.targetData = null;
             this.dependentInputData = null;
-            this.parentMatrix = null;
             this.drawModel = true;
             this.modelResource = null;
+            this.modelConvertMatrix = null;
             this.visualModelAlpha = 1.0;
-            this.hitTestSphereRadius = 0.0;
             this.hitTestSphereAlpha = 0.5;
         }
         return JointPartDrawingUnit;
@@ -435,9 +491,12 @@ var ManualTracingTool;
         function DocumentData() {
             this.rootLayer = new Layer();
             this.documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
+            this.defaultViewScale = 1.0;
+            this.lineWidthBiasRate = 1.0;
             this.palletColos = new List();
             this.animationSettingData = new AnimationSettingData();
             this.loaded = false;
+            this.hasErrorOnLoading = false;
             DocumentData.initializeDefaultPalletColors(this);
         }
         DocumentData.initializeDefaultPalletColors = function (documentData) {

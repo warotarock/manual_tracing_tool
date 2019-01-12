@@ -34,6 +34,7 @@ var ManualTracingTool;
         function Tool_HideLinePoint_BrushSelect() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.helpText = '線の太さに最大の太さに設定します。<br />Shiftキーで最小の太さに設定します。Ctrlキーで線をの太さを０にします。';
+            _this.isEditTool = false; // @override
             _this.logic_Selector = new Selector_HideLinePoint_BrushSelect(); // @override
             return _this;
         }

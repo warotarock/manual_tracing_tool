@@ -42,6 +42,7 @@ var ManualTracingTool;
             this.fileName = null;
             this.modelResources = new List();
             this.modelResourceDictionary = new Dictionary();
+            this.posingModelDictionary = new Dictionary();
             this.loaded = false;
         }
         ModelFile.prototype.file = function (fileName) {
@@ -61,6 +62,7 @@ var ManualTracingTool;
             // Posing
             // Rendering
             this.render = null;
+            this.webglWindow = null;
             this.pickingWindow = null;
             this.posingFigureShader = new PosingFigureShader();
             this.depthShader = new DepthShader();
@@ -69,7 +71,10 @@ var ManualTracingTool;
             this.zTestShpereModel = null;
             this.zTestShpereEdgeModel = null;
             this.headModel = null;
-            this.bodyModel = null;
+            this.chestModel = null;
+            this.leftSholderModel = null;
+            this.rightSholderModel = null;
+            this.hipsModel = null;
             this.leftArm1Model = null;
             this.leftArm2Model = null;
             this.rightArm1Model = null;
@@ -89,14 +94,16 @@ var ManualTracingTool;
             this.projectionMatrix = mat4.create();
             this.projectionInvMatrix = mat4.create();
             this.cameraMatrix = mat4.create();
+            this.real3DProjectionMatrix = mat4.create();
             this.locationMatrix = mat4.create();
             this.tempVec3 = vec3.create();
             this.invProjectedVec3 = vec3.create();
             this.tmpMatrix = mat4.create();
             this.screenLocation = vec3.create();
         }
-        Posing3DView.prototype.initialize = function (render, pickingWindow) {
+        Posing3DView.prototype.initialize = function (render, webglWindow, pickingWindow) {
             this.render = render;
+            this.webglWindow = webglWindow;
             this.pickingWindow = pickingWindow;
             this.render.initializeShader(this.posingFigureShader);
             this.render.initializeShader(this.depthShader);
@@ -108,123 +115,186 @@ var ManualTracingTool;
             this.zTestShpereModel = modelFile.modelResourceDictionary['ZTestSphere'];
             this.zTestShpereEdgeModel = modelFile.modelResourceDictionary['ZTestSphereEdge'];
             this.headModel = modelFile.modelResourceDictionary['Head02'];
-            this.bodyModel = modelFile.modelResourceDictionary['Body1'];
+            this.chestModel = modelFile.modelResourceDictionary['Chest'];
+            this.leftSholderModel = modelFile.modelResourceDictionary['LeftShoulder'];
+            this.rightSholderModel = modelFile.modelResourceDictionary['LeftShoulder'];
+            this.hipsModel = modelFile.modelResourceDictionary['Hips'];
             this.leftArm1Model = modelFile.modelResourceDictionary['Arm1'];
             this.leftArm2Model = modelFile.modelResourceDictionary['Arm1'];
             this.rightArm1Model = modelFile.modelResourceDictionary['Arm1'];
             this.rightArm2Model = modelFile.modelResourceDictionary['Arm1'];
             this.leftLeg1Model = modelFile.modelResourceDictionary['Leg1'];
-            this.leftLeg2Model = modelFile.modelResourceDictionary['Leg1'];
+            this.leftLeg2Model = modelFile.modelResourceDictionary['Leg2'];
             this.rightLeg1Model = modelFile.modelResourceDictionary['Leg1'];
-            this.rightLeg2Model = modelFile.modelResourceDictionary['Leg1'];
+            this.rightLeg2Model = modelFile.modelResourceDictionary['Leg2'];
             this.imageResurces.push(imageResurces[0]);
         };
         Posing3DView.prototype.buildDrawingStructures = function (posingLayer) {
             var posingData = posingLayer.posingData;
             var posingModel = posingLayer.posingModel;
             var drawingUnits = new List();
-            // Left arms
+            // Head top to neck
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "leftArm1LocationInputData";
-                unit.targetData = posingData.leftArm1LocationInputData;
-                unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.bodyLocationInputData.leftArm1RootMatrix;
-                unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateLeftArm1;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftArm1HeadLocation);
-                unit.modelResource = this.leftArm1Model;
+                unit.name = "headLocationInputData";
+                unit.targetData = posingData.headRotationInputData;
+                unit.dependentInputData = posingData.headLocationInputData;
+                unit.subToolID = ManualTracingTool.Posing3DSubToolID.rotateHead;
+                unit.modelResource = this.headModel;
+                unit.drawModel = false;
+                unit.targetData.parentMatrix = posingData.neckSphereMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.headTopToNeckVector);
+                drawingUnits.push(unit);
+            }
+            // Chest and hips
+            {
+                var unit = new ManualTracingTool.JointPartDrawingUnit();
+                unit.name = "bodyLocationInputData";
+                unit.targetData = posingData.bodyLocationInputData;
+                unit.dependentInputData = posingData.headLocationInputData;
+                unit.modelConvertMatrix = posingModel.chestModelConvertMatrix;
+                unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateBody;
+                unit.modelResource = this.chestModel;
+                unit.targetData.parentMatrix = posingData.chestRootMatrix;
+                unit.targetData.hitTestSphereRadius = posingModel.bodySphereSize;
                 drawingUnits.push(unit);
             }
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "leftArm2LocationInputData";
+                unit.name = "hipsLocationInputData";
+                unit.targetData = posingData.hipsLocationInputData;
+                unit.dependentInputData = posingData.bodyLocationInputData;
+                unit.modelConvertMatrix = posingModel.hipsModelConvertMatrix;
+                unit.subToolID = ManualTracingTool.Posing3DSubToolID.rotateBody;
+                unit.modelResource = this.hipsModel;
+                unit.targetData.parentMatrix = posingData.hipsRootMatrix;
+                unit.targetData.hitTestSphereRadius = posingModel.hipsSphereSize;
+                drawingUnits.push(unit);
+            }
+            // Left arms
+            {
+                var unit = new ManualTracingTool.JointPartDrawingUnit();
+                unit.name = "leftShoulderLocationInputData";
+                unit.targetData = posingData.leftShoulderLocationInputData;
+                unit.dependentInputData = posingData.bodyLocationInputData;
+                unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateLeftShoulder;
+                unit.modelResource = this.leftSholderModel;
+                unit.targetData.parentMatrix = posingData.shoulderRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm1Location);
+                drawingUnits.push(unit);
+            }
+            {
+                var unit = new ManualTracingTool.JointPartDrawingUnit();
+                unit.name = "leftArm1LocationInputData";
+                unit.targetData = posingData.leftArm1LocationInputData;
+                unit.dependentInputData = posingData.bodyLocationInputData;
+                unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateLeftArm1;
+                unit.modelResource = this.leftArm1Model;
+                unit.targetData.parentMatrix = posingData.leftArm1RootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm1HeadLocation);
+                drawingUnits.push(unit);
+            }
+            {
+                var unit = new ManualTracingTool.JointPartDrawingUnit();
+                unit.name = "leftArm2LocationInputData";
                 unit.targetData = posingData.leftArm2LocationInputData;
                 unit.dependentInputData = posingData.leftArm1LocationInputData;
-                unit.parentMatrix = posingData.leftArm1LocationInputData.childJointRootMatrix;
                 unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateLeftArm2;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftArm2HeadLocation);
                 unit.modelResource = this.leftArm2Model;
+                unit.targetData.parentMatrix = posingData.leftArm1LocationInputData.childJointRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm2HeadLocation);
                 drawingUnits.push(unit);
             }
             // Right arm
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "rightArm1LocationInputData";
-                unit.targetData = posingData.rightArm1LocationInputData;
+                unit.name = "rightShoulderLocationInputData";
+                unit.targetData = posingData.rightShoulderLocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.bodyLocationInputData.rightArm1RootMatrix;
-                unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateRightArm1;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightArm1HeadLocation);
-                unit.modelResource = this.rightArm1Model;
+                unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateRightShoulder;
+                unit.modelResource = this.rightSholderModel;
+                unit.targetData.parentMatrix = posingData.shoulderRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm1Location);
                 drawingUnits.push(unit);
             }
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "rightArm2LocationInputData";
+                unit.name = "rightArm1LocationInputData";
+                unit.targetData = posingData.rightArm1LocationInputData;
+                unit.dependentInputData = posingData.bodyLocationInputData;
+                unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateRightArm1;
+                unit.modelResource = this.rightArm1Model;
+                unit.targetData.parentMatrix = posingData.rightArm1RootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm1HeadLocation);
+                drawingUnits.push(unit);
+            }
+            {
+                var unit = new ManualTracingTool.JointPartDrawingUnit();
+                unit.name = "rightArm2LocationInputData";
                 unit.targetData = posingData.rightArm2LocationInputData;
                 unit.dependentInputData = posingData.rightArm1LocationInputData;
-                unit.parentMatrix = posingData.rightArm1LocationInputData.childJointRootMatrix;
                 unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateRightArm2;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightArm2HeadLocation);
                 unit.modelResource = this.rightArm2Model;
+                unit.targetData.parentMatrix = posingData.rightArm1LocationInputData.childJointRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm2HeadLocation);
                 drawingUnits.push(unit);
             }
             // Left leg
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "leftLeg1LocationInputData";
+                unit.name = "leftLeg1LocationInputData";
                 unit.targetData = posingData.leftLeg1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.bodyLocationInputData.leftLeg1RootMatrix;
                 unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateLeftLeg1;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftLeg1HeadLocation);
                 unit.modelResource = this.leftLeg1Model;
+                unit.targetData.parentMatrix = posingData.leftLeg1RootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftLeg1HeadLocation);
                 drawingUnits.push(unit);
             }
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "rightLeg2LocationInputData";
+                unit.name = "rightLeg2LocationInputData";
                 unit.targetData = posingData.leftLeg2LocationInputData;
                 unit.dependentInputData = posingData.leftLeg1LocationInputData;
-                unit.parentMatrix = posingData.leftLeg1LocationInputData.childJointRootMatrix;
                 unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateLeftLeg2;
-                unit.hitTestSphereRadius = vec3.length(posingModel.leftLeg2HeadLocation);
                 unit.modelResource = this.leftLeg2Model;
+                unit.targetData.parentMatrix = posingData.leftLeg1LocationInputData.childJointRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftLeg2HeadLocation);
                 drawingUnits.push(unit);
             }
             // Right leg
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "rightLeg1LocationInputData";
+                unit.name = "rightLeg1LocationInputData";
                 unit.targetData = posingData.rightLeg1LocationInputData;
                 unit.dependentInputData = posingData.bodyLocationInputData;
-                unit.parentMatrix = posingData.bodyLocationInputData.rightLeg1RootMatrix;
                 unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateRightLeg1;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightLeg1HeadLocation);
                 unit.modelResource = this.rightLeg1Model;
+                unit.targetData.parentMatrix = posingData.rightLeg1RootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightLeg1HeadLocation);
                 drawingUnits.push(unit);
             }
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "rightLeg2LocationInputData";
+                unit.name = "rightLeg2LocationInputData";
                 unit.targetData = posingData.rightLeg2LocationInputData;
                 unit.dependentInputData = posingData.rightLeg1LocationInputData;
-                unit.parentMatrix = posingData.rightLeg1LocationInputData.childJointRootMatrix;
                 unit.subToolID = ManualTracingTool.Posing3DSubToolID.locateRightLeg2;
-                unit.hitTestSphereRadius = vec3.length(posingModel.rightLeg2HeadLocation);
                 unit.modelResource = this.rightLeg2Model;
+                unit.targetData.parentMatrix = posingData.rightLeg1LocationInputData.childJointRootMatrix;
+                unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightLeg2HeadLocation);
                 drawingUnits.push(unit);
             }
             // Head twist
             {
                 var unit = new ManualTracingTool.JointPartDrawingUnit();
-                unit.aName = "headTwistInputData";
+                unit.name = "headTwistInputData";
                 unit.targetData = posingData.headTwistInputData;
                 unit.dependentInputData = posingData.headRotationInputData;
-                unit.parentMatrix = posingData.headLocationInputData.neckSphereMatrix;
                 unit.subToolID = ManualTracingTool.Posing3DSubToolID.twistHead;
-                unit.hitTestSphereRadius = posingModel.headTwistSphereSize;
                 unit.drawModel = false;
+                unit.targetData.parentMatrix = posingData.neckSphereMatrix;
+                unit.targetData.hitTestSphereRadius = posingModel.headTwistSphereSize;
                 drawingUnits.push(unit);
             }
             posingLayer.drawingUnits = drawingUnits;
@@ -242,16 +312,14 @@ var ManualTracingTool;
         Posing3DView.prototype.drawManipulaters = function (posingLayer, env) {
             var posingData = posingLayer.posingData;
             var posingModel = posingLayer.posingModel;
-            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth, env.mainWindow);
+            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth);
             // Draws input manipulaters
             this.drawHeadSphere(DrawImageType.visualImage, posingLayer, env);
-            this.drawBodySphere(DrawImageType.visualImage, posingLayer, env);
-            this.drawBodyRotationSphere(DrawImageType.visualImage, posingLayer, env);
             for (var _i = 0, _a = posingLayer.drawingUnits; _i < _a.length; _i++) {
                 var drawingUnit = _a[_i];
                 if (env.subToolIndex == drawingUnit.subToolID) {
                     //this.drawAxis(drawingUnit.parentMatrix, 0.3, 0.5, env);
-                    this.drawArmLegSphere(DrawImageType.visualImage, drawingUnit.targetData.inputSideID, drawingUnit.parentMatrix, drawingUnit.hitTestSphereRadius, posingLayer, env);
+                    this.drawSphere(DrawImageType.visualImage, drawingUnit.targetData.inputSideID, drawingUnit.targetData.parentMatrix, drawingUnit.targetData.hitTestSphereRadius, posingLayer, env);
                 }
             }
         };
@@ -261,29 +329,40 @@ var ManualTracingTool;
             }
             var posingData = posingLayer.posingData;
             var posingModel = posingLayer.posingModel;
-            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth, env.mainWindow);
+            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth);
             this.render.clearDepthBuffer();
             if (this.isHeadDrawable(posingData)) {
-                this.setShaderParameters(posingData.headLocationInputData.headMatrix, false, this.posingFigureShader);
+                this.setShaderParameters(posingData.headMatrix, false, this.posingFigureShader);
                 this.posingFigureShader.setAlpha(1.0);
                 this.drawModel(this.headModel.model, this.imageResurces[0].image);
             }
             if (this.isBodyDrawable(posingData)) {
-                this.setShaderParameters(posingData.bodyLocationInputData.bodyMatrix, false, this.posingFigureShader);
-                this.posingFigureShader.setAlpha(1.0);
-                this.drawModel(this.bodyModel.model, this.imageResurces[0].image);
+                //mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.chestModelConvertMatrix);
+                //this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
+                //this.posingFigureShader.setAlpha(1.0);
+                //this.drawModel(this.chestModel.model, this.imageResurces[0].image);
+                //mat4.multiply(this.tmpMatrix, posingData.chestMatrix, posingModel.hipsModelConvertMatrix);
+                //this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
+                //this.posingFigureShader.setAlpha(1.0);
+                //this.drawModel(this.hipsModel.model, this.imageResurces[0].image);
                 var debugDraw = false;
                 if (debugDraw) {
-                    this.drawAxis(posingData.bodyLocationInputData.leftArm1RootMatrix, 0.1, 0.5, env);
-                    this.drawAxis(posingData.bodyLocationInputData.rightArm1RootMatrix, 0.1, 0.5, env);
-                    this.drawAxis(posingData.bodyLocationInputData.leftLeg1RootMatrix, 0.1, 0.5, env);
-                    this.drawAxis(posingData.bodyLocationInputData.rightLeg1RootMatrix, 0.1, 0.5, env);
+                    this.drawAxis(posingData.leftArm1RootMatrix, 0.1, 0.5, env);
+                    this.drawAxis(posingData.rightArm1RootMatrix, 0.1, 0.5, env);
+                    this.drawAxis(posingData.leftLeg1RootMatrix, 0.1, 0.5, env);
+                    this.drawAxis(posingData.rightLeg1RootMatrix, 0.1, 0.5, env);
                 }
             }
             for (var _i = 0, _a = posingLayer.drawingUnits; _i < _a.length; _i++) {
                 var drawingUnit = _a[_i];
                 if (drawingUnit.drawModel && drawingUnit.targetData.inputDone) {
-                    this.setShaderParameters(drawingUnit.targetData.matrix, false, this.posingFigureShader);
+                    if (drawingUnit.modelConvertMatrix != null) {
+                        mat4.multiply(this.tmpMatrix, drawingUnit.targetData.matrix, drawingUnit.modelConvertMatrix);
+                    }
+                    else {
+                        mat4.copy(this.tmpMatrix, drawingUnit.targetData.matrix);
+                    }
+                    this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
                     this.posingFigureShader.setAlpha(drawingUnit.visualModelAlpha);
                     this.drawModel(drawingUnit.modelResource.model, this.imageResurces[0].image);
                     //this.drawAxis(drawingUnit.targetData.matrix, 0.2, 0.5, env);
@@ -298,51 +377,30 @@ var ManualTracingTool;
             for (var _i = 0, _a = posingLayer.drawingUnits; _i < _a.length; _i++) {
                 var drawingUnit = _a[_i];
                 if (env.subToolIndex == drawingUnit.subToolID) {
-                    this.drawArmLegSphere(DrawImageType.depthImage, drawingUnit.targetData.inputSideID, drawingUnit.parentMatrix, drawingUnit.hitTestSphereRadius, posingLayer, env);
+                    this.drawSphere(DrawImageType.depthImage, drawingUnit.targetData.inputSideID, drawingUnit.targetData.parentMatrix, drawingUnit.targetData.hitTestSphereRadius, posingLayer, env);
                 }
             }
-            //let posingModel = env.currentPosingModel;
-            //let posingData = env.currentPosingData;
-            //if (env.subToolIndex == Posing3DSubToolID.lodcateLeftArm1) {
-            //    this.drawArmLegSphere(DrawImageType.depthImage
-            //        , posingData.leftArm1LocationInputData.inputSideID
-            //        , posingData.bodyRotationInputData.leftArm1RootMatrix
-            //        , vec3.length(posingModel.leftArm1HeadLocation)
-            //        , env);
-            //}
-            //if (env.subToolIndex == Posing3DSubToolID.lodcateRightArm1) {
-            //    this.drawArmLegSphere(DrawImageType.depthImage
-            //        , posingData.rightArm1LocationInputData.inputSideID
-            //        , posingData.bodyRotationInputData.rightArm1RootMatrix
-            //        , vec3.length(posingModel.rightArm1HeadLocation)
-            //        , env);
-            //}
-            //if (env.subToolIndex == Posing3DSubToolID.lodcateLeftLeg1) {
-            //    this.drawArmLegSphere(DrawImageType.depthImage
-            //        , posingData.leftLeg1LocationInputData.inputSideID
-            //        , posingData.bodyRotationInputData.leftLeg1RootMatrix
-            //        , vec3.length(posingModel.leftLeg1HeadLocation)
-            //        , env);
-            //}
-            //if (env.subToolIndex == Posing3DSubToolID.lodcateRightLeg1) {
-            //    this.drawArmLegSphere(DrawImageType.depthImage
-            //        , posingData.rightLeg1LocationInputData.inputSideID
-            //        , posingData.bodyRotationInputData.rightLeg1RootMatrix
-            //        , vec3.length(posingModel.rightLeg1HeadLocation)
-            //        , env);
-            //}
             this.render.setBlendType(WebGLRenderBlendType.blend);
+        };
+        Posing3DView.prototype.getCurrentDrawingUnit = function (env) {
+            for (var _i = 0, _a = env.currentPosingLayer.drawingUnits; _i < _a.length; _i++) {
+                var drawingUnit = _a[_i];
+                if (env.subToolIndex == drawingUnit.subToolID) {
+                    return drawingUnit;
+                }
+            }
+            return null;
         };
         Posing3DView.prototype.drawHeadSphere = function (drawImageType, posingLayer, env) {
             var posingData = posingLayer.posingData;
             var posingModel = posingLayer.posingModel;
             var needsDrawing = (posingData != null
                 && posingData.headLocationInputData.inputDone
-                && (env.subToolIndex == ManualTracingTool.Posing3DSubToolID.locateHead || env.subToolIndex == ManualTracingTool.Posing3DSubToolID.rotateHead));
+                && env.subToolIndex == ManualTracingTool.Posing3DSubToolID.locateHead);
             if (!needsDrawing) {
                 return;
             }
-            mat4.copy(this.locationMatrix, posingData.headLocationInputData.matrix);
+            mat4.copy(this.locationMatrix, posingData.rootMatrix);
             var scale = posingModel.headSphereSize;
             mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
             if (drawImageType == DrawImageType.visualImage) {
@@ -358,12 +416,11 @@ var ManualTracingTool;
             var posingModel = posingLayer.posingModel;
             var needsDrawing = (posingData != null
                 && posingData.headLocationInputData.inputDone
-                && posingData.headRotationInputData.inputDone
                 && env.subToolIndex == ManualTracingTool.Posing3DSubToolID.locateBody);
             if (!needsDrawing) {
                 return;
             }
-            ManualTracingTool.Maths.getTranslationMat4(this.tempVec3, posingData.headLocationInputData.bodyRootMatrix);
+            ManualTracingTool.Maths.getTranslationMat4(this.tempVec3, posingData.chestRootMatrix);
             mat4.identity(this.tmpMatrix);
             mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
             var scale = posingModel.bodySphereSize;
@@ -385,7 +442,7 @@ var ManualTracingTool;
             if (!needsDrawing) {
                 return;
             }
-            ManualTracingTool.Maths.getTranslationMat4(this.tempVec3, posingData.bodyLocationInputData.rotationCenterMatrix);
+            ManualTracingTool.Maths.getTranslationMat4(this.tempVec3, posingData.bodyRotationCenterMatrix);
             mat4.identity(this.tmpMatrix);
             mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
             var scale = posingModel.bodyRotationSphereSize;
@@ -398,7 +455,7 @@ var ManualTracingTool;
                 this.drawZTestSphereDepth(this.locationMatrix, posingData.bodyRotationInputData.inputSideID, env);
             }
         };
-        Posing3DView.prototype.drawArmLegSphere = function (drawImageType, inputSideID, rootMatrix, scale, posingLayer, env) {
+        Posing3DView.prototype.drawSphere = function (drawImageType, inputSideID, rootMatrix, scale, posingLayer, env) {
             var posingData = posingLayer.posingData;
             ManualTracingTool.Maths.getTranslationMat4(this.tempVec3, rootMatrix);
             mat4.identity(this.tmpMatrix);
@@ -414,7 +471,8 @@ var ManualTracingTool;
         };
         Posing3DView.prototype.isHeadDrawable = function (posingData) {
             return (posingData != null
-                && posingData.headRotationInputData.inputDone);
+                && (posingData.headLocationInputData.inputDone
+                    || posingData.headRotationInputData.inputDone));
         };
         Posing3DView.prototype.isBodyDrawable = function (posingData) {
             return (posingData != null
@@ -485,12 +543,6 @@ var ManualTracingTool;
             this.posingFigureShader.setAlpha(alpha);
             this.drawModel(this.axisModel.model, this.imageResurces[0].image);
         };
-        Posing3DView.prototype.drawSphere = function (locationMatrix, scale, alpha, env) {
-            mat4.copy(this.locationMatrix, locationMatrix);
-            mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
-            this.posingFigureShader.setAlpha(alpha);
-            this.drawZTestSphere(this.locationMatrix, ManualTracingTool.InputSideID.front, env);
-        };
         Posing3DView.prototype.drawModel = function (model, image) {
             var gl = this.render.gl;
             this.render.setBuffers(model, [image]);
@@ -498,7 +550,8 @@ var ManualTracingTool;
             gl.bindTexture(gl.TEXTURE_2D, image.texture);
             this.render.drawElements(model);
         };
-        Posing3DView.prototype.caluculateCameraMatrix = function (real3DViewHalfWidth, canvasWindow) {
+        Posing3DView.prototype.caluculateCameraMatrix = function (real3DViewHalfWidth) {
+            var wnd = this.webglWindow;
             // Tareget position
             vec3.set(this.modelLocation, 0.0, 0.0, 0.0);
             // Camera position
@@ -506,35 +559,45 @@ var ManualTracingTool;
             vec3.set(this.upVector, 0.0, 0.0, 1.0);
             vec3.set(this.eyeLocation, 0.0, 0.0, 0.0);
             // 2D scale
-            var viewScale = canvasWindow.viewScale;
-            var real2DViewHalfWidth = canvasWindow.width / 2 / viewScale;
-            var real2DViewHalfHeight = canvasWindow.height / 2 / viewScale;
+            var viewScale = wnd.viewScale;
+            var real2DViewHalfWidth = wnd.width / 2 / viewScale;
+            var real2DViewHalfHeight = wnd.height / 2 / viewScale;
             // Projection
-            var aspect = canvasWindow.height / canvasWindow.width;
+            var aspect = wnd.height / wnd.width;
             var orthoWidth = real3DViewHalfWidth / viewScale;
+            mat4.ortho(this.real3DProjectionMatrix, -real3DViewHalfWidth, real3DViewHalfWidth, -real3DViewHalfWidth, real3DViewHalfWidth, 0.1, 10.0);
             mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, -orthoWidth, orthoWidth, 0.1, 10.0);
-            var viewOffsetX = -(canvasWindow.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
-            var viewOffsetY = (canvasWindow.viewLocation[1]) / real2DViewHalfHeight;
+            var viewOffsetX = -(wnd.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
+            var viewOffsetY = (wnd.viewLocation[1]) / real2DViewHalfHeight;
             mat4.identity(this.tmpMatrix);
             mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, aspect, 1.0, 1.0));
-            mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -canvasWindow.viewRotation * Math.PI / 180.0);
+            mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -wnd.viewRotation * Math.PI / 180.0);
             mat4.translate(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, viewOffsetX / aspect, viewOffsetY, 0.0));
             mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
             mat4.invert(this.projectionInvMatrix, this.projectionMatrix);
             mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
             mat4.invert(this.cameraMatrix, this.viewMatrix);
         };
-        Posing3DView.prototype.calculate3DLocationFrom2DLocation = function (result, real2DLocation, depth, real3DViewHalfWidth, canvasWindow) {
-            this.caluculateCameraMatrix(real3DViewHalfWidth, canvasWindow);
-            vec3.transformMat4(this.screenLocation, real2DLocation, canvasWindow.transformMatrix);
-            var viewHalfWidth = canvasWindow.width / 2;
-            var viewHalfHeight = canvasWindow.height / 2;
+        Posing3DView.prototype.calculate3DLocationFrom2DLocation = function (result, real2DLocation, depth, real3DViewHalfWidth) {
+            var wnd = this.webglWindow;
+            this.caluculateCameraMatrix(real3DViewHalfWidth);
+            vec3.transformMat4(this.screenLocation, real2DLocation, wnd.transformMatrix);
+            var viewHalfWidth = wnd.width / 2;
+            var viewHalfHeight = wnd.height / 2;
             this.screenLocation[0] = (this.screenLocation[0] - viewHalfWidth) / viewHalfWidth;
             this.screenLocation[1] = -(this.screenLocation[1] - viewHalfHeight) / viewHalfHeight;
             this.screenLocation[2] = 0.0;
             vec3.transformMat4(this.invProjectedVec3, this.screenLocation, this.projectionInvMatrix);
             this.invProjectedVec3[2] = -depth;
             vec3.transformMat4(result, this.invProjectedVec3, this.cameraMatrix);
+        };
+        Posing3DView.prototype.calculate2DLocationFrom3DLocation = function (result, real3DLocation, real3DViewHalfWidth) {
+            var wnd = this.webglWindow;
+            this.caluculateCameraMatrix(real3DViewHalfWidth);
+            vec3.transformMat4(result, real3DLocation, this.viewMatrix);
+            vec3.transformMat4(result, result, this.real3DProjectionMatrix);
+            result[0] *= (wnd.height / 2.0);
+            result[1] *= -(wnd.height / 2.0);
         };
         Posing3DView.prototype.pick3DLocationFromDepthImage = function (result, location2d, real3DViewHalfWidth, pickingWindow) {
             vec3.transformMat4(this.tempVec3, location2d, pickingWindow.transformMatrix);
@@ -551,7 +614,7 @@ var ManualTracingTool;
             }
             var depth = (r / 255) + (g / Math.pow(255, 2)) + (b / Math.pow(255, 3));
             depth *= pickingWindow.maxDepth;
-            this.calculate3DLocationFrom2DLocation(result, location2d, depth, real3DViewHalfWidth, pickingWindow);
+            this.calculate3DLocationFrom2DLocation(result, location2d, depth, real3DViewHalfWidth);
             return true;
         };
         return Posing3DView;

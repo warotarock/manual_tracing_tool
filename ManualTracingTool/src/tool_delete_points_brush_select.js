@@ -29,6 +29,7 @@ var ManualTracingTool;
         function Tool_DeletePoints_BrushSelect() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.helpText = 'ブラシ選択で点を削除します。';
+            _this.isEditTool = false; // @override
             _this.logic_Selector = new Selector_DeleteLinePoint_BrushSelect(); // @override
             return _this;
         }

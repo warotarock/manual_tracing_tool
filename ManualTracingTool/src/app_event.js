@@ -259,6 +259,37 @@ var ManualTracingTool;
             window.addEventListener('contextmenu', function (e) {
                 return _this.htmlWindow_contextmenu(e);
             });
+            document.addEventListener('dragover', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                var available = false;
+                if (e.dataTransfer.types.length > 0) {
+                    for (var _i = 0, _a = e.dataTransfer.types; _i < _a.length; _i++) {
+                        var type = _a[_i];
+                        if (type == 'Files') {
+                            available = true;
+                            break;
+                        }
+                    }
+                }
+                if (available) {
+                    e.dataTransfer.dropEffect = 'move';
+                }
+                else {
+                    e.dataTransfer.dropEffect = 'none';
+                }
+            });
+            document.addEventListener('drop', function (e) {
+                e.preventDefault();
+                if (e.dataTransfer.files.length > 0) {
+                    var file = e.dataTransfer.files[0];
+                    var reader_1 = new FileReader();
+                    reader_1.addEventListener('load', function (e) {
+                        _this.startReloadDocumentFromText(reader_1.result);
+                    });
+                    reader_1.readAsText(file);
+                }
+            });
             // Menu buttons
             this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', function (e) {
                 if (_this.isEventDisabled()) {
@@ -321,6 +352,13 @@ var ManualTracingTool;
                     return;
                 }
                 _this.openExportImageFileModal();
+                e.preventDefault();
+            });
+            this.getElement(this.ID.menu_btnProperty).addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.openDocumentSettingDialog();
                 e.preventDefault();
             });
             this.getElement(this.ID.menu_btnPalette1).addEventListener('mousedown', function (e) {
@@ -456,6 +494,12 @@ var ManualTracingTool;
                 vec3.transformMat4(this.tempVec3, this.tempVec3, wnd.dragBeforeTransformMatrix);
                 vec3.subtract(e.mouseMovedVector, e.mouseDownLocation, this.tempVec3);
                 vec3.add(this.mainWindow.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedVector);
+                if (!this.isViewLocationMoved) {
+                    vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
+                }
+                else {
+                    vec3.copy(this.lastViewLocation, this.mainWindow.viewLocation);
+                }
                 this.toolEnv.setRedrawMainWindowEditorWindow();
                 this.toolEnv.setRedrawWebGLWindow();
             }
@@ -474,9 +518,11 @@ var ManualTracingTool;
             // View operation
             if (e.wheelDelta != 0.0
                 && !e.isMouseDragging) {
-                this.mainWindow.addViewScale(e.wheelDelta * 0.1);
-                this.toolEnv.setRedrawMainWindowEditorWindow();
-                this.toolEnv.setRedrawWebGLWindow();
+                var addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate * 0.5;
+                if (e.wheelDelta < 0.0) {
+                    addScale = 1.0 / addScale;
+                }
+                this.addViewScale(addScale);
             }
         };
         Main_Event.prototype.layerWindow_mousedown = function () {
@@ -833,10 +879,26 @@ var ManualTracingTool;
                 return;
             }
             if (key == 'Home' || key == 'q') {
-                this.mainWindow.viewLocation[0] = 0.0;
-                this.mainWindow.viewLocation[1] = 0.0;
-                this.mainWindow.viewScale = 1.0;
-                this.mainWindow.viewRotation = 0.0;
+                if (env.isShiftKeyPressing()) {
+                    this.mainWindow.viewLocation[0] = 0.0;
+                    this.mainWindow.viewLocation[1] = 0.0;
+                    vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
+                    this.mainWindow.viewScale = context.document.defaultViewScale;
+                    this.mainWindow.viewRotation = 0.0;
+                    this.isViewLocationMoved = false;
+                }
+                else if (this.isViewLocationMoved) {
+                    vec3.copy(this.mainWindow.viewLocation, this.homeViewLocation);
+                    this.mainWindow.viewScale = context.document.defaultViewScale;
+                    this.mainWindow.viewRotation = 0.0;
+                    this.isViewLocationMoved = false;
+                }
+                else {
+                    vec3.copy(this.mainWindow.viewLocation, this.lastViewLocation);
+                    this.mainWindow.viewScale = this.lastViewScale;
+                    this.mainWindow.viewRotation = this.lastViewRotation;
+                    this.isViewLocationMoved = true;
+                }
                 env.setRedrawMainWindowEditorWindow();
                 return;
             }
@@ -847,23 +909,16 @@ var ManualTracingTool;
                         rot = -rot;
                     }
                     this.mainWindow.viewRotation += rot;
-                    if (this.mainWindow.viewRotation >= 360.0) {
-                        this.mainWindow.viewRotation -= 360.0;
-                    }
-                    if (this.mainWindow.viewRotation <= 0.0) {
-                        this.mainWindow.viewRotation += 360.0;
-                    }
-                    env.setRedrawMainWindowEditorWindow();
+                    this.setViewRotation(this.mainWindow.viewRotation);
                     return;
                 }
             }
             if (key == 'f' || key == 'd') {
-                var addScale = 0.1 * this.drawStyle.viewZoomAdjustingSpeedRate;
+                var addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate;
                 if (key == 'd') {
-                    addScale = -addScale;
+                    addScale = 1 / addScale;
                 }
-                this.mainWindow.addViewScale(addScale);
-                env.setRedrawMainWindowEditorWindow();
+                this.addViewScale(addScale);
                 return;
             }
             if (env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight' || key == 'ArrowUp' || key == 'ArrowDown')) {
@@ -978,11 +1033,17 @@ var ManualTracingTool;
                             env.setRedrawLayerWindow();
                         }
                         else {
-                            this.currentTool.keydown(e, env);
+                            if (!this.currentTool.keydown(e, env)) {
+                                // Switch to scratch line tool
+                                if (key == 'g') {
+                                    this.setCurrentMainTool(ManualTracingTool.MainToolID.drawLine);
+                                    this.setCurrentSubTool(ManualTracingTool.DrawLineToolSubToolID.scratchLine);
+                                    this.currentTool.keydown(e, env);
+                                    env.setRedrawMainWindowEditorWindow();
+                                    env.setRedrawSubtoolWindow();
+                                }
+                            }
                         }
-                    }
-                    else {
-                        this.currentTool.keydown(e, env);
                     }
                 }
                 else if (env.isEditMode()) {
