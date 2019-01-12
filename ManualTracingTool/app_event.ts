@@ -342,6 +342,52 @@ namespace ManualTracingTool {
                 return this.htmlWindow_contextmenu(e);
             });
 
+            document.addEventListener('dragover', (e: DragEvent) => {
+
+                e.stopPropagation();
+                e.preventDefault();
+
+                let available = false;
+                if (e.dataTransfer.types.length > 0) {
+
+                    for (let type of e.dataTransfer.types) {
+
+                        if (type == 'Files') {
+
+                            available = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (available) {
+
+                    e.dataTransfer.dropEffect = 'move';
+                }
+                else {
+
+                    e.dataTransfer.dropEffect = 'none';
+                }
+            });
+
+            document.addEventListener('drop', (e: DragEvent) => {
+
+                e.preventDefault();
+
+                if (e.dataTransfer.files.length > 0) {
+
+                    let file = e.dataTransfer.files[0];
+                    let reader = new FileReader();
+
+                    reader.addEventListener('load', (e: any) => {
+
+                        this.startReloadDocumentFromText(reader.result);
+                    });
+
+                    reader.readAsText(file);
+                }
+            });
+
             // Menu buttons
 
             this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', (e: Event) => {

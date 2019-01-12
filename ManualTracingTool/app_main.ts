@@ -299,7 +299,7 @@ namespace ManualTracingTool {
             this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
         }
 
-        startLoadingDocument(document: DocumentData, url: string) {
+        protected startLoadingDocument(documentData: DocumentData, url: string) {
 
             let xhr = new XMLHttpRequest();
             xhr.open('GET', url);
@@ -317,41 +317,59 @@ namespace ManualTracingTool {
                         data = JSON.parse(xhr.response);
                     }
 
-                    document.rootLayer = data.rootLayer;
-                    document.documentFrame = data.documentFrame;
-                    document.palletColos = data.palletColos;
-                    document.defaultViewScale = data.defaultViewScale;
-                    document.lineWidthBiasRate = data.lineWidthBiasRate;
-                    document.animationSettingData = data.animationSettingData;
-
-                    document.loaded = true;
+                    this.storeLoadedDocument(documentData, data);
                 }
             );
 
             xhr.addEventListener('timeout',
                 (e: Event) => {
 
-                    document.hasErrorOnLoading = true;
+                    documentData.hasErrorOnLoading = true;
                 }
             );
 
             xhr.addEventListener('error',
                 (e: Event) => {
 
-                    document.hasErrorOnLoading = true;
+                    documentData.hasErrorOnLoading = true;
                 }
             );
 
             xhr.send();
         }
 
-        startReloadDocument() {
+        protected storeLoadedDocument(documentData: DocumentData, loadedData: DocumentData) {
+
+            documentData.rootLayer = loadedData.rootLayer;
+            documentData.documentFrame = loadedData.documentFrame;
+            documentData.palletColos = loadedData.palletColos;
+            documentData.defaultViewScale = loadedData.defaultViewScale;
+            documentData.lineWidthBiasRate = loadedData.lineWidthBiasRate;
+            documentData.animationSettingData = loadedData.animationSettingData;
+
+            documentData.loaded = true;
+        }
+
+        protected startReloadDocument() {
 
             this.document = new DocumentData();
             this.initializeContext();
 
             let fileName = this.getInputElementText(this.ID.fileName);
             this.startLoadingDocument(this.document, fileName);
+
+            this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+
+            this.toolEnv.setRedrawAllWindows();
+        }
+
+        protected startReloadDocumentFromText(textData: string) {
+
+            this.document = new DocumentData();
+            this.initializeContext();
+
+            let data = JSON.parse(textData);
+            this.storeLoadedDocument(this.document, data);
 
             this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
 
@@ -932,25 +950,9 @@ namespace ManualTracingTool {
 
                 posingLayer.drawingUnits = null;
 
-                if (posingLayer.posingData.headLocationInputData['neckSphereMatrix']) {
+                if (posingLayer.posingData.rootMatrix == undefined) {
 
-                    delete posingLayer.posingData.headLocationInputData['neckSphereMatrix'];
-                }
-
-                if (posingLayer.posingData.neckSphereMatrix == undefined) {
-
-                    posingLayer.posingData.neckSphereMatrix = mat4.create();
-                    mat4.identity(posingLayer.posingData.neckSphereMatrix);
-                }
-
-                if (posingLayer.posingData.chestRootMatrix == undefined) {
-
-                    posingLayer.posingData.chestRootMatrix = mat4.create();
-                }
-
-                if (posingLayer.posingData.headTwistInputData.tempInputLocation == undefined) {
-
-                    posingLayer.posingData.headTwistInputData.tempInputLocation = vec3.create();
+                    posingLayer.posingData = new PosingData();
                 }
 
                 posingLayer.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
