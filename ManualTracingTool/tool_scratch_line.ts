@@ -107,7 +107,8 @@ namespace ManualTracingTool {
                 let point = new LinePoint();
                 vec3.copy(point.location, e.location);
                 vec3.copy(point.adjustingLocation, e.location);
-                point.lineWidth = env.mouseCursorViewRadius * 2.0;
+                //point.lineWidth = env.mouseCursorViewRadius * 2.0;
+                point.lineWidth = env.drawLineBaseWidth;
 
                 this.editLine.points.push(point);
             }
@@ -495,7 +496,7 @@ namespace ManualTracingTool {
 
                     if (containsPointLineWidth) {
 
-                        directDistance -= point.lineWidth;
+                        directDistance -= point.lineWidth * 0.5;
                         if (directDistance < 0.0) {
                             directDistance = 0.0;
                         }

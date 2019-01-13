@@ -106,6 +106,7 @@ namespace ManualTracingTool {
 
         editFalloffRadiusMinRate = 0.15;
         editFalloffRadiusMaxRate = 1.0;
+        editInfluence = 1.0;
 
         subtructVector = vec3.create();
         moveVector = vec3.create();
@@ -119,44 +120,71 @@ namespace ManualTracingTool {
             let candidatePointRadius = candidatePoint.lineWidth * 0.5;
 
             let distance = vec3.distance(targetPoint.location, candidatePoint.location);
-            let totalRadius = targetPointRadius + candidatePointRadius;
 
-            let available = (distance < totalRadius);
-            let addRadius = candidatePointRadius;
             if (!env.isShiftKeyPressing()) {
 
-                available = available && (distance > targetPointRadius - candidatePointRadius);
-                addRadius *= -1;
-            }
+                if (distance + candidatePointRadius > targetPointRadius
+                    && distance - candidatePointRadius > -targetPointRadius) {
 
-            if (available) {
+                    let totalDiameter = targetPointRadius + distance + candidatePointRadius;
+                    let totalRadius = totalDiameter * 0.5;
 
+                    let newRadius = Maths.lerp(
+                        editPoint.pair.influence
+                        , targetPointRadius
+                        , totalRadius);
 
-                let newRadius = (targetPointRadius + distance - addRadius) / 2.0;
-
-                editPoint.newLineWidth = newRadius * 2.0;
-
-                if (editPoint.newLineWidth >= 0.01) {
+                    editPoint.newLineWidth = newRadius * 2.0;
 
                     vec3.subtract(this.subtructVector, candidatePoint.location, targetPoint.location);
                     vec3.normalize(this.subtructVector, this.subtructVector);
                     vec3.scale(this.moveVector, this.subtructVector, -targetPointRadius + newRadius);
                     vec3.add(editPoint.newLocation, targetPoint.location, this.moveVector);
                 }
+                else if (candidatePointRadius > targetPointRadius) {
+
+                    editPoint.newLineWidth = candidatePointRadius * 2.0;
+                    vec3.copy(editPoint.newLocation, candidatePoint.location);
+                }
                 else {
 
-                    editPoint.newLineWidth = 0.0;
+                    editPoint.newLineWidth = targetPoint.lineWidth;
                     vec3.copy(editPoint.newLocation, targetPoint.location);
                 }
             }
             else {
 
-                editPoint.newLineWidth = targetPoint.lineWidth;
-                vec3.copy(editPoint.newLocation, targetPoint.location);
-            }
+                if (distance - candidatePointRadius < targetPointRadius
+                    && distance - candidatePointRadius > -targetPointRadius) {
 
-            //editPoint.newLineWidth = distance * 2.0;
-            //vec3.copy(editPoint.newLocation, targetPoint.location);
+                    let totalDiameter = targetPointRadius + distance - candidatePointRadius;
+                    let totalRadius = totalDiameter * 0.5;
+
+                    let newRadius = Maths.lerp(
+                        editPoint.pair.influence
+                        , targetPointRadius
+                        , totalRadius);
+
+                    editPoint.newLineWidth = newRadius * 2.0;
+
+                    vec3.subtract(this.subtructVector, candidatePoint.location, targetPoint.location);
+                    vec3.normalize(this.subtructVector, this.subtructVector);
+                    vec3.scale(this.moveVector, this.subtructVector, -targetPointRadius + newRadius);
+                    vec3.add(editPoint.newLocation, targetPoint.location, this.moveVector);
+
+
+                }
+                else if (distance < candidatePointRadius) {
+
+                    editPoint.newLineWidth = 0.0;
+                    vec3.copy(editPoint.newLocation, targetPoint.location);
+                }
+                else {
+
+                    editPoint.newLineWidth = targetPoint.lineWidth;
+                    vec3.copy(editPoint.newLocation, targetPoint.location);
+                }
+            }
         }
     }
 
