@@ -1268,7 +1268,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected updateHdeaderDocumentFileName() { // @override
+        protected updateHeaderDocumentFileName() { // @override
 
             if (this.localSetting.lastUsedFilePaths.length > 0) {
 
@@ -1278,8 +1278,13 @@ namespace ManualTracingTool {
             }
             else {
 
-                this.setInputElementText(this.ID.fileName, 'new_document.json');
+                this.setInputElementText(this.ID.fileName, this.getDefaultDocumentFileName());
             }
+        }
+
+        protected setHeaderDefaultDocumentFileName() { // @override
+
+            this.setInputElementText(this.ID.fileName, this.getDefaultDocumentFileName());
         }
 
         // Footer window

@@ -8,6 +8,7 @@ namespace ManualTracingTool {
         exportPath: string = null;
         lastUsedFilePaths: List<string> = new List<string>();
         referenceDirectoryPath: string = null;
+        currentDirectoryPath: string = null;
     }
 
     // Color

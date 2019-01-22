@@ -116,8 +116,8 @@ namespace ManualTracingTool {
         tool_AddPoint = new Tool_AddPoint();
         tool_ScratchLine = new Tool_ScratchLine();
         tool_ExtrudeLine = new Tool_ExtrudeLine();
-        //tool_OverWriteLineWidth = new Tool_OverWriteLineWidth();
-        tool_OverWriteLineWidth = new Tool_ScratchLineWidth();
+        tool_OverWriteLineWidth = new Tool_OverWriteLineWidth();
+        tool_ScratchLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
         tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
         tool_EditLinePointWidth_BrushSelect = new Tool_HideLinePoint_BrushSelect();
@@ -294,7 +294,7 @@ namespace ManualTracingTool {
                 this.document = new DocumentData();
                 this.startLoadingDocument(this.document, lastURL);
 
-                this.updateHdeaderDocumentFileName();
+                this.updateHeaderDocumentFileName();
             }
 
             this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
@@ -384,6 +384,8 @@ namespace ManualTracingTool {
                 //this.showMessageBox('ドキュメントの読み込みに失敗しました。デフォルトのドキュメントを開きます。');
 
                 this.document = this.createDefaultDocumentData();
+
+                this.setHeaderDefaultDocumentFileName();
 
                 this.mainProcessState = MainProcessStateID.Running;
             }
@@ -698,20 +700,25 @@ namespace ManualTracingTool {
                     }
                 });
 
-                for (let index = 0; index < this.localSetting.lastUsedFilePaths.length; index++) {
-
-                    if (this.localSetting.lastUsedFilePaths[index] == filePath) {
-
-                        ListRemoveAt(this.localSetting.lastUsedFilePaths, index);
-                    }
-                }
-
-                ListInsertAt(this.localSetting.lastUsedFilePaths, 0, filePath);
+                this.regsterLastUsedFile(filePath);
             }
 
             this.saveSettings();
 
             this.showMessageBox('保存しました。');
+        }
+
+        protected regsterLastUsedFile(filePath: string) {
+
+            for (let index = 0; index < this.localSetting.lastUsedFilePaths.length; index++) {
+
+                if (this.localSetting.lastUsedFilePaths[index] == filePath) {
+
+                    ListRemoveAt(this.localSetting.lastUsedFilePaths, index);
+                }
+            }
+
+            ListInsertAt(this.localSetting.lastUsedFilePaths, 0, filePath);
         }
 
         // Settings
@@ -802,6 +809,21 @@ namespace ManualTracingTool {
             document.loaded = true;
 
             return document;
+        }
+
+        private fileNameCount = 1;
+
+        protected getDefaultDocumentFileName(): string {
+
+            var date = new Date();
+            var fileName = (''
+                + date.getFullYear() + ('0' + (date.getMonth() + 1)).slice(-2) + ('0' + date.getDate()).slice(-2)
+                + '_' + ('0' + this.fileNameCount).slice(-2)
+            );
+
+            this.fileNameCount++;
+
+            return this.localSetting.currentDirectoryPath +'\\' + fileName + '.json';
         }
 
         protected fixLoadedDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
@@ -1096,6 +1118,7 @@ namespace ManualTracingTool {
                     .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                     .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
                     .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
+                    .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
                     .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
             );
 
@@ -1542,6 +1565,7 @@ namespace ManualTracingTool {
 
             if (isChanged) {
 
+                this.subtoolWindow.viewLocation[1] = 0.0;
                 this.subtoolWindow_CollectViewItems();
                 this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
 
@@ -1809,7 +1833,10 @@ namespace ManualTracingTool {
         protected resizeWindows() { // @virtual
         }
 
-        protected updateHdeaderDocumentFileName() { // @virtual
+        protected updateHeaderDocumentFileName() { // @virtual
+        }
+
+        protected setHeaderDefaultDocumentFileName() { // @virtual
         }
 
         protected updateHeaderButtons() { // @virtual

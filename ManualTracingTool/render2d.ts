@@ -14,6 +14,9 @@ namespace ManualTracingTool {
         viewScale = 1.0;
         viewRotation = 0.0;
 
+        mirrorX = false;
+        mirrorY = false;
+
         maxViewScale = 30.0;
         minViewScale = 0.1;
 
@@ -50,23 +53,29 @@ namespace ManualTracingTool {
             this.caluclateViewMatrix(this.transformMatrix);
         }
 
-        caluclateViewMatrix(out: Mat4) {
+        caluclateViewMatrix(result: Mat4) {
 
-            mat4.identity(out);
+            mat4.identity(result);
 
-            mat4.translate(out, out, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
-            mat4.scale(out, out, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
-            mat4.rotateZ(out, out, this.viewRotation * Math.PI / 180.0);
+            mat4.translate(result, result, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
+            mat4.scale(result, result, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
+            if (this.mirrorX) {
+                mat4.scale(result, result, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
+            }
+            if (this.mirrorY) {
+                mat4.scale(result, result, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
+            }
+            mat4.rotateZ(result, result, this.viewRotation * Math.PI / 180.0);
             //mat4.translate(mat, mat, vec3.set(this.tempVec3, -this.width / 2, -this.height / 2, 0.0));
 
-            mat4.translate(out, out, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
+            mat4.translate(result, result, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
         }
 
-        calculateViewUnitMatrix(out: Mat4) {
+        calculateViewUnitMatrix(result: Mat4) {
 
-            mat4.identity(out);
-            mat4.scale(out, out, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
-            mat4.rotateZ(out, out, this.viewRotation * Math.PI / 180.0);
+            mat4.identity(result);
+            mat4.scale(result, result, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
+            mat4.rotateZ(result, result, this.viewRotation * Math.PI / 180.0);
         }
     }
 

@@ -81,6 +81,9 @@ namespace ManualTracingTool {
             Logic_Edit_Line.calculateParameters(this.editLine);
 
             let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
+            if (resamplingUnitLength > this.resamplingUnitLength) {
+                resamplingUnitLength = this.resamplingUnitLength;
+            }
 
             let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
 

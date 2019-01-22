@@ -379,6 +379,14 @@ namespace ManualTracingTool {
                     let file = e.dataTransfer.files[0];
                     let reader = new FileReader();
 
+                    if (file['path'] != undefined) {
+                        this.regsterLastUsedFile(file['path']);
+                    }
+                    else {
+                        this.regsterLastUsedFile(file.name);
+                    }
+                    this.updateHeaderDocumentFileName();
+
                     reader.addEventListener('load', (e: any) => {
 
                         this.startReloadDocumentFromText(reader.result);
@@ -1165,6 +1173,8 @@ namespace ManualTracingTool {
                 this.setCurrentFrame(0);
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
 
+                this.setHeaderDefaultDocumentFileName();
+
                 this.toolEnv.setRedrawAllWindows();
 
                 return;
@@ -1296,11 +1306,21 @@ namespace ManualTracingTool {
                     if (key == 't') {
                         rot = -rot;
                     }
+                    if (this.mainWindow.mirrorX) {
+                        rot = -rot;
+                    }
 
                     this.mainWindow.viewRotation += rot;
                     this.setViewRotation(this.mainWindow.viewRotation);
                     return;
                 }
+            }
+
+            if (key == 'm') {
+
+                this.mainWindow.mirrorX = !this.mainWindow.mirrorX;
+                env.setRedrawMainWindowEditorWindow();
+                return;
             }
 
             if (key == 'f' || key == 'd') {

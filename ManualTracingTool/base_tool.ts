@@ -18,7 +18,8 @@ namespace ManualTracingTool {
         scratchLine = 2,
         extrudeLine = 3,
         overWriteLineWidth = 4,
-        editLinePointWidth_BrushSelect = 5
+        scratchLineWidth = 5,
+        editLinePointWidth_BrushSelect = 6
     }
 
     export enum EditModeSubToolID {
