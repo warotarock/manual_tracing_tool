@@ -342,6 +342,22 @@ namespace ManualTracingTool {
                 return this.htmlWindow_contextmenu(e);
             });
 
+            window.addEventListener('blur', (e: Event) => {
+
+                if (this.mainProcessState == MainProcessStateID.running) {
+
+                    this.mainProcessState = MainProcessStateID.pause;
+                }
+            });
+
+            window.addEventListener('focus', (e: Event) => {
+
+                if (this.mainProcessState == MainProcessStateID.pause) {
+
+                    this.mainProcessState = MainProcessStateID.running;
+                }
+            });
+
             document.addEventListener('dragover', (e: DragEvent) => {
 
                 e.stopPropagation();

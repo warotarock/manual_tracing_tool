@@ -193,21 +193,26 @@ namespace ManualTracingTool {
 
     function run() {
 
-        if (_Main.mainProcessState == MainProcessStateID.Running) {
+        if (_Main.mainProcessState == MainProcessStateID.pause) {
+
+            setTimeout(run, 1000);
+            return;
+        }
+        else if (_Main.mainProcessState == MainProcessStateID.running) {
 
             _Main.run();
             _Main.draw();
         }
-        else if (_Main.mainProcessState == MainProcessStateID.SystemResourceLoading) {
+        else if (_Main.mainProcessState == MainProcessStateID.systemResourceLoading) {
 
             _Main.processLoadingSystemResources();
         }
-        else if (_Main.mainProcessState == MainProcessStateID.InitialDocumentJSONLoading) {
+        else if (_Main.mainProcessState == MainProcessStateID.initialDocumentJSONLoading) {
 
             _Main.processLoadingDocumentJSON();
         }
-        else if (_Main.mainProcessState == MainProcessStateID.DocumentResourceLoading
-            || _Main.mainProcessState == MainProcessStateID.InitialDocumentResourceLoading) {
+        else if (_Main.mainProcessState == MainProcessStateID.documentResourceLoading
+            || _Main.mainProcessState == MainProcessStateID.initialDocumentResourceLoading) {
 
             _Main.processLoadingDocumentResources();
         }

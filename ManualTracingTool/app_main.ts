@@ -13,13 +13,14 @@ namespace ManualTracingTool {
 
     export enum MainProcessStateID {
 
-        none = 0,
-        SystemResourceLoading = 1,
-        InitialDocumentJSONLoading = 2,
-        InitialDocumentResourceLoading = 3,
-        Running = 4,
-        DocumentResourceLoading = 5,
-        DocumentJSONLoading = 6
+        none,
+        pause,
+        systemResourceLoading,
+        initialDocumentJSONLoading,
+        initialDocumentResourceLoading,
+        running,
+        documentResourceLoading,
+        documentJSONLoading
     }
 
     export class Main_Core implements MainEditor, MainEditorDrawer {
@@ -223,7 +224,7 @@ namespace ManualTracingTool {
 
             this.startLoadingSystemResources();
 
-            this.mainProcessState = MainProcessStateID.SystemResourceLoading;
+            this.mainProcessState = MainProcessStateID.systemResourceLoading;
         }
 
         protected initializeDevices() {
@@ -297,7 +298,7 @@ namespace ManualTracingTool {
                 this.updateHeaderDocumentFileName();
             }
 
-            this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+            this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
         }
 
         protected startLoadingDocument(documentData: DocumentData, url: string) {
@@ -359,7 +360,7 @@ namespace ManualTracingTool {
             let fileName = this.getInputElementText(this.ID.fileName);
             this.startLoadingDocument(this.document, fileName);
 
-            this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+            this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
 
             this.toolEnv.setRedrawAllWindows();
         }
@@ -372,7 +373,7 @@ namespace ManualTracingTool {
             let data = JSON.parse(textData);
             this.storeLoadedDocument(this.document, data);
 
-            this.mainProcessState = MainProcessStateID.InitialDocumentJSONLoading;
+            this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
 
             this.toolEnv.setRedrawAllWindows();
         }
@@ -387,7 +388,7 @@ namespace ManualTracingTool {
 
                 this.setHeaderDefaultDocumentFileName();
 
-                this.mainProcessState = MainProcessStateID.Running;
+                this.mainProcessState = MainProcessStateID.running;
             }
 
             if (!this.document.loaded) {
@@ -399,14 +400,14 @@ namespace ManualTracingTool {
             this.fixLoadedDocumentData(this.document, info);
 
             this.startLoadingDocumentResources(this.document);
-            this.mainProcessState = MainProcessStateID.InitialDocumentResourceLoading;
+            this.mainProcessState = MainProcessStateID.initialDocumentResourceLoading;
         }
 
         startLoadingDocumentResourcesProcess(document: DocumentData) { // @implements MainEditor
 
             this.startLoadingDocumentResources(document);
 
-            this.mainProcessState = MainProcessStateID.DocumentResourceLoading;
+            this.mainProcessState = MainProcessStateID.documentResourceLoading;
         }
 
         protected startLoadingDocumentResources(document: DocumentData) {
@@ -471,13 +472,13 @@ namespace ManualTracingTool {
             }
 
             // Loading finished
-            if (this.mainProcessState == MainProcessStateID.InitialDocumentResourceLoading) {
+            if (this.mainProcessState == MainProcessStateID.initialDocumentResourceLoading) {
 
                 this.start();
             }
             else {
 
-                this.mainProcessState = MainProcessStateID.Running;
+                this.mainProcessState = MainProcessStateID.running;
 
                 this.toolEnv.setRedrawAllWindows();
             }
@@ -485,8 +486,8 @@ namespace ManualTracingTool {
 
         protected isWhileLoading(): boolean {
 
-            return (this.mainProcessState == MainProcessStateID.SystemResourceLoading
-                || this.mainProcessState == MainProcessStateID.DocumentResourceLoading);
+            return (this.mainProcessState == MainProcessStateID.systemResourceLoading
+                || this.mainProcessState == MainProcessStateID.documentResourceLoading);
         }
 
         loadTexture(imageResource: ImageResource, url: string) {
@@ -750,7 +751,7 @@ namespace ManualTracingTool {
             this.initializeViews();
             this.initializeModals();
 
-            this.mainProcessState = MainProcessStateID.Running;
+            this.mainProcessState = MainProcessStateID.running;
 
             this.setCurrentMainTool(MainToolID.drawLine);
             //this.setCurrentMainTool(MainToolID.posing);
