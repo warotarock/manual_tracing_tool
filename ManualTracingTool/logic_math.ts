@@ -124,20 +124,51 @@ namespace ManualTracingTool {
             result[2] = matrix[14];
         }
 
-        static setVectorsMat4(result: Mat4, vecX: Vec3, vecY: Vec3, vecZ: Vec3) {
+        static mat4SetVectors(result: Mat4, vecX: Vec3, vecY: Vec3, vecZ: Vec3) {
 
             result[0] = vecX[0];
             result[1] = vecX[1];
             result[2] = vecX[2];
+            result[3] = 0.0;
+
             result[4] = vecY[0];
             result[5] = vecY[1];
             result[6] = vecY[2];
+            result[7] = 0.0;
+
             result[8] = vecZ[0];
             result[9] = vecZ[1];
             result[10] = vecZ[2];
+            result[11] = 0.0;
         }
 
-        private static hsvToRGB_Element(h: float, s: float, v: float, baseElement: float) {
+        static mat4SegmentMat(result: Mat4, resultNormalVec: Vec4, locationFrom: Vec3, locationTo: Vec3) {
+
+            vec3.subtract(resultNormalVec, locationTo, locationFrom);
+            vec3.normalize(resultNormalVec, resultNormalVec);
+
+            result[0] = resultNormalVec[0];
+            result[1] = resultNormalVec[1];
+            result[2] = 0.0;
+            result[3] = 0.0;
+
+            result[4] = -resultNormalVec[1];
+            result[5] = resultNormalVec[0];
+            result[6] = 0.0;
+            result[7] = 0.0;
+
+            result[8] = 0.0;
+            result[9] = 0.0;
+            result[10] = 1.0;
+            result[11] = 1.0;
+
+            result[12] = locationFrom[0];
+            result[13] = locationFrom[1];
+            result[14] = 0.0;
+            result[15] = 1.0;
+        }
+
+        private static hsvToRGB_Element(h: float, s: float, v: float, baseElement: float): float {
 
             return ((Maths.clamp(Math.abs(Maths.fract(h + baseElement / 3.0) * 6.0 - 3.0) - 1.0, 0.0, 1.0) - 1.0) * s + 1.0) * v;
         }

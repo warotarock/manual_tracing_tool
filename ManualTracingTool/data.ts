@@ -80,6 +80,8 @@ namespace ManualTracingTool {
         tempLocation = vec3.fromValues(0.0, 0.0, 0.0);
         adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
         adjustingLineWidth = 0.0;
+        adjustingLengthFrom = 1.0; // end position to draw segment of side of from-point (0.0 - 1.0)
+        adjustingLengthTo = 0.0; // start position to draw segment of side of to-point (0.0 - 1.0)
         totalLength = 0.0;
         curvature = 0.0;
     }
@@ -91,8 +93,9 @@ namespace ManualTracingTool {
         unselectedToSelected = 2,
         delete = 3,
         deletePoints = 4,
-        transform = 5,
-        reampling = 6
+        edit = 5,
+        transform = 6,
+        reampling = 7
     }
 
     export class VectorLine {
@@ -122,6 +125,7 @@ namespace ManualTracingTool {
         modifyLines = 1,
         deleteLines = 2,
         delete = 3,
+        edit = 4,
     }
 
     export class VectorGroup {

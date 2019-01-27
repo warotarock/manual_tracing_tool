@@ -242,7 +242,10 @@ namespace ManualTracingTool {
                     }
                 }
 
-                if (currentPosition + nextStepLength <= nextPoint.totalLength) {
+                if (currentPosition + nextStepLength >= endPosition - samplingUnitLength / 2.0) {
+                    break;
+                }
+                else if (currentPosition + nextStepLength <= nextPoint.totalLength) {
 
                     let localPosition = (currentPosition + nextStepLength) - currentPoint.totalLength;
                     let positionRate = localPosition / segmentLength;

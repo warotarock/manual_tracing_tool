@@ -102,6 +102,7 @@
     <TypeScriptCompile Include="logic_selector.ts" />
     <TypeScriptCompile Include="posing3d_view.ts" />
     <TypeScriptCompile Include="render3d.ts" />
+    <TypeScriptCompile Include="tool_delete_points_divide_line.ts" />
     <TypeScriptCompile Include="tool_edit_points.ts" />
     <TypeScriptCompile Include="tool_edit_document_frame.ts" />
     <TypeScriptCompile Include="tool_edit_image_file_ref.ts" />

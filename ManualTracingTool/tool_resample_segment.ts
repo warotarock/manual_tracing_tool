@@ -209,7 +209,7 @@ namespace ManualTracingTool {
                             , resamplingUnitLength
                         );
                     }
-                    // if no segment, execute insert original point
+                    // if no segment, execute insert current point
                     else {
 
                         let point = line.points[currentIndex];

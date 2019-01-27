@@ -236,11 +236,11 @@ namespace ManualTracingTool {
             this.selectionInfo.clear();
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @override
 
             this.selectionInfo.selectLine(line, this.editMode);
 
-            this.exitPointHitTest = true;
+            this.existsPointHitTest = true;
         }
 
         protected afterHitTest() { // @override
@@ -264,7 +264,7 @@ namespace ManualTracingTool {
             this.selectionInfo.clear();
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @override
 
             this.selectionInfo.selectPoint(line, point1, this.editMode);
             this.selectionInfo.selectPoint(line, point2, this.editMode);

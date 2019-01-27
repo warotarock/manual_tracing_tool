@@ -120,14 +120,14 @@ namespace ManualTracingTool {
                 vec3.normalize(this.vecY, this.tmpVec3);
                 vec3.cross(this.vecX, this.vecY, this.vecZ);
                 mat4.identity(this.yawRotationMatrix);
-                Maths.setVectorsMat4(this.yawRotationMatrix, this.vecX, this.vecY, this.vecZ);
+                Maths.mat4SetVectors(this.yawRotationMatrix, this.vecX, this.vecY, this.vecZ);
 
                 mat4.invert(this.invMatrix, this.yawRotationMatrix);
                 vec3.transformMat4(this.vecY, this.relativeInputLocation, this.invMatrix);
                 vec3.set(this.vecX, 1.0, 0.0, 0.0);
                 vec3.cross(this.vecZ, this.vecX, this.vecY);
                 mat4.identity(this.pitchRotationMatrix);
-                Maths.setVectorsMat4(this.pitchRotationMatrix, this.vecX, this.vecY, this.vecZ);
+                Maths.mat4SetVectors(this.pitchRotationMatrix, this.vecX, this.vecY, this.vecZ);
 
                 mat4.multiply(this.bodyMatrix, rootMatrix, this.yawRotationMatrix);
                 mat4.multiply(this.bodyMatrix, this.bodyMatrix, this.pitchRotationMatrix);
@@ -361,7 +361,7 @@ namespace ManualTracingTool {
                 vec3.cross(this.vecX, this.relativeInputLocation, this.vecZ);
 
                 mat4.identity(this.relativeRotationMatrix);
-                Maths.setVectorsMat4(this.relativeRotationMatrix, this.vecX, this.relativeInputLocation, this.vecZ);
+                Maths.mat4SetVectors(this.relativeRotationMatrix, this.vecX, this.relativeInputLocation, this.vecZ);
 
                 mat4.multiply(bodyRotationInputData.matrix, posingData.bodyLocationInputData.matrix, this.relativeRotationMatrix);
             }

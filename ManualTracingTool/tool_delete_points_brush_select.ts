@@ -10,7 +10,7 @@ namespace ManualTracingTool {
 
         protected afterHitTest() { // @override
 
-            // doesn't clear flagas
+            // doesn't clear flagas when deletion
         }
     }
 

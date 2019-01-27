@@ -120,7 +120,8 @@ namespace ManualTracingTool {
         tool_OverWriteLineWidth = new Tool_OverWriteLineWidth();
         tool_ScratchLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
-        tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
+        //tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
+        tool_DeletePoints_BrushSelect = new Tool_DeletePoints_DivideLine();
         tool_EditLinePointWidth_BrushSelect = new Tool_HideLinePoint_BrushSelect();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
@@ -929,6 +930,9 @@ namespace ManualTracingTool {
                                 if (point.lineWidth == undefined) {
                                     point.lineWidth = 1.0;
                                 }
+
+                                point.adjustingLengthFrom = 1.0;
+                                point.adjustingLengthTo = 0.0;
 
                                 if (point['adjustedLocation'] != undefined) {
                                     delete point['adjustedLocation'];

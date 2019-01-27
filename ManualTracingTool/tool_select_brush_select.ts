@@ -122,17 +122,22 @@ namespace ManualTracingTool {
 
             this.logic_Selector.endProcess();
 
-            this.editableKeyframeLayers = null;
-
             env.endModalTool();
 
-            if (this.logic_Selector.selectionInfo.selectedLines.length == 0
-                && this.logic_Selector.selectionInfo.selectedPoints.length == 0) {
+            if (!this.existsResults()) {
 
                 return;
             }
 
             this.executeCommand(env);
+
+            this.editableKeyframeLayers = null;
+        }
+
+        protected existsResults(): boolean { // @virtual
+
+            return (this.logic_Selector.selectionInfo.selectedLines.length == 0
+                && this.logic_Selector.selectionInfo.selectedPoints.length == 0);
         }
 
         protected executeCommand(env: ToolEnvironment) { // @virtual

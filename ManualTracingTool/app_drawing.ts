@@ -387,79 +387,106 @@ namespace ManualTracingTool {
 
         private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
+            if (line.points.length < 2) {
+                return;
+            }
+
+            //line.points[0].lengthFrom = 0.0;
+            //line.points[0].lengthTo = 0.5;
+            //line.points[line.points.length - 2].lineWidth = 2.3;
+            //line.points[line.points.length - 2].lengthFrom = 0.3;
+            //line.points[line.points.length - 2].lengthTo = 0.6;
+
             this.canvasRender.setLineCap(CanvasRenderLineCap.round)
 
-            for (let pointIndex = startIndex; pointIndex <= endIndex;) {
+            let firstPoint = line.points[startIndex];
+            let currentLineWidth = -1.0;
 
-                // search first visible point
-                let segmentStartIndex = -1;
-                for (let index = pointIndex; index <= endIndex; index++) {
-                    let point = line.points[index];
+            let strokeStarted = false;
+            let drawingRemainging = false;
 
-                    let isNotDeleted = (point.modifyFlag != LinePointModifyFlagID.delete);
+            for (let pointIndex = startIndex; pointIndex < endIndex;) {
 
-                    let lineWidth = (useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
-                    let isVisibleWidth = (lineWidth > 0.0);
+                let fromPoint = line.points[pointIndex];
+                let fromLocation = (useAdjustingLocation ? fromPoint.adjustingLocation : fromPoint.location);
+                let toPoint = line.points[pointIndex + 1];
+                let toLocation = (useAdjustingLocation ? toPoint.adjustingLocation : toPoint.location);
 
-                    if (isNotDeleted && isVisibleWidth) {
+                let lineWidth = (useAdjustingLocation ? fromPoint.adjustingLineWidth : fromPoint.lineWidth);
+                let isVisibleWidth = (lineWidth > 0.0);
+                //let isVisibleSegment = (fromPoint.lengthFrom != 0.0 || fromPoint.lengthTo != 0.0);
 
-                        segmentStartIndex = index;
-                        break;
+                let lengthFrom = (useAdjustingLocation ? fromPoint.adjustingLengthFrom : 1.0);
+                let lengthTo = (useAdjustingLocation ? fromPoint.adjustingLengthTo : 0.0);
+
+                if (lineWidth != currentLineWidth) {
+
+                    if (drawingRemainging) {
+
+                        this.canvasRender.stroke();
+
+                        strokeStarted = false;
+                        drawingRemainging = false;
+                    }
+
+                    this.canvasRender.setStrokeWidth(lineWidth * strokeWidthBiasRate + this.getCurrentViewScaleLineWidth(strokeWidthBolding));
+                    currentLineWidth = lineWidth;
+                }
+
+                if (lengthFrom == 1.0) {
+
+                    // draw segment's full length
+                    if (!strokeStarted) {
+
+                        this.canvasRender.beginPath();
+                        this.canvasRender.moveTo(fromLocation[0], fromLocation[1]);
+                    }
+
+                    this.canvasRender.lineTo(toLocation[0], toLocation[1]);
+                    strokeStarted = true;
+                    drawingRemainging = true;
+                }
+                else {
+
+                    // draw segment's from-side part
+                    if (lengthFrom > 0.0) {
+
+                        if (!strokeStarted) {
+
+                            this.canvasRender.beginPath();
+                            this.canvasRender.moveTo(fromLocation[0], fromLocation[1]);
+                        }
+
+                        vec3.lerp(this.toLocation, fromLocation, toLocation, lengthFrom);
+                        this.canvasRender.lineTo(this.toLocation[0], this.toLocation[1]);
+                        this.canvasRender.stroke();
+                        strokeStarted = false;
+                        drawingRemainging = false;
+                    }
+
+                    // draw segment's to-side part
+                    if (lengthTo > 0.0 && lengthTo < 1.0) {
+
+                        if (drawingRemainging) {
+
+                            this.canvasRender.stroke();
+                        }
+
+                        vec3.lerp(this.fromLocation, fromLocation, toLocation, lengthTo);
+                        this.canvasRender.beginPath();
+                        this.canvasRender.moveTo(this.fromLocation[0], this.fromLocation[1]);
+                        this.canvasRender.lineTo(toLocation[0], toLocation[1]);
+                        strokeStarted = true;
+                        drawingRemainging = true;
                     }
                 }
 
-                if (segmentStartIndex == -1) {
-                    break;
-                }
+                pointIndex++;
+            }
 
-                let firstPoint = line.points[segmentStartIndex];
-                let currentLineWidth = this.lineWidthAdjust(useAdjustingLocation ? firstPoint.adjustingLineWidth : firstPoint.lineWidth);
-
-                // search end index of the segment
-                let segmentEndIndex = segmentStartIndex;
-                for (let index = segmentStartIndex + 1; index <= endIndex; index++) {
-                    let point = line.points[index];
-
-                    let isNotDeleted = (point.modifyFlag != LinePointModifyFlagID.delete);
-
-                    let lineWidth = this.lineWidthAdjust(useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
-                    let isVisibleWidth = (lineWidth > 0.0);
-                    let isSameLineWidth = (lineWidth == currentLineWidth);
-
-                    segmentEndIndex = index;
-
-                    if (isNotDeleted && isVisibleWidth && isSameLineWidth) {
-
-                        continue;
-                    }
-                    else {
-
-                        break;
-                    }
-                }
-
-                if (segmentEndIndex == segmentStartIndex) {
-                    break;
-                }
-
-                // draw segment
-                this.canvasRender.beginPath()
-                this.canvasRender.setStrokeWidth(currentLineWidth * strokeWidthBiasRate + this.getCurrentViewScaleLineWidth(strokeWidthBolding));
-
-                let firstLocaton = (useAdjustingLocation ? firstPoint.adjustingLocation : firstPoint.location);
-                this.canvasRender.moveTo(firstLocaton[0], firstLocaton[1]);
-
-                for (let index = segmentStartIndex + 1; index <= segmentEndIndex; index++) {
-                    let point = line.points[index];
-
-                    let location = (useAdjustingLocation ? point.adjustingLocation : point.location);
-                    this.canvasRender.lineTo(location[0], location[1]);
-                }
+            if (drawingRemainging) {
 
                 this.canvasRender.stroke();
-
-                // next step
-                pointIndex = segmentEndIndex;
             }
         }
 

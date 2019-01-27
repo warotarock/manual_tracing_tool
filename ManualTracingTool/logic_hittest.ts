@@ -3,7 +3,7 @@ namespace ManualTracingTool {
 
     export class HitTest_VectorLayer_Base {
 
-        exitPointHitTest = false;
+        existsPointHitTest = false;
 
         protected beforeHitTest() { // @virtual
 
@@ -41,7 +41,7 @@ namespace ManualTracingTool {
 
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @virtual
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @virtual
 
         }
 
@@ -66,7 +66,7 @@ namespace ManualTracingTool {
 
         startProcess() {
 
-            this.exitPointHitTest = false;
+            this.existsPointHitTest = false;
 
             this.beforeHitTest();
         }
@@ -119,7 +119,7 @@ namespace ManualTracingTool {
 
         protected processHitTestToLine(group: VectorGroup, line: VectorLine, x: float, y: float, minDistance: float) { // @override
 
-            this.exitPointHitTest = false;
+            this.existsPointHitTest = false;
 
             for (let i = 0; i < line.points.length; i++) {
 
@@ -132,7 +132,7 @@ namespace ManualTracingTool {
                     this.onPointHited(group, line, point);
                 }
 
-                if (this.exitPointHitTest) {
+                if (this.existsPointHitTest) {
                     break;
                 }
             }
@@ -143,29 +143,29 @@ namespace ManualTracingTool {
 
         protected processHitTestToLine(group: VectorGroup, line: VectorLine, x: float, y: float, minDistance: float) { // @override
 
-            this.exitPointHitTest = false;
+            this.existsPointHitTest = false;
 
             for (let i = 0; i + 1 < line.points.length; i++) {
 
                 let point1 = line.points[i];
                 let point2 = line.points[i + 1];
 
-                let distance2d = Logic_Points.pointToLineSegmentDistanceSQ(
+                let distanceSQ = Logic_Points.pointToLineSegmentDistanceSQ(
                     point1.location,
                     point2.location,
                     x, y
                 );
 
-                if (distance2d < minDistance) {
+                if (distanceSQ < minDistance) {
 
-                    this.onLineSegmentHited(line, point1, point2);
+                    this.onLineSegmentHited(line, point1, point2, x, y, Math.sqrt(minDistance), distanceSQ);
                 }
                 else {
 
                     this.onLineSegmentNotHited(line, point1, point2);
                 }
 
-                if (this.exitPointHitTest) {
+                if (this.existsPointHitTest) {
                     break;
                 }
             }
@@ -181,11 +181,11 @@ namespace ManualTracingTool {
             this.hitedLine = null;
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @override
 
             this.hitedLine = line;
 
-            this.exitPointHitTest = true;
+            this.existsPointHitTest = true;
         }
     }
 
@@ -198,7 +198,7 @@ namespace ManualTracingTool {
             this.isChanged = false;
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @override
 
             if (!line.isCloseToMouse) {
 
@@ -207,7 +207,7 @@ namespace ManualTracingTool {
 
             line.isCloseToMouse = true;
 
-            this.exitPointHitTest = true;
+            this.existsPointHitTest = true;
         }
 
         protected onLineSegmentNotHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
