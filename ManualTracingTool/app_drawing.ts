@@ -54,6 +54,14 @@ namespace ManualTracingTool {
                 this.subtoolWindow_Draw(this.subtoolWindow);
             }
 
+            if (this.toolContext.redrawPalletSelectorWindow) {
+
+                this.toolContext.redrawPalletSelectorWindow = false;
+
+                this.clearWindow(this.palletSelectorWindow);
+                this.drawPalletSelectorWindow();
+            }
+
             if (this.toolContext.redrawTimeLineWindow) {
 
                 this.toolContext.redrawTimeLineWindow = false;
@@ -549,7 +557,7 @@ namespace ManualTracingTool {
             }
             else if (layer.drawLineType == DrawLineTypeID.palletColor) {
 
-                let palletColor = documentData.palletColos[layer.line_PalletColorIndex];
+                let palletColor = documentData.palletColors[layer.line_PalletColorIndex];
                 color = palletColor.color;
             }
             else {
@@ -569,7 +577,7 @@ namespace ManualTracingTool {
             }
             else if (layer.fillAreaType == FillAreaTypeID.palletColor) {
 
-                let palletColor = documentData.palletColos[layer.fill_PalletColorIndex];
+                let palletColor = documentData.palletColors[layer.fill_PalletColorIndex];
                 color = palletColor.color;
             }
             else {
@@ -845,6 +853,76 @@ namespace ManualTracingTool {
 
         // Layer window drawing
 
+        protected layerWindow_CaluculateLayout(layerWindow: LayerWindow) { // @override
+
+            // layer item buttons
+            this.layerWindowLayoutArea.copyRectangle(layerWindow);
+            this.layerWindowLayoutArea.bottom = layerWindow.height - 1.0;
+
+            this.layerWindow_CaluculateLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
+
+            if (this.layerWindowCommandButtons.length > 0) {
+
+                let lastButton = this.layerWindowCommandButtons[this.layerWindowCommandButtons.length - 1];
+                this.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0;// lastButton.bottom + 1.0;
+            }
+
+            // layer items
+            this.layerWindow_CaluculateLayout_LayerWindowItem(layerWindow, this.layerWindowLayoutArea);
+        }
+
+        private layerWindow_CaluculateLayout_CommandButtons(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
+
+            let currentX = layoutArea.left;
+            let currentY = layerWindow.viewLocation[1]; // layoutArea.top;
+            let unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
+            let unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
+
+            layerWindow.layerCommandButtonButtom = unitHeight + 1.0;
+
+            for (let button of this.layerWindowCommandButtons) {
+
+                button.left = currentX;
+                button.right = currentX + unitWidth - 1;
+                button.top = currentY;
+                button.bottom = currentY + unitHeight - 1;
+
+                currentX += unitWidth;
+
+                layerWindow.layerItemButtonButtom = button.bottom + 1.0;
+            }
+        }
+
+        private layerWindow_CaluculateLayout_LayerWindowItem(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
+
+            let currentY = layoutArea.top;
+
+            let itemHeight = layerWindow.layerItemHeight;
+
+            let margine = itemHeight * 0.1;
+            let iconWidth = (itemHeight - margine * 2);
+            let textLeftMargin = itemHeight * 0.3;
+
+            for (let item of this.layerWindowItems) {
+
+                item.left = 0.0;
+                item.top = currentY;
+                item.right = layerWindow.width - 1;
+                item.bottom = currentY + itemHeight - 1;
+
+                item.marginLeft = margine;
+                item.marginTop = margine;
+                item.marginRight = margine;
+                item.marginBottom = margine;
+                item.visibilityIconWidth = iconWidth;
+                item.textLeft = item.left + margine + iconWidth + textLeftMargin;
+
+                currentY += itemHeight;
+            }
+
+            layerWindow.layerItemsBottom = currentY;
+        }
+
         private drawLayerWindow(layerWindow: LayerWindow) {
 
             this.canvasRender.setContext(layerWindow);
@@ -856,7 +934,7 @@ namespace ManualTracingTool {
 
         private drawLayerWindow_LayerWindowButtons(layerWindow: LayerWindow) {
 
-            this.caluculateLayerWindowLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
+            this.layerWindow_CaluculateLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
 
             if (this.layerWindowCommandButtons.length > 0) {
 
@@ -1041,6 +1119,91 @@ namespace ManualTracingTool {
             this.canvasRender.setGlobalAlpha(1.0);
 
             this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
+        }
+
+        // PalletSelector window drawing
+
+        protected palletSelector_CaluculateLayout() { // @override
+
+            let wnd = this.palletSelectorWindow;
+            let context = this.toolContext;
+            let env = this.toolEnv;
+
+            let x = wnd.leftMargin;
+            let y = wnd.topMargin;
+            let itemWidth = wnd.itemWidth * wnd.itemScale;
+            let itemHeight = wnd.itemHeight * wnd.itemScale;
+
+            let viewWidth = wnd.width;
+
+            wnd.itemAreas = new List<RectangleLayoutArea>();
+
+            for (let palletColorIndex = 0; palletColorIndex < DocumentData.maxPalletColors; palletColorIndex++) {
+
+                let layoutArea = new RectangleLayoutArea();
+                layoutArea.index = palletColorIndex;
+                layoutArea.left = x;
+                layoutArea.top = y;
+                layoutArea.right = x + itemWidth - 1;
+                layoutArea.bottom = y + itemHeight - 1;
+                wnd.itemAreas.push(layoutArea);
+
+                x += itemWidth + wnd.itemRightMargin;
+
+                if (x + itemWidth >= viewWidth - wnd.rightMargin) {
+
+                    x = wnd.leftMargin;
+                    y += itemHeight + wnd.itemBottomMargin;
+                }
+            }
+        }
+
+        private drawPalletSelectorWindow() {
+
+            let wnd = this.palletSelectorWindow;
+            let context = this.toolContext;
+            let env = this.toolEnv;
+            let documentData = context.document;
+
+            this.canvasRender.setContext(wnd);
+
+            let viewWidth = wnd.width;
+
+            let currenPalletColorIndex = -1;
+            if (env.currentVectorLayer != null && env.currentVectorLayer.fillAreaType == FillAreaTypeID.palletColor) {
+
+                currenPalletColorIndex = env.currentVectorLayer.fill_PalletColorIndex;
+            }
+
+            for (let layoutArea of wnd.itemAreas) {
+
+                let palletColorIndex = layoutArea.index;
+
+                if (palletColorIndex > documentData.palletColors.length) {
+                    break;
+                }
+
+                let x = layoutArea.left;
+                let y = layoutArea.top;
+                let itemWidth = layoutArea.getWidth();
+                let itemHeight = layoutArea.getHeight();
+
+                let palletColor = documentData.palletColors[palletColorIndex];
+
+                this.canvasRender.setFillColorV(palletColor.color);
+                this.canvasRender.setStrokeColorV(env.drawStyle.palletSelectorItemEdgeColor);
+
+                this.canvasRender.fillRect(x + 0.5, y + 0.5, itemWidth, itemHeight);
+
+                this.canvasRender.setStrokeWidth(1.0);
+                this.canvasRender.drawRectangle(x + 0.5, y + 0.5, itemWidth, itemHeight);
+
+                if (palletColorIndex == currenPalletColorIndex) {
+
+                    this.canvasRender.setStrokeWidth(1.5);
+                    this.canvasRender.drawRectangle(x + 0.5 - 1.0, y + 0.5 - 1.0, itemWidth + 2.0, itemHeight + 2.0);
+                }
+            }
         }
 
         // TimeLine window drawing

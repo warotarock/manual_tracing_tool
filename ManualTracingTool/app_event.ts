@@ -218,6 +218,28 @@ namespace ManualTracingTool {
                 e.preventDefault();
             });
 
+            this.palletSelectorWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getMouseInfo(this.palletSelectorWindow.toolMouseEvent, e, false, this.palletSelectorWindow);
+                this.palletSelectorWindow_mousedown(this.palletSelectorWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+
+            this.palletSelectorWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+
+                if (this.isEventDisabled()) {
+                    return;
+                }
+
+                this.getTouchInfo(this.palletSelectorWindow.toolMouseEvent, e, true, false, this.palletSelectorWindow);
+                this.palletSelectorWindow_mousedown(this.palletSelectorWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+
             this.timeLineWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
 
                 if (this.isEventDisabled()) {
@@ -1002,6 +1024,39 @@ namespace ManualTracingTool {
         protected subtoolWindow_mouseup(e: ToolMouseEvent) {
 
             this.subtoolWindow.endMouseDragging();
+        }
+
+        protected palletSelectorWindow_mousedown(e: ToolMouseEvent) {
+
+            let context = this.toolContext;
+            let wnd = this.palletSelectorWindow;
+            let env = this.toolEnv;
+            let documentData = context.document;
+
+            if (e.isLeftButtonPressing()) {
+
+                if (env.currentVectorLayer != null) {
+
+                    let layoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
+
+                    if (layoutArea != null) {
+
+                        let palletColorIndex = layoutArea.index;
+                        let color = documentData.palletColors[palletColorIndex];
+
+                        if (env.currentVectorLayer.fillAreaType == FillAreaTypeID.fillColor) {
+
+                            vec4.copy(env.currentVectorLayer.fillColor, color.color);
+                        }
+                        else if (env.currentVectorLayer.fillAreaType == FillAreaTypeID.palletColor) {
+
+                            env.currentVectorLayer.fill_PalletColorIndex = palletColorIndex;
+                            env.setRedrawLayerWindow();
+                            env.setRedrawMainWindowEditorWindow();
+                        }
+                    }
+                }
+            }
         }
 
         protected timeLineWindow_mousedown(e: ToolMouseEvent) {

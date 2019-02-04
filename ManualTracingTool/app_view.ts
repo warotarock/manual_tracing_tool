@@ -3,7 +3,33 @@ namespace ManualTracingTool {
 
     export class Main_View extends Main_Core {
 
-        protected initializeViews() { // @override
+        protected initializeViewDevices() { // @override
+
+            this.resizeWindows();
+
+            this.mainWindow.context = this.mainWindow.canvas.getContext('2d');
+            this.editorWindow.context = this.editorWindow.canvas.getContext('2d');
+            this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
+            this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
+            this.subtoolWindow.context = this.subtoolWindow.canvas.getContext('2d');
+            this.timeLineWindow.context = this.timeLineWindow.canvas.getContext('2d');
+            this.palletSelectorWindow.context = this.palletSelectorWindow.canvas.getContext('2d');
+
+            this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
+            this.palletColorModal_colorCanvas.context = this.palletColorModal_colorCanvas.canvas.getContext('2d');
+
+            this.canvasRender.setContext(this.layerWindow);
+            this.canvasRender.setFontSize(18.0);
+
+            if (this.webGLRender.initializeWebGL(this.webglWindow.canvas)) {
+
+                throw ('３Ｄ機能を初期化できませんでした。');
+            }
+
+            this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
+        }
+
+        protected initializeViewState() { // @override
 
             this.mainWindow.centerLocationRate[0] = 0.5;
             this.mainWindow.centerLocationRate[1] = 0.5;
@@ -26,11 +52,12 @@ namespace ManualTracingTool {
 
             this.resizeCanvasToParent(this.layerWindow);
             this.resizeCanvasToParent(this.subtoolWindow);
+            this.resizeCanvasToParent(this.palletSelectorWindow);
             this.resizeCanvasToParent(this.timeLineWindow);
 
             if (this.isWhileLoading()) {
 
-                this.caluculateLayerWindowLayout(this.layerWindow);
+                this.layerWindow_CaluculateLayout(this.layerWindow);
                 this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
             }
         }
@@ -245,7 +272,7 @@ namespace ManualTracingTool {
             this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveDown));
         }
 
-        protected collectLayerWindowItems() { // @override
+        protected layerWindow_CollectItems() { // @override
 
             this.layerWindowItems = new List<LayerWindowItem>();
             this.collectLayerWindowItemsRecursive(this.layerWindowItems, this.document.rootLayer, 0);
@@ -318,76 +345,6 @@ namespace ManualTracingTool {
             }
 
             return null;
-        }
-
-        protected caluculateLayerWindowLayout(layerWindow: LayerWindow) { // @override
-
-            // layer item buttons
-            this.layerWindowLayoutArea.copyRectangle(layerWindow);
-            this.layerWindowLayoutArea.bottom = layerWindow.height - 1.0;
-
-            this.caluculateLayerWindowLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
-
-            if (this.layerWindowCommandButtons.length > 0) {
-
-                let lastButton = this.layerWindowCommandButtons[this.layerWindowCommandButtons.length - 1];
-                this.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0;// lastButton.bottom + 1.0;
-            }
-
-            // layer items
-            this.caluculateLayerWindowLayout_LayerWindowItem(layerWindow, this.layerWindowLayoutArea);
-        }
-
-        protected caluculateLayerWindowLayout_CommandButtons(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
-
-            let currentX = layoutArea.left;
-            let currentY = layerWindow.viewLocation[1]; // layoutArea.top;
-            let unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
-            let unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
-
-            layerWindow.layerCommandButtonButtom = unitHeight + 1.0;
-
-            for (let button of this.layerWindowCommandButtons) {
-
-                button.left = currentX;
-                button.right = currentX + unitWidth - 1;
-                button.top = currentY;
-                button.bottom = currentY + unitHeight - 1;
-
-                currentX += unitWidth;
-
-                layerWindow.layerItemButtonButtom = button.bottom + 1.0;
-            }
-        }
-
-        private caluculateLayerWindowLayout_LayerWindowItem(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
-
-            let currentY = layoutArea.top;
-
-            let itemHeight = layerWindow.layerItemHeight;
-
-            let margine = itemHeight * 0.1;
-            let iconWidth = (itemHeight - margine * 2);
-            let textLeftMargin = itemHeight * 0.3;
-
-            for (let item of this.layerWindowItems) {
-
-                item.left = 0.0;
-                item.top = currentY;
-                item.right = layerWindow.width - 1;
-                item.bottom = currentY + itemHeight - 1;
-
-                item.marginLeft = margine;
-                item.marginTop = margine;
-                item.marginRight = margine;
-                item.marginBottom = margine;
-                item.visibilityIconWidth = iconWidth;
-                item.textLeft = item.left + margine + iconWidth + textLeftMargin;
-
-                currentY += itemHeight;
-            }
-
-            layerWindow.layerItemsBottom = currentY;
         }
 
         protected setLayerWindowViewLocationToItem(item: LayerWindowItem) {
@@ -602,14 +559,14 @@ namespace ManualTracingTool {
                     palletColorIndex = vectorLayer.fill_PalletColorIndex;
                 }
 
-                let palletColor = documentData.palletColos[palletColorIndex];
+                let palletColor = documentData.palletColors[palletColorIndex];
                 this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
                 this.setInputElementRangeValue(this.ID.palletColorModal_currentAlpha, palletColor.color[3], 0.0, 1.0);
             }
 
-            for (let palletColorIndex = 0; palletColorIndex < documentData.palletColos.length; palletColorIndex++) {
+            for (let palletColorIndex = 0; palletColorIndex < documentData.palletColors.length; palletColorIndex++) {
 
-                let palletColor = documentData.palletColos[palletColorIndex];
+                let palletColor = documentData.palletColors[palletColorIndex];
 
                 this.setColorPalletElementValue(palletColorIndex, palletColor.color);
             }
@@ -659,7 +616,7 @@ namespace ManualTracingTool {
             let documentData = this.currentModalDialog_DocumentData;
             let vectorLayer = this.palletColorWindow_EditLayer;
             let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
-            let palletColor = documentData.palletColos[palletColorIndex];
+            let palletColor = documentData.palletColors[palletColorIndex];
 
             this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
             palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
@@ -678,7 +635,7 @@ namespace ManualTracingTool {
 
             let documentData = this.currentModalDialog_DocumentData;
             let vectorLayer = this.palletColorWindow_EditLayer;
-            let palletColor = documentData.palletColos[palletColorIndex];
+            let palletColor = documentData.palletColors[palletColorIndex];
 
             this.getInputElementColor(this.ID.palletColorModal_colorValue + palletColorIndex, palletColor.color);
 
@@ -703,7 +660,7 @@ namespace ManualTracingTool {
             let documentData = this.currentModalDialog_DocumentData;
             let vectorLayer = this.palletColorWindow_EditLayer;
             let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
-            let palletColor = documentData.palletColos[palletColorIndex];
+            let palletColor = documentData.palletColors[palletColorIndex];
 
             palletColor.color[0] = this.tempColor4[0];
             palletColor.color[1] = this.tempColor4[1];
@@ -736,14 +693,14 @@ namespace ManualTracingTool {
             if (updateOnClose) {
 
                 {
-                    let palletColor = documentData.palletColos[palletColorIndex];
+                    let palletColor = documentData.palletColors[palletColorIndex];
                     this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
                     palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
                 }
 
-                for (let i = 0; i < documentData.palletColos.length; i++) {
+                for (let i = 0; i < documentData.palletColors.length; i++) {
 
-                    let palletColor = documentData.palletColos[i];
+                    let palletColor = documentData.palletColors[i];
 
                     let id = this.ID.palletColorModal_colorValue + i;
                     this.getInputElementColor(id, palletColor.color);
@@ -789,29 +746,36 @@ namespace ManualTracingTool {
                 return;
             }
 
-            var layerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, LayerTypeID.vectorLayer);
+            var newLayerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, NewLayerTypeID.vectorLayer);
 
             // Select command
 
             let layerCommand: Command_Layer_CommandBase = null;
 
-            if (layerType == LayerTypeID.vectorLayer) {
+            if (newLayerType == NewLayerTypeID.vectorLayer) {
 
                 layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
             }
-            else if (layerType == LayerTypeID.vectorLayerReferenceLayer) {
+            else if (newLayerType == NewLayerTypeID.vectorLayer_Fill) {
+
+                let command = new Command_Layer_AddVectorLayerToCurrentPosition();
+                command.createForFillColor = true;
+
+                layerCommand = command;
+            }
+            else if (newLayerType == NewLayerTypeID.vectorLayerReferenceLayer) {
 
                 layerCommand = new Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition();
             }
-            else if (layerType == LayerTypeID.groupLayer) {
+            else if (newLayerType == NewLayerTypeID.groupLayer) {
 
                 layerCommand = new Command_Layer_AddGroupLayerToCurrentPosition();
             }
-            else if (layerType == LayerTypeID.posingLayer) {
+            else if (newLayerType == NewLayerTypeID.posingLayer) {
 
                 layerCommand = new Command_Layer_AddPosingLayerToCurrentPosition();
             }
-            else if (layerType == LayerTypeID.imageFileReferenceLayer) {
+            else if (newLayerType == NewLayerTypeID.imageFileReferenceLayer) {
 
                 layerCommand = new Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
             }
@@ -963,7 +927,7 @@ namespace ManualTracingTool {
                 this.clearWindow(this.renderingWindow);
                 if (backGroundType == 1) {
 
-                    this.canvasRender.setFillColorV(this.document.palletColos[this.document.palletColos.length - 1].color);
+                    this.canvasRender.setFillColorV(this.document.palletColors[this.document.palletColors.length - 1].color);
                     this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
                 }
                 this.drawMainWindow(this.renderingWindow);
@@ -1793,6 +1757,20 @@ namespace ManualTracingTool {
         }
     }
 
+    export class PalletSelectorWindow extends ToolBaseWindow {
+
+        leftMargin = 7.0;
+        topMargin = 30.0;
+        rightMargin = 5.0;
+        itemScale = 1.0;
+        itemWidth = 33.0;
+        itemHeight = 15.0;
+        itemRightMargin = 5.0;
+        itemBottomMargin = 5.0;
+
+        itemAreas: List<RectangleLayoutArea> = null;
+    }
+
     export enum LayerWindowButtonID {
 
         none = 0,
@@ -1846,6 +1824,18 @@ namespace ManualTracingTool {
         FillColor = 2
     }
 
+    export enum NewLayerTypeID {
+
+        none = 0,
+        rootLayer = 1,
+        vectorLayer = 2,
+        vectorLayer_Fill = 3,
+        groupLayer = 4,
+        imageFileReferenceLayer = 5,
+        posingLayer = 6,
+        vectorLayerReferenceLayer = 7,
+    }
+
     export class HTMLElementID {
 
         none = 'none';
@@ -1858,6 +1848,7 @@ namespace ManualTracingTool {
         layerCanvas = 'layerCanvas';
         subtoolCanvas = 'subtoolCanvas';
         timeLineCanvas = 'timeLineCanvas';
+        palletSelectorCanvas = 'palletSelectorCanvas';
 
         menu_btnDrawTool = 'menu_btnDrawTool';
         menu_btnMiscTool = 'menu_btnMiscTool';

@@ -163,7 +163,7 @@
         div#mainCanvasWindow {
             position: absolute;
             left: 210px;
-            right: 0px;
+            right: 210px;
             top: 0px;
             bottom: 50px;
             border: solid;
@@ -193,7 +193,7 @@
             display: none;
         }
 
-        div#rightSideWindow1 {
+        div#sideWindow1 {
             width: 200px;
             position: absolute;
             left: 0px;
@@ -207,7 +207,7 @@
             border: none;
         }
 
-        div#rightSideWindow2 {
+        div#sideWindow2 {
             width: 200px;
             position: absolute;
             left: 0px;
@@ -221,10 +221,24 @@
             border: none;
         }
 
+        div#sideWindow3 {
+            width: 200px;
+            height: 133px;
+            position: absolute;
+            right: 0px;
+            top: 0px;
+            border: solid;
+            border-width: 1px;
+        }
+
+        canvas#palletSelectorCanvas {
+            border: none;
+        }
+
         div#timeLineWindow {
             position: absolute;
             left: 210px;
-            right: 0px;
+            right: 210px;
             height: 46px;
             bottom: 0px;
             border: solid;
@@ -472,11 +486,14 @@
         <div id="timeLineWindow">
             <canvas id="timeLineCanvas"></canvas>
         </div>
-        <div id="rightSideWindow1">
+        <div id="sideWindow1">
             <canvas id="layerCanvas"></canvas>
         </div>
-        <div id="rightSideWindow2">
+        <div id="sideWindow2">
             <canvas id="subtoolCanvas"></canvas>
+        </div>
+        <div id="sideWindow3">
+            <canvas id="palletSelectorCanvas"></canvas>
         </div>
     </main>
     <footer id="footer">
@@ -617,24 +634,29 @@
             レイヤーの種類<br />
             <label>
                 <input type="radio" name="newLayerCommandOptionModal_layerType" value="2" checked>
-                ベクター
+                ベクター（線）
             </label>
             <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="6">
-                ベクター参照
+                <input type="radio" name="newLayerCommandOptionModal_layerType" value="3">
+                ベクター（塗り）
             </label>
             <br />
             <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="4">
-                画像ファイル
+                <input type="radio" name="newLayerCommandOptionModal_layerType" value="7">
+                ベクター参照
             </label>
             <label>
                 <input type="radio" name="newLayerCommandOptionModal_layerType" value="5">
+                画像ファイル
+            </label>
+            <br />
+            <label>
+                <input type="radio" name="newLayerCommandOptionModal_layerType" value="6">
                 ３Dポーズ
             </label>
             <br />
             <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="3">
+                <input type="radio" name="newLayerCommandOptionModal_layerType" value="4">
                 グループ
             </label>
             <br />

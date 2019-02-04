@@ -504,7 +504,7 @@ namespace ManualTracingTool {
         documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
         defaultViewScale = 1.0;
         lineWidthBiasRate = 1.0;
-        palletColos = new List<PalletColor>();
+        palletColors = new List<PalletColor>();
         animationSettingData = new AnimationSettingData();
 
         loaded = false;
@@ -518,20 +518,20 @@ namespace ManualTracingTool {
 
         static initializeDefaultPalletColors(documentData: DocumentData) {
 
-            documentData.palletColos = new List<PalletColor>();
+            documentData.palletColors = new List<PalletColor>();
 
             for (let color of defaultColors) {
 
                 let palletColor = new PalletColor();
                 vec4.copy(palletColor.color, color);
-                documentData.palletColos.push(palletColor);
+                documentData.palletColors.push(palletColor);
             }
 
-            while (documentData.palletColos.length < DocumentData.maxPalletColors) {
+            while (documentData.palletColors.length < DocumentData.maxPalletColors) {
 
                 let palletColor = new PalletColor();
                 vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
-                documentData.palletColos.push(palletColor);
+                documentData.palletColors.push(palletColor);
             }
         }
     }

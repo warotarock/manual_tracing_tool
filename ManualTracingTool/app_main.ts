@@ -42,6 +42,7 @@ namespace ManualTracingTool {
         layerWindow = new LayerWindow();
         subtoolWindow = new SubtoolWindow();
         timeLineWindow = new TimeLineWindow();
+        palletSelectorWindow = new PalletSelectorWindow();
         palletColorModal_colorCanvas = new ColorCanvasWindow();
 
         renderingWindow = new CanvasWindow();
@@ -221,36 +222,14 @@ namespace ManualTracingTool {
 
             this.loadSettings();
 
-            this.initializeDevices();
+            this.initializeViewDevices();
 
             this.startLoadingSystemResources();
 
             this.mainProcessState = MainProcessStateID.systemResourceLoading;
         }
 
-        protected initializeDevices() {
-
-            this.resizeWindows();
-
-            this.mainWindow.context = this.mainWindow.canvas.getContext('2d');
-            this.editorWindow.context = this.editorWindow.canvas.getContext('2d');
-            this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
-            this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
-            this.subtoolWindow.context = this.subtoolWindow.canvas.getContext('2d');
-            this.timeLineWindow.context = this.timeLineWindow.canvas.getContext('2d');
-
-            this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
-            this.palletColorModal_colorCanvas.context = this.palletColorModal_colorCanvas.canvas.getContext('2d');
-
-            this.canvasRender.setContext(this.layerWindow);
-            this.canvasRender.setFontSize(18.0);
-
-            if (this.webGLRender.initializeWebGL(this.webglWindow.canvas)) {
-
-                throw ('３Ｄ機能を初期化できませんでした。');
-            }
-
-            this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
+        protected initializeViewDevices() { // @virtual
         }
 
         // Loading
@@ -345,7 +324,14 @@ namespace ManualTracingTool {
 
             documentData.rootLayer = loadedData.rootLayer;
             documentData.documentFrame = loadedData.documentFrame;
-            documentData.palletColos = loadedData.palletColos;
+
+            if (loadedData['palletColos']) {
+                documentData.palletColors = loadedData['palletColos'];
+            }
+            else {
+
+                documentData.palletColors = loadedData.palletColors;
+            }
             documentData.defaultViewScale = loadedData.defaultViewScale;
             documentData.lineWidthBiasRate = loadedData.lineWidthBiasRate;
             documentData.animationSettingData = loadedData.animationSettingData;
@@ -749,7 +735,7 @@ namespace ManualTracingTool {
 
             this.initializeContext();
             this.initializeTools();
-            this.initializeViews();
+            this.initializeViewState();
             this.initializeModals();
 
             this.mainProcessState = MainProcessStateID.running;
@@ -830,7 +816,7 @@ namespace ManualTracingTool {
 
         protected fixLoadedDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
 
-            if (document.palletColos == undefined) {
+            if (document.palletColors == undefined) {
                 DocumentData.initializeDefaultPalletColors(document);
             }
 
@@ -1099,7 +1085,7 @@ namespace ManualTracingTool {
             this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
         }
 
-        protected initializeViews() { // @virtual
+        protected initializeViewState() { // @virtual
         }
 
         protected initializeModals() {
@@ -1272,10 +1258,11 @@ namespace ManualTracingTool {
         updateLayerStructure() { // @implements MainEditor
 
             this.collectViewContext();
-            this.collectLayerWindowItems();
-            this.caluculateLayerWindowLayout(this.layerWindow);
+            this.layerWindow_CollectItems();
+            this.layerWindow_CaluculateLayout(this.layerWindow);
             this.subtoolWindow_CollectViewItems();
             this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+            this.palletSelector_CaluculateLayout();
         }
 
         collectViewContext() {
@@ -1441,58 +1428,6 @@ namespace ManualTracingTool {
                 return null;
             }
         }
-
-        // Integrated lattice transformation
-        /*
-        protected calculateLatticePoints(): boolean {
-
-            let env = this.toolEnv;
-
-            // Caculate lattice rectangle
-
-            let rect = this.toolContext.rectangleArea;
-
-            Logic_Edit_Points.setMinMaxToRectangleArea(rect);
-
-            let selectedOnly = true;
-
-            for (let viewKeyframeLayer of env.editableKeyframeLayers) {
-
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-
-                    for (let line of group.lines) {
-
-                        Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
-                    }
-                }
-            }
-
-            let available = Logic_Edit_Points.existsRectangleArea(rect);
-
-            // Caculate lattice points location
-
-            let latticePoints = this.toolContext.latticePoints;
-
-            vec3.set(latticePoints[0].baseLocation, rect.left, rect.top, 0.0);
-            vec3.set(latticePoints[1].baseLocation, rect.right, rect.top, 0.0);
-            vec3.set(latticePoints[2].baseLocation, rect.right, rect.bottom, 0.0);
-            vec3.set(latticePoints[3].baseLocation, rect.left, rect.bottom, 0.0);
-
-            this.resetLatticePointLocationToBaseLocation();
-
-            return available;
-        }
-
-        protected resetLatticePointLocationToBaseLocation() {
-
-            let latticePoints = this.toolContext.latticePoints;
-
-            for (let latticePoint of latticePoints) {
-
-                vec3.copy(latticePoint.location, latticePoint.baseLocation);
-            }
-        }
-        */
 
         // Tools and context operations
 
@@ -1850,10 +1785,10 @@ namespace ManualTracingTool {
         protected updateFooterMessage() { // @virtual
         }
 
-        protected collectLayerWindowItems() { // @virtual
+        protected layerWindow_CollectItems() { // @virtual
         }
 
-        protected caluculateLayerWindowLayout(layerWindow: LayerWindow) { // @virtual
+        protected layerWindow_CaluculateLayout(layerWindow: LayerWindow) { // @virtual
         }
 
         protected subtoolWindow_CollectViewItems() { // @virtual
@@ -1863,6 +1798,9 @@ namespace ManualTracingTool {
         }
 
         protected layerWindow_UnselectAllLayer() { // @virtual
+        }
+
+        protected palletSelector_CaluculateLayout() { // @virtual
         }
 
         protected isModalShown(): boolean { // @virtual

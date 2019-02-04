@@ -219,6 +219,7 @@ namespace ManualTracingTool {
         redrawWebGLWindow = false;
         redrawHeaderWindow = false;
         redrawFooterWindow = false;
+        redrawPalletSelectorWindow = false;
 
         mouseCursorRadius = 12.0;
 
@@ -376,6 +377,7 @@ namespace ManualTracingTool {
         setRedrawLayerWindow() {
 
             this.toolContext.redrawLayerWindow = true;
+            this.toolContext.redrawPalletSelectorWindow = true;
         }
 
         updateLayerStructure() {
@@ -395,6 +397,11 @@ namespace ManualTracingTool {
             this.toolContext.redrawTimeLineWindow = true;
         }
 
+        setRedrawColorSelectorWindow() {
+
+            this.toolContext.redrawPalletSelectorWindow = true;
+        }
+
         setRedrawWebGLWindow() {
 
             this.toolContext.redrawWebGLWindow = true;
@@ -406,6 +413,7 @@ namespace ManualTracingTool {
             this.setRedrawSubtoolWindow();
             this.setRedrawLayerWindow();
             this.setRedrawTimeLineWindow();
+            this.setRedrawColorSelectorWindow();
             this.setRedrawWebGLWindow();
         }
 
@@ -545,6 +553,8 @@ namespace ManualTracingTool {
         layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
         layerWindowItemActiveLayerColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
         layerWindowItemSelectedColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
+
+        palletSelectorItemEdgeColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 
         timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
         timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);

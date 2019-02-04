@@ -217,6 +217,8 @@ namespace ManualTracingTool {
 
     export class Command_Layer_AddVectorLayerToCurrentPosition extends Command_Layer_CommandBase {
 
+        createForFillColor = false;
+
         newLayer: VectorLayer = null;
 
         isAvailable(env: ToolEnvironment): boolean { // @override
@@ -237,7 +239,17 @@ namespace ManualTracingTool {
         executeCommand(env: ToolEnvironment) { // @override
 
             this.newLayer = new VectorLayer();
-            this.newLayer.name = 'new layer';
+
+            if (!this.createForFillColor) {
+
+                this.newLayer.name = 'new line layer';
+            }
+            else {
+
+                this.newLayer.name = 'new fill layer';
+                this.newLayer.drawLineType = DrawLineTypeID.none;
+                this.newLayer.fillAreaType = FillAreaTypeID.palletColor;
+            }
 
             let keyFrame = new VectorLayerKeyframe();
             keyFrame.geometry = new VectorLayerGeometry();
