@@ -43,6 +43,7 @@ namespace ManualTracingTool {
         subtoolWindow = new SubtoolWindow();
         timeLineWindow = new TimeLineWindow();
         palletSelectorWindow = new PalletSelectorWindow();
+        colorMixerWindow_colorCanvas = new ColorCanvasWindow();
         palletColorModal_colorCanvas = new ColorCanvasWindow();
 
         renderingWindow = new CanvasWindow();
@@ -820,6 +821,11 @@ namespace ManualTracingTool {
                 DocumentData.initializeDefaultPalletColors(document);
             }
 
+            while (document.palletColors.length < DocumentData.maxPalletColors) {
+
+                document.palletColors.push(new PalletColor());
+            }
+
             if (document.animationSettingData == undefined) {
                 document.animationSettingData = new AnimationSettingData();
             }
@@ -846,6 +852,10 @@ namespace ManualTracingTool {
         }
 
         protected fixLoadedDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
+
+            if (layer.isRenderTarget == undefined) {
+                layer.isRenderTarget = true;
+            }
 
             if (layer.type == LayerTypeID.vectorLayer) {
 

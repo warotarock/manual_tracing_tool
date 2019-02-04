@@ -15,7 +15,7 @@ namespace ManualTracingTool {
 
     export class PalletColor {
 
-        color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     }
 
     // Base layer class
@@ -37,6 +37,7 @@ namespace ManualTracingTool {
         name: string = null;
         isVisible = true;
         isSelected = false;
+        isRenderTarget = false;
 
         childLayers = new List<Layer>();
 
@@ -498,7 +499,7 @@ namespace ManualTracingTool {
 
     export class DocumentData {
 
-        static maxPalletColors = 25;
+        static maxPalletColors = 50;
 
         rootLayer = new Layer();
         documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);

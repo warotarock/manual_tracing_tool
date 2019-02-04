@@ -38,7 +38,11 @@ namespace ManualTracingTool {
 
                 let last_KeyFrame = vectorLayer.keyframes[keyframeIndex];
 
-                // Crete keyframe and insert
+                if (last_KeyFrame.frame == targetFrame) {
+                    continue;
+                }
+
+                // Create keyframe and insert
                 let newKeyframe = new VectorLayerKeyframe();
                 newKeyframe.frame = targetFrame;
                 if (last_KeyFrame != null) {

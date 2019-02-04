@@ -162,6 +162,7 @@ namespace ManualTracingTool {
         _Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
         _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
         _Main.palletSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.palletSelectorCanvas);
+        _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
         _Main.palletColorModal_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.palletColorModal_colorCanvas);

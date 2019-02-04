@@ -21,7 +21,7 @@ namespace ManualTracingTool {
 
                 this.clearWindow(this.mainWindow);
 
-                this.drawMainWindow(this.mainWindow);
+                this.drawMainWindow(this.mainWindow, false);
 
                 if (this.selectCurrentLayerAnimationTime > 0.0) {
 
@@ -99,7 +99,7 @@ namespace ManualTracingTool {
             this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
         }
 
-        protected drawMainWindow(canvasWindow: CanvasWindow) { // @override
+        protected drawMainWindow(canvasWindow: CanvasWindow, isExporting: boolean) { // @override
 
             if (this.currentKeyframe == null) {
                 return;
@@ -115,6 +115,10 @@ namespace ManualTracingTool {
 
             for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
                 let viewKeyFrameLayer = viewKeyframe.layers[i];
+
+                if (isExporting && !viewKeyFrameLayer.layer.isRenderTarget) {
+                    continue;
+                }
 
                 this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document)
             }
@@ -670,7 +674,7 @@ namespace ManualTracingTool {
                 }
             }
 
-            this.drawMainWindow(this.mainWindow);
+            this.drawMainWindow(this.mainWindow, false);
 
             return pickedLayer;
         }

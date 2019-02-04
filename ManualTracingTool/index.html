@@ -223,7 +223,7 @@
 
         div#sideWindow3 {
             width: 200px;
-            height: 133px;
+            height: 233px;
             position: absolute;
             right: 0px;
             top: 0px;
@@ -233,6 +233,30 @@
 
         canvas#palletSelectorCanvas {
             border: none;
+        }
+
+        div#sideWindow4 {
+            width: 200px;
+            height: 233px;
+            position: absolute;
+            right: 0px;
+            top: 240px;
+            border: solid;
+            border-width: 1px;
+        }
+
+        canvas#colorMixer_colorCanvas {
+            border: none;
+            width: 200px;
+            height: 100px;
+        }
+
+        div#sideWindow4 input[type=number] {
+            width: 20px;
+        }
+
+        div#sideWindow4 input[type=range] {
+            width: 160px;
         }
 
         div#timeLineWindow {
@@ -296,6 +320,10 @@
                     margin-left: 15px;
                     margin-top: 15px;
                 }
+
+                    .modalDialogWindow.layerPropertyModal input[type=checkbox] {
+                        margin-top: 0px;
+                    }
 
                 .modalDialogWindow.layerPropertyModal div {
                     margin-top: 15px;
@@ -495,6 +523,11 @@
         <div id="sideWindow3">
             <canvas id="palletSelectorCanvas"></canvas>
         </div>
+        <div id="sideWindow4">
+            <canvas id="colorMixer_colorCanvas"></canvas>
+            <input type="number" id="" step="0.1" />
+            <input type="range" id="colorMixer_alpha" min="0" max="500">
+        </div>
     </main>
     <footer id="footer">
     </footer>
@@ -562,7 +595,11 @@
                 <input type="radio" name="layerPropertyModal_fillAreaType" value="3">
                 パレット
             </label>
-            <br />
+        </div>
+        <div>
+            <label>
+                エクスポート<input type="checkbox" id="layerPropertyModal_isRenderTarget" value="1">
+            </label>
         </div>
     </div>
 
