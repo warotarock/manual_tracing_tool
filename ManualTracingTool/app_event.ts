@@ -336,7 +336,7 @@ namespace ManualTracingTool {
                     return;
                 }
 
-                if (document.activeElement.id == this.ID.fileName) {
+                if (document.activeElement.nodeName == 'INPUT') {
                     return;
                 }
 
@@ -349,7 +349,7 @@ namespace ManualTracingTool {
                     return;
                 }
 
-                if (document.activeElement.id == this.ID.fileName) {
+                if (document.activeElement.nodeName == 'INPUT') {
                     return;
                 }
 

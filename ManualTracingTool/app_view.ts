@@ -1185,8 +1185,8 @@ namespace ManualTracingTool {
             //this.canvasRender.fillRect(0.0, 0.0, width, height);
 
             this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-            let divisionW = 20.0;
-            let divisionH = 20.0;
+            let divisionW = 40.0;
+            let divisionH = 25.0;
             let unitWidth = Math.floor(width / divisionW);
             let unitHeight = Math.floor(height / divisionH);
 
