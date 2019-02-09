@@ -19,15 +19,29 @@ var ManualTracingTool;
         MainToolID[MainToolID["misc"] = 4] = "misc";
         MainToolID[MainToolID["edit"] = 5] = "edit";
     })(MainToolID = ManualTracingTool.MainToolID || (ManualTracingTool.MainToolID = {}));
-    var OperationUnitID;
-    (function (OperationUnitID) {
-        OperationUnitID[OperationUnitID["none"] = 0] = "none";
-        OperationUnitID[OperationUnitID["linePoint"] = 1] = "linePoint";
-        OperationUnitID[OperationUnitID["lineSegment"] = 2] = "lineSegment";
-        OperationUnitID[OperationUnitID["line"] = 3] = "line";
-        OperationUnitID[OperationUnitID["layer"] = 4] = "layer";
-        OperationUnitID[OperationUnitID["countOfID"] = 5] = "countOfID";
-    })(OperationUnitID = ManualTracingTool.OperationUnitID || (ManualTracingTool.OperationUnitID = {}));
+    var DrawLineToolSubToolID;
+    (function (DrawLineToolSubToolID) {
+        DrawLineToolSubToolID[DrawLineToolSubToolID["drawLine"] = 0] = "drawLine";
+        DrawLineToolSubToolID[DrawLineToolSubToolID["deletePointBrush"] = 1] = "deletePointBrush";
+        DrawLineToolSubToolID[DrawLineToolSubToolID["scratchLine"] = 2] = "scratchLine";
+        DrawLineToolSubToolID[DrawLineToolSubToolID["extrudeLine"] = 3] = "extrudeLine";
+        DrawLineToolSubToolID[DrawLineToolSubToolID["overWriteLineWidth"] = 4] = "overWriteLineWidth";
+        DrawLineToolSubToolID[DrawLineToolSubToolID["scratchLineWidth"] = 5] = "scratchLineWidth";
+        DrawLineToolSubToolID[DrawLineToolSubToolID["editLinePointWidth_BrushSelect"] = 6] = "editLinePointWidth_BrushSelect";
+    })(DrawLineToolSubToolID = ManualTracingTool.DrawLineToolSubToolID || (ManualTracingTool.DrawLineToolSubToolID = {}));
+    var EditModeSubToolID;
+    (function (EditModeSubToolID) {
+        EditModeSubToolID[EditModeSubToolID["mainEditTool"] = 0] = "mainEditTool";
+    })(EditModeSubToolID = ManualTracingTool.EditModeSubToolID || (ManualTracingTool.EditModeSubToolID = {}));
+    var ModalToolID;
+    (function (ModalToolID) {
+        ModalToolID[ModalToolID["none"] = 0] = "none";
+        ModalToolID[ModalToolID["grabMove"] = 1] = "grabMove";
+        ModalToolID[ModalToolID["ratate"] = 2] = "ratate";
+        ModalToolID[ModalToolID["scale"] = 3] = "scale";
+        ModalToolID[ModalToolID["latticeMove"] = 4] = "latticeMove";
+        ModalToolID[ModalToolID["countOfID"] = 5] = "countOfID";
+    })(ModalToolID = ManualTracingTool.ModalToolID || (ManualTracingTool.ModalToolID = {}));
     var Posing3DSubToolID;
     (function (Posing3DSubToolID) {
         Posing3DSubToolID[Posing3DSubToolID["locateHead"] = 0] = "locateHead";
@@ -51,6 +65,15 @@ var ManualTracingTool;
         EditModeID[EditModeID["editMode"] = 1] = "editMode";
         EditModeID[EditModeID["drawMode"] = 2] = "drawMode";
     })(EditModeID = ManualTracingTool.EditModeID || (ManualTracingTool.EditModeID = {}));
+    var OperationUnitID;
+    (function (OperationUnitID) {
+        OperationUnitID[OperationUnitID["none"] = 0] = "none";
+        OperationUnitID[OperationUnitID["linePoint"] = 1] = "linePoint";
+        OperationUnitID[OperationUnitID["lineSegment"] = 2] = "lineSegment";
+        OperationUnitID[OperationUnitID["line"] = 3] = "line";
+        OperationUnitID[OperationUnitID["layer"] = 4] = "layer";
+        OperationUnitID[OperationUnitID["countOfID"] = 5] = "countOfID";
+    })(OperationUnitID = ManualTracingTool.OperationUnitID || (ManualTracingTool.OperationUnitID = {}));
     var OpenFileDialogTargetID;
     (function (OpenFileDialogTargetID) {
         OpenFileDialogTargetID[OpenFileDialogTargetID["none"] = 0] = "none";
@@ -173,6 +196,7 @@ var ManualTracingTool;
             this.redrawWebGLWindow = false;
             this.redrawHeaderWindow = false;
             this.redrawFooterWindow = false;
+            this.redrawPalletSelectorWindow = false;
             this.mouseCursorRadius = 12.0;
             this.resamplingUnitLength = 8.0;
             this.operatorCursor = new OperatorCursor();
@@ -282,6 +306,7 @@ var ManualTracingTool;
         };
         ToolEnvironment.prototype.setRedrawLayerWindow = function () {
             this.toolContext.redrawLayerWindow = true;
+            this.toolContext.redrawPalletSelectorWindow = true;
         };
         ToolEnvironment.prototype.updateLayerStructure = function () {
             this.toolContext.mainEditor.updateLayerStructure();
@@ -294,6 +319,9 @@ var ManualTracingTool;
         ToolEnvironment.prototype.setRedrawTimeLineWindow = function () {
             this.toolContext.redrawTimeLineWindow = true;
         };
+        ToolEnvironment.prototype.setRedrawColorSelectorWindow = function () {
+            this.toolContext.redrawPalletSelectorWindow = true;
+        };
         ToolEnvironment.prototype.setRedrawWebGLWindow = function () {
             this.toolContext.redrawWebGLWindow = true;
         };
@@ -302,6 +330,7 @@ var ManualTracingTool;
             this.setRedrawSubtoolWindow();
             this.setRedrawLayerWindow();
             this.setRedrawTimeLineWindow();
+            this.setRedrawColorSelectorWindow();
             this.setRedrawWebGLWindow();
         };
         ToolEnvironment.prototype.isAnyModifierKeyPressing = function () {
@@ -393,6 +422,7 @@ var ManualTracingTool;
             this.layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             this.layerWindowItemActiveLayerColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
             this.layerWindowItemSelectedColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
+            this.palletSelectorItemEdgeColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
             this.timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
             this.timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);
             this.timeLineKeyFrameColor = vec4.fromValues(0.0, 0.0, 1.0, 0.1);

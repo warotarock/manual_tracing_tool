@@ -32,7 +32,7 @@ var ManualTracingTool;
             if (this.toolContext.redrawMainWindow) {
                 this.toolContext.redrawMainWindow = false;
                 this.clearWindow(this.mainWindow);
-                this.drawMainWindow(this.mainWindow);
+                this.drawMainWindow(this.mainWindow, false);
                 if (this.selectCurrentLayerAnimationTime > 0.0) {
                     this.toolEnv.setRedrawMainWindow();
                 }
@@ -51,6 +51,11 @@ var ManualTracingTool;
                 this.toolContext.redrawSubtoolWindow = false;
                 this.clearWindow(this.subtoolWindow);
                 this.subtoolWindow_Draw(this.subtoolWindow);
+            }
+            if (this.toolContext.redrawPalletSelectorWindow) {
+                this.toolContext.redrawPalletSelectorWindow = false;
+                this.clearWindow(this.palletSelectorWindow);
+                this.drawPalletSelectorWindow();
             }
             if (this.toolContext.redrawTimeLineWindow) {
                 this.toolContext.redrawTimeLineWindow = false;
@@ -75,7 +80,7 @@ var ManualTracingTool;
             this.canvasRender.setContext(canvasWindow);
             this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
         };
-        Main_Drawing.prototype.drawMainWindow = function (canvasWindow) {
+        Main_Drawing.prototype.drawMainWindow = function (canvasWindow, isExporting) {
             if (this.currentKeyframe == null) {
                 return;
             }
@@ -85,6 +90,9 @@ var ManualTracingTool;
             var viewKeyframe = this.currentKeyframe;
             for (var i = viewKeyframe.layers.length - 1; i >= 0; i--) {
                 var viewKeyFrameLayer = viewKeyframe.layers[i];
+                if (isExporting && !viewKeyFrameLayer.layer.isRenderTarget) {
+                    continue;
+                }
                 this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document);
             }
             if (env.isEditMode()) {
@@ -227,7 +235,8 @@ var ManualTracingTool;
             }
         };
         Main_Drawing.prototype.lineWidthAdjust = function (width) {
-            return Math.floor(width * 5) / 5;
+            //return Math.floor(width * 5) / 5;
+            return width;
         };
         Main_Drawing.prototype.drawVectorLineFill = function (line, color, useAdjustingLocation, isFillContinuing) {
             if (line.points.length <= 1) {
@@ -276,57 +285,78 @@ var ManualTracingTool;
             }
         };
         Main_Drawing.prototype.drawVectorLineSegment = function (line, startIndex, endIndex, strokeWidthBiasRate, strokeWidthBolding, useAdjustingLocation) {
+            if (line.points.length < 2) {
+                return;
+            }
+            //line.points[0].lengthFrom = 0.0;
+            //line.points[0].lengthTo = 0.5;
+            //line.points[line.points.length - 2].lineWidth = 2.3;
+            //line.points[line.points.length - 2].lengthFrom = 0.3;
+            //line.points[line.points.length - 2].lengthTo = 0.6;
             this.canvasRender.setLineCap(ManualTracingTool.CanvasRenderLineCap.round);
-            for (var pointIndex = startIndex; pointIndex <= endIndex;) {
-                // search first visible point
-                var segmentStartIndex = -1;
-                for (var index = pointIndex; index <= endIndex; index++) {
-                    var point = line.points[index];
-                    var isNotDeleted = (point.modifyFlag != ManualTracingTool.LinePointModifyFlagID.delete);
-                    var lineWidth = (useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
-                    var isVisibleWidth = (lineWidth > 0.0);
-                    if (isNotDeleted && isVisibleWidth) {
-                        segmentStartIndex = index;
-                        break;
+            var firstPoint = line.points[startIndex];
+            var currentLineWidth = -1.0;
+            var strokeStarted = false;
+            var drawingRemainging = false;
+            for (var pointIndex = startIndex; pointIndex < endIndex;) {
+                var fromPoint = line.points[pointIndex];
+                var fromLocation = (useAdjustingLocation ? fromPoint.adjustingLocation : fromPoint.location);
+                var toPoint = line.points[pointIndex + 1];
+                var toLocation = (useAdjustingLocation ? toPoint.adjustingLocation : toPoint.location);
+                var lineWidth = (useAdjustingLocation ? fromPoint.adjustingLineWidth : fromPoint.lineWidth);
+                var isVisibleWidth = (lineWidth > 0.0);
+                //let isVisibleSegment = (fromPoint.lengthFrom != 0.0 || fromPoint.lengthTo != 0.0);
+                var lengthFrom = (useAdjustingLocation ? fromPoint.adjustingLengthFrom : 1.0);
+                var lengthTo = (useAdjustingLocation ? fromPoint.adjustingLengthTo : 0.0);
+                if (lineWidth != currentLineWidth) {
+                    if (drawingRemainging) {
+                        this.canvasRender.stroke();
+                        strokeStarted = false;
+                        drawingRemainging = false;
+                    }
+                    this.canvasRender.setStrokeWidth(lineWidth * strokeWidthBiasRate + this.getCurrentViewScaleLineWidth(strokeWidthBolding));
+                    currentLineWidth = lineWidth;
+                }
+                if (lengthFrom == 1.0) {
+                    // draw segment's full length
+                    if (!strokeStarted) {
+                        this.canvasRender.beginPath();
+                        this.canvasRender.moveTo(fromLocation[0], fromLocation[1]);
+                    }
+                    this.canvasRender.lineTo(toLocation[0], toLocation[1]);
+                    strokeStarted = true;
+                    drawingRemainging = true;
+                }
+                else {
+                    // draw segment's from-side part
+                    if (lengthFrom > 0.0) {
+                        if (!strokeStarted) {
+                            this.canvasRender.beginPath();
+                            this.canvasRender.moveTo(fromLocation[0], fromLocation[1]);
+                        }
+                        vec3.lerp(this.toLocation, fromLocation, toLocation, lengthFrom);
+                        this.canvasRender.lineTo(this.toLocation[0], this.toLocation[1]);
+                        this.canvasRender.stroke();
+                        strokeStarted = false;
+                        drawingRemainging = false;
+                    }
+                    // draw segment's to-side part
+                    if (lengthTo > 0.0 && lengthTo < 1.0) {
+                        if (drawingRemainging) {
+                            this.canvasRender.stroke();
+                        }
+                        vec3.lerp(this.fromLocation, fromLocation, toLocation, lengthTo);
+                        this.canvasRender.beginPath();
+                        this.canvasRender.moveTo(this.fromLocation[0], this.fromLocation[1]);
+                        this.canvasRender.lineTo(toLocation[0], toLocation[1]);
+                        strokeStarted = true;
+                        drawingRemainging = true;
                     }
                 }
-                if (segmentStartIndex == -1) {
-                    break;
-                }
-                var firstPoint = line.points[segmentStartIndex];
-                var currentLineWidth = this.lineWidthAdjust(useAdjustingLocation ? firstPoint.adjustingLineWidth : firstPoint.lineWidth);
-                // search end index of the segment
-                var segmentEndIndex = segmentStartIndex;
-                for (var index = segmentStartIndex + 1; index <= endIndex; index++) {
-                    var point = line.points[index];
-                    var isNotDeleted = (point.modifyFlag != ManualTracingTool.LinePointModifyFlagID.delete);
-                    var lineWidth = this.lineWidthAdjust(useAdjustingLocation ? point.adjustingLineWidth : point.lineWidth);
-                    var isVisibleWidth = (lineWidth > 0.0);
-                    var isSameLineWidth = (lineWidth == currentLineWidth);
-                    segmentEndIndex = index;
-                    if (isNotDeleted && isVisibleWidth && isSameLineWidth) {
-                        continue;
-                    }
-                    else {
-                        break;
-                    }
-                }
-                if (segmentEndIndex == segmentStartIndex) {
-                    break;
-                }
-                // draw segment
-                this.canvasRender.beginPath();
-                this.canvasRender.setStrokeWidth(currentLineWidth * strokeWidthBiasRate + this.getCurrentViewScaleLineWidth(strokeWidthBolding));
-                var firstLocaton = (useAdjustingLocation ? firstPoint.adjustingLocation : firstPoint.location);
-                this.canvasRender.moveTo(firstLocaton[0], firstLocaton[1]);
-                for (var index = segmentStartIndex + 1; index <= segmentEndIndex; index++) {
-                    var point = line.points[index];
-                    var location_2 = (useAdjustingLocation ? point.adjustingLocation : point.location);
-                    this.canvasRender.lineTo(location_2[0], location_2[1]);
-                }
+                pointIndex++;
+            }
+            if (drawingRemainging) {
                 this.canvasRender.stroke();
-                // next step
-                pointIndex = segmentEndIndex;
             }
         };
         Main_Drawing.prototype.drawVectorLinePoint = function (point, color, useAdjustingLocation) {
@@ -368,7 +398,7 @@ var ManualTracingTool;
                 color = layer.layerColor;
             }
             else if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.palletColor) {
-                var palletColor = documentData.palletColos[layer.line_PalletColorIndex];
+                var palletColor = documentData.palletColors[layer.line_PalletColorIndex];
                 color = palletColor.color;
             }
             else {
@@ -382,7 +412,7 @@ var ManualTracingTool;
                 color = layer.fillColor;
             }
             else if (layer.fillAreaType == ManualTracingTool.FillAreaTypeID.palletColor) {
-                var palletColor = documentData.palletColos[layer.fill_PalletColorIndex];
+                var palletColor = documentData.palletColors[layer.fill_PalletColorIndex];
                 color = palletColor.color;
             }
             else {
@@ -440,7 +470,7 @@ var ManualTracingTool;
                     break;
                 }
             }
-            this.drawMainWindow(this.mainWindow);
+            this.drawMainWindow(this.mainWindow, false);
             return pickedLayer;
         };
         // Editor window drawing
@@ -548,13 +578,63 @@ var ManualTracingTool;
             }
         };
         // Layer window drawing
+        Main_Drawing.prototype.layerWindow_CaluculateLayout = function (layerWindow) {
+            // layer item buttons
+            this.layerWindowLayoutArea.copyRectangle(layerWindow);
+            this.layerWindowLayoutArea.bottom = layerWindow.height - 1.0;
+            this.layerWindow_CaluculateLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
+            if (this.layerWindowCommandButtons.length > 0) {
+                var lastButton = this.layerWindowCommandButtons[this.layerWindowCommandButtons.length - 1];
+                this.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0; // lastButton.bottom + 1.0;
+            }
+            // layer items
+            this.layerWindow_CaluculateLayout_LayerWindowItem(layerWindow, this.layerWindowLayoutArea);
+        };
+        Main_Drawing.prototype.layerWindow_CaluculateLayout_CommandButtons = function (layerWindow, layoutArea) {
+            var currentX = layoutArea.left;
+            var currentY = layerWindow.viewLocation[1]; // layoutArea.top;
+            var unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
+            var unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
+            layerWindow.layerCommandButtonButtom = unitHeight + 1.0;
+            for (var _i = 0, _a = this.layerWindowCommandButtons; _i < _a.length; _i++) {
+                var button = _a[_i];
+                button.left = currentX;
+                button.right = currentX + unitWidth - 1;
+                button.top = currentY;
+                button.bottom = currentY + unitHeight - 1;
+                currentX += unitWidth;
+                layerWindow.layerItemButtonButtom = button.bottom + 1.0;
+            }
+        };
+        Main_Drawing.prototype.layerWindow_CaluculateLayout_LayerWindowItem = function (layerWindow, layoutArea) {
+            var currentY = layoutArea.top;
+            var itemHeight = layerWindow.layerItemHeight;
+            var margine = itemHeight * 0.1;
+            var iconWidth = (itemHeight - margine * 2);
+            var textLeftMargin = itemHeight * 0.3;
+            for (var _i = 0, _a = this.layerWindowItems; _i < _a.length; _i++) {
+                var item = _a[_i];
+                item.left = 0.0;
+                item.top = currentY;
+                item.right = layerWindow.width - 1;
+                item.bottom = currentY + itemHeight - 1;
+                item.marginLeft = margine;
+                item.marginTop = margine;
+                item.marginRight = margine;
+                item.marginBottom = margine;
+                item.visibilityIconWidth = iconWidth;
+                item.textLeft = item.left + margine + iconWidth + textLeftMargin;
+                currentY += itemHeight;
+            }
+            layerWindow.layerItemsBottom = currentY;
+        };
         Main_Drawing.prototype.drawLayerWindow = function (layerWindow) {
             this.canvasRender.setContext(layerWindow);
             this.drawLayerWindow_LayerItems(layerWindow);
             this.drawLayerWindow_LayerWindowButtons(layerWindow);
         };
         Main_Drawing.prototype.drawLayerWindow_LayerWindowButtons = function (layerWindow) {
-            this.caluculateLayerWindowLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
+            this.layerWindow_CaluculateLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
             if (this.layerWindowCommandButtons.length > 0) {
                 var button = this.layerWindowCommandButtons[0];
                 this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
@@ -677,6 +757,65 @@ var ManualTracingTool;
             }
             this.canvasRender.setGlobalAlpha(1.0);
             this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
+        };
+        // PalletSelector window drawing
+        Main_Drawing.prototype.palletSelector_CaluculateLayout = function () {
+            var wnd = this.palletSelectorWindow;
+            var context = this.toolContext;
+            var env = this.toolEnv;
+            var x = wnd.leftMargin;
+            var y = wnd.topMargin;
+            var itemWidth = wnd.itemWidth * wnd.itemScale;
+            var itemHeight = wnd.itemHeight * wnd.itemScale;
+            var viewWidth = wnd.width;
+            wnd.itemAreas = new List();
+            for (var palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
+                var layoutArea = new ManualTracingTool.RectangleLayoutArea();
+                layoutArea.index = palletColorIndex;
+                layoutArea.left = x;
+                layoutArea.top = y;
+                layoutArea.right = x + itemWidth - 1;
+                layoutArea.bottom = y + itemHeight - 1;
+                wnd.itemAreas.push(layoutArea);
+                x += itemWidth + wnd.itemRightMargin;
+                if (x + itemWidth >= viewWidth - wnd.rightMargin) {
+                    x = wnd.leftMargin;
+                    y += itemHeight + wnd.itemBottomMargin;
+                }
+            }
+        };
+        Main_Drawing.prototype.drawPalletSelectorWindow = function () {
+            var wnd = this.palletSelectorWindow;
+            var context = this.toolContext;
+            var env = this.toolEnv;
+            var documentData = context.document;
+            this.canvasRender.setContext(wnd);
+            var viewWidth = wnd.width;
+            var currenPalletColorIndex = -1;
+            if (env.currentVectorLayer != null && env.currentVectorLayer.fillAreaType == ManualTracingTool.FillAreaTypeID.palletColor) {
+                currenPalletColorIndex = env.currentVectorLayer.fill_PalletColorIndex;
+            }
+            for (var _i = 0, _a = wnd.itemAreas; _i < _a.length; _i++) {
+                var layoutArea = _a[_i];
+                var palletColorIndex = layoutArea.index;
+                if (palletColorIndex > documentData.palletColors.length) {
+                    break;
+                }
+                var x = layoutArea.left;
+                var y = layoutArea.top;
+                var itemWidth = layoutArea.getWidth();
+                var itemHeight = layoutArea.getHeight();
+                var palletColor = documentData.palletColors[palletColorIndex];
+                this.canvasRender.setFillColorV(palletColor.color);
+                this.canvasRender.setStrokeColorV(env.drawStyle.palletSelectorItemEdgeColor);
+                this.canvasRender.fillRect(x + 0.5, y + 0.5, itemWidth, itemHeight);
+                this.canvasRender.setStrokeWidth(1.0);
+                this.canvasRender.drawRectangle(x + 0.5, y + 0.5, itemWidth, itemHeight);
+                if (palletColorIndex == currenPalletColorIndex) {
+                    this.canvasRender.setStrokeWidth(1.5);
+                    this.canvasRender.drawRectangle(x + 0.5 - 1.0, y + 0.5 - 1.0, itemWidth + 2.0, itemHeight + 2.0);
+                }
+            }
         };
         // TimeLine window drawing
         Main_Drawing.prototype.drawTimeLineWindow = function (wnd) {

@@ -42,7 +42,10 @@ var ManualTracingTool;
                     continue;
                 }
                 var last_KeyFrame = vectorLayer.keyframes[keyframeIndex];
-                // Crete keyframe and insert
+                if (last_KeyFrame.frame == targetFrame) {
+                    continue;
+                }
+                // Create keyframe and insert
                 var newKeyframe = new ManualTracingTool.VectorLayerKeyframe();
                 newKeyframe.frame = targetFrame;
                 if (last_KeyFrame != null) {

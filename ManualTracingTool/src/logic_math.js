@@ -87,16 +87,39 @@ var ManualTracingTool;
             result[1] = matrix[13];
             result[2] = matrix[14];
         };
-        Maths.setVectorsMat4 = function (result, vecX, vecY, vecZ) {
+        Maths.mat4SetVectors = function (result, vecX, vecY, vecZ) {
             result[0] = vecX[0];
             result[1] = vecX[1];
             result[2] = vecX[2];
+            result[3] = 0.0;
             result[4] = vecY[0];
             result[5] = vecY[1];
             result[6] = vecY[2];
+            result[7] = 0.0;
             result[8] = vecZ[0];
             result[9] = vecZ[1];
             result[10] = vecZ[2];
+            result[11] = 0.0;
+        };
+        Maths.mat4SegmentMat = function (result, resultNormalVec, locationFrom, locationTo) {
+            vec3.subtract(resultNormalVec, locationTo, locationFrom);
+            vec3.normalize(resultNormalVec, resultNormalVec);
+            result[0] = resultNormalVec[0];
+            result[1] = resultNormalVec[1];
+            result[2] = 0.0;
+            result[3] = 0.0;
+            result[4] = -resultNormalVec[1];
+            result[5] = resultNormalVec[0];
+            result[6] = 0.0;
+            result[7] = 0.0;
+            result[8] = 0.0;
+            result[9] = 0.0;
+            result[10] = 1.0;
+            result[11] = 1.0;
+            result[12] = locationFrom[0];
+            result[13] = locationFrom[1];
+            result[14] = 0.0;
+            result[15] = 1.0;
         };
         Maths.hsvToRGB_Element = function (h, s, v, baseElement) {
             return ((Maths.clamp(Math.abs(Maths.fract(h + baseElement / 3.0) * 6.0 - 3.0) - 1.0, 0.0, 1.0) - 1.0) * s + 1.0) * v;

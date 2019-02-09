@@ -170,6 +170,22 @@ var ManualTracingTool;
                 _this.getTouchInfo(_this.subtoolWindow.toolMouseEvent, e, false, true, _this.subtoolWindow);
                 e.preventDefault();
             });
+            this.palletSelectorWindow.canvas.addEventListener('mousedown', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getMouseInfo(_this.palletSelectorWindow.toolMouseEvent, e, false, _this.palletSelectorWindow);
+                _this.palletSelectorWindow_mousedown(_this.palletSelectorWindow.toolMouseEvent);
+                e.preventDefault();
+            });
+            this.palletSelectorWindow.canvas.addEventListener('touchstart', function (e) {
+                if (_this.isEventDisabled()) {
+                    return;
+                }
+                _this.getTouchInfo(_this.palletSelectorWindow.toolMouseEvent, e, true, false, _this.palletSelectorWindow);
+                _this.palletSelectorWindow_mousedown(_this.palletSelectorWindow.toolMouseEvent);
+                e.preventDefault();
+            });
             this.timeLineWindow.canvas.addEventListener('mousedown', function (e) {
                 if (_this.isEventDisabled()) {
                     return;
@@ -239,7 +255,7 @@ var ManualTracingTool;
                 if (_this.isModalShown()) {
                     return;
                 }
-                if (document.activeElement.id == _this.ID.fileName) {
+                if (document.activeElement.nodeName == 'INPUT') {
                     return;
                 }
                 _this.document_keydown(e);
@@ -248,7 +264,7 @@ var ManualTracingTool;
                 if (_this.isModalShown()) {
                     return;
                 }
-                if (document.activeElement.id == _this.ID.fileName) {
+                if (document.activeElement.nodeName == 'INPUT') {
                     return;
                 }
                 _this.document_keyup(e);
@@ -258,6 +274,16 @@ var ManualTracingTool;
             });
             window.addEventListener('contextmenu', function (e) {
                 return _this.htmlWindow_contextmenu(e);
+            });
+            window.addEventListener('blur', function (e) {
+                if (_this.mainProcessState == ManualTracingTool.MainProcessStateID.running) {
+                    _this.mainProcessState = ManualTracingTool.MainProcessStateID.pause;
+                }
+            });
+            window.addEventListener('focus', function (e) {
+                if (_this.mainProcessState == ManualTracingTool.MainProcessStateID.pause) {
+                    _this.mainProcessState = ManualTracingTool.MainProcessStateID.running;
+                }
             });
             document.addEventListener('dragover', function (e) {
                 e.stopPropagation();
@@ -284,6 +310,13 @@ var ManualTracingTool;
                 if (e.dataTransfer.files.length > 0) {
                     var file = e.dataTransfer.files[0];
                     var reader_1 = new FileReader();
+                    if (file['path'] != undefined) {
+                        _this.regsterLastUsedFile(file['path']);
+                    }
+                    else {
+                        _this.regsterLastUsedFile(file.name);
+                    }
+                    _this.updateHeaderDocumentFileName();
                     reader_1.addEventListener('load', function (e) {
                         _this.startReloadDocumentFromText(reader_1.result);
                     });
@@ -695,6 +728,29 @@ var ManualTracingTool;
         Main_Event.prototype.subtoolWindow_mouseup = function (e) {
             this.subtoolWindow.endMouseDragging();
         };
+        Main_Event.prototype.palletSelectorWindow_mousedown = function (e) {
+            var context = this.toolContext;
+            var wnd = this.palletSelectorWindow;
+            var env = this.toolEnv;
+            var documentData = context.document;
+            if (e.isLeftButtonPressing()) {
+                if (env.currentVectorLayer != null) {
+                    var layoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
+                    if (layoutArea != null) {
+                        var palletColorIndex = layoutArea.index;
+                        var color = documentData.palletColors[palletColorIndex];
+                        if (env.currentVectorLayer.fillAreaType == ManualTracingTool.FillAreaTypeID.fillColor) {
+                            vec4.copy(env.currentVectorLayer.fillColor, color.color);
+                        }
+                        else if (env.currentVectorLayer.fillAreaType == ManualTracingTool.FillAreaTypeID.palletColor) {
+                            env.currentVectorLayer.fill_PalletColorIndex = palletColorIndex;
+                            env.setRedrawLayerWindow();
+                            env.setRedrawMainWindowEditorWindow();
+                        }
+                    }
+                }
+            }
+        };
         Main_Event.prototype.timeLineWindow_mousedown = function (e) {
             var context = this.toolContext;
             var wnd = this.timeLineWindow;
@@ -819,6 +875,7 @@ var ManualTracingTool;
                 this.setCurrentLayer(null);
                 this.setCurrentFrame(0);
                 this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
+                this.setHeaderDefaultDocumentFileName();
                 this.toolEnv.setRedrawAllWindows();
                 return;
             }
@@ -908,10 +965,18 @@ var ManualTracingTool;
                     if (key == 't') {
                         rot = -rot;
                     }
+                    if (this.mainWindow.mirrorX) {
+                        rot = -rot;
+                    }
                     this.mainWindow.viewRotation += rot;
                     this.setViewRotation(this.mainWindow.viewRotation);
                     return;
                 }
+            }
+            if (key == 'm') {
+                this.mainWindow.mirrorX = !this.mainWindow.mirrorX;
+                env.setRedrawMainWindowEditorWindow();
+                return;
             }
             if (key == 'f' || key == 'd') {
                 var addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate;

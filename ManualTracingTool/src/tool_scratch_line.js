@@ -52,6 +52,7 @@ var ManualTracingTool;
             _this.cutoutAngle = 30 / 180.0 * Math.PI;
             _this.editFalloffRadiusMinRate = 0.15;
             _this.editFalloffRadiusMaxRate = 2.0;
+            _this.editFalloffRadiusContainsLineWidth = false;
             _this.editInfluence = 0.5;
             _this.editExtrudeMinRadiusRate = 0.5;
             _this.editExtrudeMaxRadiusRate = 1.0;
@@ -93,6 +94,8 @@ var ManualTracingTool;
                 var point = new ManualTracingTool.LinePoint();
                 vec3.copy(point.location, e.location);
                 vec3.copy(point.adjustingLocation, e.location);
+                //point.lineWidth = env.mouseCursorViewRadius * 2.0;
+                point.lineWidth = env.drawLineBaseWidth;
                 this.editLine.points.push(point);
             }
         };
@@ -222,7 +225,7 @@ var ManualTracingTool;
             var baseRadius = env.mouseCursorViewRadius;
             var editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
             var editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
-            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, resampledLine, editFalloffRadiusMin, editFalloffRadiusMax);
+            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, resampledLine, editFalloffRadiusMin, editFalloffRadiusMax, this.editFalloffRadiusContainsLineWidth);
             // For display
             this.candidateLine = new ManualTracingTool.VectorLine();
             for (var _i = 0, candidatePointPairs_1 = candidatePointPairs; _i < candidatePointPairs_1.length; _i++) {
@@ -290,7 +293,7 @@ var ManualTracingTool;
             this.cutoutLine(resampledLine);
             return resampledLine;
         };
-        Tool_ScratchLine.prototype.ganerateCandidatePoints = function (target_Line, editorLine, editFalloffRadiusMin, editFalloffRadiusMax) {
+        Tool_ScratchLine.prototype.ganerateCandidatePoints = function (target_Line, editorLine, editFalloffRadiusMin, editFalloffRadiusMax, containsPointLineWidth) {
             var result = new List();
             for (var _i = 0, _a = target_Line.points; _i < _a.length; _i++) {
                 var point = _a[_i];
@@ -319,8 +322,14 @@ var ManualTracingTool;
                     if (nearestPoint_ResultVec == null) {
                         continue;
                     }
-                    var normalDistance = vec3.distance(point.location, this.nearestPointLocation);
-                    if (normalDistance > editFalloffRadiusMax) {
+                    var directDistance = vec3.distance(point.location, this.nearestPointLocation);
+                    if (containsPointLineWidth) {
+                        directDistance -= point.lineWidth * 0.5;
+                        if (directDistance < 0.0) {
+                            directDistance = 0.0;
+                        }
+                    }
+                    if (directDistance > editFalloffRadiusMax) {
                         continue;
                     }
                     // Calculate edit influence
@@ -331,11 +340,12 @@ var ManualTracingTool;
                     var normPositionInEditorLineSegment = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(nearestLinePoint1.location, nearestLinePoint2.location, point.location);
                     var totalLengthInEditorLine = (nearestLinePoint1.totalLength
                         + (nearestLinePoint2.totalLength - nearestLinePoint1.totalLength) * normPositionInEditorLineSegment);
-                    var influence = this.calculateCandidatePointInfluence(editorLine.totalLength, normalDistance, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax);
+                    var influence = this.calculateCandidatePointInfluence(editorLine.totalLength, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax);
                     // Create edit data
                     var candidatePoint = new ManualTracingTool.LinePoint();
                     vec3.copy(candidatePoint.location, this.nearestPointLocation);
                     vec3.copy(candidatePoint.adjustingLocation, candidatePoint.location);
+                    candidatePoint.lineWidth = ManualTracingTool.Maths.lerp(normPositionInEditorLineSegment, nearestLinePoint1.lineWidth, nearestLinePoint2.lineWidth);
                     var pair = new Tool_ScratchLine_CandidatePair();
                     pair.targetPoint = point;
                     pair.candidatePoint = candidatePoint;
@@ -467,7 +477,7 @@ var ManualTracingTool;
             }
             return result;
         };
-        Tool_ScratchLine.prototype.calculateCandidatePointInfluence = function (editorLine_TotalLength, normalDistance, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax) {
+        Tool_ScratchLine.prototype.calculateCandidatePointInfluence = function (editorLine_TotalLength, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax) {
             var falloffDistance = 1.0;
             if (editorLine_TotalLength > editFalloffRadiusMax * 2.0) {
                 if (totalLengthInEditorLine < editFalloffRadiusMax) {

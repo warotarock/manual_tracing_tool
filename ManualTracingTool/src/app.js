@@ -1,9 +1,6 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
     // これからやろうと思っていること (current tasks)
-    // ・点が一つしかない（あるいは同じ座標にある？）線が残ることがあるのを直したい
-    // ・ミラー（左右反転）表示
-    // 　・キーフレームの編集がレイヤーごとにきちんと適用されているか確認
     // ・ファイル管理
     // 　・デフォルトの線の太さ設定の保存
     // 　・デフォルトのズーム倍率の設定の保存
@@ -16,20 +13,17 @@ var ManualTracingTool;
     // 　・線の基本幅の倍率
     // ・ポージングツールの整備
     // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
-    // 　・モデルを切り替えられるようにする（数種類でよい）
+    // 　・親の向きに合わせて子も回転してしまう（していい部位もある）のでどうにかする
+    // 　・モデルを切り替えられるようにする
     // ・パレット１、２ボタンをレイヤーウィンドウに置く
-    // ・Web向け？仕様
-    // 　・保存をダウンロード、読み込みをブロブにする
-    // ・アクティブ線、レイヤによる絞り込み処理と可視化
-    // 　・とりあえず無効にしておく
+    // ・Web向け仕様
+    // 　・Webで保存をダウンロード、読み込みをブロブにする
     // ・編集ツールの整備
     // 　・選択ツールのアイコンの作成
     // 　・ポージングツールのアイコンの作成
+    // ・ミラー表示にＵＩがきちんとついてくるようにする
     // どこかでやる必要があること (nearest future tasks)
-    // ・PNG出力、jpeg出力
-    // 　・出力倍率を指定できるようにする、ドキュメントに記録する
-    // 　・出力先のフォルダをローカルストレージの設定で決め、ドキュメントの設定のファイル名で保存する
-    // 　・出力ファイル名を指定するダイアログを実装する。ついでに出力範囲の値指定も同じダイアログでできるようにする
+    // ・点が一つしかない（あるいは同じ座標にある？）線が残ることがあるのを直したい
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
     // 　・影響範囲が感覚と合わないのでどうにかしたい
     // ・モバイル対応
@@ -43,6 +37,8 @@ var ManualTracingTool;
     // ・線の連続塗りつぶしで後ろの線が削除されたときにフラグを解除していない
     // ・ドローツールで線の最後の点が重複しているときがある？（リサンプリングで最後と同じ位置に点が追加されている？）
     // いつかやるかも (anytime tasks)
+    // ・アクティブ線、レイヤによる絞り込み処理と可視化
+    // ・ミラー（上下反転）表示
     // ・線の太さに変化がある線を品質よく描画する
     // ・筆圧を利用した何か
     // ・パレット機能の拡充
@@ -67,9 +63,14 @@ var ManualTracingTool;
     // 　・直線上の点は削減する
     // 　・曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
     // 終わったもの (done)
+    // ・ミラー（左右反転）表示
+    // 　・キーフレームの編集がレイヤーごとにきちんと適用されているか確認
     // ・不具合
     // 　・ポージングツール以外のツールでパンしたとき３Ⅾが更新されない
     // 　・非表示時に入力スフィアをも非表示にする（不具合）
+    // ・PNG出力、jpeg出力
+    // 　・出力倍率を指定できるようにする、ドキュメントに記録する
+    // 　・出力ファイル名を指定するダイアログを実装する。ついでに出力範囲の値指定も同じダイアログでできるようにする
     // ・編集ツールの整備
     // 　・グループレイヤーによる複数レイヤー同時編集
     // 　　・編集モード表示の複数レイヤー対応
@@ -152,6 +153,8 @@ var ManualTracingTool;
         _Main.layerWindow.canvas = document.getElementById(_Main.ID.layerCanvas);
         _Main.subtoolWindow.canvas = document.getElementById(_Main.ID.subtoolCanvas);
         _Main.timeLineWindow.canvas = document.getElementById(_Main.ID.timeLineCanvas);
+        _Main.palletSelectorWindow.canvas = document.getElementById(_Main.ID.palletSelectorCanvas);
+        _Main.colorMixerWindow_colorCanvas.canvas = document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
         _Main.pickingWindow.canvas = document.createElement('canvas');
         _Main.renderingWindow.canvas = document.createElement('canvas');
         _Main.palletColorModal_colorCanvas.canvas = document.getElementById(_Main.ID.palletColorModal_colorCanvas);
@@ -176,18 +179,22 @@ var ManualTracingTool;
         setTimeout(run, 1000 / 30);
     };
     function run() {
-        if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.Running) {
+        if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.pause) {
+            setTimeout(run, 1000);
+            return;
+        }
+        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.running) {
             _Main.run();
             _Main.draw();
         }
-        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.SystemResourceLoading) {
+        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.systemResourceLoading) {
             _Main.processLoadingSystemResources();
         }
-        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.InitialDocumentJSONLoading) {
+        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.initialDocumentJSONLoading) {
             _Main.processLoadingDocumentJSON();
         }
-        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.DocumentResourceLoading
-            || _Main.mainProcessState == ManualTracingTool.MainProcessStateID.InitialDocumentResourceLoading) {
+        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.documentResourceLoading
+            || _Main.mainProcessState == ManualTracingTool.MainProcessStateID.initialDocumentResourceLoading) {
             _Main.processLoadingDocumentResources();
         }
         if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {

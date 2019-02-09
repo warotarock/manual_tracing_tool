@@ -19,7 +19,7 @@ var ManualTracingTool;
             this.selectionInfo.deletePoint(point);
         };
         Selector_DeleteLinePoint_BrushSelect.prototype.afterHitTest = function () {
-            // doesn't clear flagas
+            // doesn't clear flagas when deletion
         };
         return Selector_DeleteLinePoint_BrushSelect;
     }(ManualTracingTool.Selector_LinePoint_BrushSelect));

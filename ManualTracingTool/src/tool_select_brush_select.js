@@ -90,13 +90,16 @@ var ManualTracingTool;
         };
         Tool_BrushSelectLinePointBase.prototype.endSelection = function (env) {
             this.logic_Selector.endProcess();
-            this.editableKeyframeLayers = null;
             env.endModalTool();
-            if (this.logic_Selector.selectionInfo.selectedLines.length == 0
-                && this.logic_Selector.selectionInfo.selectedPoints.length == 0) {
+            if (!this.existsResults()) {
                 return;
             }
             this.executeCommand(env);
+            this.editableKeyframeLayers = null;
+        };
+        Tool_BrushSelectLinePointBase.prototype.existsResults = function () {
+            return (this.logic_Selector.selectionInfo.selectedLines.length == 0
+                && this.logic_Selector.selectionInfo.selectedPoints.length == 0);
         };
         Tool_BrushSelectLinePointBase.prototype.executeCommand = function (env) {
         };

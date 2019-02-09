@@ -155,6 +155,7 @@ var ManualTracingTool;
         __extends(Command_Layer_AddVectorLayerToCurrentPosition, _super);
         function Command_Layer_AddVectorLayerToCurrentPosition() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.createForFillColor = false;
             _this.newLayer = null;
             return _this;
         }
@@ -169,7 +170,14 @@ var ManualTracingTool;
         };
         Command_Layer_AddVectorLayerToCurrentPosition.prototype.executeCommand = function (env) {
             this.newLayer = new ManualTracingTool.VectorLayer();
-            this.newLayer.name = 'new layer';
+            if (!this.createForFillColor) {
+                this.newLayer.name = 'new line layer';
+            }
+            else {
+                this.newLayer.name = 'new fill layer';
+                this.newLayer.drawLineType = ManualTracingTool.DrawLineTypeID.none;
+                this.newLayer.fillAreaType = ManualTracingTool.FillAreaTypeID.palletColor;
+            }
             var keyFrame = new ManualTracingTool.VectorLayerKeyframe();
             keyFrame.geometry = new ManualTracingTool.VectorLayerGeometry();
             this.newLayer.keyframes.push(keyFrame);

@@ -16,6 +16,7 @@ var ManualTracingTool;
             this.exportPath = null;
             this.lastUsedFilePaths = new List();
             this.referenceDirectoryPath = null;
+            this.currentDirectoryPath = null;
         }
         return LocalSetting;
     }());
@@ -23,7 +24,7 @@ var ManualTracingTool;
     // Color
     var PalletColor = /** @class */ (function () {
         function PalletColor() {
-            this.color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+            this.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
         }
         return PalletColor;
     }());
@@ -45,6 +46,7 @@ var ManualTracingTool;
             this.name = null;
             this.isVisible = true;
             this.isSelected = false;
+            this.isRenderTarget = true;
             this.childLayers = new List();
             this.layerColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         }
@@ -79,6 +81,8 @@ var ManualTracingTool;
             this.tempLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.adjustingLineWidth = 0.0;
+            this.adjustingLengthFrom = 1.0; // end position to draw segment of side of from-point (0.0 - 1.0)
+            this.adjustingLengthTo = 0.0; // start position to draw segment of side of to-point (0.0 - 1.0)
             this.totalLength = 0.0;
             this.curvature = 0.0;
         }
@@ -92,8 +96,9 @@ var ManualTracingTool;
         VectorLineModifyFlagID[VectorLineModifyFlagID["unselectedToSelected"] = 2] = "unselectedToSelected";
         VectorLineModifyFlagID[VectorLineModifyFlagID["delete"] = 3] = "delete";
         VectorLineModifyFlagID[VectorLineModifyFlagID["deletePoints"] = 4] = "deletePoints";
-        VectorLineModifyFlagID[VectorLineModifyFlagID["transform"] = 5] = "transform";
-        VectorLineModifyFlagID[VectorLineModifyFlagID["reampling"] = 6] = "reampling";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["edit"] = 5] = "edit";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["transform"] = 6] = "transform";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["reampling"] = 7] = "reampling";
     })(VectorLineModifyFlagID = ManualTracingTool.VectorLineModifyFlagID || (ManualTracingTool.VectorLineModifyFlagID = {}));
     var VectorLine = /** @class */ (function () {
         function VectorLine() {
@@ -119,6 +124,7 @@ var ManualTracingTool;
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["modifyLines"] = 1] = "modifyLines";
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["deleteLines"] = 2] = "deleteLines";
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["delete"] = 3] = "delete";
+        VectorGroupModifyFlagID[VectorGroupModifyFlagID["edit"] = 4] = "edit";
     })(VectorGroupModifyFlagID = ManualTracingTool.VectorGroupModifyFlagID || (ManualTracingTool.VectorGroupModifyFlagID = {}));
     var VectorGroup = /** @class */ (function () {
         function VectorGroup() {
@@ -493,27 +499,27 @@ var ManualTracingTool;
             this.documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
             this.defaultViewScale = 1.0;
             this.lineWidthBiasRate = 1.0;
-            this.palletColos = new List();
+            this.palletColors = new List();
             this.animationSettingData = new AnimationSettingData();
             this.loaded = false;
             this.hasErrorOnLoading = false;
             DocumentData.initializeDefaultPalletColors(this);
         }
         DocumentData.initializeDefaultPalletColors = function (documentData) {
-            documentData.palletColos = new List();
+            documentData.palletColors = new List();
             for (var _i = 0, defaultColors_1 = defaultColors; _i < defaultColors_1.length; _i++) {
                 var color = defaultColors_1[_i];
                 var palletColor = new PalletColor();
                 vec4.copy(palletColor.color, color);
-                documentData.palletColos.push(palletColor);
+                documentData.palletColors.push(palletColor);
             }
-            while (documentData.palletColos.length < DocumentData.maxPalletColors) {
+            while (documentData.palletColors.length < DocumentData.maxPalletColors) {
                 var palletColor = new PalletColor();
                 vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
-                documentData.palletColos.push(palletColor);
+                documentData.palletColors.push(palletColor);
             }
         };
-        DocumentData.maxPalletColors = 25;
+        DocumentData.maxPalletColors = 50;
         return DocumentData;
     }());
     ManualTracingTool.DocumentData = DocumentData;

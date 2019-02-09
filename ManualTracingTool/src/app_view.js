@@ -45,9 +45,30 @@ var ManualTracingTool;
             _this.footerTextBefore = '';
             return _this;
         }
-        Main_View.prototype.initializeViews = function () {
+        Main_View.prototype.initializeViewDevices = function () {
+            this.resizeWindows();
+            this.mainWindow.context = this.mainWindow.canvas.getContext('2d');
+            this.editorWindow.context = this.editorWindow.canvas.getContext('2d');
+            this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
+            this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
+            this.subtoolWindow.context = this.subtoolWindow.canvas.getContext('2d');
+            this.palletSelectorWindow.context = this.palletSelectorWindow.canvas.getContext('2d');
+            this.colorMixerWindow_colorCanvas.context = this.colorMixerWindow_colorCanvas.canvas.getContext('2d');
+            this.timeLineWindow.context = this.timeLineWindow.canvas.getContext('2d');
+            this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
+            this.palletColorModal_colorCanvas.context = this.palletColorModal_colorCanvas.canvas.getContext('2d');
+            this.canvasRender.setContext(this.layerWindow);
+            this.canvasRender.setFontSize(18.0);
+            if (this.webGLRender.initializeWebGL(this.webglWindow.canvas)) {
+                throw ('３Ｄ機能を初期化できませんでした。');
+            }
+            this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
+        };
+        Main_View.prototype.initializeViewState = function () {
             this.mainWindow.centerLocationRate[0] = 0.5;
             this.mainWindow.centerLocationRate[1] = 0.5;
+            this.setCanvasSizeFromStyle(this.colorMixerWindow_colorCanvas);
+            this.drawPalletColorMixer(this.colorMixerWindow_colorCanvas);
             this.setCanvasSizeFromStyle(this.palletColorModal_colorCanvas);
             this.drawPalletColorMixer(this.palletColorModal_colorCanvas);
             this.collectLayerWindowButtons();
@@ -61,10 +82,12 @@ var ManualTracingTool;
             this.fitCanvas(this.pickingWindow, this.mainWindow);
             this.resizeCanvasToParent(this.layerWindow);
             this.resizeCanvasToParent(this.subtoolWindow);
+            this.resizeCanvasToParent(this.palletSelectorWindow);
             this.resizeCanvasToParent(this.timeLineWindow);
             if (this.isWhileLoading()) {
-                this.caluculateLayerWindowLayout(this.layerWindow);
+                this.layerWindow_CaluculateLayout(this.layerWindow);
                 this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+                this.palletSelector_CaluculateLayout();
             }
         };
         Main_View.prototype.resizeCanvasToParent = function (canvasWindow) {
@@ -208,7 +231,7 @@ var ManualTracingTool;
             this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveUp));
             this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveDown));
         };
-        Main_View.prototype.collectLayerWindowItems = function () {
+        Main_View.prototype.layerWindow_CollectItems = function () {
             this.layerWindowItems = new List();
             this.collectLayerWindowItemsRecursive(this.layerWindowItems, this.document.rootLayer, 0);
             var previousItem = null;
@@ -256,56 +279,6 @@ var ManualTracingTool;
                 return item;
             }
             return null;
-        };
-        Main_View.prototype.caluculateLayerWindowLayout = function (layerWindow) {
-            // layer item buttons
-            this.layerWindowLayoutArea.copyRectangle(layerWindow);
-            this.layerWindowLayoutArea.bottom = layerWindow.height - 1.0;
-            this.caluculateLayerWindowLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
-            if (this.layerWindowCommandButtons.length > 0) {
-                var lastButton = this.layerWindowCommandButtons[this.layerWindowCommandButtons.length - 1];
-                this.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0; // lastButton.bottom + 1.0;
-            }
-            // layer items
-            this.caluculateLayerWindowLayout_LayerWindowItem(layerWindow, this.layerWindowLayoutArea);
-        };
-        Main_View.prototype.caluculateLayerWindowLayout_CommandButtons = function (layerWindow, layoutArea) {
-            var currentX = layoutArea.left;
-            var currentY = layerWindow.viewLocation[1]; // layoutArea.top;
-            var unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
-            var unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
-            layerWindow.layerCommandButtonButtom = unitHeight + 1.0;
-            for (var _i = 0, _a = this.layerWindowCommandButtons; _i < _a.length; _i++) {
-                var button = _a[_i];
-                button.left = currentX;
-                button.right = currentX + unitWidth - 1;
-                button.top = currentY;
-                button.bottom = currentY + unitHeight - 1;
-                currentX += unitWidth;
-                layerWindow.layerItemButtonButtom = button.bottom + 1.0;
-            }
-        };
-        Main_View.prototype.caluculateLayerWindowLayout_LayerWindowItem = function (layerWindow, layoutArea) {
-            var currentY = layoutArea.top;
-            var itemHeight = layerWindow.layerItemHeight;
-            var margine = itemHeight * 0.1;
-            var iconWidth = (itemHeight - margine * 2);
-            var textLeftMargin = itemHeight * 0.3;
-            for (var _i = 0, _a = this.layerWindowItems; _i < _a.length; _i++) {
-                var item = _a[_i];
-                item.left = 0.0;
-                item.top = currentY;
-                item.right = layerWindow.width - 1;
-                item.bottom = currentY + itemHeight - 1;
-                item.marginLeft = margine;
-                item.marginTop = margine;
-                item.marginRight = margine;
-                item.marginBottom = margine;
-                item.visibilityIconWidth = iconWidth;
-                item.textLeft = item.left + margine + iconWidth + textLeftMargin;
-                currentY += itemHeight;
-            }
-            layerWindow.layerItemsBottom = currentY;
         };
         Main_View.prototype.setLayerWindowViewLocationToItem = function (item) {
             var layerWindow = this.layerWindow;
@@ -385,6 +358,7 @@ var ManualTracingTool;
             this.setInputElementText(this.ID.layerPropertyModal_layerName, layer.name);
             this.setInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
             this.setInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, layer.layerColor[3], 0.0, 1.0);
+            this.setInputElementBoolean(this.ID.layerPropertyModal_isRenderTarget, layer.isRenderTarget);
             // for each layer type properties
             if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
                 var vectorLayer = layer;
@@ -395,6 +369,25 @@ var ManualTracingTool;
             }
             this.layerPropertyWindow_EditLayer = layer;
             this.openModal(this.ID.layerPropertyModal, this.ID.layerPropertyModal_layerName);
+        };
+        Main_View.prototype.onClosedLayerPropertyModal = function () {
+            var layer = this.layerPropertyWindow_EditLayer;
+            // common layer properties
+            var layerName = this.getInputElementText(this.ID.layerPropertyModal_layerName);
+            if (!StringIsNullOrEmpty(layerName)) {
+                layer.name = layerName;
+            }
+            this.getInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
+            layer.layerColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, 0.0, 1.0);
+            layer.isRenderTarget = this.getInputElementBoolean(this.ID.layerPropertyModal_isRenderTarget);
+            if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
+                var vectorLayer = layer;
+                this.getInputElementColor(this.ID.layerPropertyModal_fillColor, vectorLayer.fillColor);
+                vectorLayer.fillColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_fillColorAlpha, 0.0, 1.0);
+                vectorLayer.drawLineType = this.getRadioElementIntValue(this.ID.layerPropertyModal_drawLineType, ManualTracingTool.DrawLineTypeID.layerColor);
+                vectorLayer.fillAreaType = this.getRadioElementIntValue(this.ID.layerPropertyModal_fillAreaType, ManualTracingTool.FillAreaTypeID.fillColor);
+            }
+            this.layerPropertyWindow_EditLayer = null;
         };
         Main_View.prototype.openPalletColorModal = function (mode, documentData, layer) {
             if (this.isModalShown()) {
@@ -431,12 +424,12 @@ var ManualTracingTool;
                 else {
                     palletColorIndex = vectorLayer.fill_PalletColorIndex;
                 }
-                var palletColor = documentData.palletColos[palletColorIndex];
+                var palletColor = documentData.palletColors[palletColorIndex];
                 this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
                 this.setInputElementRangeValue(this.ID.palletColorModal_currentAlpha, palletColor.color[3], 0.0, 1.0);
             }
-            for (var palletColorIndex = 0; palletColorIndex < documentData.palletColos.length; palletColorIndex++) {
-                var palletColor = documentData.palletColos[palletColorIndex];
+            for (var palletColorIndex = 0; palletColorIndex < documentData.palletColors.length; palletColorIndex++) {
+                var palletColor = documentData.palletColors[palletColorIndex];
                 this.setColorPalletElementValue(palletColorIndex, palletColor.color);
             }
         };
@@ -471,7 +464,7 @@ var ManualTracingTool;
             var documentData = this.currentModalDialog_DocumentData;
             var vectorLayer = this.palletColorWindow_EditLayer;
             var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
-            var palletColor = documentData.palletColos[palletColorIndex];
+            var palletColor = documentData.palletColors[palletColorIndex];
             this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
             palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
             this.displayPalletColorModalColors(documentData, vectorLayer);
@@ -483,7 +476,7 @@ var ManualTracingTool;
             }
             var documentData = this.currentModalDialog_DocumentData;
             var vectorLayer = this.palletColorWindow_EditLayer;
-            var palletColor = documentData.palletColos[palletColorIndex];
+            var palletColor = documentData.palletColors[palletColorIndex];
             this.getInputElementColor(this.ID.palletColorModal_colorValue + palletColorIndex, palletColor.color);
             this.displayPalletColorModalColors(documentData, vectorLayer);
             this.toolEnv.setRedrawMainWindow();
@@ -500,7 +493,7 @@ var ManualTracingTool;
             var documentData = this.currentModalDialog_DocumentData;
             var vectorLayer = this.palletColorWindow_EditLayer;
             var palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
-            var palletColor = documentData.palletColos[palletColorIndex];
+            var palletColor = documentData.palletColors[palletColorIndex];
             palletColor.color[0] = this.tempColor4[0];
             palletColor.color[1] = this.tempColor4[1];
             palletColor.color[2] = this.tempColor4[2];
@@ -522,12 +515,12 @@ var ManualTracingTool;
             var updateOnClose = false;
             if (updateOnClose) {
                 {
-                    var palletColor = documentData.palletColos[palletColorIndex];
+                    var palletColor = documentData.palletColors[palletColorIndex];
                     this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
                     palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
                 }
-                for (var i = 0; i < documentData.palletColos.length; i++) {
-                    var palletColor = documentData.palletColos[i];
+                for (var i = 0; i < documentData.palletColors.length; i++) {
+                    var palletColor = documentData.palletColors[i];
                     var id = this.ID.palletColorModal_colorValue + i;
                     this.getInputElementColor(id, palletColor.color);
                 }
@@ -557,22 +550,27 @@ var ManualTracingTool;
             if (this.currentModalDialogResult != this.ID.newLayerCommandOptionModal_ok) {
                 return;
             }
-            var layerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, ManualTracingTool.LayerTypeID.vectorLayer);
+            var newLayerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, NewLayerTypeID.vectorLayer);
             // Select command
             var layerCommand = null;
-            if (layerType == ManualTracingTool.LayerTypeID.vectorLayer) {
+            if (newLayerType == NewLayerTypeID.vectorLayer) {
                 layerCommand = new ManualTracingTool.Command_Layer_AddVectorLayerToCurrentPosition();
             }
-            else if (layerType == ManualTracingTool.LayerTypeID.vectorLayerReferenceLayer) {
+            else if (newLayerType == NewLayerTypeID.vectorLayer_Fill) {
+                var command = new ManualTracingTool.Command_Layer_AddVectorLayerToCurrentPosition();
+                command.createForFillColor = true;
+                layerCommand = command;
+            }
+            else if (newLayerType == NewLayerTypeID.vectorLayerReferenceLayer) {
                 layerCommand = new ManualTracingTool.Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition();
             }
-            else if (layerType == ManualTracingTool.LayerTypeID.groupLayer) {
+            else if (newLayerType == NewLayerTypeID.groupLayer) {
                 layerCommand = new ManualTracingTool.Command_Layer_AddGroupLayerToCurrentPosition();
             }
-            else if (layerType == ManualTracingTool.LayerTypeID.posingLayer) {
+            else if (newLayerType == NewLayerTypeID.posingLayer) {
                 layerCommand = new ManualTracingTool.Command_Layer_AddPosingLayerToCurrentPosition();
             }
-            else if (layerType == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
+            else if (newLayerType == NewLayerTypeID.imageFileReferenceLayer) {
                 layerCommand = new ManualTracingTool.Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
             }
             if (layerCommand == null) {
@@ -635,16 +633,19 @@ var ManualTracingTool;
             if (this.isModalShown()) {
                 return;
             }
-            var fileName = this.getInputElementText(this.ID.fileName);
-            var lastSeperatorIndex = StringLastIndexOf(fileName, '\\');
-            if (lastSeperatorIndex == -1) {
-                lastSeperatorIndex = StringLastIndexOf(fileName, '/');
+            var exportFileName = this.getInputElementText(this.ID.exportImageFileModal_fileName);
+            if (StringIsNullOrEmpty(exportFileName)) {
+                var fileName = this.getInputElementText(this.ID.fileName);
+                var lastSeperatorIndex = StringLastIndexOf(fileName, '\\');
+                if (lastSeperatorIndex == -1) {
+                    lastSeperatorIndex = StringLastIndexOf(fileName, '/');
+                }
+                var separatorDotIndex = StringLastIndexOf(fileName, '.');
+                if (lastSeperatorIndex != -1 && separatorDotIndex != -1 && separatorDotIndex - lastSeperatorIndex > 0) {
+                    fileName = StringSubstring(fileName, lastSeperatorIndex + 1, separatorDotIndex - lastSeperatorIndex - 1);
+                }
+                this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
             }
-            var eperatorDotIndex = StringLastIndexOf(fileName, '.');
-            if (lastSeperatorIndex != -1 && eperatorDotIndex != -1 && eperatorDotIndex - lastSeperatorIndex > 0) {
-                fileName = StringSubstring(fileName, lastSeperatorIndex + 1, eperatorDotIndex - lastSeperatorIndex - 1);
-            }
-            this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
             this.openModal(this.ID.exportImageFileModal, null);
         };
         Main_View.prototype.onClosedExportImageFileModal = function () {
@@ -680,10 +681,10 @@ var ManualTracingTool;
                 this.renderingWindow.centerLocationRate[1] = 0.0;
                 this.clearWindow(this.renderingWindow);
                 if (backGroundType == 1) {
-                    this.canvasRender.setFillColorV(this.document.palletColos[this.document.palletColos.length - 1].color);
+                    this.canvasRender.setFillColorV(this.document.palletColors[this.document.palletColors.length - 1].color);
                     this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
                 }
-                this.drawMainWindow(this.renderingWindow);
+                this.drawMainWindow(this.renderingWindow, true);
                 var exportPath = this.localSetting.exportPath;
                 var imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
                 var extText = '.png';
@@ -754,22 +755,7 @@ var ManualTracingTool;
         };
         Main_View.prototype.onModalWindowClosed = function () {
             if (this.currentModalDialogID == this.ID.layerPropertyModal) {
-                var layer = this.layerPropertyWindow_EditLayer;
-                // common layer properties
-                var layerName = this.getInputElementText(this.ID.layerPropertyModal_layerName);
-                if (!StringIsNullOrEmpty(layerName)) {
-                    layer.name = layerName;
-                }
-                this.getInputElementColor(this.ID.layerPropertyModal_layerColor, layer.layerColor);
-                layer.layerColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, 0.0, 1.0);
-                if (ManualTracingTool.VectorLayer.isVectorLayer(layer)) {
-                    var vectorLayer = layer;
-                    this.getInputElementColor(this.ID.layerPropertyModal_fillColor, vectorLayer.fillColor);
-                    vectorLayer.fillColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_fillColorAlpha, 0.0, 1.0);
-                    vectorLayer.drawLineType = this.getRadioElementIntValue(this.ID.layerPropertyModal_drawLineType, ManualTracingTool.DrawLineTypeID.layerColor);
-                    vectorLayer.fillAreaType = this.getRadioElementIntValue(this.ID.layerPropertyModal_fillAreaType, ManualTracingTool.FillAreaTypeID.fillColor);
-                }
-                this.layerPropertyWindow_EditLayer = null;
+                this.onClosedLayerPropertyModal();
             }
             else if (this.currentModalDialogID == this.ID.palletColorModal) {
                 this.onClosedPalletColorModal();
@@ -824,11 +810,11 @@ var ManualTracingTool;
             var top = 0.0;
             var right = width - 1.0;
             var bottom = height - 1.0;
-            var minRadius = 10.0;
-            var maxRadius = width * 1.0;
+            //let minRadius = 10.0;
+            //let maxRadius = width * 1.0;
             this.canvasRender.setContext(wnd);
             this.canvasRender.setBlendMode(ManualTracingTool.CanvasRenderBlendMode.default);
-            this.canvasRender.setFillColorV(this.colorB);
+            this.canvasRender.setFillColorV(this.colorW);
             this.canvasRender.fillRect(0.0, 0.0, width, height);
             //this.canvasRender.setBlendMode(CanvasRenderBlendMode.add);
             //this.canvasRender.setFillRadialGradient(left, top, minRadius, maxRadius, this.color11, this.color12);
@@ -844,27 +830,33 @@ var ManualTracingTool;
             //this.canvasRender.setFillLinearGradient(left, top, left, bottom, this.colorW, this.colorB);
             //this.canvasRender.fillRect(0.0, 0.0, width, height);
             this.canvasRender.setBlendMode(ManualTracingTool.CanvasRenderBlendMode.default);
-            var division = 50.0;
-            var unitWidth = width / division;
-            var unitHeight = height / division;
-            for (var x = 0.0; x < 1.0; x += (1.0 / division)) {
-                for (var y = 0.0; y < 1.0; y += (1.0 / division)) {
-                    var h = x;
+            var divisionW = 40.0;
+            var divisionH = 25.0;
+            var unitWidth = Math.floor(width / divisionW);
+            var unitHeight = Math.floor(height / divisionH);
+            var drawX = 0.0;
+            for (var x = 0; x <= divisionW; x++) {
+                var drawY = 0.0;
+                for (var y = 1; y <= divisionH; y++) {
+                    var h = x / divisionW;
                     var s = 0.0;
                     var v = 0.0;
-                    if (y <= 0.5) {
-                        s = y * 2.0;
+                    var iy = y / divisionH;
+                    if (iy <= 0.5) {
+                        s = iy * 2.0;
                         v = 1.0;
                     }
                     else {
                         s = 1.0;
-                        v = 1.0 - (y - 0.5) * 2.0;
+                        v = 1.0 - (iy - 0.5) * 2.0;
                     }
                     ManualTracingTool.Maths.hsvToRGBVec4(this.tempColor4, h, s, v);
                     this.tempColor4[3] = 1.0;
                     this.canvasRender.setFillColorV(this.tempColor4);
-                    this.canvasRender.fillRect(x * width, y * height, unitWidth, unitHeight);
+                    this.canvasRender.fillRect(drawX, drawY, unitWidth, unitHeight);
+                    drawY += unitHeight;
                 }
+                drawX += unitWidth;
             }
             this.canvasRender.setBlendMode(ManualTracingTool.CanvasRenderBlendMode.default);
         };
@@ -898,14 +890,17 @@ var ManualTracingTool;
                 element.classList.add(this.ID.unselectedMainButton);
             }
         };
-        Main_View.prototype.updateHdeaderDocumentFileName = function () {
+        Main_View.prototype.updateHeaderDocumentFileName = function () {
             if (this.localSetting.lastUsedFilePaths.length > 0) {
                 var filePath = this.localSetting.lastUsedFilePaths[0];
                 this.setInputElementText(this.ID.fileName, filePath);
             }
             else {
-                this.setInputElementText(this.ID.fileName, 'new_document.json');
+                this.setInputElementText(this.ID.fileName, this.getDefaultDocumentFileName());
             }
+        };
+        Main_View.prototype.setHeaderDefaultDocumentFileName = function () {
+            this.setInputElementText(this.ID.fileName, this.getDefaultDocumentFileName());
         };
         Main_View.prototype.updateFooterMessage = function () {
             var context = this.toolContext;
@@ -1045,7 +1040,7 @@ var ManualTracingTool;
         // Drawing for export
         Main_View.prototype.clearWindow = function (canvasWindow) {
         };
-        Main_View.prototype.drawMainWindow = function (canvasWindow) {
+        Main_View.prototype.drawMainWindow = function (canvasWindow, isExporting) {
         };
         // HTML helper
         Main_View.prototype.getElement = function (id) {
@@ -1109,6 +1104,14 @@ var ManualTracingTool;
                 }
             }
             return value;
+        };
+        Main_View.prototype.setInputElementBoolean = function (id, checked) {
+            var element = (document.getElementById(id));
+            element.checked = checked;
+        };
+        Main_View.prototype.getInputElementBoolean = function (id) {
+            var element = (document.getElementById(id));
+            return element.checked;
         };
         Main_View.prototype.setInputElementColor = function (id, color) {
             var colorText = '#' + ManualTracingTool.ColorLogic.rgbToHex2String(color);
@@ -1269,6 +1272,24 @@ var ManualTracingTool;
         return TimeLineWindow;
     }(ManualTracingTool.ToolBaseWindow));
     ManualTracingTool.TimeLineWindow = TimeLineWindow;
+    var PalletSelectorWindow = /** @class */ (function (_super) {
+        __extends(PalletSelectorWindow, _super);
+        function PalletSelectorWindow() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.leftMargin = 7.0;
+            _this.topMargin = 30.0;
+            _this.rightMargin = 5.0;
+            _this.itemScale = 1.0;
+            _this.itemWidth = 33.0;
+            _this.itemHeight = 15.0;
+            _this.itemRightMargin = 5.0;
+            _this.itemBottomMargin = 5.0;
+            _this.itemAreas = null;
+            return _this;
+        }
+        return PalletSelectorWindow;
+    }(ManualTracingTool.ToolBaseWindow));
+    ManualTracingTool.PalletSelectorWindow = PalletSelectorWindow;
     var LayerWindowButtonID;
     (function (LayerWindowButtonID) {
         LayerWindowButtonID[LayerWindowButtonID["none"] = 0] = "none";
@@ -1333,6 +1354,17 @@ var ManualTracingTool;
         OpenPalletColorModalMode[OpenPalletColorModalMode["LineColor"] = 1] = "LineColor";
         OpenPalletColorModalMode[OpenPalletColorModalMode["FillColor"] = 2] = "FillColor";
     })(OpenPalletColorModalMode = ManualTracingTool.OpenPalletColorModalMode || (ManualTracingTool.OpenPalletColorModalMode = {}));
+    var NewLayerTypeID;
+    (function (NewLayerTypeID) {
+        NewLayerTypeID[NewLayerTypeID["none"] = 0] = "none";
+        NewLayerTypeID[NewLayerTypeID["rootLayer"] = 1] = "rootLayer";
+        NewLayerTypeID[NewLayerTypeID["vectorLayer"] = 2] = "vectorLayer";
+        NewLayerTypeID[NewLayerTypeID["vectorLayer_Fill"] = 3] = "vectorLayer_Fill";
+        NewLayerTypeID[NewLayerTypeID["groupLayer"] = 4] = "groupLayer";
+        NewLayerTypeID[NewLayerTypeID["imageFileReferenceLayer"] = 5] = "imageFileReferenceLayer";
+        NewLayerTypeID[NewLayerTypeID["posingLayer"] = 6] = "posingLayer";
+        NewLayerTypeID[NewLayerTypeID["vectorLayerReferenceLayer"] = 7] = "vectorLayerReferenceLayer";
+    })(NewLayerTypeID = ManualTracingTool.NewLayerTypeID || (ManualTracingTool.NewLayerTypeID = {}));
     var HTMLElementID = /** @class */ (function () {
         function HTMLElementID() {
             this.none = 'none';
@@ -1343,6 +1375,8 @@ var ManualTracingTool;
             this.layerCanvas = 'layerCanvas';
             this.subtoolCanvas = 'subtoolCanvas';
             this.timeLineCanvas = 'timeLineCanvas';
+            this.palletSelectorCanvas = 'palletSelectorCanvas';
+            this.colorMixerWindow_colorCanvas = 'colorMixer_colorCanvas';
             this.menu_btnDrawTool = 'menu_btnDrawTool';
             this.menu_btnMiscTool = 'menu_btnMiscTool';
             this.menu_btnEditTool = 'menu_btnEditTool';
@@ -1368,6 +1402,7 @@ var ManualTracingTool;
             this.layerPropertyModal_fillColor = 'layerPropertyModal_fillColor';
             this.layerPropertyModal_fillColorAlpha = 'layerPropertyModal_fillColorAlpha';
             this.layerPropertyModal_fillAreaType = 'layerPropertyModal_fillAreaType';
+            this.layerPropertyModal_isRenderTarget = 'layerPropertyModal_isRenderTarget';
             this.palletColorModal = '#palletColorModal';
             this.palletColorModal_targetName = 'palletColorModal_targetName';
             this.palletColorModal_currentColor = 'palletColorModal_currentColor';

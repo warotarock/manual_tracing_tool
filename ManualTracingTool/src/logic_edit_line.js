@@ -174,7 +174,10 @@ var ManualTracingTool;
                         break;
                     }
                 }
-                if (currentPosition + nextStepLength <= nextPoint.totalLength) {
+                if (currentPosition + nextStepLength >= endPosition - samplingUnitLength / 2.0) {
+                    break;
+                }
+                else if (currentPosition + nextStepLength <= nextPoint.totalLength) {
                     var localPosition = (currentPosition + nextStepLength) - currentPoint.totalLength;
                     var positionRate = localPosition / segmentLength;
                     vec3.lerp(sampledLocationVec, currentPoint.location, nextPoint.location, positionRate);

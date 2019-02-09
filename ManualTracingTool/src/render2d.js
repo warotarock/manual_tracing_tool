@@ -10,6 +10,8 @@ var ManualTracingTool;
             this.centerLocationRate = vec3.fromValues(0.0, 0.0, 0.0);
             this.viewScale = 1.0;
             this.viewRotation = 0.0;
+            this.mirrorX = false;
+            this.mirrorY = false;
             this.maxViewScale = 30.0;
             this.minViewScale = 0.1;
             this.transformMatrix = mat4.create();
@@ -34,18 +36,24 @@ var ManualTracingTool;
         CanvasWindow.prototype.updateViewMatrix = function () {
             this.caluclateViewMatrix(this.transformMatrix);
         };
-        CanvasWindow.prototype.caluclateViewMatrix = function (out) {
-            mat4.identity(out);
-            mat4.translate(out, out, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
-            mat4.scale(out, out, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
-            mat4.rotateZ(out, out, this.viewRotation * Math.PI / 180.0);
+        CanvasWindow.prototype.caluclateViewMatrix = function (result) {
+            mat4.identity(result);
+            mat4.translate(result, result, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
+            mat4.scale(result, result, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
+            if (this.mirrorX) {
+                mat4.scale(result, result, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
+            }
+            if (this.mirrorY) {
+                mat4.scale(result, result, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
+            }
+            mat4.rotateZ(result, result, this.viewRotation * Math.PI / 180.0);
             //mat4.translate(mat, mat, vec3.set(this.tempVec3, -this.width / 2, -this.height / 2, 0.0));
-            mat4.translate(out, out, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
+            mat4.translate(result, result, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
         };
-        CanvasWindow.prototype.calculateViewUnitMatrix = function (out) {
-            mat4.identity(out);
-            mat4.scale(out, out, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
-            mat4.rotateZ(out, out, this.viewRotation * Math.PI / 180.0);
+        CanvasWindow.prototype.calculateViewUnitMatrix = function (result) {
+            mat4.identity(result);
+            mat4.scale(result, result, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
+            mat4.rotateZ(result, result, this.viewRotation * Math.PI / 180.0);
         };
         return CanvasWindow;
     }());
@@ -190,6 +198,11 @@ var ManualTracingTool;
             this.context.beginPath();
             this.context.moveTo(x1, y1);
             this.context.lineTo(x2, y2);
+            this.context.stroke();
+        };
+        CanvasRender.prototype.drawRectangle = function (x, y, width, height) {
+            this.context.beginPath();
+            this.context.strokeRect(x, y, width, height);
             this.context.stroke();
         };
         CanvasRender.prototype.drawImage = function (image, srcX, srcY, srcW, srcH, dstX, detY, dstW, dstH) {
