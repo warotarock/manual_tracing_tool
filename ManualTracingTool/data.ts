@@ -37,7 +37,7 @@ namespace ManualTracingTool {
         name: string = null;
         isVisible = true;
         isSelected = false;
-        isRenderTarget = false;
+        isRenderTarget = true;
 
         childLayers = new List<Layer>();
 
