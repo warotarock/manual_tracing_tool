@@ -62,6 +62,13 @@ namespace ManualTracingTool {
                 this.drawPalletSelectorWindow();
             }
 
+            if (this.toolContext.redrawColorMixerWindow) {
+
+                this.toolContext.redrawColorMixerWindow = false;
+
+                this.drawColorMixerWindow();
+            }
+
             if (this.toolContext.redrawTimeLineWindow) {
 
                 this.toolContext.redrawTimeLineWindow = false;
@@ -90,7 +97,7 @@ namespace ManualTracingTool {
             }
         }
 
-        // Main window drawing
+        // Main window
 
         protected clearWindow(canvasWindow: CanvasWindow) { // @override
 
@@ -679,7 +686,7 @@ namespace ManualTracingTool {
             return pickedLayer;
         }
 
-        // Editor window drawing
+        // Editor window
 
         private drawEditorWindow(editorWindow: CanvasWindow, mainWindow: CanvasWindow) {
 
@@ -813,7 +820,7 @@ namespace ManualTracingTool {
             this.drawVectorLineSegment(line, startIndex, endIndex, 1.0, 0.0, useAdjustingLocation);
         }
 
-        // WebGL window drawing
+        // WebGL window
 
         private drawWebGLWindow(mainWindow: CanvasWindow, webglWindow: CanvasWindow, pickingWindow: CanvasWindow) {
 
@@ -855,7 +862,7 @@ namespace ManualTracingTool {
             }
         }
 
-        // Layer window drawing
+        // Layer window
 
         protected layerWindow_CaluculateLayout(layerWindow: LayerWindow) { // @override
 
@@ -1031,7 +1038,7 @@ namespace ManualTracingTool {
             this.canvasRender.fillText(layer.name, item.textLeft + depthOffset, bottom - bottomMargin);
         }
 
-        // Subtool window drawing
+        // Subtool window
 
         subToolItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
         subToolItemSeperatorLineColor = vec4.fromValues(0.0, 0.0, 0.0, 0.5);
@@ -1125,7 +1132,7 @@ namespace ManualTracingTool {
             this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
         }
 
-        // PalletSelector window drawing
+        // PalletSelector window
 
         protected palletSelector_CaluculateLayout() { // @override
 
@@ -1148,8 +1155,8 @@ namespace ManualTracingTool {
                 layoutArea.index = palletColorIndex;
                 layoutArea.left = x;
                 layoutArea.top = y;
-                layoutArea.right = x + itemWidth - 1;
-                layoutArea.bottom = y + itemHeight - 1;
+                layoutArea.right = x + itemWidth + wnd.itemRightMargin - 1;
+                layoutArea.bottom = y + itemHeight + wnd.itemBottomMargin - 1;
                 wnd.itemAreas.push(layoutArea);
 
                 x += itemWidth + wnd.itemRightMargin;
@@ -1174,7 +1181,7 @@ namespace ManualTracingTool {
             let viewWidth = wnd.width;
 
             let currenPalletColorIndex = -1;
-            if (env.currentVectorLayer != null && env.currentVectorLayer.fillAreaType == FillAreaTypeID.palletColor) {
+            if (env.currentVectorLayer != null) {
 
                 currenPalletColorIndex = env.currentVectorLayer.fill_PalletColorIndex;
             }
@@ -1189,8 +1196,8 @@ namespace ManualTracingTool {
 
                 let x = layoutArea.left;
                 let y = layoutArea.top;
-                let itemWidth = layoutArea.getWidth();
-                let itemHeight = layoutArea.getHeight();
+                let itemWidth = layoutArea.getWidth() - wnd.itemRightMargin;
+                let itemHeight = layoutArea.getHeight() - wnd.itemBottomMargin;
 
                 let palletColor = documentData.palletColors[palletColorIndex];
 
@@ -1210,7 +1217,52 @@ namespace ManualTracingTool {
             }
         }
 
-        // TimeLine window drawing
+        // ColorMixer window
+
+        private hsv = vec4.create();
+
+        private drawColorMixerWindow() {
+
+            let wnd = this.palletSelectorWindow;
+            let context = this.toolContext;
+            let env = this.toolEnv;
+            let documentData = context.document;
+
+            let color = env.getCurrentLayerColor();
+
+            if (color != null) {
+
+                this.setColorMixerValue(this.ID.colorMixer_red, color[0]);
+                this.setColorMixerValue(this.ID.colorMixer_green, color[1]);
+                this.setColorMixerValue(this.ID.colorMixer_blue, color[2]);
+                this.setColorMixerValue(this.ID.colorMixer_alpha, color[3]);
+
+                Maths.rgbToHSV(this.hsv, color[0], color[1], color[2])
+
+                this.setColorMixerValue(this.ID.colorMixer_hue, this.hsv[0]);
+                this.setColorMixerValue(this.ID.colorMixer_sat, this.hsv[1]);
+                this.setColorMixerValue(this.ID.colorMixer_val, this.hsv[2]);
+            }
+            else {
+
+                this.setColorMixerValue(this.ID.colorMixer_red, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_green, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_blue, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_alpha, 0.0);
+
+                this.setColorMixerValue(this.ID.colorMixer_hue, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_sat, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
+            }
+        }
+
+        private setColorMixerValue(id: string, colorValue: float) {
+
+            this.setInputElementNumber2Decimal(id + this.ID.colorMixer_id_number, colorValue);
+            this.setInputElementRangeValue(id + this.ID.colorMixer_id_range, colorValue, 0.0, 1.0);
+        }
+
+        // TimeLine window
 
         private drawTimeLineWindow(wnd: TimeLineWindow) {
 

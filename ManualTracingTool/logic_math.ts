@@ -18,6 +18,11 @@ namespace ManualTracingTool {
             return x - Math.floor(x);
         }
 
+        static step(edge: float, x: float): float {
+
+            return x < edge ? 0.0 : 1.0;
+        }
+
         static smoothstep(edge0: float, edge1: float, x: float): float {
 
             let t = Maths.clamp((x - edge0) / (edge1 - edge0), 0, 1);
@@ -173,11 +178,60 @@ namespace ManualTracingTool {
             return ((Maths.clamp(Math.abs(Maths.fract(h + baseElement / 3.0) * 6.0 - 3.0) - 1.0, 0.0, 1.0) - 1.0) * s + 1.0) * v;
         }
 
-        static hsvToRGBVec4(out: Vec4, h: float, s: float, v: float) {
+        static hsvToRGB(out: Vec4, h: float, s: float, v: float) {
 
             out[0] = Maths.hsvToRGB_Element(h, s, v, 0.0);
             out[1] = Maths.hsvToRGB_Element(h, s, v, 2.0);
             out[2] = Maths.hsvToRGB_Element(h, s, v, 1.0);
+        }
+
+        private static rgbToHSV_K = vec4.fromValues(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+        private static rgbToHSV_Kxy = vec4.create();
+        private static rgbToHSV_bgKwz = vec4.create();
+        private static rgbToHSV_gbKxy = vec4.create();
+        private static rgbToHSV_p = vec4.create();
+        private static rgbToHSV_Pxywr = vec4.create();
+        private static rgbToHSV_rPyzx = vec4.create();
+        private static rgbToHSV_q = vec4.create();
+
+        static rgbToHSV(result: Vec4, r: float, g: float, b: float) {
+
+            // vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+            let Kx = 0.0;
+            let Ky = -1.0 / 3.0;
+            let Kz = 2.0 / 3.0;
+            let Kw = -1.0;
+
+            // vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+            vec4.set(this.rgbToHSV_bgKwz, b, g, Kw, Kz);
+            vec4.set(this.rgbToHSV_gbKxy, g, b, Kx, Ky);
+            vec4.lerp(this.rgbToHSV_p, this.rgbToHSV_bgKwz, this.rgbToHSV_gbKxy, this.step(b, g));
+
+            let px = this.rgbToHSV_p[0];
+            let py = this.rgbToHSV_p[1];
+            let pz = this.rgbToHSV_p[2];
+            let pw = this.rgbToHSV_p[3];
+
+            // vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+            vec4.set(this.rgbToHSV_Pxywr, px, py, pw, r);
+            vec4.set(this.rgbToHSV_rPyzx, r, py, pz, px);
+            vec4.lerp(this.rgbToHSV_q, this.rgbToHSV_Pxywr, this.rgbToHSV_rPyzx, this.step(px, r));
+
+            let qx = this.rgbToHSV_q[0];
+            let qy = this.rgbToHSV_q[1];
+            let qz = this.rgbToHSV_q[2];
+            let qw = this.rgbToHSV_q[3];
+
+            // float d = q.x - min(q.w, q.y);
+            let d = qx - Math.min(qw, qy);
+
+            // float e = 1.0e-10;
+            let e = 1.0e-10;
+
+            // return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+            result[0] = Math.abs(qz + (qw - qy) / (6.0 * d + e));
+            result[1] = d / (qx + e);
+            result[2] = qx;
         }
     }
 }

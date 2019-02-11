@@ -98,12 +98,17 @@ namespace ManualTracingTool {
             canvasWindow.canvas.height = canvasWindow.height;
         }
 
-        protected getMouseInfo(toolMouseEvent: ToolMouseEvent, e: MouseEvent, touchUp: boolean, canvasWindow: CanvasWindow) {
+        protected processMouseEventInput(toolMouseEvent: ToolMouseEvent, e: MouseEvent, touchUp: boolean, canvasWindow: CanvasWindow) {
 
             this.activeCanvasWindow = canvasWindow;
 
+            if (document.activeElement.nodeName == 'INPUT') {
+                (<HTMLInputElement>document.activeElement).blur();
+            }
+
             toolMouseEvent.button = e.button;
             toolMouseEvent.buttons = e.buttons;
+
             if (touchUp) {
                 toolMouseEvent.button = -1;
                 toolMouseEvent.buttons = 0;
@@ -687,7 +692,7 @@ namespace ManualTracingTool {
             this.toolEnv.setRedrawMainWindow();
         }
 
-        protected onPalletColorModal_ColorCanvas_mousedown(e: ToolMouseEvent) {
+        protected onPalletColorModal_ColorCanvas_mousedown() {
 
             if (this.palletColorWindow_EditLayer == null) {
                 return;
@@ -695,6 +700,7 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
             let wnd = this.palletColorModal_colorCanvas;
+            let e = wnd.toolMouseEvent;
             let env = this.toolEnv;
 
             this.canvasRender.setContext(wnd);
@@ -1211,7 +1217,7 @@ namespace ManualTracingTool {
                         v = 1.0 - (iy - 0.5) * 2.0;
                     }
 
-                    Maths.hsvToRGBVec4(this.tempColor4, h, s, v);
+                    Maths.hsvToRGB(this.tempColor4, h, s, v);
                     this.tempColor4[3] = 1.0;
                     this.canvasRender.setFillColorV(this.tempColor4);
                     this.canvasRender.fillRect(drawX, drawY, unitWidth, unitHeight);
@@ -1553,6 +1559,15 @@ namespace ManualTracingTool {
             let element = <HTMLInputElement>(document.getElementById(id));
 
             element.value = value.toString();
+
+            return element;
+        }
+
+        setInputElementNumber2Decimal(id: string, value: float): HTMLElement {
+
+            let element = <HTMLInputElement>(document.getElementById(id));
+
+            element.value = value.toFixed(2);
 
             return element;
         }
@@ -1911,6 +1926,16 @@ namespace ManualTracingTool {
 
         unselectedMainButton = 'unselectedMainButton';
         selectedMainButton = 'selectedMainButton';
+
+        colorMixer_id_number = '_number';
+        colorMixer_id_range = '_range';
+        colorMixer_alpha = 'colorMixer_alpha';
+        colorMixer_red = 'colorMixer_red';
+        colorMixer_green = 'colorMixer_green';
+        colorMixer_blue = 'colorMixer_blue';
+        colorMixer_hue = 'colorMixer_hue';
+        colorMixer_sat = 'colorMixer_sat';
+        colorMixer_val = 'colorMixer_val';
 
         openFileDialogModal = '#openFileDialogModal';
         openFileDialogModal_file = 'openFileDialogModal_file';

@@ -13,318 +13,61 @@ namespace ManualTracingTool {
 
             this.isEventSetDone = true;
 
-            this.editorWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.mainWindow.toolMouseEvent, e, false, this.mainWindow);
-                this.mainWindow_mousedown();
-                e.preventDefault();
-            });
-
-            this.editorWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.mainWindow.toolMouseEvent, e, false, this.mainWindow);
-                this.mainWindow_mousemove();
-                e.preventDefault();
-            });
-
-            this.editorWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.mainWindow.toolMouseEvent, e, true, this.mainWindow);
-                this.mainWindow_mouseup();
-                e.preventDefault();
-            });
-
-            this.editorWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.mainWindow.toolMouseEvent, e, true, false, this.mainWindow);
-                this.mainWindow_mousedown();
-                e.preventDefault();
-            });
-
-            this.editorWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.mainWindow.toolMouseEvent, e, false, false, this.mainWindow);
-                this.mainWindow_mousemove();
-                e.preventDefault();
-            });
-
-            this.editorWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.mainWindow.toolMouseEvent, e, false, true, this.mainWindow);
-                this.mainWindow_mouseup();
-                e.preventDefault();
-            });
-
-            this.editorWindow.canvas.addEventListener('mousewheel', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getWheelInfo(this.mainWindow.toolMouseEvent, e);
-                this.editorWindow_mousewheel();
-                e.preventDefault();
-            });
-
-            this.layerWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.layerWindow.toolMouseEvent, e, false, this.layerWindow);
-                this.layerWindow_mousedown();
-                e.preventDefault();
-            });
-
-            this.layerWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.layerWindow.toolMouseEvent, e, false, this.layerWindow);
-                this.layerWindow_mousemove();
-                e.preventDefault();
-            });
-
-            this.layerWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.layerWindow.toolMouseEvent, e, true, this.mainWindow);
-                this.layerWindow_mouseup();
-                e.preventDefault();
-            });
-
-            this.layerWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.layerWindow.toolMouseEvent, e, true, false, this.layerWindow);
-                this.layerWindow_mousedown();
-                e.preventDefault();
-            });
-
-            this.layerWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.layerWindow.toolMouseEvent, e, false, false, this.layerWindow);
-                e.preventDefault();
-            });
-
-            this.layerWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.layerWindow.toolMouseEvent, e, false, true, this.layerWindow);
-                e.preventDefault();
-            });
-
-            this.subtoolWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.subtoolWindow.toolMouseEvent, e, false, this.subtoolWindow);
-                this.subtoolWindow_mousedown(this.subtoolWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.subtoolWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.subtoolWindow.toolMouseEvent, e, false, this.subtoolWindow);
-                this.subtoolWindow_mousemove(this.subtoolWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.subtoolWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.subtoolWindow.toolMouseEvent, e, true, this.mainWindow);
-                this.subtoolWindow_mouseup(this.subtoolWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.subtoolWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.subtoolWindow.toolMouseEvent, e, true, false, this.subtoolWindow);
-                this.subtoolWindow_mousedown(this.subtoolWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.subtoolWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.subtoolWindow.toolMouseEvent, e, false, false, this.subtoolWindow);
-                e.preventDefault();
-            });
-
-            this.subtoolWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.subtoolWindow.toolMouseEvent, e, false, true, this.subtoolWindow);
-                e.preventDefault();
-            });
-
-            this.palletSelectorWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.palletSelectorWindow.toolMouseEvent, e, false, this.palletSelectorWindow);
-                this.palletSelectorWindow_mousedown(this.palletSelectorWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.palletSelectorWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.palletSelectorWindow.toolMouseEvent, e, true, false, this.palletSelectorWindow);
-                this.palletSelectorWindow_mousedown(this.palletSelectorWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.timeLineWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.timeLineWindow.toolMouseEvent, e, false, this.timeLineWindow);
-                this.timeLineWindow_mousedown(this.timeLineWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.timeLineWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.timeLineWindow.toolMouseEvent, e, false, this.timeLineWindow);
-                this.timeLineWindow_mousemove(this.timeLineWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.timeLineWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getMouseInfo(this.timeLineWindow.toolMouseEvent, e, true, this.mainWindow);
-                this.timeLineWindow_mouseup(this.timeLineWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.timeLineWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.timeLineWindow.toolMouseEvent, e, true, false, this.timeLineWindow);
-                this.timeLineWindow_mousedown(this.timeLineWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.timeLineWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.timeLineWindow.toolMouseEvent, e, false, false, this.timeLineWindow);
-                e.preventDefault();
-            });
-
-            this.timeLineWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getTouchInfo(this.timeLineWindow.toolMouseEvent, e, false, true, this.timeLineWindow);
-                e.preventDefault();
-            });
-
-            this.timeLineWindow.canvas.addEventListener('mousewheel', (e: MouseEvent) => {
-
-                if (this.isEventDisabled()) {
-                    return;
-                }
-
-                this.getWheelInfo(this.timeLineWindow.toolMouseEvent, e);
-                this.timeLineWindow_mousewheel(this.timeLineWindow.toolMouseEvent);
-                e.preventDefault();
-            });
-
-            this.palletColorModal_colorCanvas.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-
-                if (this.currentModalDialogID != this.ID.palletColorModal) {
-                    return;
-                }
-
-                this.getMouseInfo(this.palletColorModal_colorCanvas.toolMouseEvent, e, false, this.palletColorModal_colorCanvas);
-                this.onPalletColorModal_ColorCanvas_mousedown(this.palletColorModal_colorCanvas.toolMouseEvent);
-                e.preventDefault();
-            });
+            this.setCanvasWindowMouseEvent(this.editorWindow, this.mainWindow
+                , this.mainWindow_mousedown
+                , this.mainWindow_mousemove
+                , this.mainWindow_mouseup
+                , this.mainWindow_mousewheel
+                , false
+            );
+
+            this.setCanvasWindowMouseEvent(this.layerWindow, this.layerWindow
+                , this.layerWindow_mousedown
+                , this.layerWindow_mousemove
+                , this.layerWindow_mouseup
+                , null
+                , false
+            );
+
+            this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
+                , this.subtoolWindow_mousedown
+                , this.subtoolWindow_mousemove
+                , this.subtoolWindow_mouseup
+                , null
+                , false
+            );
+
+            this.setCanvasWindowMouseEvent(this.palletSelectorWindow, this.palletSelectorWindow
+                , this.palletSelectorWindow_mousedown
+                , null
+                , null
+                , null
+                , false
+            );
+
+            this.setCanvasWindowMouseEvent(this.timeLineWindow, this.timeLineWindow
+                , this.timeLineWindow_mousedown
+                , this.timeLineWindow_mousemove
+                , this.timeLineWindow_mousedown
+                , this.timeLineWindow_mousewheel
+                , false
+            );
+
+            this.setCanvasWindowMouseEvent(this.palletColorModal_colorCanvas, this.palletColorModal_colorCanvas
+                , this.onPalletColorModal_ColorCanvas_mousedown
+                , null
+                , null
+                , null
+                , true
+            );
+
+            this.setCanvasWindowMouseEvent(this.colorMixerWindow_colorCanvas, this.colorMixerWindow_colorCanvas
+                , this.colorMixerWindow_colorCanvas_mousedown
+                , this.colorMixerWindow_colorCanvas_mousedown
+                , null
+                , null
+                , true
+            );
 
             document.addEventListener('keydown', (e: KeyboardEvent) => {
 
@@ -585,6 +328,16 @@ namespace ManualTracingTool {
             this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_ok);
             this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_cancel);
 
+            // Color mixer window
+            this.setColorMixerRGBElementEvent(this.ID.colorMixer_red, 0);
+            this.setColorMixerRGBElementEvent(this.ID.colorMixer_green, 1);
+            this.setColorMixerRGBElementEvent(this.ID.colorMixer_blue, 2);
+            this.setColorMixerRGBElementEvent(this.ID.colorMixer_alpha, 3);
+
+            this.setColorMixerHSVElementEvent(this.ID.colorMixer_hue);
+            this.setColorMixerHSVElementEvent(this.ID.colorMixer_sat);
+            this.setColorMixerHSVElementEvent(this.ID.colorMixer_val);
+
             // Pallet modal
 
             this.getElement(this.ID.palletColorModal_currentColor).addEventListener('change', (e: Event) => {
@@ -618,6 +371,107 @@ namespace ManualTracingTool {
                         this.onPalletColorModal_ColorIndexChanged();
                     });
                 }
+            }
+        }
+
+        protected setCanvasWindowMouseEvent(eventCanvasWindow: CanvasWindow, drawCanvasWindew: ToolBaseWindow, mousedown: Function, mousemove: Function, mouseup: Function, mousewheel: Function, isModal: boolean) {
+
+            if (mousedown != null) {
+
+                eventCanvasWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+
+                    if (this.isEventDisabled() && !isModal) {
+                        return;
+                    }
+
+                    this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
+                    mousedown.call(this);
+                    e.preventDefault();
+                });
+            }
+
+            if (mousemove != null) {
+
+                eventCanvasWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+
+                    if (this.isEventDisabled() && !isModal) {
+                        return;
+                    }
+
+                    this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
+                    mousemove.call(this);
+                    e.preventDefault();
+                });
+            }
+
+            if (mouseup != null) {
+
+                eventCanvasWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
+
+                    if (this.isEventDisabled() && !isModal) {
+                        return;
+                    }
+
+                    this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, true, drawCanvasWindew);
+                    mouseup.call(this);
+                    e.preventDefault();
+                });
+            }
+
+            if (mousedown != null) {
+
+                eventCanvasWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+
+                    if (this.isEventDisabled() && !isModal) {
+                        return;
+                    }
+
+                    this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, true, false, drawCanvasWindew);
+                    mousedown.call(this);
+                    e.preventDefault();
+                });
+            }
+
+            if (mousemove != null) {
+
+                eventCanvasWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+
+                    if (this.isEventDisabled() && !isModal) {
+                        return;
+                    }
+
+                    this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, false, false, drawCanvasWindew);
+                    mousemove.call(this);
+                    e.preventDefault();
+                });
+            }
+
+            if (mouseup != null) {
+
+                eventCanvasWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
+
+                    if (this.isEventDisabled() && !isModal) {
+                        return;
+                    }
+
+                    this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, false, true, drawCanvasWindew);
+                    mouseup.call(this);
+                    e.preventDefault();
+                });
+            }
+
+            if (mousewheel != null) {
+
+                eventCanvasWindow.canvas.addEventListener('mousewheel', (e: MouseEvent) => {
+
+                    if (this.isEventDisabled() && !isModal) {
+                        return;
+                    }
+
+                    this.getWheelInfo(drawCanvasWindew.toolMouseEvent, e);
+                    mousewheel.call(this);
+                    e.preventDefault();
+                });
             }
         }
 
@@ -758,7 +612,7 @@ namespace ManualTracingTool {
             this.mainWindow_MouseViewOperationEnd();
         }
 
-        protected editorWindow_mousewheel() {
+        protected mainWindow_mousewheel() {
 
             let wnd = this.mainWindow;
             let e = wnd.toolMouseEvent;
@@ -926,10 +780,11 @@ namespace ManualTracingTool {
             this.toolEnv.setRedrawSubtoolWindow();
         }
 
-        protected subtoolWindow_mousedown(e: ToolMouseEvent) {
+        protected subtoolWindow_mousedown() {
 
             let context = this.toolContext;
             let wnd = this.subtoolWindow;
+            let e = wnd.toolMouseEvent;
             let env = this.toolEnv;
             let doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
 
@@ -999,9 +854,10 @@ namespace ManualTracingTool {
             }
         }
 
-        protected subtoolWindow_mousemove(e: ToolMouseEvent) {
+        protected subtoolWindow_mousemove() {
 
             let wnd = this.subtoolWindow;
+            let e = wnd.toolMouseEvent;
 
             // View operation
             if (e.isMouseDragging) {
@@ -1021,15 +877,16 @@ namespace ManualTracingTool {
             }
         }
 
-        protected subtoolWindow_mouseup(e: ToolMouseEvent) {
+        protected subtoolWindow_mouseup() {
 
             this.subtoolWindow.endMouseDragging();
         }
 
-        protected palletSelectorWindow_mousedown(e: ToolMouseEvent) {
+        protected palletSelectorWindow_mousedown() {
 
             let context = this.toolContext;
             let wnd = this.palletSelectorWindow;
+            let e = wnd.toolMouseEvent;
             let env = this.toolEnv;
             let documentData = context.document;
 
@@ -1044,18 +901,123 @@ namespace ManualTracingTool {
                         let palletColorIndex = layoutArea.index;
                         let color = documentData.palletColors[palletColorIndex];
 
-                        if (env.currentVectorLayer.fillAreaType == FillAreaTypeID.fillColor) {
+                        env.currentVectorLayer.fill_PalletColorIndex = palletColorIndex;
+                        vec4.copy(env.currentVectorLayer.fillColor, color.color);
 
-                            vec4.copy(env.currentVectorLayer.fillColor, color.color);
-                        }
-                        else if (env.currentVectorLayer.fillAreaType == FillAreaTypeID.palletColor) {
-
-                            env.currentVectorLayer.fill_PalletColorIndex = palletColorIndex;
-                            env.setRedrawLayerWindow();
-                            env.setRedrawMainWindowEditorWindow();
-                        }
+                        env.setRedrawLayerWindow();
+                        env.setRedrawMainWindowEditorWindow();
                     }
                 }
+            }
+        }
+
+        protected setColorMixerRGBElementEvent(id: string, elementID: int) {
+
+            let numberID = id + this.ID.colorMixer_id_number;
+            let rangeID = id + this.ID.colorMixer_id_range;
+
+            this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', (e: Event) => {
+
+                let numberValue = this.getInputElementNumber(numberID, 0.0);
+
+                let color = this.toolEnv.getCurrentLayerColor();
+
+                if (color != null) {
+
+                    color[elementID] = numberValue;
+                }
+
+                this.toolEnv.setRedrawMainWindow();
+                this.toolEnv.setRedrawColorSelectorWindow();
+                this.toolEnv.setRedrawColorMixerWindow();
+            });
+
+            this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', (e: Event) => {
+
+                let rangeValue = this.getInputElementRangeValue(rangeID, 0.0, 1.0);
+
+                let color = this.toolEnv.getCurrentLayerColor();
+
+                if (color != null) {
+
+                    color[elementID] = rangeValue;
+                }
+
+                this.toolEnv.setRedrawMainWindow();
+                this.toolEnv.setRedrawColorSelectorWindow();
+                this.toolEnv.setRedrawColorMixerWindow();
+
+            });
+        }
+
+        protected setColorMixerHSVElementEvent(id: string) {
+
+            let numberID = id + this.ID.colorMixer_id_number;
+            let rangeID = id + this.ID.colorMixer_id_range;
+
+            this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', (e: Event) => {
+
+                let hueValue = this.getInputElementNumber(this.ID.colorMixer_hue + this.ID.colorMixer_id_number, 0.0);
+                let satValue = this.getInputElementNumber(this.ID.colorMixer_sat + this.ID.colorMixer_id_number, 0.0);
+                let valValue = this.getInputElementNumber(this.ID.colorMixer_val + this.ID.colorMixer_id_number, 0.0);
+
+                let color = this.toolEnv.getCurrentLayerColor();
+
+                if (color != null) {
+
+                    Maths.hsvToRGB(color, hueValue, satValue, valValue);
+
+                    this.toolEnv.setRedrawMainWindow();
+                    this.toolEnv.setRedrawColorSelectorWindow();
+                    this.toolEnv.setRedrawColorMixerWindow();
+                }
+            });
+
+            this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', (e: Event) => {
+
+                let hueValue = this.getInputElementRangeValue(this.ID.colorMixer_hue + this.ID.colorMixer_id_range, 0.0, 1.0);
+                let satValue = this.getInputElementRangeValue(this.ID.colorMixer_sat + this.ID.colorMixer_id_range, 0.0, 1.0);
+                let valValue = this.getInputElementRangeValue(this.ID.colorMixer_val + this.ID.colorMixer_id_range, 0.0, 1.0);
+
+                let color = this.toolEnv.getCurrentLayerColor();
+
+                if (color != null) {
+
+                    Maths.hsvToRGB(color, hueValue, satValue, valValue);
+
+                    this.toolEnv.setRedrawMainWindow();
+                    this.toolEnv.setRedrawColorSelectorWindow();
+                    this.toolEnv.setRedrawColorMixerWindow();
+                }
+            });
+        }
+
+        protected colorMixerWindow_colorCanvas_mousedown() {
+
+            let wnd = this.colorMixerWindow_colorCanvas;
+            let e = wnd.toolMouseEvent;
+
+            if (!e.isLeftButtonPressing()) {
+                return;
+            }
+
+            let context = this.toolContext;
+            let env = this.toolEnv;
+
+            this.canvasRender.setContext(wnd);
+            this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
+
+            let color = this.toolEnv.getCurrentLayerColor();
+
+            if (color != null) {
+
+                color[0] = this.tempColor4[0];
+                color[1] = this.tempColor4[1];
+                color[2] = this.tempColor4[2];
+
+                this.toolEnv.setRedrawMainWindow();
+                this.toolEnv.setRedrawColorSelectorWindow();
+                this.toolEnv.setRedrawColorMixerWindow();
             }
         }
 

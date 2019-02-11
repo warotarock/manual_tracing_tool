@@ -220,6 +220,7 @@ namespace ManualTracingTool {
         redrawHeaderWindow = false;
         redrawFooterWindow = false;
         redrawPalletSelectorWindow = false;
+        redrawColorMixerWindow = false;
 
         mouseCursorRadius = 12.0;
 
@@ -378,6 +379,7 @@ namespace ManualTracingTool {
 
             this.toolContext.redrawLayerWindow = true;
             this.toolContext.redrawPalletSelectorWindow = true;
+            this.toolContext.redrawColorMixerWindow = true;
         }
 
         updateLayerStructure() {
@@ -400,6 +402,11 @@ namespace ManualTracingTool {
         setRedrawColorSelectorWindow() {
 
             this.toolContext.redrawPalletSelectorWindow = true;
+        }
+
+        setRedrawColorMixerWindow() {
+
+            this.toolContext.redrawColorMixerWindow = true;
         }
 
         setRedrawWebGLWindow() {
@@ -483,6 +490,25 @@ namespace ManualTracingTool {
             this.currentVectorLine = line;
 
             this.currentVectorLine.isEditTarget = isEditTarget;
+        }
+
+        getCurrentLayerColor(): Vec4 {
+
+            let color: Vec4 = null;
+
+            if (this.currentVectorLayer != null) {
+
+                if (this.currentVectorLayer.fillAreaType == FillAreaTypeID.palletColor) {
+
+                    color = this.toolContext.document.palletColors[this.currentVectorLayer.fill_PalletColorIndex].color;
+                }
+                else {
+
+                    color = this.currentVectorLayer.fillColor;
+                }
+            }
+
+            return color;
         }
 
         startModalTool(modalTool: ModalToolBase) {
