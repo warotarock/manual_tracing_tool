@@ -48,7 +48,7 @@ namespace ManualTracingTool {
             this.setCanvasWindowMouseEvent(this.timeLineWindow, this.timeLineWindow
                 , this.timeLineWindow_mousedown
                 , this.timeLineWindow_mousemove
-                , this.timeLineWindow_mousedown
+                , this.timeLineWindow_mouseup
                 , this.timeLineWindow_mousewheel
                 , false
             );
@@ -1021,10 +1021,12 @@ namespace ManualTracingTool {
             }
         }
 
-        protected timeLineWindow_mousedown(e: ToolMouseEvent) {
+        protected timeLineWindow_mousedown() {
+
+            let wnd = this.timeLineWindow;
+            let e = wnd.toolMouseEvent;
 
             let context = this.toolContext;
-            let wnd = this.timeLineWindow;
             let env = this.toolEnv;
             let aniSetting = context.document.animationSettingData;
 
@@ -1040,7 +1042,10 @@ namespace ManualTracingTool {
             }
         }
 
-        protected timeLineWindow_OnPlayPauseButton(e: ToolMouseEvent) {
+        protected timeLineWindow_OnPlayPauseButton() {
+
+            let wnd = this.timeLineWindow;
+            let e = wnd.toolMouseEvent;
 
             let context = this.toolContext;
             let env = this.toolEnv;
@@ -1059,10 +1064,12 @@ namespace ManualTracingTool {
             }
         }
 
-        protected timeLineWindow_ProcessFrameInput(e: ToolMouseEvent) {
+        protected timeLineWindow_ProcessFrameInput() {
+
+            let wnd = this.timeLineWindow;
+            let e = wnd.toolMouseEvent;
 
             let context = this.toolContext;
-            let wnd = this.timeLineWindow;
             let env = this.toolEnv;
             let aniSetting = context.document.animationSettingData;
 
@@ -1076,10 +1083,12 @@ namespace ManualTracingTool {
             }
         }
 
-        protected timeLineWindow_mousemove(e: ToolMouseEvent) {
+        protected timeLineWindow_mousemove() {
+
+            let wnd = this.timeLineWindow;
+            let e = wnd.toolMouseEvent;
 
             let context = this.toolContext;
-            let wnd = this.timeLineWindow;
             let env = this.toolEnv;
 
             if (e.isLeftButtonPressing()) {
@@ -1088,20 +1097,23 @@ namespace ManualTracingTool {
             }
         }
 
-        protected timeLineWindow_mouseup(e: ToolMouseEvent) {
+        protected timeLineWindow_mouseup() {
+
+            let wnd = this.timeLineWindow;
+            let e = wnd.toolMouseEvent;
 
             let context = this.toolContext;
-            let wnd = this.timeLineWindow;
             let env = this.toolEnv;
-
 
             wnd.endMouseDragging();
         }
 
-        protected timeLineWindow_mousewheel(e: ToolMouseEvent) {
+        protected timeLineWindow_mousewheel() {
+
+            let wnd = this.timeLineWindow;
+            let e = wnd.toolMouseEvent;
 
             let context = this.toolContext;
-            let wnd = this.mainWindow;
             let env = this.toolEnv;
             let aniSetting = context.document.animationSettingData;
 
