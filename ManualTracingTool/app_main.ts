@@ -466,6 +466,8 @@ namespace ManualTracingTool {
             }
             else {
 
+                this.finishLayerLoading_Recursive(this.document.rootLayer);
+
                 this.mainProcessState = MainProcessStateID.running;
 
                 this.toolEnv.setRedrawAllWindows();
@@ -536,6 +538,27 @@ namespace ManualTracingTool {
             );
 
             xhr.send();
+        }
+
+        finishLayerLoading_Recursive(layer: Layer) {
+
+            if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                let ifrLayer = <ImageFileReferenceLayer>layer;
+
+                if (ifrLayer.imageLoading) {
+
+                    ifrLayer.imageLoading = false;
+
+                    ifrLayer.location[0] = -ifrLayer.imageResource.image.width / 2;
+                    ifrLayer.location[1] = -ifrLayer.imageResource.image.height / 2;
+                }
+            }
+
+            for (let childLayer of layer.childLayers) {
+
+                this.finishLayerLoading_Recursive(childLayer);
+            }
         }
 
         private createPosingModel(modelData: any): PosingModel {
@@ -1056,6 +1079,7 @@ namespace ManualTracingTool {
                 let ifrLayer = <ImageFileReferenceLayer>layer;
 
                 delete ifrLayer.imageResource;
+                delete ifrLayer.imageLoading;
                 delete ifrLayer.adjustingLocation;
                 delete ifrLayer.adjustingRotation;
                 delete ifrLayer.adjustingScale;
@@ -1628,24 +1652,24 @@ namespace ManualTracingTool {
                 aniSetting.currentTimeFrame = aniSetting.maxFrame;
             }
 
-            let currentKeyframeIndex = this.findViewKeyFrameIndex(aniSetting.currentTimeFrame);
+            let keyframeIndex = this.findViewKeyFrameIndex(aniSetting.currentTimeFrame);
 
-            if (currentKeyframeIndex != -1) {
+            if (keyframeIndex != -1) {
 
-                this.currentKeyframe = this.viewLayerContext.keyframes[currentKeyframeIndex];
+                this.currentKeyframe = this.viewLayerContext.keyframes[keyframeIndex];
 
-                if (currentKeyframeIndex - 1 >= 0) {
+                if (keyframeIndex - 1 >= 0) {
 
-                    this.previousKeyframe = this.viewLayerContext.keyframes[currentKeyframeIndex - 1];
+                    this.previousKeyframe = this.viewLayerContext.keyframes[keyframeIndex - 1];
                 }
                 else {
 
                     this.previousKeyframe = null;
                 }
 
-                if (currentKeyframeIndex + 1 < this.viewLayerContext.keyframes.length) {
+                if (keyframeIndex + 1 < this.viewLayerContext.keyframes.length) {
 
-                    this.nextKeyframe = this.viewLayerContext.keyframes[currentKeyframeIndex + 1];
+                    this.nextKeyframe = this.viewLayerContext.keyframes[keyframeIndex + 1];
                 }
                 else {
 

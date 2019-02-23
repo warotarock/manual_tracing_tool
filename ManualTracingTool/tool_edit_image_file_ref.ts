@@ -86,6 +86,10 @@ namespace ManualTracingTool {
 
                 this.targetLayer.imageResource.loaded = false;
             }
+            else {
+
+                this.targetLayer.imageLoading = true;
+            }
 
             env.startLoadingCurrentDocumentResources();
         }

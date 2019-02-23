@@ -247,6 +247,7 @@ namespace ManualTracingTool {
         // runtime
 
         imageResource: ImageResource = null;
+        imageLoading = false;
 
         adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
         adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
