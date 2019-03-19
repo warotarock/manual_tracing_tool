@@ -1406,29 +1406,70 @@ namespace ManualTracingTool {
             }
         }
 
-        protected findViewKeyFrameIndex(currentFrame: int): int {
+        protected findViewKeyframeIndex(frame: int): int {
 
-            let max_ViewKeyFrameIndex = 0;
+            let resultIndex = 0;
 
             for (let index = 0; index < this.viewLayerContext.keyframes.length; index++) {
 
-                if (this.viewLayerContext.keyframes[index].frame > currentFrame) {
+                if (this.viewLayerContext.keyframes[index].frame > frame) {
                     break;
                 }
 
-                max_ViewKeyFrameIndex = index;
+                resultIndex = index;
             }
 
-            return max_ViewKeyFrameIndex;
+            return resultIndex;
         }
 
-        protected findViewKeyFrame(currentFrame: int): ViewKeyframe {
+        protected findNextViewKeyframeIndex(startFrame: int, searchDirection: int): int {
 
-            let keyFrameIndex = this.findViewKeyFrameIndex(currentFrame);
+            let resultFrame = -1;
 
-            if (keyFrameIndex != -1) {
+            let startKeyframeIndex = this.findViewKeyframeIndex(startFrame);
 
-                return this.viewLayerContext.keyframes[keyFrameIndex];
+            if (startKeyframeIndex == -1) {
+                return -1;
+            }
+
+            let resultIndex = startKeyframeIndex + searchDirection;
+
+            if (resultIndex < 0) {
+
+                return 0;
+            }
+
+            if (resultIndex >= this.viewLayerContext.keyframes.length) {
+
+                return this.viewLayerContext.keyframes.length - 1;
+            }
+
+            return resultIndex;
+        }
+
+        protected findNextViewKeyframeFrame(startFrame: int, searchDirection: int): int {
+
+            let resultFrame = -1;
+
+            let keyframeIndex = this.findNextViewKeyframeIndex(startFrame, searchDirection);
+
+            if (keyframeIndex == -1) {
+
+                return -2;
+            }
+            else {
+
+                return this.viewLayerContext.keyframes[keyframeIndex].frame;
+            }
+        }
+
+        protected findViewKeyframe(frame: int): ViewKeyframe {
+
+            let keyframeIndex = this.findViewKeyframeIndex(frame);
+
+            if (keyframeIndex != -1) {
+
+                return this.viewLayerContext.keyframes[keyframeIndex];
             }
             else {
 
@@ -1652,7 +1693,7 @@ namespace ManualTracingTool {
                 aniSetting.currentTimeFrame = aniSetting.maxFrame;
             }
 
-            let keyframeIndex = this.findViewKeyFrameIndex(aniSetting.currentTimeFrame);
+            let keyframeIndex = this.findViewKeyframeIndex(aniSetting.currentTimeFrame);
 
             if (keyframeIndex != -1) {
 

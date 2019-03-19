@@ -1366,7 +1366,7 @@ namespace ManualTracingTool {
 
             if (env.currentVectorLayer != null) {
 
-                let viewKeyFrame = this.findViewKeyFrame(aniSetting.currentTimeFrame);
+                let viewKeyFrame = this.findViewKeyframe(aniSetting.currentTimeFrame);
                 let layerIndex = -1;
                 if (viewKeyFrame != null) {
 

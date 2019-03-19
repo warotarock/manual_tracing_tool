@@ -1034,11 +1034,11 @@ namespace ManualTracingTool {
 
             if (e.offsetX < left) {
 
-                this.timeLineWindow_OnPlayPauseButton(e);
+                this.timeLineWindow_OnPlayPauseButton();
             }
             else {
 
-                this.timeLineWindow_ProcessFrameInput(e);
+                this.timeLineWindow_ProcessFrameInput();
             }
         }
 
@@ -1093,7 +1093,7 @@ namespace ManualTracingTool {
 
             if (e.isLeftButtonPressing()) {
 
-                this.timeLineWindow_ProcessFrameInput(e);
+                this.timeLineWindow_ProcessFrameInput();
             }
         }
 
@@ -1440,6 +1440,20 @@ namespace ManualTracingTool {
                 env.setRedrawTimeLineWindow();
             }
 
+            if (!env.isCtrlKeyPressing() && (key == 'c' || key == 'v')) {
+
+                let addFrame = 1;
+                if (key == 'c') {
+                    addFrame = -addFrame;
+                }
+
+                let frame = this.findNextViewKeyframeFrame(context.document.animationSettingData.currentTimeFrame, addFrame);
+
+                this.setCurrentFrame(frame);
+
+                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawTimeLineWindow();
+            }
             if (key == 'i') {
 
                 return;
