@@ -149,7 +149,7 @@ namespace ManualTracingTool {
         toLocation = vec3.create();
         fromLocation = vec3.create();
 
-        protected existsResults(): boolean { // @virtual
+        protected existsResults(): boolean { // @override
 
             let selector = <Selector_DeleteLinePoint_DivideLine>this.logic_Selector;
 

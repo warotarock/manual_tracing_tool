@@ -28,7 +28,7 @@ namespace ManualTracingTool {
             // Get candidate points
             let editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
             let editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
-            let candidatePointPairs = this.ganerateCandidatePoints(
+            let candidatePointPairs = this.ganerateScratchingCandidatePoints(
                 targetLine
                 , this.resampledLine
                 , editFalloffRadiusMin

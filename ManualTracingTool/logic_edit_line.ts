@@ -225,7 +225,7 @@ namespace ManualTracingTool {
                 result.push(sampledPoint);
             }
 
-            // for internal points
+            // for inside points
             let sampledCount = 1;
 
             while (currentPosition < endPosition) {
@@ -234,7 +234,7 @@ namespace ManualTracingTool {
                 let nextPoint = points[currentIndex + 1];
                 let segmentLength = nextPoint.totalLength - currentPoint.totalLength;
 
-                if (segmentLength == 0.0) {
+                if (segmentLength < samplingUnitLength / 10.0) {
 
                     currentIndex++;
                     if (currentIndex == endIndex) {

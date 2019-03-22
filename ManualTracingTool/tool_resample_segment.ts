@@ -10,8 +10,8 @@ namespace ManualTracingTool {
 
         targetLine: VectorLine = null;
 
-        oldPointList: List<LinePoint> = null;
-        newPointList: List<LinePoint> = null;
+        oldPoints: List<LinePoint> = null;
+        newPoints: List<LinePoint> = null;
     }
 
     export class Tool_Resample_Segment extends ToolBase {
@@ -23,7 +23,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentVectorLayer != null
+                env.isCurrentLayerVectorLayer()
                 && env.currentVectorLayer.isVisible
             );
         }
@@ -150,8 +150,8 @@ namespace ManualTracingTool {
 
             let result = new Tool_Resample_Segment_EditLine();
             result.targetLine = line;
-            result.oldPointList = line.points;
-            result.newPointList = new List<LinePoint>();
+            result.oldPoints = line.points;
+            result.newPoints = new List<LinePoint>();
 
             return result;
         }
@@ -202,7 +202,7 @@ namespace ManualTracingTool {
                     if (segmentEndIndex > segmentStartIndex) {
 
                         Logic_Edit_Points.resamplePoints(
-                            editLine.newPointList
+                            editLine.newPoints
                             , line.points
                             , segmentStartIndex
                             , segmentEndIndex
@@ -214,7 +214,7 @@ namespace ManualTracingTool {
 
                         let point = line.points[currentIndex];
 
-                        editLine.newPointList.push(point);
+                        editLine.newPoints.push(point);
                     }
 
                     currentIndex = segmentEndIndex + 1;
@@ -242,7 +242,7 @@ namespace ManualTracingTool {
 
                         let point = line.points[i];
 
-                        editLine.newPointList.push(point);
+                        editLine.newPoints.push(point);
                     }
 
                     currentIndex = segmentEndIndex + 1;
@@ -263,7 +263,7 @@ namespace ManualTracingTool {
 
             for (let editLine of this.editLines) {
 
-                editLine.targetLine.points = editLine.oldPointList;
+                editLine.targetLine.points = editLine.oldPoints;
             }
 
             this.calculateLineParameters();
@@ -278,7 +278,7 @@ namespace ManualTracingTool {
 
             for (let editLine of this.editLines) {
 
-                editLine.targetLine.points = editLine.newPointList;
+                editLine.targetLine.points = editLine.newPoints;
             }
 
             this.calculateLineParameters();

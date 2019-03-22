@@ -39,6 +39,12 @@ namespace ManualTracingTool {
             var a2 = a * a;
             var b2 = b * b;
             var r2 = a2 + b2;
+
+            if (r2 < 0.000001) {
+
+                return (x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1);
+            }
+
             var tt = -(a * (x1 - x0) + b * (y1 - y0));
 
             if (tt < 0) {
