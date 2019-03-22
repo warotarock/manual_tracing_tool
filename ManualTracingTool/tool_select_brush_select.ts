@@ -136,8 +136,8 @@ namespace ManualTracingTool {
 
         protected existsResults(): boolean { // @virtual
 
-            return (this.logic_Selector.selectionInfo.selectedLines.length == 0
-                && this.logic_Selector.selectionInfo.selectedPoints.length == 0);
+            return (this.logic_Selector.selectionInfo.selectedLines.length != 0
+                || this.logic_Selector.selectionInfo.selectedPoints.length != 0);
         }
 
         protected executeCommand(env: ToolEnvironment) { // @virtual
@@ -217,6 +217,7 @@ namespace ManualTracingTool {
             this.errorCheck();
 
             // Selection process has done while inputting
+            // so not required execute this.redo(env);
 
             this.selectedLines = ListClone(this.selectionInfo.selectedLines);
             this.selectedPoints = ListClone(this.selectionInfo.selectedPoints);
