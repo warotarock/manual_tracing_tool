@@ -41,7 +41,7 @@ namespace ManualTracingTool {
 
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @virtual
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @virtual
 
         }
 
@@ -53,15 +53,15 @@ namespace ManualTracingTool {
     export interface IHitTest_VectorLayerLinePoint {
 
         startProcess();
-        processLayer(geometry: VectorLayerGeometry, x: float, y: float, minDistance: float);
+        processLayer(geometry: VectorLayerGeometry, location: Vec3, minDistance: float);
         endProcess();
     }
 
     export class HitTest_LinePointBase extends HitTest_VectorLayer_Base implements IHitTest_VectorLayerLinePoint {
 
-        processLayer(geometry: VectorLayerGeometry, x: float, y: float, minDistance: float) {
+        processLayer(geometry: VectorLayerGeometry, location: Vec3, minDistance: float) {
 
-            this.hitTest(geometry, x, y, minDistance * minDistance);
+            this.hitTest(geometry, location, minDistance * minDistance);
         }
 
         startProcess() {
@@ -76,7 +76,7 @@ namespace ManualTracingTool {
             this.afterHitTest();
         }
 
-        protected hitTest(geometry: VectorLayerGeometry, x: float, y: float, minDistance: float) {
+        protected hitTest(geometry: VectorLayerGeometry, location: Vec3, minDistance: float) {
 
             this.beforeHitTestToLayer(geometry);
 
@@ -88,9 +88,9 @@ namespace ManualTracingTool {
 
                     this.beforeHitTestToLine(group, line);
 
-                    if (this.hitTest_LineRectangle(line, x, y, minDistance)) {
+                    if (this.hitTest_LineRectangle(line, location, minDistance)) {
 
-                        this.processHitTestToLine(group, line, x, y, minDistance);
+                        this.processHitTestToLine(group, line, location, minDistance);
                     }
 
                     this.afterHitTestToLine(group, line);
@@ -102,22 +102,19 @@ namespace ManualTracingTool {
             this.afterHitTestToLayer(geometry);
         }
 
-        protected hitTest_LineRectangle(line: VectorLine, x: float, y: float, minDistance: float): boolean {
+        protected hitTest_LineRectangle(line: VectorLine, location: Vec3, minDistance: float): boolean {
 
-            return (x >= line.left - minDistance
-                && x <= line.right + minDistance
-                && y >= line.top - minDistance
-                && y <= line.bottom + minDistance);
+            return HitTest_Line.hitTestLocationToLineByRectangle(location, line, minDistance);
         }
 
-        protected processHitTestToLine(group: VectorGroup, line: VectorLine, x: float, y: float, minDistance: float) { // @virtual
+        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistance: float) { // @virtual
 
         }
     }
 
     export class HitTest_LinePoint_PointToPointByDistance extends HitTest_LinePointBase {
 
-        protected processHitTestToLine(group: VectorGroup, line: VectorLine, x: float, y: float, minDistance: float) { // @override
+        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistance: float) { // @override
 
             this.existsPointHitTest = false;
 
@@ -125,7 +122,7 @@ namespace ManualTracingTool {
 
                 let point = line.points[i];
 
-                let distance2d = Math.pow(x - point.location[0], 2) + Math.pow(y - point.location[1], 2);
+                let distance2d = Math.pow(location[0] - point.location[0], 2) + Math.pow(location[1] - point.location[1], 2);
 
                 if (distance2d < minDistance) {
 
@@ -141,7 +138,7 @@ namespace ManualTracingTool {
 
     export class HitTest_Line_PointToLineByDistance extends HitTest_LinePointBase {
 
-        protected processHitTestToLine(group: VectorGroup, line: VectorLine, x: float, y: float, minDistance: float) { // @override
+        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistance: float) { // @override
 
             this.existsPointHitTest = false;
 
@@ -153,12 +150,12 @@ namespace ManualTracingTool {
                 let distanceSQ = Logic_Points.pointToLineSegmentDistanceSQ(
                     point1.location,
                     point2.location,
-                    x, y
+                    location[0], location[1]
                 );
 
                 if (distanceSQ < minDistance) {
 
-                    this.onLineSegmentHited(line, point1, point2, x, y, Math.sqrt(minDistance), distanceSQ);
+                    this.onLineSegmentHited(line, point1, point2, location, Math.sqrt(minDistance), distanceSQ);
                 }
                 else {
 
@@ -181,7 +178,7 @@ namespace ManualTracingTool {
             this.hitedLine = null;
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @override
 
             this.hitedLine = line;
 
@@ -198,7 +195,7 @@ namespace ManualTracingTool {
             this.isChanged = false;
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @override
 
             if (!line.isCloseToMouse) {
 
@@ -218,6 +215,65 @@ namespace ManualTracingTool {
             }
 
             line.isCloseToMouse = false;
+        }
+    }
+
+    export class HitTest_Line {
+
+        public static MaxDistance = 999999.0;
+        public static InvalidDistance = -1.0;
+        public static InvalidIndex = -1;
+
+        public static getNearestSegmentIndex(targetLine: VectorLine, location: Vec3): int {
+
+            let minDistance = HitTest_Line.MaxDistance;
+            let nearestSegmentIndex = HitTest_Line.InvalidIndex;
+
+            for (let i = 0; i < targetLine.points.length - 1; i++) {
+
+                let editPoint1 = targetLine.points[i];
+                let editPoint2 = targetLine.points[i + 1];
+
+                let distance = Logic_Points.pointToLineSegment_SorroundingDistance(
+                    editPoint1.location,
+                    editPoint2.location,
+                    location
+                );
+
+                if (distance < minDistance) {
+
+                    minDistance = distance;
+                    nearestSegmentIndex = i;
+                }
+            }
+
+            return nearestSegmentIndex;
+        }
+
+        public static hitTestLocationToLineByRectangle(location: Vec3, line: VectorLine, minDistance: float): boolean {
+
+            return (location[0] >= line.left - minDistance
+                && location[0] <= line.right + minDistance
+                && location[1] >= line.top - minDistance
+                && location[1] <= line.bottom + minDistance);
+        }
+
+        public static hitTestLineToLineByRectangle(line1: VectorLine, line2: VectorLine): boolean {
+
+            let centerX1 = (line1.left + line1.right) / 2.0;
+            let centerY1 = (line1.top + line1.bottom) / 2.0;
+
+            let centerX2 = (line2.left + line2.right) / 2.0;
+            let centerY2 = (line2.top + line2.bottom) / 2.0;
+
+            let widthHalf = (line1.right - line1.left) / 2.0 + (line2.right - line2.left) / 2.0;
+            let heightHalf = (line1.bottom - line1.top) / 2.0 + (line2.bottom - line2.top) / 2.0;
+
+            return (centerX2 >= centerX1 - widthHalf
+                && centerX2 <= centerX1 + widthHalf
+                && centerY2 >= centerY1 - heightHalf
+                && centerY2 <= centerY1 + heightHalf
+            );
         }
     }
 }

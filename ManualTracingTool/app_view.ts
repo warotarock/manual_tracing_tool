@@ -1367,13 +1367,13 @@ namespace ManualTracingTool {
             }
         }
 
-        protected mousemoveHittest(x: float, y: float, minDistance: float): boolean {
+        protected mousemoveHittest(location: Vec3, minDistance: float): boolean {
 
             this.hittest_Line_IsCloseTo.startProcess();
 
             if (this.toolEnv.currentVectorGeometry != null) {
 
-                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, x, y, minDistance);
+                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
             }
 
             this.hittest_Line_IsCloseTo.endProcess();

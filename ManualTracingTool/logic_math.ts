@@ -30,6 +30,20 @@ namespace ManualTracingTool {
             return t * t * (3 - 2 * t);
         }
 
+        // xが0.0～1.0の間でだいたい0.0～1.0の値をとるシグモイド関数（やんわりと何かを変化させる用途）
+        static sigmoid10(x: float): float {
+
+            var a = 1.0 / (1.0 + Math.exp(-20 * (x - 0.5)));
+
+            return a;
+        }
+
+        // シグモイド関数の0.5以降の部分
+        static sigmoid10half(x: float): float {
+
+            return (Maths.sigmoid10(0.5 + x * 0.5) - 0.5) * 2.0;
+        }
+
         static pointToLineSegment_Distance(x0: float, y0: float, x1: float, y1: float, x2: float, y2: float): float {
 
             // from: https://qiita.com/yellow_73/items/bcd4e150e7caa0210ee6

@@ -29,6 +29,10 @@ function ListGetRange<T>(srcList: List<T>, index: int, length: int): List<T> {
     return srcList.slice(index, index + length);
 }
 
+function ListGetRangeToLast<T>(srcList: List<T>, index: int): List<T> {
+    return srcList.slice(index, srcList.length);
+}
+
 function ListInsertAt<T>(destList: List<T>, index: int, item: T) {
     destList.splice(index, 0, item);
 }

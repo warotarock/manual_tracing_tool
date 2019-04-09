@@ -115,7 +115,8 @@ namespace ManualTracingTool {
         tool_EditModeMain = new Tool_EditModeMain();
 
         // Drawing tools
-        tool_DrawLine = new Tool_DrawLine();
+        //tool_DrawLine = new Tool_DrawLine();
+        tool_DrawLine = new Tool_ScratchLineDraw();
         tool_AddPoint = new Tool_AddPoint();
         tool_ScratchLine = new Tool_ScratchLine();
         tool_ExtrudeLine = new Tool_ExtrudeLine();
@@ -1205,13 +1206,6 @@ namespace ManualTracingTool {
             //this.currentTool = this.tool_AddPoint;
             //this.currentTool = this.tool_ScratchLine;
             this.currentTool = this.tool_Posing3d_LocateHead;
-
-            // TODO: ツールを作るたびに忘れるのでなんとかしる
-            this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_OverWriteLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         }
 
         protected isEventDisabled() {
@@ -1885,6 +1879,9 @@ namespace ManualTracingTool {
         // MainEditorDrawer implementations (virtual functions)
 
         drawMouseCursor() { // @implements MainEditorDrawer @virtual
+        }
+
+        drawMouseCursorCircle(radius: float) { // @implements MainEditorDrawer @virtual
         }
 
         drawEditorEditLineStroke(line: VectorLine) { // @implements MainEditorDrawer @virtual

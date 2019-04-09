@@ -795,6 +795,22 @@ namespace ManualTracingTool {
             this.canvasRender.stroke();
         }
 
+        drawMouseCursorCircle(radius: float) { // @override
+
+            this.canvasRender.beginPath();
+
+            this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
+            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
+
+            this.canvasRender.circle(
+                this.mainWindow.toolMouseEvent.location[0]
+                , this.mainWindow.toolMouseEvent.location[1]
+                , radius
+            );
+
+            this.canvasRender.stroke();
+        }
+
         drawEditorEditLineStroke(line: VectorLine) { // @override
 
             this.drawEditLineStroke(line);

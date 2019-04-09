@@ -114,7 +114,7 @@ namespace ManualTracingTool {
 
             for (let viewKeyframeLayer of this.editableKeyframeLayers) {
 
-                this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location[0], e.location[1], env.mouseCursorViewRadius);
+                this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location, env.mouseCursorViewRadius);
             }
         }
 

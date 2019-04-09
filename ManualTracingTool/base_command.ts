@@ -3,7 +3,6 @@ namespace ManualTracingTool {
 
     export interface IEditCommand {
 
-        isContinuing: boolean;
         isContinued: boolean;
         execute(env: ToolEnvironment);
         undo(env: ToolEnvironment);
@@ -12,7 +11,6 @@ namespace ManualTracingTool {
 
     export class CommandBase implements IEditCommand {
 
-        isContinuing = false;
         isContinued = false;
 
         execute(env: ToolEnvironment) { // @override method

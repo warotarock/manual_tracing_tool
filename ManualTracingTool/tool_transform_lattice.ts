@@ -415,8 +415,9 @@ namespace ManualTracingTool {
                 let latticePoint2 = this.latticePoints[indexTo];
 
                 let distance = Logic_Points.pointToLineSegment_SorroundingDistance(
-                    latticePoint1.location, latticePoint2.location
-                    , e.location[0], e.location[1]);
+                    latticePoint1.location,
+                    latticePoint2.location,
+                    e.location);
 
                 if (distance <= scaledHitRadius) {
 

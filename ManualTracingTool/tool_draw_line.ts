@@ -8,8 +8,6 @@ namespace ManualTracingTool {
         editLine: VectorLine = null;
         continuousFill = false;
 
-        resamplingUnitLength = 1.0;
-
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
@@ -78,13 +76,7 @@ namespace ManualTracingTool {
 
             Logic_Edit_Line.smooth(this.editLine);
 
-            Logic_Edit_Line.calculateParameters(this.editLine);
-
-            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
-            if (resamplingUnitLength > this.resamplingUnitLength) {
-                resamplingUnitLength = this.resamplingUnitLength;
-            }
-
+            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
             let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
 
             let resampledLine = Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);

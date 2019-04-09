@@ -48,9 +48,9 @@ namespace ManualTracingTool {
         protected beforeHitTestToLine(group: VectorGroup, line: VectorLine) { // @override
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @override
 
-            this.createEditPoint(line, point1, point2, x, y, minDistance);
+            this.createEditPoint(line, point1, point2, location, minDistance);
         }
 
         protected afterHitTestToLine(group: VectorGroup, line: VectorLine) { // @override
@@ -59,7 +59,7 @@ namespace ManualTracingTool {
         protected afterHitTestToGroup(geometry: VectorLayerGeometry, group: VectorGroup) { // @override
         }
 
-        private createEditPoint(line: VectorLine, point1: LinePoint, point2: LinePoint, x: float, y: float, minDistance: float) {
+        private createEditPoint(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float) {
 
             let edited = false;
 
@@ -70,7 +70,7 @@ namespace ManualTracingTool {
                 Maths.mat4SegmentMat(this.segmentMat4, this.normalVec, point1.location, point2.location);
                 mat4.invert(this.invMat4, this.segmentMat4);
 
-                vec3.set(this.localLocation, x, y, 0.0);
+                vec3.set(this.localLocation, location[0], location[1], 0.0);
                 vec3.transformMat4(this.localLocation, this.localLocation, this.invMat4);
 
                 let dy = 0 - this.localLocation[1];

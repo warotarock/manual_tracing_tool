@@ -374,9 +374,18 @@ namespace ManualTracingTool {
 
         static smooth(line: VectorLine) {
 
+            Logic_Edit_Line.smoothPoints(line.points);
+
+            Logic_Edit_Line.applyAdjustments(line);
+
+            Logic_Edit_Line.calculateParameters(line)
+        }
+
+        static smoothPoints(linePoints: List<LinePoint>) {
+
             // Smoothing
-            for (let i = 0; i < line.points.length; i++) {
-                let point = line.points[i];
+            for (let i = 0; i < linePoints.length; i++) {
+                let point = linePoints[i];
 
                 vec3.copy(point.adjustingLocation, point.location);
                 vec3.copy(point.tempLocation, point.location);
@@ -386,11 +395,11 @@ namespace ManualTracingTool {
             let iteration = 2;
             for (let count = 0; count < iteration; count++) {
 
-                for (let i = 0; i + 2 < line.points.length; i++) {
+                for (let i = 0; i + 2 < linePoints.length; i++) {
 
-                    let point1 = line.points[i];
-                    let point2 = line.points[i + 1];
-                    let point3 = line.points[i + 2];
+                    let point1 = linePoints[i];
+                    let point2 = linePoints[i + 1];
+                    let point3 = linePoints[i + 2];
 
                     Logic_Edit_Line.calcBezier2d(
                         point2.adjustingLocation
@@ -403,17 +412,13 @@ namespace ManualTracingTool {
                     point2.adjustingLineWidth = (point1.adjustingLineWidth + point3.adjustingLineWidth) / 2;
                 }
 
-                for (let i = 0; i + 2 < line.points.length; i++) {
+                for (let i = 0; i + 2 < linePoints.length; i++) {
 
-                    let point2 = line.points[i + 1];
+                    let point2 = linePoints[i + 1];
 
                     vec3.copy(point2.tempLocation, point2.adjustingLocation);
                 }
             }
-
-            Logic_Edit_Line.applyAdjustments(line);
-
-            Logic_Edit_Line.calculateParameters(line)
         }
 
         private static calcBezier2d(result: Vec3, p0: Vec3, p1: Vec3, p2: Vec3, t: float) {
@@ -442,6 +447,14 @@ namespace ManualTracingTool {
             }
         }
 
+        static resetModifyStatus(lines: List<VectorLine>) {
+
+            for (let line of lines) {
+
+                line.modifyFlag = VectorLineModifyFlagID.none;
+            }
+        }
+
         static createResampledLine(baseLine: VectorLine, samplingDivisionCount: int): VectorLine {
 
             let result = new VectorLine();
@@ -462,11 +475,22 @@ namespace ManualTracingTool {
             return result;
         }
 
-        static resetModifyStatus(lines: List<VectorLine>) {
+        static addPointsToList(destList: List<LinePoint>, sourceList: List<LinePoint>, startIndex: int, endIndex: int) {
 
-            for (let line of lines) {
+            let index = startIndex;
+            let addIndex = (startIndex < endIndex) ? 1 : -1;
 
-                line.modifyFlag = VectorLineModifyFlagID.none;
+            while (true) {
+
+                let point = sourceList[index];
+
+                destList.push(point);
+
+                index += addIndex;
+
+                if (index == endIndex) {
+                    break;
+                }
             }
         }
     }

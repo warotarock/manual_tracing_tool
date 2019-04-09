@@ -46,6 +46,72 @@ namespace ManualTracingTool {
             return true;
         }
 
+        execute(env: ToolEnvironment) { // @override
+
+            this.redo(env);
+        }
+
+        undo(env: ToolEnvironment) { // @override
+
+            for (let editGroup of this.editGroups) {
+
+                editGroup.group.lines = editGroup.oldLineList;
+            }
+
+            for (let editLine of this.editLines) {
+
+                editLine.targetLine.points = editLine.oldPointList;
+
+                Logic_Edit_Line.calculateParameters(editLine.targetLine);
+            }
+
+            for (let line of this.deletedLines) {
+
+                line.modifyFlag = VectorLineModifyFlagID.none;
+            }
+
+            for (let point of this.deletedPoints) {
+
+                point.modifyFlag = LinePointModifyFlagID.none;
+            }
+        }
+
+        redo(env: ToolEnvironment) { // @override
+
+            for (let editGroup of this.editGroups) {
+
+                editGroup.group.lines = editGroup.newLineList;
+                editGroup.group.modifyFlag = VectorGroupModifyFlagID.none;
+            }
+
+            for (let editLine of this.editLines) {
+
+                editLine.targetLine.points = editLine.newPointList;
+                editLine.targetLine.modifyFlag = VectorLineModifyFlagID.none;
+
+                Logic_Edit_Line.calculateParameters(editLine.targetLine);
+            }
+
+            for (let line of this.deletedLines) {
+
+                line.modifyFlag = VectorLineModifyFlagID.delete;
+            }
+
+            for (let point of this.deletedPoints) {
+
+                point.modifyFlag = LinePointModifyFlagID.delete;
+            }
+        }
+
+        errorCheck(layer: VectorLayer): boolean {
+
+            if (layer == null) {
+                return true;
+            }
+
+            return false;
+        }
+
         private collectEditTargets(layer: VectorLayer, geometry: VectorLayerGeometry) {
 
             // Collect informations for modified lines and deleted points
@@ -157,29 +223,37 @@ namespace ManualTracingTool {
 
                     let deletePointCount = 0;
 
-                    // Check deleting points
-                    for (let point of line.points) {
+                    if (line.modifyFlag == VectorLineModifyFlagID.none) {
 
-                        if (point.modifyFlag == LinePointModifyFlagID.delete) {
+                        // Check deleting points
+                        for (let point of line.points) {
 
-                            deletePointCount++;
+                            if (point.modifyFlag == LinePointModifyFlagID.delete) {
+
+                                deletePointCount++;
+                            }
+                        }
+
+                        // Set flag to delete line
+                        if (deletePointCount > 0) {
+
+                            if (line.points.length - deletePointCount <= 1) {
+
+                                line.modifyFlag = VectorLineModifyFlagID.delete;
+                                deleteLineCount++;
+                            }
+                            else {
+
+                                line.modifyFlag = VectorLineModifyFlagID.deletePoints;
+                            }
+
+                            modifiedLineCount++;
                         }
                     }
+                    else if (line.modifyFlag == VectorLineModifyFlagID.deleteLine) {
 
-                    // Set flag to delete line
-                    if (deletePointCount > 0 && line.modifyFlag == VectorLineModifyFlagID.none) {
-
-                        if (line.points.length - deletePointCount <= 1) {
-
-                            line.modifyFlag = VectorLineModifyFlagID.delete;
-                            deleteLineCount++;
-                        }
-                        else {
-
-                            line.modifyFlag = VectorLineModifyFlagID.deletePoints;
-                        }
-
-                        modifiedLineCount++;
+                        line.modifyFlag = VectorLineModifyFlagID.delete;
+                        deleteLineCount++;
                     }
                 }
 
@@ -199,72 +273,6 @@ namespace ManualTracingTool {
                     modifiedGroupCount++;
                 }
             }
-        }
-
-        execute(env: ToolEnvironment) { // @override
-
-            this.redo(env);
-        }
-
-        undo(env: ToolEnvironment) { // @override
-
-            for (let editGroup of this.editGroups) {
-
-                editGroup.group.lines = editGroup.oldLineList;
-            }
-
-            for (let editLine of this.editLines) {
-
-                editLine.targetLine.points = editLine.oldPointList;
-
-                Logic_Edit_Line.calculateParameters(editLine.targetLine);
-            }
-
-            for (let line of this.deletedLines) {
-
-                line.modifyFlag = VectorLineModifyFlagID.none;
-            }
-
-            for (let point of this.deletedPoints) {
-
-                point.modifyFlag = LinePointModifyFlagID.none;
-            }
-        }
-
-        redo(env: ToolEnvironment) { // @override
-
-            for (let editGroup of this.editGroups) {
-
-                editGroup.group.lines = editGroup.newLineList;
-                editGroup.group.modifyFlag = VectorGroupModifyFlagID.none;
-            }
-
-            for (let editLine of this.editLines) {
-
-                editLine.targetLine.points = editLine.newPointList;
-                editLine.targetLine.modifyFlag = VectorLineModifyFlagID.none;
-
-                Logic_Edit_Line.calculateParameters(editLine.targetLine);
-            }
-
-            for (let line of this.deletedLines) {
-
-                line.modifyFlag = VectorLineModifyFlagID.delete;
-            }
-
-            for (let point of this.deletedPoints) {
-
-                point.modifyFlag = LinePointModifyFlagID.delete;
-            }
-        }
-
-        errorCheck(layer: VectorLayer): boolean {
-
-            if (layer == null) {
-                return true;
-            }
-
-            return false;
         }
 
         protected setDeleteFlags(geometry: VectorLayerGeometry): boolean { // @virtual
@@ -299,7 +307,7 @@ namespace ManualTracingTool {
         }
     }
 
-    export class Command_DeleteFlagedPoints extends Command_DeletePoints {
+    export class Command_DeleteFlaggedPoints extends Command_DeletePoints {
 
         protected setDeleteFlags(geometry: VectorLayerGeometry): boolean { // @override
 
@@ -308,6 +316,11 @@ namespace ManualTracingTool {
             for (let group of geometry.groups) {
 
                 for (let line of group.lines) {
+
+                    if (line.modifyFlag == VectorLineModifyFlagID.deleteLine) {
+
+                        deletePointCount++;
+                    }
 
                     // Set flag to delete points
                     for (let point of line.points) {

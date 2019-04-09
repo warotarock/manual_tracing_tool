@@ -18,8 +18,6 @@ namespace ManualTracingTool {
 
         helpText = 'エンターキーで選択中の頂点の間を画面の拡大率に合わせて再分割します。';
 
-        resamplingUnitLength = 1.0;
-
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
@@ -65,8 +63,6 @@ namespace ManualTracingTool {
 
     export class Command_Resample_Segment extends CommandBase {
 
-        resamplingUnitLength = 8.0;
-
         editGroups: List<Tool_Resample_Segment_EditGroup> = null;
         editLines: List<Tool_Resample_Segment_EditLine> = null;
 
@@ -91,7 +87,7 @@ namespace ManualTracingTool {
 
                             editLines.push(editLine);
 
-                            editLine.targetLine.modifyFlag = VectorLineModifyFlagID.reampling;
+                            editLine.targetLine.modifyFlag = VectorLineModifyFlagID.resampling;
                             modifiedLineCount++;
                         }
                     }
@@ -158,7 +154,7 @@ namespace ManualTracingTool {
 
         executeResampling(env: ToolEnvironment) {
 
-            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
+            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
 
             for (let editLine of this.editLines) {
 

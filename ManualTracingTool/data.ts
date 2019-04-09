@@ -85,6 +85,19 @@ namespace ManualTracingTool {
         adjustingLengthTo = 0.0; // start position to draw segment of side of to-point (0.0 - 1.0)
         totalLength = 0.0;
         curvature = 0.0;
+
+        static clone(srcPoint: LinePoint): LinePoint {
+
+            let point = new LinePoint();
+
+            vec3.copy(point.location, srcPoint.location);
+            point.lineWidth = srcPoint.lineWidth;
+
+            vec3.copy(point.adjustingLocation, point.location);
+            point.adjustingLineWidth = point.lineWidth;
+
+            return point;
+        }
     }
 
     export enum VectorLineModifyFlagID {
@@ -94,9 +107,10 @@ namespace ManualTracingTool {
         unselectedToSelected = 2,
         delete = 3,
         deletePoints = 4,
-        edit = 5,
-        transform = 6,
-        reampling = 7
+        deleteLine = 5, // delete the line with all points
+        edit = 6,
+        transform = 7,
+        resampling = 8
     }
 
     export class VectorLine {

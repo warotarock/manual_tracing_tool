@@ -28,9 +28,9 @@ namespace ManualTracingTool {
                 point2[1]);
         }
 
-        static pointToLineSegment_SorroundingDistance(point1: Vec3, point2: Vec3, x: float, y: float): float {
+        static pointToLineSegment_SorroundingDistance(point1: Vec3, point2: Vec3, targetPoint: Vec3): float {
 
-            let distanceSQ = this.pointToLineSegmentDistanceSQ(point1, point2, x, y);
+            let distanceSQ = this.pointToLineSegmentDistanceSQ(point1, point2, targetPoint[0], targetPoint[1]);
 
             return Math.sqrt(distanceSQ);
         }
@@ -48,7 +48,7 @@ namespace ManualTracingTool {
         }
 
         // Point to endless line: distance calculation
-        static pointToLine_Distance(point1: Vec3, point2: Vec3, targetPoint: Vec3): float {
+        static pointToLine_Distance(targetPoint: Vec3, point1: Vec3, point2: Vec3): float {
 
             return Maths.pointToLine_Distance(
                 targetPoint[0],
@@ -60,7 +60,7 @@ namespace ManualTracingTool {
         }
 
         // Point to endless line: nearest location calculation
-        static pointToLine_NearestPointLocation(result: Vec3, linePoint1: Vec3, linePoint2: Vec3, targetPoint: Vec3): Vec3 {
+        static pointToLine_NearestLocation(result: Vec3, linePoint1: Vec3, linePoint2: Vec3, targetPoint: Vec3): boolean {
 
             return Maths.pointToLine_NearestPoint(
                 result,
@@ -69,7 +69,7 @@ namespace ManualTracingTool {
                 linePoint1[0],
                 linePoint1[1],
                 linePoint2[0],
-                linePoint2[1]);
+                linePoint2[1]) != null;
         }
     }
 }

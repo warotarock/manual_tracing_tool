@@ -567,7 +567,7 @@ namespace ManualTracingTool {
             }
             else if (this.toolEnv.isEditMode()) {
 
-                let isHitChanged = this.mousemoveHittest(e.location[0], e.location[1], this.toolEnv.mouseCursorViewRadius);
+                let isHitChanged = this.mousemoveHittest(e.location, this.toolEnv.mouseCursorViewRadius);
                 if (isHitChanged) {
                     this.toolEnv.setRedrawMainWindow();
                 }

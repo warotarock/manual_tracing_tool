@@ -103,6 +103,7 @@ namespace ManualTracingTool {
     export interface MainEditorDrawer {
 
         drawMouseCursor();
+        drawMouseCursorCircle(radius: float);
         drawEditorEditLineStroke(line: VectorLine);
         drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean);
         drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean);
@@ -549,6 +550,17 @@ namespace ManualTracingTool {
         getViewScaledLength(length: float) {
 
             return length / this.viewScale;
+        }
+
+        getViewScaledDrawLineUnitLength() {
+
+            let resamplingUnitLength = this.getViewScaledLength(this.toolContext.resamplingUnitLength);
+
+            if (resamplingUnitLength > this.toolContext.resamplingUnitLength) {
+                resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            }
+
+            return resamplingUnitLength;
         }
 
         collectEditTargetViewKeyframeLayers(): List<ViewKeyframeLayer> {

@@ -40,7 +40,6 @@ namespace ManualTracingTool {
         isLeftButtonEdit = false;
         isRightButtonEdit = false;
 
-        resamplingUnitLength = 1.0;
         maxResamplingDivisionCount = 51;
         curveCheckPointCount = 3;
         cutoutAngle = 30 / 180.0 * Math.PI;
@@ -239,7 +238,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.lineSingleHitTester.processLayer(env.currentVectorGeometry, location[0], location[1], env.mouseCursorViewRadius);
+            this.lineSingleHitTester.processLayer(env.currentVectorGeometry, location, env.mouseCursorViewRadius);
 
             let hitedLine = this.lineSingleHitTester.hitedLine;
 
@@ -262,7 +261,7 @@ namespace ManualTracingTool {
 
             if (this.enableExtrude) {
 
-                let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
+                let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
                 let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
 
                 this.resampledLine = Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
@@ -343,13 +342,15 @@ namespace ManualTracingTool {
 
         protected generateCutoutedResampledLine(editorLine: VectorLine, env: ToolEnvironment): VectorLine {
 
-            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength * 2.0);
+            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
             let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(editorLine.totalLength, resamplingUnitLength);
             if (divisionCount > this.maxResamplingDivisionCount) {
                 divisionCount = this.maxResamplingDivisionCount;
             }
 
             let resampledLine = Logic_Edit_Line.createResampledLine(editorLine, divisionCount);
+
+            //Logic_Edit_Line.smooth(resampledLine);
 
             this.cutoutLine(resampledLine);
 
@@ -392,7 +393,6 @@ namespace ManualTracingTool {
             if (extrudeLine != null && extrudeLine.points.length > 0) {
 
                 let command = new Command_ExtrudeLine();
-                command.isContinuing = true;
                 command.targetLine = targetLine;
                 command.forwardExtrude = forwardExtrude;
                 command.extrudeLine = extrudeLine;
@@ -583,8 +583,7 @@ namespace ManualTracingTool {
                     let distance = Logic_Points.pointToLineSegment_SorroundingDistance(
                         editPoint1.location,
                         editPoint2.location,
-                        point.location[0],
-                        point.location[1]
+                        point.location
                     );
 
                     if (distance < minDistance) {
@@ -600,14 +599,14 @@ namespace ManualTracingTool {
                     let nearestLinePoint2 = editorLine.points[nearestSegmentIndex + 1];
 
                     // Calculate candidate point
-                    let nearestPoint_ResultVec = Logic_Points.pointToLine_NearestPointLocation(
+                    let nearestPoint_Available = Logic_Points.pointToLine_NearestLocation(
                         this.nearestPointLocation,
                         nearestLinePoint1.location,
                         nearestLinePoint2.location,
                         point.location
                     );
 
-                    if (nearestPoint_ResultVec == null) {
+                    if (!nearestPoint_Available) {
 
                         continue;
                     }
@@ -631,8 +630,7 @@ namespace ManualTracingTool {
                     let sorroundingDistance = Logic_Points.pointToLineSegment_SorroundingDistance(
                         nearestLinePoint1.location,
                         nearestLinePoint2.location,
-                        this.nearestPointLocation[0],
-                        this.nearestPointLocation[1]
+                        this.nearestPointLocation
                     );
 
                     if (sorroundingDistance > editFalloffRadiusMax) {
@@ -713,7 +711,7 @@ namespace ManualTracingTool {
                 return 0.0;
             }
 
-            influence *= this.editInfluence;
+            influence *= this.editInfluence * Maths.sigmoid10(1.0 - sorroundingDistance / editFalloffRadiusMax);
 
             return influence;
         }
@@ -764,10 +762,7 @@ namespace ManualTracingTool {
 
             var newPoints = ListGetRange(targetLine.points, 0, firstPointIndex);
 
-            let resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
-            if (resamplingUnitLength > this.resamplingUnitLength) {
-                resamplingUnitLength = this.resamplingUnitLength;
-            }
+            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
 
             Logic_Edit_Points.resamplePoints(
                 newPoints
@@ -813,7 +808,7 @@ namespace ManualTracingTool {
                     let normPosition = Logic_Points.pointToLineSegment_NormalizedPosition(point1.location, point2.location, linePoint.location);
 
                     if ((includeInnerSide && normPosition >= 0.0 && normPosition <= 1.0)
-                        || (includeOuterSide && normPosition < 0.0 || normPosition > 1.0)) {
+                        || (includeOuterSide && (normPosition < 0.0 || normPosition > 1.0))) {
 
                         if (distance > limitMinDistance
                             && distance < limitMaxDistance) {
