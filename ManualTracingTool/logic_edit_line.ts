@@ -183,6 +183,53 @@ namespace ManualTracingTool {
             result.bottom = bottom;
         }
 
+        static calculatePointTotalLength(points: List<LinePoint>, startLength: float) {
+
+            if (points.length == 0) {
+
+                return;
+            }
+
+            points[0].totalLength = startLength;
+
+            let totalLength = startLength;
+            for (let i = 1; i < points.length; i++) {
+
+                let point1 = points[i];
+                let point2 = points[i - 1];
+
+                totalLength += vec3.distance(point1.location, point2.location);
+
+                point1.totalLength = totalLength;
+            }
+        }
+
+        static calculatePointCurvature(points: List<LinePoint>) {
+
+            if (points.length <= 2) {
+
+                return;
+            }
+
+            points[0].totalLength = 0;
+            points[points.length - 1].totalLength = 0;
+
+            for (let i = 1; i + 1 < points.length; i++) {
+
+                let point1 = points[i - 1];
+                let point2 = points[i];
+                let point3 = points[i + 1];
+
+                let angle = Logic_Points.angle(point1.location, point2.location, point3.location);
+
+                point2.curvature = Math.PI - angle;
+                if (point2.curvature >= Math.PI) {
+
+                    point2.curvature = Math.PI * 2 - point2.curvature;
+                }
+            }
+        }
+
         static calculateSegmentTotalLength(points: List<LinePoint>, startIndex: int, endIndex: int) {
 
             let totalLength = 0.0;
@@ -208,8 +255,8 @@ namespace ManualTracingTool {
             let lastPoint = points[endIndex];
 
             let currentIndex = startIndex;
-            let currentPosition = firstPoint.totalLength;
-            let endPosition = firstPoint.totalLength + totalLength;
+            let currentPosition = 0.0;
+            let endPosition = totalLength;
 
             let maxSampleCount = 1 + Math.ceil(totalLength / samplingUnitLength);
 
@@ -228,26 +275,31 @@ namespace ManualTracingTool {
             // for inside points
             let sampledCount = 1;
 
+            let currentPointPosition = 0.0;
             while (currentPosition < endPosition) {
 
                 let currentPoint = points[currentIndex];
                 let nextPoint = points[currentIndex + 1];
-                let segmentLength = nextPoint.totalLength - currentPoint.totalLength;
+                let segmentLength = vec3.distance(nextPoint.location, currentPoint.location);
 
                 if (segmentLength < samplingUnitLength / 10.0) {
 
                     currentIndex++;
+                    currentPointPosition += segmentLength;
+
                     if (currentIndex == endIndex) {
                         break;
                     }
                 }
 
+                let nextPointPosition = currentPointPosition + segmentLength;
+
                 if (currentPosition + nextStepLength >= endPosition - samplingUnitLength / 2.0) {
                     break;
                 }
-                else if (currentPosition + nextStepLength <= nextPoint.totalLength) {
+                else if (currentPosition + nextStepLength <= nextPointPosition) {
 
-                    let localPosition = (currentPosition + nextStepLength) - currentPoint.totalLength;
+                    let localPosition = (currentPosition + nextStepLength) - currentPointPosition;
                     let positionRate = localPosition / segmentLength;
 
                     vec3.lerp(sampledLocationVec, currentPoint.location, nextPoint.location, positionRate);
@@ -272,9 +324,11 @@ namespace ManualTracingTool {
                 }
                 else {
 
-                    nextStepLength = (currentPosition + nextStepLength) - nextPoint.totalLength;
-                    currentPosition = nextPoint.totalLength;
+                    nextStepLength = (currentPosition + nextStepLength) - nextPointPosition;
+                    currentPosition = nextPointPosition;
+
                     currentIndex++;
+                    currentPointPosition += segmentLength;
 
                     if (currentIndex == endIndex) {
                         break;
@@ -334,36 +388,15 @@ namespace ManualTracingTool {
             line.isSelected = isSelected;
 
             // Calculate point positon in length
-            line.points[0].totalLength = 0.0;
+            if (line.points.length > 0) {
 
-            let totalLength = 0.0;
-            for (let i = 1; i < line.points.length; i++) {
+                Logic_Edit_Points.calculatePointTotalLength(line.points, 0.0);
 
-                let point1 = line.points[i];
-                let point2 = line.points[i - 1];
-
-                totalLength += vec3.distance(point1.location, point2.location);
-
-                point1.totalLength = totalLength;
+                line.totalLength = line.points[line.points.length - 1].totalLength;
             }
-
-            line.totalLength = totalLength;
 
             // Calculate curvature
-            for (let i = 1; i + 1 < line.points.length; i++) {
-
-                let point1 = line.points[i - 1];
-                let point2 = line.points[i];
-                let point3 = line.points[i + 1];
-
-                let angle = Logic_Points.angle(point1.location, point2.location, point3.location);
-
-                point2.curvature = Math.PI - angle;
-                if (point2.curvature >= Math.PI) {
-
-                    point2.curvature = Math.PI * 2 - point2.curvature;
-                }
-            }
+            Logic_Edit_Points.calculatePointCurvature(line.points);
         }
 
         static calculateParametersV(lines: List<VectorLine>) {
