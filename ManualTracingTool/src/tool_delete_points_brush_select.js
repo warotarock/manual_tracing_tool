@@ -34,7 +34,7 @@ var ManualTracingTool;
             return _this;
         }
         Tool_DeletePoints_BrushSelect.prototype.executeCommand = function (env) {
-            var command = new ManualTracingTool.Command_DeleteFlagedPoints();
+            var command = new ManualTracingTool.Command_DeleteFlaggedPoints();
             if (command.prepareEditTargets(env.currentVectorLayer, env.currentVectorGeometry)) {
                 command.execute(env);
                 env.commandHistory.addCommand(command);

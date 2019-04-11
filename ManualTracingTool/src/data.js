@@ -86,6 +86,14 @@ var ManualTracingTool;
             this.totalLength = 0.0;
             this.curvature = 0.0;
         }
+        LinePoint.clone = function (srcPoint) {
+            var point = new LinePoint();
+            vec3.copy(point.location, srcPoint.location);
+            point.lineWidth = srcPoint.lineWidth;
+            vec3.copy(point.adjustingLocation, point.location);
+            point.adjustingLineWidth = point.lineWidth;
+            return point;
+        };
         return LinePoint;
     }());
     ManualTracingTool.LinePoint = LinePoint;
@@ -96,9 +104,10 @@ var ManualTracingTool;
         VectorLineModifyFlagID[VectorLineModifyFlagID["unselectedToSelected"] = 2] = "unselectedToSelected";
         VectorLineModifyFlagID[VectorLineModifyFlagID["delete"] = 3] = "delete";
         VectorLineModifyFlagID[VectorLineModifyFlagID["deletePoints"] = 4] = "deletePoints";
-        VectorLineModifyFlagID[VectorLineModifyFlagID["edit"] = 5] = "edit";
-        VectorLineModifyFlagID[VectorLineModifyFlagID["transform"] = 6] = "transform";
-        VectorLineModifyFlagID[VectorLineModifyFlagID["reampling"] = 7] = "reampling";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["deleteLine"] = 5] = "deleteLine";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["edit"] = 6] = "edit";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["transform"] = 7] = "transform";
+        VectorLineModifyFlagID[VectorLineModifyFlagID["resampling"] = 8] = "resampling";
     })(VectorLineModifyFlagID = ManualTracingTool.VectorLineModifyFlagID || (ManualTracingTool.VectorLineModifyFlagID = {}));
     var VectorLine = /** @class */ (function () {
         function VectorLine() {
@@ -237,6 +246,7 @@ var ManualTracingTool;
             _this.scale = vec3.fromValues(1.0, 1.0, 1.0);
             // runtime
             _this.imageResource = null;
+            _this.imageLoading = false;
             _this.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
             _this.adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
             _this.adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);

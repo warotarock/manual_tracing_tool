@@ -192,7 +192,7 @@ var ManualTracingTool;
         Selector_Line_BrushSelect.prototype.beforeHitTest = function () {
             this.selectionInfo.clear();
         };
-        Selector_Line_BrushSelect.prototype.onLineSegmentHited = function (line, point1, point2, x, y, minDistance, distanceSQ) {
+        Selector_Line_BrushSelect.prototype.onLineSegmentHited = function (line, point1, point2, location, minDistance, distanceSQ) {
             this.selectionInfo.selectLine(line, this.editMode);
             this.existsPointHitTest = true;
         };
@@ -215,7 +215,7 @@ var ManualTracingTool;
         Selector_LineSegment_BrushSelect.prototype.beforeHitTest = function () {
             this.selectionInfo.clear();
         };
-        Selector_LineSegment_BrushSelect.prototype.onLineSegmentHited = function (line, point1, point2, x, y, minDistance, distanceSQ) {
+        Selector_LineSegment_BrushSelect.prototype.onLineSegmentHited = function (line, point1, point2, location, minDistance, distanceSQ) {
             this.selectionInfo.selectPoint(line, point1, this.editMode);
             this.selectionInfo.selectPoint(line, point2, this.editMode);
         };

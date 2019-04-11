@@ -36,7 +36,7 @@ var ManualTracingTool;
             // Get candidate points
             var editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
             var editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
-            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, this.resampledLine, editFalloffRadiusMin, editFalloffRadiusMax, this.editFalloffRadiusContainsLineWidth);
+            var candidatePointPairs = this.ganerateScratchingCandidatePoints(targetLine, this.resampledLine, editFalloffRadiusMin, editFalloffRadiusMax, this.editFalloffRadiusContainsLineWidth);
             if (candidatePointPairs != null && candidatePointPairs.length > 0) {
                 var command = new Command_ScratchLineWidth();
                 command.targetLine = targetLine;

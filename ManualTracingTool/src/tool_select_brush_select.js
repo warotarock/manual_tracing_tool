@@ -85,7 +85,7 @@ var ManualTracingTool;
             }
             for (var _i = 0, _a = this.editableKeyframeLayers; _i < _a.length; _i++) {
                 var viewKeyframeLayer = _a[_i];
-                this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location[0], e.location[1], env.mouseCursorViewRadius);
+                this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location, env.mouseCursorViewRadius);
             }
         };
         Tool_BrushSelectLinePointBase.prototype.endSelection = function (env) {
@@ -98,8 +98,8 @@ var ManualTracingTool;
             this.editableKeyframeLayers = null;
         };
         Tool_BrushSelectLinePointBase.prototype.existsResults = function () {
-            return (this.logic_Selector.selectionInfo.selectedLines.length == 0
-                && this.logic_Selector.selectionInfo.selectedPoints.length == 0);
+            return (this.logic_Selector.selectionInfo.selectedLines.length != 0
+                || this.logic_Selector.selectionInfo.selectedPoints.length != 0);
         };
         Tool_BrushSelectLinePointBase.prototype.executeCommand = function (env) {
         };
@@ -177,6 +177,7 @@ var ManualTracingTool;
         Command_Select.prototype.execute = function (env) {
             this.errorCheck();
             // Selection process has done while inputting
+            // so not required execute this.redo(env);
             this.selectedLines = ListClone(this.selectionInfo.selectedLines);
             this.selectedPoints = ListClone(this.selectionInfo.selectedPoints);
             if (this.selectedLines.length > 0) {

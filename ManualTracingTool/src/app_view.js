@@ -109,8 +109,11 @@ var ManualTracingTool;
             canvasWindow.canvas.width = canvasWindow.width;
             canvasWindow.canvas.height = canvasWindow.height;
         };
-        Main_View.prototype.getMouseInfo = function (toolMouseEvent, e, touchUp, canvasWindow) {
+        Main_View.prototype.processMouseEventInput = function (toolMouseEvent, e, touchUp, canvasWindow) {
             this.activeCanvasWindow = canvasWindow;
+            if (document.activeElement.nodeName == 'INPUT') {
+                document.activeElement.blur();
+            }
             toolMouseEvent.button = e.button;
             toolMouseEvent.buttons = e.buttons;
             if (touchUp) {
@@ -481,12 +484,13 @@ var ManualTracingTool;
             this.displayPalletColorModalColors(documentData, vectorLayer);
             this.toolEnv.setRedrawMainWindow();
         };
-        Main_View.prototype.onPalletColorModal_ColorCanvas_mousedown = function (e) {
+        Main_View.prototype.onPalletColorModal_ColorCanvas_mousedown = function () {
             if (this.palletColorWindow_EditLayer == null) {
                 return;
             }
             var context = this.toolContext;
             var wnd = this.palletColorModal_colorCanvas;
+            var e = wnd.toolMouseEvent;
             var env = this.toolEnv;
             this.canvasRender.setContext(wnd);
             this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
@@ -850,7 +854,7 @@ var ManualTracingTool;
                         s = 1.0;
                         v = 1.0 - (iy - 0.5) * 2.0;
                     }
-                    ManualTracingTool.Maths.hsvToRGBVec4(this.tempColor4, h, s, v);
+                    ManualTracingTool.Maths.hsvToRGB(this.tempColor4, h, s, v);
                     this.tempColor4[3] = 1.0;
                     this.canvasRender.setFillColorV(this.tempColor4);
                     this.canvasRender.fillRect(drawX, drawY, unitWidth, unitHeight);
@@ -950,10 +954,10 @@ var ManualTracingTool;
                 return false;
             }
         };
-        Main_View.prototype.mousemoveHittest = function (x, y, minDistance) {
+        Main_View.prototype.mousemoveHittest = function (location, minDistance) {
             this.hittest_Line_IsCloseTo.startProcess();
             if (this.toolEnv.currentVectorGeometry != null) {
-                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, x, y, minDistance);
+                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
             }
             this.hittest_Line_IsCloseTo.endProcess();
             return this.hittest_Line_IsCloseTo.isChanged;
@@ -1067,6 +1071,11 @@ var ManualTracingTool;
         Main_View.prototype.setInputElementNumber = function (id, value) {
             var element = (document.getElementById(id));
             element.value = value.toString();
+            return element;
+        };
+        Main_View.prototype.setInputElementNumber2Decimal = function (id, value) {
+            var element = (document.getElementById(id));
+            element.value = value.toFixed(2);
             return element;
         };
         Main_View.prototype.getInputElementNumber = function (id, defaultValue) {
@@ -1389,6 +1398,15 @@ var ManualTracingTool;
             this.menu_btnPalette2 = 'menu_btnPalette2';
             this.unselectedMainButton = 'unselectedMainButton';
             this.selectedMainButton = 'selectedMainButton';
+            this.colorMixer_id_number = '_number';
+            this.colorMixer_id_range = '_range';
+            this.colorMixer_alpha = 'colorMixer_alpha';
+            this.colorMixer_red = 'colorMixer_red';
+            this.colorMixer_green = 'colorMixer_green';
+            this.colorMixer_blue = 'colorMixer_blue';
+            this.colorMixer_hue = 'colorMixer_hue';
+            this.colorMixer_sat = 'colorMixer_sat';
+            this.colorMixer_val = 'colorMixer_val';
             this.openFileDialogModal = '#openFileDialogModal';
             this.openFileDialogModal_file = 'openFileDialogModal_file';
             this.openFileDialogModal_ok = 'openFileDialogModal_ok';

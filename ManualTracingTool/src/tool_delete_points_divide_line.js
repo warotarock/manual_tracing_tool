@@ -54,20 +54,20 @@ var ManualTracingTool;
         };
         Selector_DeleteLinePoint_DivideLine.prototype.beforeHitTestToLine = function (group, line) {
         };
-        Selector_DeleteLinePoint_DivideLine.prototype.onLineSegmentHited = function (line, point1, point2, x, y, minDistance, distanceSQ) {
-            this.createEditPoint(line, point1, point2, x, y, minDistance);
+        Selector_DeleteLinePoint_DivideLine.prototype.onLineSegmentHited = function (line, point1, point2, location, minDistance, distanceSQ) {
+            this.createEditPoint(line, point1, point2, location, minDistance);
         };
         Selector_DeleteLinePoint_DivideLine.prototype.afterHitTestToLine = function (group, line) {
         };
         Selector_DeleteLinePoint_DivideLine.prototype.afterHitTestToGroup = function (geometry, group) {
         };
-        Selector_DeleteLinePoint_DivideLine.prototype.createEditPoint = function (line, point1, point2, x, y, minDistance) {
+        Selector_DeleteLinePoint_DivideLine.prototype.createEditPoint = function (line, point1, point2, location, minDistance) {
             var edited = false;
             var segmentLength = vec3.distance(point1.location, point2.location);
             if (segmentLength > 0.0) {
                 ManualTracingTool.Maths.mat4SegmentMat(this.segmentMat4, this.normalVec, point1.location, point2.location);
                 mat4.invert(this.invMat4, this.segmentMat4);
-                vec3.set(this.localLocation, x, y, 0.0);
+                vec3.set(this.localLocation, location[0], location[1], 0.0);
                 vec3.transformMat4(this.localLocation, this.localLocation, this.invMat4);
                 var dy = 0 - this.localLocation[1];
                 var r = minDistance;

@@ -76,6 +76,9 @@ var ManualTracingTool;
             if (this.targetLayer.imageResource != null) {
                 this.targetLayer.imageResource.loaded = false;
             }
+            else {
+                this.targetLayer.imageLoading = true;
+            }
             env.startLoadingCurrentDocumentResources();
         };
         Command_LoadReferenceImageToLayer.prototype.errorCheck = function () {

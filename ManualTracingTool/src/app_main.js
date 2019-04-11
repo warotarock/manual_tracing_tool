@@ -87,7 +87,8 @@ var ManualTracingTool;
             this.tool_Transform_Lattice_Scale = new ManualTracingTool.Tool_Transform_Lattice_Scale();
             this.tool_EditModeMain = new ManualTracingTool.Tool_EditModeMain();
             // Drawing tools
-            this.tool_DrawLine = new ManualTracingTool.Tool_DrawLine();
+            //tool_DrawLine = new Tool_DrawLine();
+            this.tool_DrawLine = new ManualTracingTool.Tool_ScratchLineDraw();
             this.tool_AddPoint = new ManualTracingTool.Tool_AddPoint();
             this.tool_ScratchLine = new ManualTracingTool.Tool_ScratchLine();
             this.tool_ExtrudeLine = new ManualTracingTool.Tool_ExtrudeLine();
@@ -330,6 +331,7 @@ var ManualTracingTool;
                 this.start();
             }
             else {
+                this.finishLayerLoading_Recursive(this.document.rootLayer);
                 this.mainProcessState = MainProcessStateID.running;
                 this.toolEnv.setRedrawAllWindows();
             }
@@ -380,6 +382,20 @@ var ManualTracingTool;
                 modelFile.loaded = true;
             });
             xhr.send();
+        };
+        Main_Core.prototype.finishLayerLoading_Recursive = function (layer) {
+            if (layer.type == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
+                var ifrLayer = layer;
+                if (ifrLayer.imageLoading) {
+                    ifrLayer.imageLoading = false;
+                    ifrLayer.location[0] = -ifrLayer.imageResource.image.width / 2;
+                    ifrLayer.location[1] = -ifrLayer.imageResource.image.height / 2;
+                }
+            }
+            for (var _i = 0, _a = layer.childLayers; _i < _a.length; _i++) {
+                var childLayer = _a[_i];
+                this.finishLayerLoading_Recursive(childLayer);
+            }
         };
         Main_Core.prototype.createPosingModel = function (modelData) {
             var posingModel = new ManualTracingTool.PosingModel();
@@ -746,6 +762,7 @@ var ManualTracingTool;
             else if (layer.type == ManualTracingTool.LayerTypeID.imageFileReferenceLayer) {
                 var ifrLayer = layer;
                 delete ifrLayer.imageResource;
+                delete ifrLayer.imageLoading;
                 delete ifrLayer.adjustingLocation;
                 delete ifrLayer.adjustingRotation;
                 delete ifrLayer.adjustingScale;
@@ -835,12 +852,6 @@ var ManualTracingTool;
             //this.currentTool = this.tool_AddPoint;
             //this.currentTool = this.tool_ScratchLine;
             this.currentTool = this.tool_Posing3d_LocateHead;
-            // TODO: ツールを作るたびに忘れるのでなんとかしる
-            this.tool_DrawLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ScratchLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ExtrudeLine.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_OverWriteLineWidth.resamplingUnitLength = this.toolContext.resamplingUnitLength;
-            this.tool_ResampleSegment.resamplingUnitLength = this.toolContext.resamplingUnitLength;
         };
         Main_Core.prototype.isEventDisabled = function () {
             if (this.isWhileLoading()) {
@@ -970,20 +981,45 @@ var ManualTracingTool;
                 }
             }
         };
-        Main_Core.prototype.findViewKeyFrameIndex = function (currentFrame) {
-            var max_ViewKeyFrameIndex = 0;
+        Main_Core.prototype.findViewKeyframeIndex = function (frame) {
+            var resultIndex = 0;
             for (var index = 0; index < this.viewLayerContext.keyframes.length; index++) {
-                if (this.viewLayerContext.keyframes[index].frame > currentFrame) {
+                if (this.viewLayerContext.keyframes[index].frame > frame) {
                     break;
                 }
-                max_ViewKeyFrameIndex = index;
+                resultIndex = index;
             }
-            return max_ViewKeyFrameIndex;
+            return resultIndex;
         };
-        Main_Core.prototype.findViewKeyFrame = function (currentFrame) {
-            var keyFrameIndex = this.findViewKeyFrameIndex(currentFrame);
-            if (keyFrameIndex != -1) {
-                return this.viewLayerContext.keyframes[keyFrameIndex];
+        Main_Core.prototype.findNextViewKeyframeIndex = function (startFrame, searchDirection) {
+            var resultFrame = -1;
+            var startKeyframeIndex = this.findViewKeyframeIndex(startFrame);
+            if (startKeyframeIndex == -1) {
+                return -1;
+            }
+            var resultIndex = startKeyframeIndex + searchDirection;
+            if (resultIndex < 0) {
+                return 0;
+            }
+            if (resultIndex >= this.viewLayerContext.keyframes.length) {
+                return this.viewLayerContext.keyframes.length - 1;
+            }
+            return resultIndex;
+        };
+        Main_Core.prototype.findNextViewKeyframeFrame = function (startFrame, searchDirection) {
+            var resultFrame = -1;
+            var keyframeIndex = this.findNextViewKeyframeIndex(startFrame, searchDirection);
+            if (keyframeIndex == -1) {
+                return -2;
+            }
+            else {
+                return this.viewLayerContext.keyframes[keyframeIndex].frame;
+            }
+        };
+        Main_Core.prototype.findViewKeyframe = function (frame) {
+            var keyframeIndex = this.findViewKeyframeIndex(frame);
+            if (keyframeIndex != -1) {
+                return this.viewLayerContext.keyframes[keyframeIndex];
             }
             else {
                 return null;
@@ -1127,17 +1163,17 @@ var ManualTracingTool;
             if (aniSetting.currentTimeFrame > aniSetting.maxFrame) {
                 aniSetting.currentTimeFrame = aniSetting.maxFrame;
             }
-            var currentKeyframeIndex = this.findViewKeyFrameIndex(aniSetting.currentTimeFrame);
-            if (currentKeyframeIndex != -1) {
-                this.currentKeyframe = this.viewLayerContext.keyframes[currentKeyframeIndex];
-                if (currentKeyframeIndex - 1 >= 0) {
-                    this.previousKeyframe = this.viewLayerContext.keyframes[currentKeyframeIndex - 1];
+            var keyframeIndex = this.findViewKeyframeIndex(aniSetting.currentTimeFrame);
+            if (keyframeIndex != -1) {
+                this.currentKeyframe = this.viewLayerContext.keyframes[keyframeIndex];
+                if (keyframeIndex - 1 >= 0) {
+                    this.previousKeyframe = this.viewLayerContext.keyframes[keyframeIndex - 1];
                 }
                 else {
                     this.previousKeyframe = null;
                 }
-                if (currentKeyframeIndex + 1 < this.viewLayerContext.keyframes.length) {
-                    this.nextKeyframe = this.viewLayerContext.keyframes[currentKeyframeIndex + 1];
+                if (keyframeIndex + 1 < this.viewLayerContext.keyframes.length) {
+                    this.nextKeyframe = this.viewLayerContext.keyframes[keyframeIndex + 1];
                 }
                 else {
                     this.nextKeyframe = null;
@@ -1248,6 +1284,8 @@ var ManualTracingTool;
         };
         // MainEditorDrawer implementations (virtual functions)
         Main_Core.prototype.drawMouseCursor = function () {
+        };
+        Main_Core.prototype.drawMouseCursorCircle = function (radius) {
         };
         Main_Core.prototype.drawEditorEditLineStroke = function (line) {
         };

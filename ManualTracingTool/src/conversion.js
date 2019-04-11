@@ -7,6 +7,9 @@ function ListAddRange(destList, addList) {
 function ListGetRange(srcList, index, length) {
     return srcList.slice(index, index + length);
 }
+function ListGetRangeToLast(srcList, index) {
+    return srcList.slice(index, srcList.length);
+}
 function ListInsertAt(destList, index, item) {
     destList.splice(index, 0, item);
 }
@@ -15,6 +18,9 @@ function ListRemoveAt(destList, index) {
 }
 function ListClone(list) {
     return list.slice();
+}
+function ListReverse(list) {
+    return list.reverse();
 }
 function DictionaryContainsKey(dic, key) {
     return (key in dic);

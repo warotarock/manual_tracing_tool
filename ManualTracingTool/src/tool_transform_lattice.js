@@ -292,7 +292,7 @@ var ManualTracingTool;
                 var indexTo = (index + 1) % this.latticePoints.length;
                 var latticePoint1 = this.latticePoints[index];
                 var latticePoint2 = this.latticePoints[indexTo];
-                var distance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(latticePoint1.location, latticePoint2.location, e.location[0], e.location[1]);
+                var distance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(latticePoint1.location, latticePoint2.location, e.location);
                 if (distance <= scaledHitRadius) {
                     resultIndex = index;
                     break;

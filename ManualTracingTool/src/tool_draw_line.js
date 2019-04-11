@@ -17,7 +17,6 @@ var ManualTracingTool;
             _this.helpText = '線を追加します。Shiftキーで直前の線から続けて塗りつぶします。';
             _this.editLine = null;
             _this.continuousFill = false;
-            _this.resamplingUnitLength = 1.0;
             return _this;
         }
         Tool_DrawLine.prototype.isAvailable = function (env) {
@@ -62,11 +61,7 @@ var ManualTracingTool;
         };
         Tool_DrawLine.prototype.executeCommand = function (env) {
             ManualTracingTool.Logic_Edit_Line.smooth(this.editLine);
-            ManualTracingTool.Logic_Edit_Line.calculateParameters(this.editLine);
-            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
-            if (resamplingUnitLength > this.resamplingUnitLength) {
-                resamplingUnitLength = this.resamplingUnitLength;
-            }
+            var resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
             var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
             var resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
             var command = new Command_AddLine();

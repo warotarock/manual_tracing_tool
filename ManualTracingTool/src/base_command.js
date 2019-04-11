@@ -2,7 +2,6 @@ var ManualTracingTool;
 (function (ManualTracingTool) {
     var CommandBase = /** @class */ (function () {
         function CommandBase() {
-            this.isContinuing = false;
             this.isContinued = false;
         }
         CommandBase.prototype.execute = function (env) {
@@ -29,7 +28,7 @@ var ManualTracingTool;
                 this.redoList = new List();
             }
         };
-        CommandHistory.prototype.getLastCommand = function () {
+        CommandHistory.prototype.getUndoCommand = function () {
             if (this.historyList.length == 0) {
                 return null;
             }
@@ -44,7 +43,7 @@ var ManualTracingTool;
         CommandHistory.prototype.undo = function (env) {
             var command = null;
             do {
-                command = this.getLastCommand();
+                command = this.getUndoCommand();
                 if (command == null) {
                     return;
                 }
@@ -63,7 +62,8 @@ var ManualTracingTool;
                 command.redo(env);
                 ListRemoveAt(this.redoList, this.redoList.length - 1);
                 this.historyList.push(command);
-            } while (command.isContinued);
+                command = this.getRedoCommand();
+            } while (command != null && command.isContinued);
         };
         return CommandHistory;
     }());

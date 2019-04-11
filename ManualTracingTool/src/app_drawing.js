@@ -18,9 +18,11 @@ var ManualTracingTool;
             _this.operatorCurosrLineDash = [2.0, 2.0];
             _this.operatorCurosrLineDashScaled = [0.0, 0.0];
             _this.operatorCurosrLineDashNone = [];
-            // Subtool window drawing
+            // Subtool window
             _this.subToolItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
             _this.subToolItemSeperatorLineColor = vec4.fromValues(0.0, 0.0, 0.0, 0.5);
+            // ColorMixer window
+            _this.hsv = vec4.create();
             return _this;
         }
         Main_Drawing.prototype.draw = function () {
@@ -57,6 +59,10 @@ var ManualTracingTool;
                 this.clearWindow(this.palletSelectorWindow);
                 this.drawPalletSelectorWindow();
             }
+            if (this.toolContext.redrawColorMixerWindow) {
+                this.toolContext.redrawColorMixerWindow = false;
+                this.drawColorMixerWindow();
+            }
             if (this.toolContext.redrawTimeLineWindow) {
                 this.toolContext.redrawTimeLineWindow = false;
                 this.clearWindow(this.timeLineWindow);
@@ -75,7 +81,7 @@ var ManualTracingTool;
                 this.updateFooterMessage();
             }
         };
-        // Main window drawing
+        // Main window
         Main_Drawing.prototype.clearWindow = function (canvasWindow) {
             this.canvasRender.setContext(canvasWindow);
             this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
@@ -473,7 +479,7 @@ var ManualTracingTool;
             this.drawMainWindow(this.mainWindow, false);
             return pickedLayer;
         };
-        // Editor window drawing
+        // Editor window
         Main_Drawing.prototype.drawEditorWindow = function (editorWindow, mainWindow) {
             var context = this.toolContext;
             mainWindow.updateViewMatrix();
@@ -535,6 +541,13 @@ var ManualTracingTool;
             this.canvasRender.circle(this.mainWindow.toolMouseEvent.location[0], this.mainWindow.toolMouseEvent.location[1], this.getCurrentViewScaleLineWidth(this.toolContext.mouseCursorRadius));
             this.canvasRender.stroke();
         };
+        Main_Drawing.prototype.drawMouseCursorCircle = function (radius) {
+            this.canvasRender.beginPath();
+            this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
+            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
+            this.canvasRender.circle(this.mainWindow.toolMouseEvent.location[0], this.mainWindow.toolMouseEvent.location[1], radius);
+            this.canvasRender.stroke();
+        };
         Main_Drawing.prototype.drawEditorEditLineStroke = function (line) {
             this.drawEditLineStroke(line);
         };
@@ -550,7 +563,7 @@ var ManualTracingTool;
         Main_Drawing.prototype.drawEditorVectorLineSegment = function (line, startIndex, endIndex, useAdjustingLocation) {
             this.drawVectorLineSegment(line, startIndex, endIndex, 1.0, 0.0, useAdjustingLocation);
         };
-        // WebGL window drawing
+        // WebGL window
         Main_Drawing.prototype.drawWebGLWindow = function (mainWindow, webglWindow, pickingWindow) {
             var env = this.toolEnv;
             this.webGLRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
@@ -577,7 +590,7 @@ var ManualTracingTool;
                 this.posing3dView.drawPosingModel(posingLayer, env);
             }
         };
-        // Layer window drawing
+        // Layer window
         Main_Drawing.prototype.layerWindow_CaluculateLayout = function (layerWindow) {
             // layer item buttons
             this.layerWindowLayoutArea.copyRectangle(layerWindow);
@@ -758,7 +771,7 @@ var ManualTracingTool;
             this.canvasRender.setGlobalAlpha(1.0);
             this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
         };
-        // PalletSelector window drawing
+        // PalletSelector window
         Main_Drawing.prototype.palletSelector_CaluculateLayout = function () {
             var wnd = this.palletSelectorWindow;
             var context = this.toolContext;
@@ -774,8 +787,8 @@ var ManualTracingTool;
                 layoutArea.index = palletColorIndex;
                 layoutArea.left = x;
                 layoutArea.top = y;
-                layoutArea.right = x + itemWidth - 1;
-                layoutArea.bottom = y + itemHeight - 1;
+                layoutArea.right = x + itemWidth + wnd.itemRightMargin - 1;
+                layoutArea.bottom = y + itemHeight + wnd.itemBottomMargin - 1;
                 wnd.itemAreas.push(layoutArea);
                 x += itemWidth + wnd.itemRightMargin;
                 if (x + itemWidth >= viewWidth - wnd.rightMargin) {
@@ -792,7 +805,7 @@ var ManualTracingTool;
             this.canvasRender.setContext(wnd);
             var viewWidth = wnd.width;
             var currenPalletColorIndex = -1;
-            if (env.currentVectorLayer != null && env.currentVectorLayer.fillAreaType == ManualTracingTool.FillAreaTypeID.palletColor) {
+            if (env.currentVectorLayer != null) {
                 currenPalletColorIndex = env.currentVectorLayer.fill_PalletColorIndex;
             }
             for (var _i = 0, _a = wnd.itemAreas; _i < _a.length; _i++) {
@@ -803,8 +816,8 @@ var ManualTracingTool;
                 }
                 var x = layoutArea.left;
                 var y = layoutArea.top;
-                var itemWidth = layoutArea.getWidth();
-                var itemHeight = layoutArea.getHeight();
+                var itemWidth = layoutArea.getWidth() - wnd.itemRightMargin;
+                var itemHeight = layoutArea.getHeight() - wnd.itemBottomMargin;
                 var palletColor = documentData.palletColors[palletColorIndex];
                 this.canvasRender.setFillColorV(palletColor.color);
                 this.canvasRender.setStrokeColorV(env.drawStyle.palletSelectorItemEdgeColor);
@@ -817,7 +830,37 @@ var ManualTracingTool;
                 }
             }
         };
-        // TimeLine window drawing
+        Main_Drawing.prototype.drawColorMixerWindow = function () {
+            var wnd = this.palletSelectorWindow;
+            var context = this.toolContext;
+            var env = this.toolEnv;
+            var documentData = context.document;
+            var color = env.getCurrentLayerColor();
+            if (color != null) {
+                this.setColorMixerValue(this.ID.colorMixer_red, color[0]);
+                this.setColorMixerValue(this.ID.colorMixer_green, color[1]);
+                this.setColorMixerValue(this.ID.colorMixer_blue, color[2]);
+                this.setColorMixerValue(this.ID.colorMixer_alpha, color[3]);
+                ManualTracingTool.Maths.rgbToHSV(this.hsv, color[0], color[1], color[2]);
+                this.setColorMixerValue(this.ID.colorMixer_hue, this.hsv[0]);
+                this.setColorMixerValue(this.ID.colorMixer_sat, this.hsv[1]);
+                this.setColorMixerValue(this.ID.colorMixer_val, this.hsv[2]);
+            }
+            else {
+                this.setColorMixerValue(this.ID.colorMixer_red, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_green, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_blue, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_alpha, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_hue, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_sat, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
+            }
+        };
+        Main_Drawing.prototype.setColorMixerValue = function (id, colorValue) {
+            this.setInputElementNumber2Decimal(id + this.ID.colorMixer_id_number, colorValue);
+            this.setInputElementRangeValue(id + this.ID.colorMixer_id_range, colorValue, 0.0, 1.0);
+        };
+        // TimeLine window
         Main_Drawing.prototype.drawTimeLineWindow = function (wnd) {
             var context = this.toolContext;
             var env = this.toolEnv;
@@ -894,7 +937,7 @@ var ManualTracingTool;
             this.canvasRender.setStrokeWidth(1.0);
             this.canvasRender.setFillColorV(this.drawStyle.timeLineLayerKeyFrameColor);
             if (env.currentVectorLayer != null) {
-                var viewKeyFrame = this.findViewKeyFrame(aniSetting.currentTimeFrame);
+                var viewKeyFrame = this.findViewKeyframe(aniSetting.currentTimeFrame);
                 var layerIndex = -1;
                 if (viewKeyFrame != null) {
                     layerIndex = this.findViewKeyframeLayerIndex(viewKeyFrame, env.currentVectorLayer);

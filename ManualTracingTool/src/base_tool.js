@@ -197,6 +197,7 @@ var ManualTracingTool;
             this.redrawHeaderWindow = false;
             this.redrawFooterWindow = false;
             this.redrawPalletSelectorWindow = false;
+            this.redrawColorMixerWindow = false;
             this.mouseCursorRadius = 12.0;
             this.resamplingUnitLength = 8.0;
             this.operatorCursor = new OperatorCursor();
@@ -307,6 +308,7 @@ var ManualTracingTool;
         ToolEnvironment.prototype.setRedrawLayerWindow = function () {
             this.toolContext.redrawLayerWindow = true;
             this.toolContext.redrawPalletSelectorWindow = true;
+            this.toolContext.redrawColorMixerWindow = true;
         };
         ToolEnvironment.prototype.updateLayerStructure = function () {
             this.toolContext.mainEditor.updateLayerStructure();
@@ -321,6 +323,9 @@ var ManualTracingTool;
         };
         ToolEnvironment.prototype.setRedrawColorSelectorWindow = function () {
             this.toolContext.redrawPalletSelectorWindow = true;
+        };
+        ToolEnvironment.prototype.setRedrawColorMixerWindow = function () {
+            this.toolContext.redrawColorMixerWindow = true;
         };
         ToolEnvironment.prototype.setRedrawWebGLWindow = function () {
             this.toolContext.redrawWebGLWindow = true;
@@ -374,6 +379,18 @@ var ManualTracingTool;
             this.currentVectorLine = line;
             this.currentVectorLine.isEditTarget = isEditTarget;
         };
+        ToolEnvironment.prototype.getCurrentLayerColor = function () {
+            var color = null;
+            if (this.currentVectorLayer != null) {
+                if (this.currentVectorLayer.fillAreaType == ManualTracingTool.FillAreaTypeID.palletColor) {
+                    color = this.toolContext.document.palletColors[this.currentVectorLayer.fill_PalletColorIndex].color;
+                }
+                else {
+                    color = this.currentVectorLayer.fillColor;
+                }
+            }
+            return color;
+        };
         ToolEnvironment.prototype.startModalTool = function (modalTool) {
             this.toolContext.mainEditor.startModalTool(modalTool);
         };
@@ -397,6 +414,13 @@ var ManualTracingTool;
         };
         ToolEnvironment.prototype.getViewScaledLength = function (length) {
             return length / this.viewScale;
+        };
+        ToolEnvironment.prototype.getViewScaledDrawLineUnitLength = function () {
+            var resamplingUnitLength = this.getViewScaledLength(this.toolContext.resamplingUnitLength);
+            if (resamplingUnitLength > this.toolContext.resamplingUnitLength) {
+                resamplingUnitLength = this.toolContext.resamplingUnitLength;
+            }
+            return resamplingUnitLength;
         };
         ToolEnvironment.prototype.collectEditTargetViewKeyframeLayers = function () {
             return this.toolContext.mainEditor.collectEditTargetViewKeyframeLayers();

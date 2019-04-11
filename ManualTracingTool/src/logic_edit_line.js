@@ -134,6 +134,36 @@ var ManualTracingTool;
             result.right = right;
             result.bottom = bottom;
         };
+        Logic_Edit_Points.calculatePointTotalLength = function (points, startLength) {
+            if (points.length == 0) {
+                return;
+            }
+            points[0].totalLength = startLength;
+            var totalLength = startLength;
+            for (var i = 1; i < points.length; i++) {
+                var point1 = points[i];
+                var point2 = points[i - 1];
+                totalLength += vec3.distance(point1.location, point2.location);
+                point1.totalLength = totalLength;
+            }
+        };
+        Logic_Edit_Points.calculatePointCurvature = function (points) {
+            if (points.length <= 2) {
+                return;
+            }
+            points[0].totalLength = 0;
+            points[points.length - 1].totalLength = 0;
+            for (var i = 1; i + 1 < points.length; i++) {
+                var point1 = points[i - 1];
+                var point2 = points[i];
+                var point3 = points[i + 1];
+                var angle = ManualTracingTool.Logic_Points.angle(point1.location, point2.location, point3.location);
+                point2.curvature = Math.PI - angle;
+                if (point2.curvature >= Math.PI) {
+                    point2.curvature = Math.PI * 2 - point2.curvature;
+                }
+            }
+        };
         Logic_Edit_Points.calculateSegmentTotalLength = function (points, startIndex, endIndex) {
             var totalLength = 0.0;
             for (var i = startIndex; i <= endIndex - 1; i++) {
@@ -149,8 +179,8 @@ var ManualTracingTool;
             var firstPoint = points[startIndex];
             var lastPoint = points[endIndex];
             var currentIndex = startIndex;
-            var currentPosition = firstPoint.totalLength;
-            var endPosition = firstPoint.totalLength + totalLength;
+            var currentPosition = 0.0;
+            var endPosition = totalLength;
             var maxSampleCount = 1 + Math.ceil(totalLength / samplingUnitLength);
             var nextStepLength = samplingUnitLength;
             // for first point
@@ -162,23 +192,26 @@ var ManualTracingTool;
                 sampledPoint.adjustingLineWidth = sampledPoint.lineWidth;
                 result.push(sampledPoint);
             }
-            // for internal points
+            // for inside points
             var sampledCount = 1;
+            var currentPointPosition = 0.0;
             while (currentPosition < endPosition) {
                 var currentPoint = points[currentIndex];
                 var nextPoint = points[currentIndex + 1];
-                var segmentLength = nextPoint.totalLength - currentPoint.totalLength;
-                if (segmentLength == 0.0) {
+                var segmentLength = vec3.distance(nextPoint.location, currentPoint.location);
+                if (segmentLength < samplingUnitLength / 10.0) {
                     currentIndex++;
+                    currentPointPosition += segmentLength;
                     if (currentIndex == endIndex) {
                         break;
                     }
                 }
+                var nextPointPosition = currentPointPosition + segmentLength;
                 if (currentPosition + nextStepLength >= endPosition - samplingUnitLength / 2.0) {
                     break;
                 }
-                else if (currentPosition + nextStepLength <= nextPoint.totalLength) {
-                    var localPosition = (currentPosition + nextStepLength) - currentPoint.totalLength;
+                else if (currentPosition + nextStepLength <= nextPointPosition) {
+                    var localPosition = (currentPosition + nextStepLength) - currentPointPosition;
                     var positionRate = localPosition / segmentLength;
                     vec3.lerp(sampledLocationVec, currentPoint.location, nextPoint.location, positionRate);
                     var sampledPoint = new ManualTracingTool.LinePoint();
@@ -195,9 +228,10 @@ var ManualTracingTool;
                     }
                 }
                 else {
-                    nextStepLength = (currentPosition + nextStepLength) - nextPoint.totalLength;
-                    currentPosition = nextPoint.totalLength;
+                    nextStepLength = (currentPosition + nextStepLength) - nextPointPosition;
+                    currentPosition = nextPointPosition;
                     currentIndex++;
+                    currentPointPosition += segmentLength;
                     if (currentIndex == endIndex) {
                         break;
                     }
@@ -243,25 +277,12 @@ var ManualTracingTool;
             line.bottom = bottom;
             line.isSelected = isSelected;
             // Calculate point positon in length
-            var totalLength = 0.0;
-            for (var i = 1; i < line.points.length; i++) {
-                var point1 = line.points[i];
-                var point2 = line.points[i - 1];
-                totalLength += vec3.distance(point1.location, point2.location);
-                point1.totalLength = totalLength;
+            if (line.points.length > 0) {
+                Logic_Edit_Points.calculatePointTotalLength(line.points, 0.0);
+                line.totalLength = line.points[line.points.length - 1].totalLength;
             }
-            line.totalLength = totalLength;
             // Calculate curvature
-            for (var i = 1; i + 1 < line.points.length; i++) {
-                var point1 = line.points[i - 1];
-                var point2 = line.points[i];
-                var point3 = line.points[i + 1];
-                var angle = ManualTracingTool.Logic_Points.angle(point1.location, point2.location, point3.location);
-                point2.curvature = Math.PI - angle;
-                if (point2.curvature >= Math.PI) {
-                    point2.curvature = Math.PI * 2 - point2.curvature;
-                }
-            }
+            Logic_Edit_Points.calculatePointCurvature(line.points);
         };
         Logic_Edit_Line.calculateParametersV = function (lines) {
             for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
@@ -270,29 +291,32 @@ var ManualTracingTool;
             }
         };
         Logic_Edit_Line.smooth = function (line) {
+            Logic_Edit_Line.smoothPoints(line.points);
+            Logic_Edit_Line.applyAdjustments(line);
+            Logic_Edit_Line.calculateParameters(line);
+        };
+        Logic_Edit_Line.smoothPoints = function (linePoints) {
             // Smoothing
-            for (var i = 0; i < line.points.length; i++) {
-                var point = line.points[i];
+            for (var i = 0; i < linePoints.length; i++) {
+                var point = linePoints[i];
                 vec3.copy(point.adjustingLocation, point.location);
                 vec3.copy(point.tempLocation, point.location);
                 point.adjustingLineWidth = point.lineWidth;
             }
             var iteration = 2;
             for (var count = 0; count < iteration; count++) {
-                for (var i = 0; i + 2 < line.points.length; i++) {
-                    var point1 = line.points[i];
-                    var point2 = line.points[i + 1];
-                    var point3 = line.points[i + 2];
+                for (var i = 0; i + 2 < linePoints.length; i++) {
+                    var point1 = linePoints[i];
+                    var point2 = linePoints[i + 1];
+                    var point3 = linePoints[i + 2];
                     Logic_Edit_Line.calcBezier2d(point2.adjustingLocation, point1.tempLocation, point2.tempLocation, point3.tempLocation, 0.5);
                     point2.adjustingLineWidth = (point1.adjustingLineWidth + point3.adjustingLineWidth) / 2;
                 }
-                for (var i = 0; i + 2 < line.points.length; i++) {
-                    var point2 = line.points[i + 1];
+                for (var i = 0; i + 2 < linePoints.length; i++) {
+                    var point2 = linePoints[i + 1];
                     vec3.copy(point2.tempLocation, point2.adjustingLocation);
                 }
             }
-            Logic_Edit_Line.applyAdjustments(line);
-            Logic_Edit_Line.calculateParameters(line);
         };
         Logic_Edit_Line.calcBezier2d = function (result, p0, p1, p2, t) {
             var px = (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0];
@@ -312,6 +336,12 @@ var ManualTracingTool;
                 point.lineWidth = point.adjustingLineWidth;
             }
         };
+        Logic_Edit_Line.resetModifyStatus = function (lines) {
+            for (var _i = 0, lines_2 = lines; _i < lines_2.length; _i++) {
+                var line = lines_2[_i];
+                line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
+            }
+        };
         Logic_Edit_Line.createResampledLine = function (baseLine, samplingDivisionCount) {
             var result = new ManualTracingTool.VectorLine();
             var startIndex = 0;
@@ -321,10 +351,16 @@ var ManualTracingTool;
             Logic_Edit_Line.calculateParameters(result);
             return result;
         };
-        Logic_Edit_Line.resetModifyStatus = function (lines) {
-            for (var _i = 0, lines_2 = lines; _i < lines_2.length; _i++) {
-                var line = lines_2[_i];
-                line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
+        Logic_Edit_Line.addPointsToList = function (destList, sourceList, startIndex, endIndex) {
+            var index = startIndex;
+            var addIndex = (startIndex < endIndex) ? 1 : -1;
+            while (true) {
+                var point = sourceList[index];
+                destList.push(point);
+                index += addIndex;
+                if (index == endIndex) {
+                    break;
+                }
             }
         };
         Logic_Edit_Line.sampledLocation = vec3.fromValues(0.0, 0.0, 0.0);

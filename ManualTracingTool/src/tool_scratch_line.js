@@ -33,7 +33,7 @@ var ManualTracingTool;
         __extends(Tool_ScratchLine, _super);
         function Tool_ScratchLine() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.helpText = '右クリックで線を選択し、左クリックで線を修正します。';
+            _this.helpText = '右クリック(G)で線を選択し、左クリックで線を修正します。';
             _this.enableScratchEdit = true;
             _this.enableExtrude = false;
             _this.editLine = null;
@@ -46,7 +46,6 @@ var ManualTracingTool;
             _this.lineSingleHitTester = new ManualTracingTool.HitTest_Line_PointToLineByDistanceSingle();
             _this.isLeftButtonEdit = false;
             _this.isRightButtonEdit = false;
-            _this.resamplingUnitLength = 1.0;
             _this.maxResamplingDivisionCount = 51;
             _this.curveCheckPointCount = 3;
             _this.cutoutAngle = 30 / 180.0 * Math.PI;
@@ -169,7 +168,7 @@ var ManualTracingTool;
             if (env.currentVectorLayer == null) {
                 return;
             }
-            this.lineSingleHitTester.processLayer(env.currentVectorGeometry, location[0], location[1], env.mouseCursorViewRadius);
+            this.lineSingleHitTester.processLayer(env.currentVectorGeometry, location, env.mouseCursorViewRadius);
             var hitedLine = this.lineSingleHitTester.hitedLine;
             if (hitedLine != null) {
                 if (env.currentVectorLine != null) {
@@ -180,73 +179,23 @@ var ManualTracingTool;
             }
         };
         Tool_ScratchLine.prototype.executeCommand = function (env) {
+            var isExtrudeDone = false;
+            var isScratchingDone = false;
             if (this.enableExtrude) {
-                var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength);
+                var resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
                 var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
                 this.resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
-                this.executeExtrudeLine(this.resampledLine, env);
+                isExtrudeDone = this.executeExtrudeLine(this.resampledLine, env);
             }
             if (this.enableScratchEdit) {
                 this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
-                var isExtrudeDone = (this.extrudeLine != null);
-                this.executeScratchEditLine(this.resampledLine, isExtrudeDone, env);
+                isScratchingDone = this.executeScratchingLine(this.resampledLine, isExtrudeDone, env);
+            }
+            if (isExtrudeDone || isScratchingDone) {
+                this.deleteDuplications(env);
             }
         };
-        Tool_ScratchLine.prototype.executeExtrudeLine = function (resampledLine, env) {
-            var targetLine = env.currentVectorLine;
-            // Create extrude points
-            var baseRadius = env.mouseCursorViewRadius;
-            var editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
-            var editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
-            var forwardExtrude = true;
-            var extrudeLine = this.generateExtrudePoints(false, targetLine, resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
-            if (extrudeLine == null) {
-                extrudeLine = this.generateExtrudePoints(true, targetLine, resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
-                if (extrudeLine != null) {
-                    forwardExtrude = false;
-                }
-            }
-            // Execute command
-            if (extrudeLine != null && extrudeLine.points.length > 0) {
-                var command = new Command_ExtrudeLine();
-                command.isContinuing = true;
-                command.targetLine = targetLine;
-                command.forwardExtrude = forwardExtrude;
-                command.extrudeLine = extrudeLine;
-                command.execute(env);
-                env.commandHistory.addCommand(command);
-            }
-            this.forwardExtrude = forwardExtrude;
-            this.extrudeLine = extrudeLine;
-        };
-        Tool_ScratchLine.prototype.executeScratchEditLine = function (resampledLine, isExtrudeDone, env) {
-            var targetLine = env.currentVectorLine;
-            // Get scratching candidate points
-            var baseRadius = env.mouseCursorViewRadius;
-            var editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
-            var editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
-            var candidatePointPairs = this.ganerateCandidatePoints(targetLine, resampledLine, editFalloffRadiusMin, editFalloffRadiusMax, this.editFalloffRadiusContainsLineWidth);
-            // For display
-            this.candidateLine = new ManualTracingTool.VectorLine();
-            for (var _i = 0, candidatePointPairs_1 = candidatePointPairs; _i < candidatePointPairs_1.length; _i++) {
-                var pair = candidatePointPairs_1[_i];
-                this.candidateLine.points.push(pair.candidatePoint);
-            }
-            // Execute command
-            if (candidatePointPairs != null && candidatePointPairs.length > 0) {
-                var command = new Command_ScratchLine();
-                command.isContinued = isExtrudeDone;
-                command.targetLine = targetLine;
-                for (var _a = 0, candidatePointPairs_2 = candidatePointPairs; _a < candidatePointPairs_2.length; _a++) {
-                    var pair = candidatePointPairs_2[_a];
-                    var editPoint = new Tool_ScratchLine_EditPoint();
-                    editPoint.pair = pair;
-                    command.editPoints.push(editPoint);
-                }
-                command.execute(env);
-                env.commandHistory.addCommand(command);
-            }
-        };
+        // Adjusting edit line
         Tool_ScratchLine.prototype.cutoutLine = function (result) {
             var startIndex = this.searchCutoutIndex(result, false);
             var endIndex = this.searchCutoutIndex(result, true);
@@ -284,78 +233,46 @@ var ManualTracingTool;
             return cutoutIndex;
         };
         Tool_ScratchLine.prototype.generateCutoutedResampledLine = function (editorLine, env) {
-            var resamplingUnitLength = env.getViewScaledLength(this.resamplingUnitLength * 2.0);
+            var resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
             var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(editorLine.totalLength, resamplingUnitLength);
             if (divisionCount > this.maxResamplingDivisionCount) {
                 divisionCount = this.maxResamplingDivisionCount;
             }
             var resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(editorLine, divisionCount);
+            //Logic_Edit_Line.smooth(resampledLine);
             this.cutoutLine(resampledLine);
             return resampledLine;
         };
-        Tool_ScratchLine.prototype.ganerateCandidatePoints = function (target_Line, editorLine, editFalloffRadiusMin, editFalloffRadiusMax, containsPointLineWidth) {
-            var result = new List();
-            for (var _i = 0, _a = target_Line.points; _i < _a.length; _i++) {
-                var point = _a[_i];
-                // Targets selected point only if line is selected
-                if (target_Line.isSelected && !point.isSelected) {
-                    continue;
-                }
-                // Search nearest segment
-                var isHited = false;
-                var minDistance = 99999.0;
-                var nearestSegmentIndex = -1;
-                for (var i = 0; i < editorLine.points.length - 1; i++) {
-                    var editPoint1 = editorLine.points[i];
-                    var editPoint2 = editorLine.points[i + 1];
-                    var distance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(editPoint1.location, editPoint2.location, point.location[0], point.location[1]);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearestSegmentIndex = i;
-                    }
-                }
-                if (nearestSegmentIndex != -1) {
-                    var nearestLinePoint1 = editorLine.points[nearestSegmentIndex];
-                    var nearestLinePoint2 = editorLine.points[nearestSegmentIndex + 1];
-                    // Calculate candidate point
-                    var nearestPoint_ResultVec = ManualTracingTool.Logic_Points.pointToLine_NearestPointLocation(this.nearestPointLocation, nearestLinePoint1.location, nearestLinePoint2.location, point.location);
-                    if (nearestPoint_ResultVec == null) {
-                        continue;
-                    }
-                    var directDistance = vec3.distance(point.location, this.nearestPointLocation);
-                    if (containsPointLineWidth) {
-                        directDistance -= point.lineWidth * 0.5;
-                        if (directDistance < 0.0) {
-                            directDistance = 0.0;
-                        }
-                    }
-                    if (directDistance > editFalloffRadiusMax) {
-                        continue;
-                    }
-                    // Calculate edit influence
-                    var sorroundingDistance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(nearestLinePoint1.location, nearestLinePoint2.location, this.nearestPointLocation[0], this.nearestPointLocation[1]);
-                    if (sorroundingDistance > editFalloffRadiusMax) {
-                        continue;
-                    }
-                    var normPositionInEditorLineSegment = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(nearestLinePoint1.location, nearestLinePoint2.location, point.location);
-                    var totalLengthInEditorLine = (nearestLinePoint1.totalLength
-                        + (nearestLinePoint2.totalLength - nearestLinePoint1.totalLength) * normPositionInEditorLineSegment);
-                    var influence = this.calculateCandidatePointInfluence(editorLine.totalLength, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax);
-                    // Create edit data
-                    var candidatePoint = new ManualTracingTool.LinePoint();
-                    vec3.copy(candidatePoint.location, this.nearestPointLocation);
-                    vec3.copy(candidatePoint.adjustingLocation, candidatePoint.location);
-                    candidatePoint.lineWidth = ManualTracingTool.Maths.lerp(normPositionInEditorLineSegment, nearestLinePoint1.lineWidth, nearestLinePoint2.lineWidth);
-                    var pair = new Tool_ScratchLine_CandidatePair();
-                    pair.targetPoint = point;
-                    pair.candidatePoint = candidatePoint;
-                    pair.normPosition = normPositionInEditorLineSegment;
-                    pair.totalLength = totalLengthInEditorLine;
-                    pair.influence = influence;
-                    result.push(pair);
+        // Extruding edit
+        Tool_ScratchLine.prototype.executeExtrudeLine = function (resampledLine, env) {
+            var targetLine = env.currentVectorLine;
+            // Create extrude points
+            var baseRadius = env.mouseCursorViewRadius;
+            var editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
+            var editExtrudeMaxRadius = baseRadius * this.editExtrudeMaxRadiusRate;
+            var forwardExtrude = true;
+            var extrudeLine = this.generateExtrudePoints(false, targetLine, resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // forward extrude
+            if (extrudeLine == null) {
+                extrudeLine = this.generateExtrudePoints(true, targetLine, resampledLine, editExtrudeMinRadius, editExtrudeMaxRadius); // backword extrude
+                if (extrudeLine != null) {
+                    forwardExtrude = false;
                 }
             }
-            return result;
+            // Execute command
+            this.forwardExtrude = forwardExtrude;
+            this.extrudeLine = extrudeLine;
+            if (extrudeLine != null && extrudeLine.points.length > 0) {
+                var command = new Command_ExtrudeLine();
+                command.targetLine = targetLine;
+                command.forwardExtrude = forwardExtrude;
+                command.extrudeLine = extrudeLine;
+                command.execute(env);
+                env.commandHistory.addCommand(command);
+                return true;
+            }
+            else {
+                return false;
+            }
         };
         Tool_ScratchLine.prototype.generateExtrudePoints = function (fromTargetLineTop, targetLine, sampleLine, editExtrudeMinRadius, editExtrudeMaxRadius) {
             var startPoint;
@@ -387,6 +304,203 @@ var ManualTracingTool;
             extrudeLine.points = extrudePoints;
             return extrudeLine;
         };
+        Tool_ScratchLine.prototype.getExtrudePoints = function (targetLine, sampleLine, searchStartIndex, forwardSearch, limitMinDistance, limitMaxDistance) {
+            var scanDirection = (forwardSearch ? 1 : -1);
+            var startIndex = -1;
+            var currentIndex = searchStartIndex;
+            var nextIndex = currentIndex + scanDirection;
+            while (nextIndex >= 0 && nextIndex < sampleLine.points.length) {
+                var point1 = sampleLine.points[currentIndex];
+                var point2 = sampleLine.points[nextIndex];
+                var nearestPointIndex = this.findNearestPointIndex_LineSegmentToPoint(targetLine, point1, point2, limitMinDistance, limitMaxDistance, false, true);
+                if (nearestPointIndex == -1) {
+                    startIndex = nextIndex;
+                    break;
+                }
+                currentIndex += scanDirection;
+                nextIndex += scanDirection;
+            }
+            if (startIndex == -1) {
+                return null;
+            }
+            var result = new List();
+            if (forwardSearch) {
+                for (var i = startIndex; i < sampleLine.points.length; i++) {
+                    result.push(sampleLine.points[i]);
+                }
+            }
+            else {
+                for (var i = startIndex; i >= 0; i--) {
+                    result.push(sampleLine.points[i]);
+                }
+            }
+            return result;
+        };
+        // Scratching edit
+        Tool_ScratchLine.prototype.executeScratchingLine = function (resampledLine, isExtrudeDone, env) {
+            var targetLine = env.currentVectorLine;
+            // Get scratching candidate points
+            var baseRadius = env.mouseCursorViewRadius;
+            var editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
+            var editFalloffRadiusMax = baseRadius * this.editFalloffRadiusMaxRate;
+            var candidatePointPairs = this.ganerateScratchingCandidatePoints(targetLine, resampledLine, editFalloffRadiusMin, editFalloffRadiusMax, this.editFalloffRadiusContainsLineWidth);
+            // For display
+            this.candidateLine = new ManualTracingTool.VectorLine();
+            for (var _i = 0, candidatePointPairs_1 = candidatePointPairs; _i < candidatePointPairs_1.length; _i++) {
+                var pair = candidatePointPairs_1[_i];
+                this.candidateLine.points.push(pair.candidatePoint);
+            }
+            // Execute command
+            if (candidatePointPairs != null && candidatePointPairs.length > 0) {
+                var command = new Command_ScratchLine();
+                command.isContinued = isExtrudeDone;
+                command.targetLine = targetLine;
+                for (var _a = 0, candidatePointPairs_2 = candidatePointPairs; _a < candidatePointPairs_2.length; _a++) {
+                    var pair = candidatePointPairs_2[_a];
+                    var editPoint = new Tool_ScratchLine_EditPoint();
+                    editPoint.pair = pair;
+                    command.editPoints.push(editPoint);
+                }
+                command.execute(env);
+                env.commandHistory.addCommand(command);
+                return true;
+            }
+            else {
+                return false;
+            }
+        };
+        Tool_ScratchLine.prototype.ganerateScratchingCandidatePoints = function (target_Line, editorLine, editFalloffRadiusMin, editFalloffRadiusMax, containsPointLineWidth) {
+            var result = new List();
+            for (var _i = 0, _a = target_Line.points; _i < _a.length; _i++) {
+                var point = _a[_i];
+                // Targets selected point only if line is selected
+                //if (target_Line.isSelected && !point.isSelected) {
+                //    continue;
+                //}
+                // Search nearest segment
+                var isHited = false;
+                var minDistance = 99999.0;
+                var nearestSegmentIndex = -1;
+                for (var i = 0; i < editorLine.points.length - 1; i++) {
+                    var editPoint1 = editorLine.points[i];
+                    var editPoint2 = editorLine.points[i + 1];
+                    var distance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(editPoint1.location, editPoint2.location, point.location);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestSegmentIndex = i;
+                    }
+                }
+                if (nearestSegmentIndex != -1) {
+                    var nearestLinePoint1 = editorLine.points[nearestSegmentIndex];
+                    var nearestLinePoint2 = editorLine.points[nearestSegmentIndex + 1];
+                    // Calculate candidate point
+                    var nearestPoint_Available = ManualTracingTool.Logic_Points.pointToLine_NearestLocation(this.nearestPointLocation, nearestLinePoint1.location, nearestLinePoint2.location, point.location);
+                    if (!nearestPoint_Available) {
+                        continue;
+                    }
+                    var directDistance = vec3.distance(point.location, this.nearestPointLocation);
+                    if (containsPointLineWidth) {
+                        directDistance -= point.lineWidth * 0.5;
+                        if (directDistance < 0.0) {
+                            directDistance = 0.0;
+                        }
+                    }
+                    if (directDistance > editFalloffRadiusMax) {
+                        continue;
+                    }
+                    // Calculate edit influence
+                    var sorroundingDistance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(nearestLinePoint1.location, nearestLinePoint2.location, this.nearestPointLocation);
+                    if (sorroundingDistance > editFalloffRadiusMax) {
+                        continue;
+                    }
+                    var normPositionInEditorLineSegment = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(nearestLinePoint1.location, nearestLinePoint2.location, point.location);
+                    var totalLengthInEditorLine = (nearestLinePoint1.totalLength
+                        + (nearestLinePoint2.totalLength - nearestLinePoint1.totalLength) * normPositionInEditorLineSegment);
+                    var influence = this.calculateScratchingCandidatePointInfluence(editorLine.totalLength, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax);
+                    if (influence > 0.0) {
+                        // Create edit data
+                        var candidatePoint = new ManualTracingTool.LinePoint();
+                        vec3.copy(candidatePoint.location, this.nearestPointLocation);
+                        vec3.copy(candidatePoint.adjustingLocation, candidatePoint.location);
+                        candidatePoint.lineWidth = ManualTracingTool.Maths.lerp(normPositionInEditorLineSegment, nearestLinePoint1.lineWidth, nearestLinePoint2.lineWidth);
+                        var pair = new Tool_ScratchLine_CandidatePair();
+                        pair.targetPoint = point;
+                        pair.candidatePoint = candidatePoint;
+                        pair.normPosition = normPositionInEditorLineSegment;
+                        pair.totalLength = totalLengthInEditorLine;
+                        pair.influence = influence;
+                        result.push(pair);
+                        // Set the flag for after editing
+                        point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.edit;
+                    }
+                }
+            }
+            return result;
+        };
+        Tool_ScratchLine.prototype.calculateScratchingCandidatePointInfluence = function (editorLine_TotalLength, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax) {
+            var falloffDistance = 1.0;
+            if (editorLine_TotalLength > editFalloffRadiusMax * 2.0) {
+                if (totalLengthInEditorLine < editFalloffRadiusMax) {
+                    //falloffDistance = 0.0;
+                    falloffDistance = totalLengthInEditorLine / editFalloffRadiusMax;
+                }
+                if (totalLengthInEditorLine > editorLine_TotalLength - editFalloffRadiusMax) {
+                    //falloffDistance = 0.0;
+                    falloffDistance = (editorLine_TotalLength - totalLengthInEditorLine) / editFalloffRadiusMax;
+                }
+            }
+            else {
+                falloffDistance = 1.0 - sorroundingDistance / editFalloffRadiusMax;
+            }
+            var influence = ManualTracingTool.Maths.clamp(falloffDistance, 0.0, 1.0);
+            if (influence == 0.0) {
+                return 0.0;
+            }
+            influence *= this.editInfluence * ManualTracingTool.Maths.sigmoid10(1.0 - sorroundingDistance / editFalloffRadiusMax);
+            return influence;
+        };
+        // Delete duplication edit
+        Tool_ScratchLine.prototype.deleteDuplications = function (env) {
+            var targetLine = env.currentVectorLine;
+            // Search edited index range of points
+            var firstPointIndex = -1;
+            var lastPointIndex = -1;
+            for (var i = 0; i < targetLine.points.length; i++) {
+                var point = targetLine.points[i];
+                if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.edit) {
+                    if (firstPointIndex == -1) {
+                        firstPointIndex = i;
+                    }
+                    lastPointIndex = i;
+                }
+                point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.none;
+            }
+            if (firstPointIndex > 0) {
+                firstPointIndex--;
+            }
+            if (lastPointIndex < targetLine.points.length - 1) {
+                lastPointIndex++;
+            }
+            if (lastPointIndex - firstPointIndex < 2) {
+                return;
+            }
+            // Create new point list
+            var newPoints = ListGetRange(targetLine.points, 0, firstPointIndex);
+            var resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
+            ManualTracingTool.Logic_Edit_Points.resamplePoints(newPoints, targetLine.points, firstPointIndex, lastPointIndex, resamplingUnitLength);
+            for (var index = lastPointIndex + 1; index < targetLine.points.length; index++) {
+                newPoints.push(targetLine.points[index]);
+            }
+            // Execute command
+            var command = new Command_DeleteDuplicationInLine();
+            command.isContinued = true;
+            command.targetLine = targetLine;
+            command.oldPoints = targetLine.points;
+            command.newPoints = newPoints;
+            command.execute(env);
+            env.commandHistory.addCommand(command);
+        };
+        // Common functions
         Tool_ScratchLine.prototype.findNearestPointIndex_LineSegmentToPoint = function (line, point1, point2, limitMinDistance, limitMaxDistance, includeInnerSide, includeOuterSide) {
             var isHited = false;
             var minDistance = 99999.0;
@@ -397,7 +511,7 @@ var ManualTracingTool;
                 if (distance < minDistance) {
                     var normPosition = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(point1.location, point2.location, linePoint.location);
                     if ((includeInnerSide && normPosition >= 0.0 && normPosition <= 1.0)
-                        || (includeOuterSide && normPosition < 0.0 || normPosition > 1.0)) {
+                        || (includeOuterSide && (normPosition < 0.0 || normPosition > 1.0))) {
                         if (distance > limitMinDistance
                             && distance < limitMaxDistance) {
                             minDistance = distance;
@@ -444,60 +558,6 @@ var ManualTracingTool;
                 nextIndex += scanDirection;
             }
             return nearPointCcount;
-        };
-        Tool_ScratchLine.prototype.getExtrudePoints = function (targetLine, sampleLine, searchStartIndex, forwardSearch, limitMinDistance, limitMaxDistance) {
-            var scanDirection = (forwardSearch ? 1 : -1);
-            var startIndex = -1;
-            var currentIndex = searchStartIndex;
-            var nextIndex = currentIndex + scanDirection;
-            while (nextIndex >= 0 && nextIndex < sampleLine.points.length) {
-                var point1 = sampleLine.points[currentIndex];
-                var point2 = sampleLine.points[nextIndex];
-                var nearestPointIndex = this.findNearestPointIndex_LineSegmentToPoint(targetLine, point1, point2, limitMinDistance, limitMaxDistance, false, true);
-                if (nearestPointIndex == -1) {
-                    startIndex = nextIndex;
-                    break;
-                }
-                currentIndex += scanDirection;
-                nextIndex += scanDirection;
-            }
-            if (startIndex == -1) {
-                return null;
-            }
-            var result = new List();
-            if (forwardSearch) {
-                for (var i = startIndex; i < sampleLine.points.length; i++) {
-                    result.push(sampleLine.points[i]);
-                }
-            }
-            else {
-                for (var i = startIndex; i >= 0; i--) {
-                    result.push(sampleLine.points[i]);
-                }
-            }
-            return result;
-        };
-        Tool_ScratchLine.prototype.calculateCandidatePointInfluence = function (editorLine_TotalLength, sorroundingDistance, totalLengthInEditorLine, normPositionInEditorLineSegment, editFalloffRadiusMin, editFalloffRadiusMax) {
-            var falloffDistance = 1.0;
-            if (editorLine_TotalLength > editFalloffRadiusMax * 2.0) {
-                if (totalLengthInEditorLine < editFalloffRadiusMax) {
-                    //falloffDistance = 0.0;
-                    falloffDistance = totalLengthInEditorLine / editFalloffRadiusMax;
-                }
-                if (totalLengthInEditorLine > editorLine_TotalLength - editFalloffRadiusMax) {
-                    //falloffDistance = 0.0;
-                    falloffDistance = (editorLine_TotalLength - totalLengthInEditorLine) / editFalloffRadiusMax;
-                }
-            }
-            else {
-                falloffDistance = 1.0 - sorroundingDistance / editFalloffRadiusMax;
-            }
-            var influence = ManualTracingTool.Maths.clamp(falloffDistance, 0.0, 1.0);
-            if (influence == 0.0) {
-                return 0.0;
-            }
-            influence *= this.editInfluence;
-            return influence;
         };
         return Tool_ScratchLine;
     }(ManualTracingTool.ToolBase));
@@ -617,4 +677,33 @@ var ManualTracingTool;
         return Command_ScratchLine;
     }(ManualTracingTool.CommandBase));
     ManualTracingTool.Command_ScratchLine = Command_ScratchLine;
+    var Command_DeleteDuplicationInLine = /** @class */ (function (_super) {
+        __extends(Command_DeleteDuplicationInLine, _super);
+        function Command_DeleteDuplicationInLine() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.targetLine = null;
+            _this.oldPoints = null;
+            _this.newPoints = null;
+            return _this;
+        }
+        Command_DeleteDuplicationInLine.prototype.execute = function (env) {
+            this.errorCheck();
+            this.redo(env);
+        };
+        Command_DeleteDuplicationInLine.prototype.undo = function (env) {
+            this.targetLine.points = this.oldPoints;
+            ManualTracingTool.Logic_Edit_Line.calculateParameters(this.targetLine);
+        };
+        Command_DeleteDuplicationInLine.prototype.redo = function (env) {
+            this.targetLine.points = this.newPoints;
+            ManualTracingTool.Logic_Edit_Line.calculateParameters(this.targetLine);
+        };
+        Command_DeleteDuplicationInLine.prototype.errorCheck = function () {
+            if (this.targetLine == null) {
+                throw ('Command_ScratchLine: line is null!');
+            }
+        };
+        return Command_DeleteDuplicationInLine;
+    }(ManualTracingTool.CommandBase));
+    ManualTracingTool.Command_DeleteDuplicationInLine = Command_DeleteDuplicationInLine;
 })(ManualTracingTool || (ManualTracingTool = {}));
