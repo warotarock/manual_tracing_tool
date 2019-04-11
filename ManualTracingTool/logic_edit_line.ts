@@ -334,6 +334,8 @@ namespace ManualTracingTool {
             line.isSelected = isSelected;
 
             // Calculate point positon in length
+            line.points[0].totalLength = 0.0;
+
             let totalLength = 0.0;
             for (let i = 1; i < line.points.length; i++) {
 

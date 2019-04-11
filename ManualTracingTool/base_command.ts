@@ -47,7 +47,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private getLastCommand(): IEditCommand {
+        private getUndoCommand(): IEditCommand {
 
             if (this.historyList.length == 0) {
                 return null;
@@ -71,7 +71,7 @@ namespace ManualTracingTool {
 
             do {
 
-                command = this.getLastCommand();
+                command = this.getUndoCommand();
 
                 if (command == null) {
                     return;
@@ -101,8 +101,10 @@ namespace ManualTracingTool {
 
                 ListRemoveAt(this.redoList, this.redoList.length - 1);
                 this.historyList.push(command);
+
+                command = this.getRedoCommand();
             }
-            while (command.isContinued);
+            while (command != null && command.isContinued);
         }
     }
 }

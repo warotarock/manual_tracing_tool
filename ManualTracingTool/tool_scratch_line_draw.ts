@@ -11,7 +11,7 @@ namespace ManualTracingTool {
         oldLocation = vec3.create();
     }
 
-    class NearestLineInfo {
+    class SubjoinProcessingState {
 
         isAvailable = true;
 
@@ -21,6 +21,11 @@ namespace ManualTracingTool {
         targetLine_SearchForward = false;
         targetLine_OrderedPoints: List<LinePoint> = null;
         targetLine_SegmentIndex = HitTest_Line.InvalidIndex;
+
+        subjoinLine_OrderedPoints: List<LinePoint> = null;
+
+        newLine: VectorLine = null;
+        deleteLines = new List<VectorLine>();
     }
 
     class LineOverlappingInfo {
@@ -94,25 +99,30 @@ namespace ManualTracingTool {
             }
         }
 
-        public executeAddDrawLine(env: ToolEnvironment) {
+        keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @override
 
-            Logic_Edit_Line.smooth(this.editLine);
+            return false;
+        }
+
+        private executeAddDrawLine(newLine: VectorLine, env: ToolEnvironment): VectorLine {
+
+            Logic_Edit_Line.smooth(newLine);
 
             let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
-            let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
+            let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(newLine.totalLength, resamplingUnitLength);
 
-            let resampledLine = Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
+            let resampledLine = Logic_Edit_Line.createResampledLine(newLine, divisionCount);
 
             let command = new Command_AddLine();
             command.group = env.currentVectorGroup;
             command.line = resampledLine;
             command.execute(env);
             env.commandHistory.addCommand(command);
+
+            return resampledLine;
         }
 
-        private getNearestLine(info: NearestLineInfo, targetPoint: LinePoint, geometry: VectorLayerGeometry, minDistanceRange: float) {
-
-            // Search nearest line and segment about the editor line top point
+        private getNearestLine(state: SubjoinProcessingState, targetPoint: LinePoint, geometry: VectorLayerGeometry, minDistanceRange: float) {
 
             let nearestLine: VectorLine = null;
             let nearestLine_SegmentIndex = HitTest_Line.InvalidIndex;
@@ -161,63 +171,42 @@ namespace ManualTracingTool {
 
             if (nearestLine == null) {
 
-                info.isAvailable = false;
+                state.isAvailable = false;
                 return false;
             }
 
-            info.isAvailable = true;
-            info.nearestLine = nearestLine;
-            info.nearestLine_SegmentIndex = nearestLine_SegmentIndex;
+            state.isAvailable = true;
+            state.nearestLine = nearestLine;
+            state.nearestLine_SegmentIndex = nearestLine_SegmentIndex;
         }
 
-        private getSearchDirectionForTargetLine(info: NearestLineInfo, editLinePoint1: LinePoint, editLinePoint2: LinePoint) {
+        private getSearchDirectionForTargetLine(state: SubjoinProcessingState, editLinePoint1: LinePoint, editLinePoint2: LinePoint) {
 
-            let nearestLine = info.nearestLine;
+            let nearestLine = state.nearestLine;
 
             // Ditermine search-index direction
-            {
-                let point1 = nearestLine.points[info.nearestLine_SegmentIndex];
-                let point2 = nearestLine.points[info.nearestLine_SegmentIndex + 1];
+            let point1 = nearestLine.points[state.nearestLine_SegmentIndex];
+            let point2 = nearestLine.points[state.nearestLine_SegmentIndex + 1];
 
-                let firstPoint_Position = Logic_Points.pointToLineSegment_NormalizedPosition(
-                    point1.location,
-                    point2.location,
-                    editLinePoint1.location
-                );
+            let firstPoint_Position = Logic_Points.pointToLineSegment_NormalizedPosition(
+                point1.location,
+                point2.location,
+                editLinePoint1.location
+            );
 
-                let secondPoint_Position = Logic_Points.pointToLineSegment_NormalizedPosition(
-                    point1.location,
-                    point2.location,
-                    editLinePoint2.location
-                );
+            let secondPoint_Position = Logic_Points.pointToLineSegment_NormalizedPosition(
+                point1.location,
+                point2.location,
+                editLinePoint2.location
+            );
 
-                if (secondPoint_Position == firstPoint_Position) {
+            if (secondPoint_Position == firstPoint_Position) {
 
-                    info.isAvailable = false;
-                    return;
-                }
-
-                info.isAvailable = true;
-                info.targetLine_SearchForward = (secondPoint_Position >= firstPoint_Position);
+                state.isAvailable = false;
+                return;
             }
 
-            // get ordered points
-            if (info.targetLine_SearchForward) {
-
-                info.targetLine_OrderedPoints = ListClone(nearestLine.points);
-
-                info.targetLine_SegmentIndex = info.nearestLine_SegmentIndex;
-            }
-            else {
-
-                info.targetLine_OrderedPoints = new List<LinePoint>();
-                for (let i = nearestLine.points.length - 1; i >= 0; i--) {
-
-                    info.targetLine_OrderedPoints.push(nearestLine.points[i]);
-                }
-
-                info.targetLine_SegmentIndex = (nearestLine.points.length - 1) - info.nearestLine_SegmentIndex - 1;
-            }
+            state.targetLine_SearchForward = (secondPoint_Position >= firstPoint_Position);
         }
 
         private getLineOverlappingInfo(sourcePoints: List<LinePoint>, source_StartIndex: int, targetPoints: List<LinePoint>, target_StartIndex: int, minDistanceRange: float): LineOverlappingInfo {
@@ -307,12 +296,12 @@ namespace ManualTracingTool {
             return info;
         }
 
-        private createSubjoinedLine(topPoints: List<LinePoint>, topPonts_OverlappingInfo: LineOverlappingInfo, followingPoints: List<LinePoint>, followingPoints_OverlappingInfo: LineOverlappingInfo, isTopPointsPrior: boolean, resamplingUnitLength: float): VectorLine {
+        private createSubjoinedLine(topPoints: List<LinePoint>, topPonts_OverlappingInfo: LineOverlappingInfo, followingPoints: List<LinePoint>, followingPoints_OverlappingInfo: LineOverlappingInfo, resamplingUnitLength: float, subjoinToAfter: boolean): VectorLine {
 
             let newPoints = new List<LinePoint>();
 
             let subjoinedIndex: int;
-            if (isTopPointsPrior) {
+            if (subjoinToAfter) {
 
                 ListAddRange(newPoints, topPoints);
 
@@ -359,46 +348,124 @@ namespace ManualTracingTool {
                 newLine.points.push(LinePoint.clone(point));
             }
 
-            Logic_Edit_Line.calculateParameters(newLine);
-
             return newLine;
         }
 
-        public executeDrawLineWithSubjoin(editLine: VectorLine, nearestLineInfo: NearestLineInfo, minDistanceRange: float, resamplingUnitLength: float, env: ToolEnvironment) {
+        private executeProcessLine(state: SubjoinProcessingState, subjoinLine: VectorLine, subjoinToAfter, env: ToolEnvironment) {
 
-            let editLineFirstPoint = this.editLine.points[0];
-            let editLineSecondPoint = this.editLine.points[1];
+            // get nearest line
+            if (subjoinToAfter) {
+
+                state.subjoinLine_OrderedPoints = ListClone(subjoinLine.points);
+            }
+            else {
+
+                state.subjoinLine_OrderedPoints = ListReverse(subjoinLine.points);
+            }
+
+            let editLineFirstPoint = state.subjoinLine_OrderedPoints[0];
+
+            let minDistanceRange = this.getMinDistanceRange(env);
+
+            this.getNearestLine(state, editLineFirstPoint, env.currentVectorGeometry, minDistanceRange);
+
+            if (!state.isAvailable) {
+
+                return;
+            }
 
             // get searching direction
-            this.getSearchDirectionForTargetLine(nearestLineInfo, editLineFirstPoint, editLineSecondPoint);
+            let editLineSecondPoint = state.subjoinLine_OrderedPoints[1];
 
-            if (!nearestLineInfo.isAvailable) {
+            this.getSearchDirectionForTargetLine(state, editLineFirstPoint, editLineSecondPoint);
 
-                this.executeAddDrawLine(env);
+            if (!state.isAvailable) {
+
                 return;
             }
 
             // get overlapping part
+            if (state.targetLine_SearchForward) {
+
+                state.targetLine_OrderedPoints = ListClone(state.nearestLine.points);
+
+                state.targetLine_SegmentIndex = state.nearestLine_SegmentIndex;
+            }
+            else {
+
+                state.targetLine_OrderedPoints = ListReverse(state.nearestLine.points);
+
+                state.targetLine_SegmentIndex = (state.nearestLine.points.length - 1) - state.nearestLine_SegmentIndex - 1;
+            }
+
             let editLine_OverlappingInfo = this.getLineOverlappingInfo(
-                editLine.points, 0, nearestLineInfo.targetLine_OrderedPoints, nearestLineInfo.targetLine_SegmentIndex, minDistanceRange);
+                state.subjoinLine_OrderedPoints, 0, state.targetLine_OrderedPoints, state.targetLine_SegmentIndex, minDistanceRange);
 
             let nearestLine_OverlappingInfo = this.getLineOverlappingInfo(
-                nearestLineInfo.targetLine_OrderedPoints, nearestLineInfo.targetLine_SegmentIndex, editLine.points, 0, minDistanceRange);
+                state.targetLine_OrderedPoints, state.targetLine_SegmentIndex, state.subjoinLine_OrderedPoints, 0, minDistanceRange);
+
+            if (!editLine_OverlappingInfo.isAvailable || !nearestLine_OverlappingInfo.isAvailable) {
+
+                state.isAvailable = false;
+                return;
+            }
 
             // join the two lines
-            if (editLine_OverlappingInfo.isAvailable && nearestLine_OverlappingInfo.isAvailable) {
+            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
 
-                let newLine = this.createSubjoinedLine(
-                    nearestLineInfo.targetLine_OrderedPoints,
-                    nearestLine_OverlappingInfo,
-                    editLine.points,
-                    editLine_OverlappingInfo,
-                    true,
-                    resamplingUnitLength
-                );
+            state.newLine = this.createSubjoinedLine(
+                state.targetLine_OrderedPoints,
+                nearestLine_OverlappingInfo,
+                subjoinLine.points,
+                editLine_OverlappingInfo,
+                resamplingUnitLength,
+                true
+            );
 
-                {
-                    nearestLineInfo.nearestLine.modifyFlag = VectorLineModifyFlagID.deleteLine;
+            // delete the joined line
+            state.nearestLine.modifyFlag = VectorLineModifyFlagID.deleteLine;
+            state.deleteLines.push(state.nearestLine);
+
+            if (!subjoinToAfter) {
+
+                state.newLine.points = ListReverse(state.newLine.points);
+            }
+
+            Logic_Edit_Line.calculateParameters(state.newLine);
+        }
+
+        protected executeCommand(env: ToolEnvironment) { // @override
+
+            if (this.editLine.points.length < 2) {
+
+                return;
+            }
+
+            let processingState = new SubjoinProcessingState();
+
+            // correct subjoining porocessing-info
+            this.executeProcessLine(processingState, this.editLine, true, env);
+
+            if (!processingState.isAvailable) {
+
+                this.editLine.points = ListReverse(this.editLine.points);
+                Logic_Edit_Line.calculateParameters(this.editLine);
+
+                processingState = new SubjoinProcessingState();
+                this.executeProcessLine(processingState, this.editLine, true, env);
+            }
+
+            if (processingState.isAvailable) {
+
+                processingState.nearestLine = null;
+                processingState.nearestLine_SegmentIndex = -1;
+                processingState.subjoinLine_OrderedPoints = null;
+                processingState.targetLine_OrderedPoints = null;
+                processingState.targetLine_SearchForward = true;
+                processingState.targetLine_SegmentIndex = -1;
+                this.executeProcessLine(processingState, processingState.newLine, false, env);
+
+                if (processingState.deleteLines.length > 0) {
 
                     let command = new Command_DeleteFlaggedPoints();
                     if (command.prepareEditTargets(env.currentVectorLayer, env.currentVectorGeometry)) {
@@ -411,7 +478,7 @@ namespace ManualTracingTool {
                 {
                     let command = new Command_AddLine();
                     command.group = env.currentVectorGroup;
-                    command.line = newLine;
+                    command.line = processingState.newLine;
                     command.isContinued = true;
                     command.execute(env);
                     env.commandHistory.addCommand(command);
@@ -419,34 +486,12 @@ namespace ManualTracingTool {
             }
             else {
 
-                this.executeAddDrawLine(env);
-            }
-        }
-
-        protected executeCommand(env: ToolEnvironment) { // @override
-
-            let editLineFirstPoint = this.editLine.points[0];
-            let editLineSecondPoint = this.editLine.points[1];
-
-            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
-            let minDistanceRange = this.getMinDistanceRange(env);
-
-            // get nearest line
-            let nearestLineInfo = new NearestLineInfo();
-            this.getNearestLine(nearestLineInfo, editLineFirstPoint, env.currentVectorGeometry, minDistanceRange);
-
-            if (nearestLineInfo.isAvailable) {
-
-                this.executeDrawLineWithSubjoin(this.editLine, nearestLineInfo, minDistanceRange, resamplingUnitLength, env);
-            }
-            else {
-
-                this.executeAddDrawLine(env);
+                this.executeAddDrawLine(this.editLine, env);
             }
 
             this.editLine = null;
 
-            env.setRedrawEditorWindow();
+            env.setRedrawMainWindowEditorWindow();
         }
     }
 }

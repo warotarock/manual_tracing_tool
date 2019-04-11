@@ -45,6 +45,10 @@ function ListClone<T>(list: List<T>): List<T> {
     return list.slice();
 }
 
+function ListReverse<T>(list: List<T>): List<T> {
+    return list.reverse();
+}
+
 function DictionaryContainsKey<T>(dic: Dictionary<T>, key: string): boolean {
     return (key in dic);
 }
