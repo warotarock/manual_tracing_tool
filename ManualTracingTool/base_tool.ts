@@ -14,12 +14,12 @@ namespace ManualTracingTool {
     export enum DrawLineToolSubToolID {
 
         drawLine = 0,
-        deletePointBrush = 1,
-        scratchLine = 2,
-        extrudeLine = 3,
-        overWriteLineWidth = 4,
-        scratchLineWidth = 5,
-        editLinePointWidth_BrushSelect = 6
+        extrudeLine = 1,
+        deletePointBrush = 2,
+        editLinePointWidth_BrushSelect = 3,
+        scratchLine = 4,
+        overWriteLineWidth = 5,
+        scratchLineWidth = 6
     }
 
     export enum EditModeSubToolID {

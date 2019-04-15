@@ -115,11 +115,10 @@ namespace ManualTracingTool {
         tool_EditModeMain = new Tool_EditModeMain();
 
         // Drawing tools
-        //tool_DrawLine = new Tool_DrawLine();
-        tool_DrawLine = new Tool_ScratchLineDraw();
-        tool_AddPoint = new Tool_AddPoint();
+        tool_DrawLine = new Tool_DrawLine();
+        //tool_AddPoint = new Tool_AddPoint();
         tool_ScratchLine = new Tool_ScratchLine();
-        tool_ExtrudeLine = new Tool_ExtrudeLine();
+        tool_ExtrudeLine = new Tool_ScratchLineDraw();
         tool_OverWriteLineWidth = new Tool_OverWriteLineWidth();
         tool_ScratchLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
@@ -1140,12 +1139,12 @@ namespace ManualTracingTool {
             this.mainTools.push(
                 new MainTool().id(MainToolID.drawLine)
                     .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
-                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
-                    .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                     .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
+                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
+                    .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
+                    .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                     .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
                     .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
-                    .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
             );
 
             this.mainTools.push(
