@@ -31,7 +31,7 @@ namespace ManualTracingTool {
 
         none = 0,
         grabMove = 1,
-        ratate = 2,
+        rotate = 2,
         scale = 3,
         latticeMove = 4,
         countOfID = 5,

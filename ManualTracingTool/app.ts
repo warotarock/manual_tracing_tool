@@ -188,7 +188,7 @@ namespace ManualTracingTool {
             colorItemDiv.appendChild(colorInput);
         }
 
-        _Main.onLoad();
+        _Main.onInitializeSystemDevices();
 
         setTimeout(run, 1000 / 30);
     };

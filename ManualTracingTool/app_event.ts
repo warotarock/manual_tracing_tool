@@ -281,6 +281,7 @@ namespace ManualTracingTool {
                 e.preventDefault();
             });
 
+            /*
             this.getElement(this.ID.menu_btnPalette1).addEventListener('mousedown', (e: Event) => {
 
                 if (this.isEventDisabled()) {
@@ -300,6 +301,7 @@ namespace ManualTracingTool {
                 this.openPalletColorModal(OpenPalletColorModalMode.FillColor, this.toolContext.document, this.toolContext.currentLayer);
                 e.preventDefault();
             });
+            */
 
             // Modal window
 
@@ -692,26 +694,26 @@ namespace ManualTracingTool {
 
         protected layerWindow_mousedown_LayerCommandButton(clickedX: float, clickedY: float, doubleClicked: boolean) {
 
-            let hitedButton = <LayerWindowButton>this.hitTestLayout(this.layerWindowCommandButtons, clickedX, clickedY);
+            let hitedButton = this.hitTestLayout(this.layerWindowCommandButtons, clickedX, clickedY);
 
             if (hitedButton != null) {
 
                 // Select command
                 let layerCommand: Command_Layer_CommandBase = null;
 
-                if (hitedButton.buttonID == LayerWindowButtonID.addLayer) {
+                if (hitedButton.index == <int>LayerWindowButtonID.addLayer) {
 
                     this.openNewLayerCommandOptionModal();
                 }
-                else if (hitedButton.buttonID == LayerWindowButtonID.deleteLayer) {
+                else if (hitedButton.index == <int>LayerWindowButtonID.deleteLayer) {
 
                     layerCommand = new Command_Layer_Delete();
                 }
-                else if (hitedButton.buttonID == LayerWindowButtonID.moveUp) {
+                else if (hitedButton.index == <int>LayerWindowButtonID.moveUp) {
 
                     layerCommand = new Command_Layer_MoveUp();
                 }
-                else if (hitedButton.buttonID == LayerWindowButtonID.moveDown) {
+                else if (hitedButton.index == <int>LayerWindowButtonID.moveDown) {
 
                     layerCommand = new Command_Layer_MoveDown();
                 }
@@ -1568,7 +1570,7 @@ namespace ManualTracingTool {
 
                     if (key == 'r') {
 
-                        modalToolID = ModalToolID.ratate;
+                        modalToolID = ModalToolID.rotate;
                     }
                     else if (key == 's') {
 

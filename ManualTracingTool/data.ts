@@ -559,6 +559,8 @@ namespace ManualTracingTool {
 
         layerDictionary = new Dictionary<Layer>();
 
+        modelFile: ModelFile = null;
+
         addLayer(layer: Layer) {
 
             layer.ID = this.layerID;

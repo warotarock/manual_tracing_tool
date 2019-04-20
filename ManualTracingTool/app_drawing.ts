@@ -900,8 +900,8 @@ namespace ManualTracingTool {
 
         private layerWindow_CaluculateLayout_CommandButtons(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
 
-            let currentX = layoutArea.left;
-            let currentY = layerWindow.viewLocation[1]; // layoutArea.top;
+            let x = layoutArea.left;
+            let y = layerWindow.viewLocation[1]; // layoutArea.top;
             let unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
             let unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
 
@@ -909,12 +909,12 @@ namespace ManualTracingTool {
 
             for (let button of this.layerWindowCommandButtons) {
 
-                button.left = currentX;
-                button.right = currentX + unitWidth - 1;
-                button.top = currentY;
-                button.bottom = currentY + unitHeight - 1;
+                button.left = x;
+                button.right = x + unitWidth - 1;
+                button.top = y;
+                button.bottom = y + unitHeight - 1;
 
-                currentX += unitWidth;
+                x += unitWidth;
 
                 layerWindow.layerItemButtonButtom = button.bottom + 1.0;
             }
@@ -977,17 +977,17 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawLayerWindow_LayerWindowButton(button: LayerWindowButton) {
+        private drawLayerWindow_LayerWindowButton(layoutArea: RectangleLayoutArea) {
 
             let srcWidth = 64.0;
             let srcHeight = 64.0;
             let srcX = 0.0;
-            let srcY = (<int>button.buttonID - 1) * srcHeight;
-            let dstX = button.left;
-            let dstY = button.top;
+            let srcY = (<int>layoutArea.iconID - 1) * srcHeight;
+            let dstX = layoutArea.left;
+            let dstY = layoutArea.top;
             let scale = 1.0;
-            let dstWidth = button.getWidth() * scale;
-            let dstHeight = button.getHeight() * scale;
+            let dstWidth = layoutArea.getWidth() * scale;
+            let dstHeight = layoutArea.getHeight() * scale;
 
             let srcImage = this.layerButtonImage;
 
@@ -1152,12 +1152,43 @@ namespace ManualTracingTool {
 
         protected palletSelector_CaluculateLayout() { // @override
 
+            this.palletSelector_CaluculateLayout_CommandButtons();
+
+            this.palletSelector_CaluculateLayout_PalletItems();
+        }
+
+        protected palletSelector_CaluculateLayout_CommandButtons() {
+
+            let wnd = this.palletSelectorWindow;
+            let context = this.toolContext;
+            let env = this.toolEnv;
+
+            let x = 0.0;
+            let y = 0.0;
+            let unitWidth = wnd.buttonWidth * wnd.buttonScale;
+            let unitHeight = wnd.buttonHeight * wnd.buttonScale;
+
+            for (let layoutArea of wnd.commandButtonAreas) {
+
+                layoutArea.left = x;
+                layoutArea.top = y;
+                layoutArea.right = x + unitWidth - 1;
+                layoutArea.bottom = y + unitHeight - 1;
+
+                x += unitWidth;
+            }
+
+            wnd.commandButtonsBottom = y + unitHeight + wnd.buttonBottomMargin;
+        }
+
+        protected palletSelector_CaluculateLayout_PalletItems() {
+
             let wnd = this.palletSelectorWindow;
             let context = this.toolContext;
             let env = this.toolEnv;
 
             let x = wnd.leftMargin;
-            let y = wnd.topMargin;
+            let y = wnd.commandButtonsBottom;
             let itemWidth = wnd.itemWidth * wnd.itemScale;
             let itemHeight = wnd.itemHeight * wnd.itemScale;
 
@@ -1186,6 +1217,23 @@ namespace ManualTracingTool {
         }
 
         private drawPalletSelectorWindow() {
+
+            this.drawPalletSelectorWindow_CommandButtons();
+
+            this.drawPalletSelectorWindow_PalletItems();
+        }
+
+        private drawPalletSelectorWindow_CommandButtons() {
+
+            let wnd = this.palletSelectorWindow;
+
+            for (let layoutArea of wnd.commandButtonAreas) {
+
+                this.drawLayerWindow_LayerWindowButton(layoutArea);
+            }
+        }
+
+        private drawPalletSelectorWindow_PalletItems() {
 
             let wnd = this.palletSelectorWindow;
             let context = this.toolContext;

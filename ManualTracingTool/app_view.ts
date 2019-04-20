@@ -3,6 +3,8 @@ namespace ManualTracingTool {
 
     export class Main_View extends Main_Core {
 
+        // Initializing devices not depending media resoures
+
         protected initializeViewDevices() { // @override
 
             this.resizeWindows();
@@ -31,7 +33,16 @@ namespace ManualTracingTool {
             }
 
             this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
+
+            this.initializeLayerWindow();
+            this.initializePalletSelectorWindow();
+
+            this.layerWindow_CaluculateLayout(this.layerWindow);
+            this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+            this.palletSelector_CaluculateLayout();
         }
+
+        // Starting ups after loading resources
 
         protected initializeViewState() { // @override
 
@@ -44,7 +55,6 @@ namespace ManualTracingTool {
             this.setCanvasSizeFromStyle(this.palletColorModal_colorCanvas);
             this.drawPalletColorMixer(this.palletColorModal_colorCanvas);
 
-            this.collectLayerWindowButtons();
             this.updateLayerStructure();
         }
 
@@ -61,13 +71,6 @@ namespace ManualTracingTool {
             this.resizeCanvasToParent(this.subtoolWindow);
             this.resizeCanvasToParent(this.palletSelectorWindow);
             this.resizeCanvasToParent(this.timeLineWindow);
-
-            if (this.isWhileLoading()) {
-
-                this.layerWindow_CaluculateLayout(this.layerWindow);
-                this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
-                this.palletSelector_CaluculateLayout();
-            }
         }
 
         private resizeCanvasToParent(canvasWindow: CanvasWindow) {
@@ -272,17 +275,16 @@ namespace ManualTracingTool {
         // Layer window
 
         layerWindowLayoutArea = new RectangleLayoutArea();
-        layerWindowItems: List<LayerWindowItem> = null;
-        layerWindowCommandButtons: List<LayerWindowButton> = null;
+        layerWindowItems = new List<LayerWindowItem>();
+        layerWindowCommandButtons: List<RectangleLayoutArea> = null;
 
-        private collectLayerWindowButtons() {
+        private initializeLayerWindow() {
 
-            this.layerWindowCommandButtons = new List<LayerWindowButton>();
-
-            this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.addLayer));
-            this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.deleteLayer));
-            this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveUp));
-            this.layerWindowCommandButtons.push((new LayerWindowButton()).ID(LayerWindowButtonID.moveDown));
+            this.layerWindowCommandButtons = new List<RectangleLayoutArea>();
+            this.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.addLayer).setIcon(1));
+            this.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.deleteLayer).setIcon(2));
+            this.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.moveUp).setIcon(3));
+            this.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.moveDown).setIcon(4));
         }
 
         protected layerWindow_CollectItems() { // @override
@@ -376,9 +378,19 @@ namespace ManualTracingTool {
             }
         }
 
+        // Pallet selector window
+
+        protected initializePalletSelectorWindow() {
+
+            this.palletSelectorWindow.commandButtonAreas = new List<RectangleLayoutArea>();
+
+            this.palletSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PalletSelectorWindowButtonID.lineColor).setIcon(1));
+            this.palletSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PalletSelectorWindowButtonID.fillColor).setIcon(2));
+        }
+
         // Subtool window
 
-        subToolViewItems: List<SubToolViewItem> = null;
+        subToolViewItems = new List<SubToolViewItem>();
 
         protected subtoolWindow_CollectViewItems() { // @override
 
@@ -1281,13 +1293,13 @@ namespace ManualTracingTool {
             }
             else {
 
-                this.setInputElementText(this.ID.fileName, this.getDefaultDocumentFileName());
+                this.setInputElementText(this.ID.fileName, DocumentLogic.getDefaultDocumentFileName(this.localSetting));
             }
         }
 
         protected setHeaderDefaultDocumentFileName() { // @override
 
-            this.setInputElementText(this.ID.fileName, this.getDefaultDocumentFileName());
+            this.setInputElementText(this.ID.fileName, DocumentLogic.getDefaultDocumentFileName(this.localSetting));
         }
 
         // Footer window
@@ -1724,6 +1736,7 @@ namespace ManualTracingTool {
     export class RectangleLayoutArea {
 
         index = -1;
+        iconID = -1;
 
         marginTop = 0.0;
         marginRight = 0.0;
@@ -1744,6 +1757,21 @@ namespace ManualTracingTool {
         paddingRight = 0.0;
         paddingBottom = 0.0;
         paddingLeft = 0.0;
+
+        setIndex(index: int): RectangleLayoutArea {
+
+            this.index = index;
+
+            return this;
+        }
+
+        setIcon(index: int): RectangleLayoutArea {
+
+            this.iconID = index;
+
+            return this;
+        }
+
 
         getWidth(): float {
 
@@ -1819,18 +1847,36 @@ namespace ManualTracingTool {
         }
     }
 
+    export enum PalletSelectorWindowButtonID {
+
+        none = 0,
+        lineColor = 1,
+        fillColor = 2,
+    }
+
     export class PalletSelectorWindow extends ToolBaseWindow {
 
         leftMargin = 7.0;
-        topMargin = 30.0;
+        topMargin = 5.0;
         rightMargin = 5.0;
+
+        buttonScale = 0.5;
+        buttonWidth = 64.0;
+        buttonHeight = 64.0;
+        buttonRightMargin = 5.0;
+        buttonBottomMargin = 5.0;
+
+        commandButtonsBottom = 0.0;
+
+        commandButtonAreas = new List<RectangleLayoutArea>();
+
         itemScale = 1.0;
         itemWidth = 33.0;
         itemHeight = 15.0;
         itemRightMargin = 5.0;
         itemBottomMargin = 5.0;
 
-        itemAreas: List<RectangleLayoutArea> = null;
+        itemAreas = new List<RectangleLayoutArea>();
     }
 
     export enum LayerWindowButtonID {
@@ -1840,18 +1886,6 @@ namespace ManualTracingTool {
         deleteLayer = 2,
         moveUp = 3,
         moveDown = 4,
-    }
-
-    export class LayerWindowButton extends RectangleLayoutArea {
-
-        buttonID: LayerWindowButtonID;
-
-        ID(id: LayerWindowButtonID): LayerWindowButton {
-
-            this.buttonID = id;
-
-            return this;
-        }
     }
 
     export class LayerWindowItem extends RectangleLayoutArea {

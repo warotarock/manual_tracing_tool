@@ -14,6 +14,7 @@ namespace ManualTracingTool {
     export enum MainProcessStateID {
 
         none,
+        startup,
         pause,
         systemResourceLoading,
         initialDocumentJSONLoading,
@@ -27,7 +28,7 @@ namespace ManualTracingTool {
 
         // Main process management
 
-        mainProcessState = MainProcessStateID.none;
+        mainProcessState = MainProcessStateID.startup;
         isEventSetDone = false;
         isDeferredWindowResizeWaiting = false;
         lastTime: long = 0;
@@ -214,28 +215,28 @@ namespace ManualTracingTool {
             this.layerButtonImage = this.imageResurces[5];
         }
 
-        showMessageBox(text: string) {
+        protected showMessageBox(text: string) {
 
             alert(text);
         }
 
-        onLoad() {
+        // Initializing devices not depending media resoures
+
+        onInitializeSystemDevices() {
 
             this.loadSettings();
 
             this.initializeViewDevices();
 
             this.startLoadingSystemResources();
-
-            this.mainProcessState = MainProcessStateID.systemResourceLoading;
         }
 
         protected initializeViewDevices() { // @virtual
         }
 
-        // Loading
+        // Loading system resources
 
-        protected startLoadingSystemResources() {
+        private startLoadingSystemResources() {
 
             // Start loading
 
@@ -245,6 +246,8 @@ namespace ManualTracingTool {
 
                 this.loadTexture(imageResource, './res/' + imageResource.fileName);
             }
+
+            this.mainProcessState = MainProcessStateID.systemResourceLoading;
         }
 
         processLoadingSystemResources() {
@@ -281,6 +284,8 @@ namespace ManualTracingTool {
 
             this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
         }
+
+        // Loading document resources
 
         protected startLoadingDocument(documentData: DocumentData, url: string) {
 
@@ -384,11 +389,298 @@ namespace ManualTracingTool {
             }
 
             let info = new DocumentDataSaveInfo();
-            this.fixLoadedDocumentData_CollectLayers_Recursive(this.document.rootLayer, info);
-            this.fixLoadedDocumentData(this.document, info);
+            info.modelFile = this.modelFile;
+
+            DocumentLogic.fixLoadedDocumentData_CollectLayers_Recursive(this.document.rootLayer, info);
+            DocumentLogic.fixLoadedDocumentData(this.document, info);
 
             this.startLoadingDocumentResources(this.document);
             this.mainProcessState = MainProcessStateID.initialDocumentResourceLoading;
+        }
+
+        // Starting ups after loading resources
+
+        protected start() {
+
+            this.initializeContext();
+            this.initializeTools();
+            this.initializeViewState();
+            this.initializeModals();
+
+            this.setCurrentMainTool(MainToolID.drawLine);
+            //this.setCurrentMainTool(MainToolID.posing);
+
+            this.setCurrentOperationUnitID(this.toolContext.operationUnitID);
+
+            this.setCurrentFrame(0);
+            this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
+            //this.collectViewContext_CollectEditTargets();
+
+            this.toolEnv.updateContext();
+
+            // 初回描画
+            this.resizeWindows();   // TODO: これをしないとキャンバスの高さが足りなくなる。最初のリサイズのときは高さがなぜか少し小さい。2回リサイズする必要は本来ないはずなのでなんとかしたい。
+
+            this.updateHeaderButtons();
+
+            this.updateFooterMessage();
+
+            this.toolEnv.setRedrawAllWindows();
+
+            this.setEvents();
+
+            this.mainProcessState = MainProcessStateID.running;
+        }
+
+        protected initializeContext() {
+
+            this.toolContext = new ToolContext();
+
+            this.toolContext.mainEditor = this;
+            this.toolContext.drawStyle = this.drawStyle;
+            this.toolContext.commandHistory = new CommandHistory();
+
+            this.toolContext.document = this.document;
+
+            this.toolContext.mainWindow = this.mainWindow;
+            this.toolContext.pickingWindow = this.pickingWindow;
+            this.toolContext.posing3DView = this.posing3dView;
+            this.toolContext.posing3DLogic = this.posing3DLogic;
+
+            this.toolEnv = new ToolEnvironment(this.toolContext);
+            this.toolDrawEnv = new ToolDrawingEnvironment();
+            this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
+        }
+
+        protected initializeViewState() { // @virtual
+        }
+
+        protected initializeModals() {
+
+        }
+
+        protected initializeTools() {
+
+            // Resoures
+            this.posing3dView.storeResources(this.modelFile, this.imageResurces);
+
+            // Constructs main tools and sub tools structure
+            this.mainTools.push(
+                new MainTool().id(MainToolID.none)
+            );
+
+            this.mainTools.push(
+                new MainTool().id(MainToolID.drawLine)
+                    .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
+                    .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
+                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
+                    .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
+                    .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
+                    .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
+                    .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
+            );
+
+            this.mainTools.push(
+                new MainTool().id(MainToolID.posing)
+                    .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
+                    .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
+                    .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
+                    .subTool(this.tool_Posing3d_LocateHips, this.subToolImages[2], 3)
+                    .subTool(this.tool_Posing3d_LocateLeftShoulder, this.subToolImages[2], 6)
+                    .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 6)
+                    .subTool(this.tool_Posing3d_LocateLeftArm2, this.subToolImages[2], 7)
+                    .subTool(this.tool_Posing3d_LocateRightShoulder, this.subToolImages[2], 4)
+                    .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
+                    .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
+                    .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 8)
+                    .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 9)
+                    .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 10)
+                    .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 11)
+            );
+
+            this.mainTools.push(
+                new MainTool().id(MainToolID.imageReferenceLayer)
+                    .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
+            );
+
+            this.mainTools.push(
+                new MainTool().id(MainToolID.misc)
+                    .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
+            );
+
+            this.mainTools.push(
+                new MainTool().id(MainToolID.edit)
+                    .subTool(this.tool_LineBrushSelect, this.subToolImages[2], 0)
+                    .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 0)
+                    .subTool(this.tool_LinePointBrushSelect, this.subToolImages[2], 0)
+                    .subTool(this.tool_EditModeMain, this.subToolImages[2], 0)
+                    .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
+            );
+
+            // Modal tools
+            this.vectorLayer_ModalTools[<int>ModalToolID.none] = null;
+            this.vectorLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
+            this.vectorLayer_ModalTools[<int>ModalToolID.rotate] = this.tool_Transform_Lattice_Rotate;
+            this.vectorLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_Lattice_Scale;
+
+            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.none] = null;
+            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_ReferenceImage_GrabMove;
+            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.rotate] = this.tool_Transform_ReferenceImage_Rotate;
+            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_ReferenceImage_Scale;
+
+            // Selection tools
+            this.selectionTools[<int>OperationUnitID.none] = null;
+            this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
+            this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
+            this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
+
+            //this.currentTool = this.tool_DrawLine;
+            //this.currentTool = this.tool_AddPoint;
+            //this.currentTool = this.tool_ScratchLine;
+            this.currentTool = this.tool_Posing3d_LocateHead;
+        }
+
+        protected isEventDisabled() {
+
+            if (this.isWhileLoading()) {
+                return true;
+            }
+
+            if (this.isModalShown()) {
+                return true;
+            }
+
+            return false;
+        }
+
+        protected setEvents() { // @virtual
+        }
+
+        // Continuous processes
+
+        run() {
+
+            let context = this.toolContext;
+            let env = this.toolEnv;
+
+            if (this.isDeferredWindowResizeWaiting) {
+
+                this.isDeferredWindowResizeWaiting = false;
+
+                this.resizeWindows();
+
+                this.toolEnv.setRedrawAllWindows();
+            }
+
+            // Process animation time
+
+            let currentTime = (new Date().getTime());
+            if (this.lastTime == 0) {
+
+                this.elapsedTime = 100;
+            }
+            else {
+
+                this.elapsedTime = currentTime - this.lastTime;
+            }
+            this.lastTime = currentTime;
+
+            this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
+            if (this.selectCurrentLayerAnimationTime < 0) {
+
+                this.selectCurrentLayerAnimationTime = 0;
+            }
+
+            // Process animation
+
+            if (context.animationPlaying) {
+
+                let aniSetting = context.document.animationSettingData;
+
+                aniSetting.currentTimeFrame += 1;
+
+                if (aniSetting.currentTimeFrame >= aniSetting.loopEndFrame) {
+
+                    aniSetting.currentTimeFrame = aniSetting.loopStartFrame;
+                }
+
+                this.setCurrentFrame(aniSetting.currentTimeFrame);
+
+                env.setRedrawMainWindow();
+                env.setRedrawTimeLineWindow();
+            }
+        }
+
+        // System settings
+
+        private loadSettings() {
+
+            let index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
+            let localSettingText = window.localStorage.getItem(this.localStorage_SettingKey + index);
+
+            if (!StringIsNullOrEmpty(localSettingText)) {
+
+                this.localSetting = JSON.parse(localSettingText);
+            }
+        }
+
+        private saveSettings() {
+
+            let index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
+
+            window.localStorage.setItem(this.localStorage_SettingKey + index, JSON.stringify(this.localSetting));
+        }
+
+        protected regsterLastUsedFile(filePath: string) {
+
+            for (let index = 0; index < this.localSetting.lastUsedFilePaths.length; index++) {
+
+                if (this.localSetting.lastUsedFilePaths[index] == filePath) {
+
+                    ListRemoveAt(this.localSetting.lastUsedFilePaths, index);
+                }
+            }
+
+            ListInsertAt(this.localSetting.lastUsedFilePaths, 0, filePath);
+        }
+
+        // Document data operations
+
+        protected createDefaultDocumentData(): DocumentData {
+
+            let saveData = window.localStorage.getItem(this.tempFileNameKey);
+
+            if (!StringIsNullOrEmpty(saveData)) {
+
+                let document = JSON.parse(saveData);
+                document.loaded = true;
+
+                return document;
+            }
+
+            let document = new DocumentData();
+
+            let rootLayer = document.rootLayer;
+            rootLayer.type = LayerTypeID.rootLayer;
+
+            {
+                let layer1 = new VectorLayer();
+                layer1.name = 'layer1'
+                rootLayer.childLayers.push(layer1);
+                let group1 = new VectorGroup();
+                layer1.keyframes[0].geometry.groups.push(group1);
+            }
+
+            {
+                let layer1 = new PosingLayer();
+                layer1.name = 'posing1'
+                rootLayer.childLayers.push(layer1);
+                layer1.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
+            }
+
+            document.loaded = true;
+
+            return document;
         }
 
         startLoadingDocumentResourcesProcess(document: DocumentData) { // @implements MainEditor
@@ -680,8 +972,6 @@ namespace ManualTracingTool {
             return null;
         }
 
-        // Saving 
-
         saveDocument() {
 
             let filePath = this.getInputElementText(this.ID.fileName);
@@ -692,11 +982,11 @@ namespace ManualTracingTool {
             }
 
             let info = new DocumentDataSaveInfo();
-            this.fixSaveDocumentData_SetID_Recursive(this.document.rootLayer, info);
-            this.fixSaveDocumentData_CopyID_Recursive(this.document.rootLayer, info);
+            DocumentLogic.fixSaveDocumentData_SetID_Recursive(this.document.rootLayer, info);
+            DocumentLogic.fixSaveDocumentData_CopyID_Recursive(this.document.rootLayer, info);
 
             let copy = JSON.parse(JSON.stringify(this.document));
-            this.fixSaveDocumentData(copy, info);
+            DocumentLogic.fixSaveDocumentData(copy, info);
 
             let forceToLocalStrage = false;
 
@@ -720,576 +1010,16 @@ namespace ManualTracingTool {
             this.showMessageBox('保存しました。');
         }
 
-        protected regsterLastUsedFile(filePath: string) {
-
-            for (let index = 0; index < this.localSetting.lastUsedFilePaths.length; index++) {
-
-                if (this.localSetting.lastUsedFilePaths[index] == filePath) {
-
-                    ListRemoveAt(this.localSetting.lastUsedFilePaths, index);
-                }
-            }
-
-            ListInsertAt(this.localSetting.lastUsedFilePaths, 0, filePath);
-        }
-
-        // Settings
-
-        loadSettings() {
-
-            let index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
-            let localSettingText = window.localStorage.getItem(this.localStorage_SettingKey + index);
-
-            if (!StringIsNullOrEmpty(localSettingText)) {
-
-                this.localSetting = JSON.parse(localSettingText);
-            }
-        }
-
-        saveSettings() {
-
-            let index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
-
-            window.localStorage.setItem(this.localStorage_SettingKey + index, JSON.stringify(this.localSetting));
-        }
-
-        // Starting ups
-
-        protected start() {
-
-            this.initializeContext();
-            this.initializeTools();
-            this.initializeViewState();
-            this.initializeModals();
-
-            this.mainProcessState = MainProcessStateID.running;
-
-            this.setCurrentMainTool(MainToolID.drawLine);
-            //this.setCurrentMainTool(MainToolID.posing);
-
-            this.setCurrentOperationUnitID(this.toolContext.operationUnitID);
-
-            this.setCurrentFrame(0);
-            this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
-            //this.collectViewContext_CollectEditTargets();
-
-            this.toolEnv.updateContext();
-
-            // 初回描画
-            this.resizeWindows();   // TODO: これをしないとキャンバスの高さが足りなくなる。最初のリサイズのときは高さがなぜか少し小さい。2回リサイズする必要は本来ないはずなのでなんとかしたい。
-
-            this.updateHeaderButtons();
-
-            this.updateFooterMessage();
-
-            this.toolEnv.setRedrawAllWindows();
-
-            this.setEvents();
-        }
-
-        protected createDefaultDocumentData(): DocumentData {
-
-            let saveData = window.localStorage.getItem(this.tempFileNameKey);
-            if (!StringIsNullOrEmpty(saveData)) {
-
-                let document = JSON.parse(saveData);
-                document.loaded = true;
-
-                return document;
-            }
-
-            let document = new DocumentData();
-
-            let rootLayer = document.rootLayer;
-            rootLayer.type = LayerTypeID.rootLayer;
-
-            {
-                let layer1 = new VectorLayer();
-                layer1.name = 'layer1'
-                rootLayer.childLayers.push(layer1);
-                let group1 = new VectorGroup();
-                layer1.keyframes[0].geometry.groups.push(group1);
-            }
-
-            {
-                let layer1 = new PosingLayer();
-                layer1.name = 'posing1'
-                rootLayer.childLayers.push(layer1);
-                layer1.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
-            }
-
-            document.loaded = true;
-
-            return document;
-        }
-
-        private fileNameCount = 1;
-
-        protected getDefaultDocumentFileName(): string {
-
-            var date = new Date();
-            var fileName = (''
-                + date.getFullYear() + ('0' + (date.getMonth() + 1)).slice(-2) + ('0' + date.getDate()).slice(-2)
-                + '_' + ('0' + this.fileNameCount).slice(-2)
-            );
-
-            this.fileNameCount++;
-
-            return this.localSetting.currentDirectoryPath +'\\' + fileName + '.json';
-        }
-
-        protected fixLoadedDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
-
-            if (document.palletColors == undefined) {
-                DocumentData.initializeDefaultPalletColors(document);
-            }
-
-            while (document.palletColors.length < DocumentData.maxPalletColors) {
-
-                document.palletColors.push(new PalletColor());
-            }
-
-            if (document.animationSettingData == undefined) {
-                document.animationSettingData = new AnimationSettingData();
-            }
-
-            if (document.defaultViewScale == undefined) {
-                document.defaultViewScale = 1.0;
-            }
-
-            if (document.lineWidthBiasRate == undefined) {
-                document.lineWidthBiasRate = 1.0;
-            }
-
-            this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
-        }
-
-        protected fixLoadedDocumentData_CollectLayers_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
-
-            info.collectLayer(layer);
-
-            for (let childLayer of layer.childLayers) {
-
-                this.fixLoadedDocumentData_CollectLayers_Recursive(childLayer, info);
-            }
-        }
-
-        protected fixLoadedDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
-
-            if (layer.isRenderTarget == undefined) {
-                layer.isRenderTarget = true;
-            }
-
-            if (layer.type == LayerTypeID.vectorLayer) {
-
-                let vectorLayer = <VectorLayer>layer;
-
-                if (vectorLayer.drawLineType == undefined) {
-                    vectorLayer.drawLineType = DrawLineTypeID.layerColor;
-                }
-
-                if (vectorLayer.fillAreaType == undefined) {
-                    vectorLayer.fillAreaType = FillAreaTypeID.none;
-                }
-
-                if (vectorLayer.fillColor == undefined) {
-                    vectorLayer.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-                }
-
-                if (vectorLayer.line_PalletColorIndex == undefined) {
-                    vectorLayer.line_PalletColorIndex = 0;
-                }
-
-                if (vectorLayer.fill_PalletColorIndex == undefined) {
-                    vectorLayer.fill_PalletColorIndex = 1;
-                }
-
-                if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {
-
-                    vectorLayer.keyframes = new List<VectorLayerKeyframe>();
-                    let key = new VectorLayerKeyframe();
-                    key.frame = 0;
-                    key.geometry = vectorLayer['geometry'];
-                    vectorLayer.keyframes.push(key);
-                }
-
-                if (vectorLayer['geometry'] != undefined) {
-                    delete vectorLayer['geometry'];
-                }
-
-                if (vectorLayer['groups'] != undefined) {
-                    delete vectorLayer['groups'];
-                }
-
-                for (let keyframe of vectorLayer.keyframes) {
-
-                    for (let group of keyframe.geometry.groups) {
-
-                        for (let line of group.lines) {
-
-                            line.modifyFlag = VectorLineModifyFlagID.none;
-                            line.isEditTarget = false;
-                            line.isCloseToMouse = false;
-
-                            if (line['strokeWidth'] != undefined) {
-                                delete line['strokeWidth'];
-                            }
-
-                            for (let point of line.points) {
-
-                                point.modifyFlag = LinePointModifyFlagID.none;
-
-                                point.adjustingLocation = vec3.create();
-                                vec3.copy(point.adjustingLocation, point.location);
-
-                                point.tempLocation = vec3.create();
-
-                                point.adjustingLineWidth = point.lineWidth;
-
-                                if (point.lineWidth == undefined) {
-                                    point.lineWidth = 1.0;
-                                }
-
-                                point.adjustingLengthFrom = 1.0;
-                                point.adjustingLengthTo = 0.0;
-
-                                if (point['adjustedLocation'] != undefined) {
-                                    delete point['adjustedLocation'];
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
-
-                let vRefLayer = <VectorLayerReferenceLayer>layer;
-
-                vRefLayer.referenceLayer = <VectorLayer>info.layerDictionary[vRefLayer.referenceLayerID];
-                vRefLayer.keyframes = vRefLayer.referenceLayer.keyframes;
-
-                delete vRefLayer.referenceLayerID;
-            }
-            else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
-
-                let ifrLayer = <ImageFileReferenceLayer>layer;
-
-                ifrLayer.imageResource = null;
-
-                ifrLayer.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
-                ifrLayer.adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
-                ifrLayer.adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
-
-                if (ifrLayer.location == undefined) {
-
-                    ifrLayer.location = vec3.fromValues(0.0, 0.0, 0.0);
-                    ifrLayer.rotation = vec3.fromValues(0.0, 0.0, 0.0);
-                    ifrLayer.scale = vec3.fromValues(1.0, 1.0, 1.0);
-                }
-
-                vec3.copy(ifrLayer.adjustingLocation, ifrLayer.location);
-                vec3.copy(ifrLayer.adjustingRotation, ifrLayer.rotation);
-                vec3.copy(ifrLayer.adjustingScale, ifrLayer.scale);
-            }
-            else if (layer.type == LayerTypeID.posingLayer) {
-
-                let posingLayer = <PosingLayer>layer;
-
-                posingLayer.drawingUnits = null;
-
-                if (posingLayer.posingData.rootMatrix == undefined) {
-
-                    posingLayer.posingData = new PosingData();
-                }
-
-                posingLayer.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
-            }            
-
-            for (let childLayer of layer.childLayers) {
-
-                this.fixLoadedDocumentData_FixLayer_Recursive(childLayer, info);
-            }
-        }
-
-        protected fixSaveDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
-
-            this.fixSaveDocumentData_FixLayer_Recursive(document.rootLayer, info);
-        }
-
-        protected fixSaveDocumentData_SetID_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
-
-            info.addLayer(layer);
-
-            for (let childLayer of layer.childLayers) {
-
-                this.fixSaveDocumentData_SetID_Recursive(childLayer, info);
-            }
-        }
-
-        protected fixSaveDocumentData_CopyID_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
-
-            if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
-
-                let vRefLayer = <VectorLayerReferenceLayer>layer;
-
-                vRefLayer.referenceLayerID = vRefLayer.referenceLayer.ID;
-            }
-
-            for (let childLayer of layer.childLayers) {
-
-                this.fixSaveDocumentData_CopyID_Recursive(childLayer, info);
-            }
-        }
-
-        protected fixSaveDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
-
-            if (layer.type == LayerTypeID.vectorLayer) {
-
-                let vectorLayer = <VectorLayer>layer;
-
-                for (let keyframe of vectorLayer.keyframes) {
-
-                    for (let group of keyframe.geometry.groups) {
-
-                        for (let line of group.lines) {
-
-                            delete line.modifyFlag;
-                            delete line.isCloseToMouse;
-                            delete line.isEditTarget;
-
-                            for (let point of line.points) {
-
-                                delete point.adjustingLocation;
-                                delete point.tempLocation;
-                                delete point.adjustingLineWidth;
-                            }
-                        }
-                    }
-                }
-            }
-            else if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
-
-                let vRefLayer = <VectorLayerReferenceLayer>layer;
-
-                delete vRefLayer.keyframes;
-                delete vRefLayer.referenceLayer;
-            }
-            else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
-
-                let ifrLayer = <ImageFileReferenceLayer>layer;
-
-                delete ifrLayer.imageResource;
-                delete ifrLayer.imageLoading;
-                delete ifrLayer.adjustingLocation;
-                delete ifrLayer.adjustingRotation;
-                delete ifrLayer.adjustingScale;
-            }
-            else if (layer.type == LayerTypeID.posingLayer) {
-
-                let posingLayer = <PosingLayer>layer;
-
-                // TODO: 他のデータも削除する
-                delete posingLayer.posingData.bodyLocationInputData.parentMatrix;
-                delete posingLayer.posingData.bodyLocationInputData.hitTestSphereRadius;
-            }
-
-            for (let childLayer of layer.childLayers) {
-
-                this.fixSaveDocumentData_FixLayer_Recursive(childLayer, info);
-            }
-        }
-
-        protected initializeContext() {
-
-            this.toolContext = new ToolContext();
-
-            this.toolContext.mainEditor = this;
-            this.toolContext.drawStyle = this.drawStyle;
-            this.toolContext.commandHistory = new CommandHistory();
-
-            this.toolContext.document = this.document;
-
-            this.toolContext.mainWindow = this.mainWindow;
-            this.toolContext.pickingWindow = this.pickingWindow;
-            this.toolContext.posing3DView = this.posing3dView;
-            this.toolContext.posing3DLogic = this.posing3DLogic;
-
-            this.toolEnv = new ToolEnvironment(this.toolContext);
-            this.toolDrawEnv = new ToolDrawingEnvironment();
-            this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
-        }
-
-        protected initializeViewState() { // @virtual
-        }
-
-        protected initializeModals() {
-
-        }
-
-        protected initializeTools() {
-
-            // Resoures
-            this.posing3dView.storeResources(this.modelFile, this.imageResurces);
-
-            // Constructs main tools and sub tools structure
-            this.mainTools.push(
-                new MainTool().id(MainToolID.none)
-            );
-
-            this.mainTools.push(
-                new MainTool().id(MainToolID.drawLine)
-                    .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
-                    .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
-                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
-                    .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
-                    .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
-                    .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
-                    .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
-            );
-
-            this.mainTools.push(
-                new MainTool().id(MainToolID.posing)
-                    .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
-                    .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
-                    .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
-                    .subTool(this.tool_Posing3d_LocateHips, this.subToolImages[2], 3)
-                    .subTool(this.tool_Posing3d_LocateLeftShoulder, this.subToolImages[2], 6)
-                    .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 6)
-                    .subTool(this.tool_Posing3d_LocateLeftArm2, this.subToolImages[2], 7)
-                    .subTool(this.tool_Posing3d_LocateRightShoulder, this.subToolImages[2], 4)
-                    .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 4)
-                    .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 5)
-                    .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 8)
-                    .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 9)
-                    .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 10)
-                    .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 11)
-            );
-
-            this.mainTools.push(
-                new MainTool().id(MainToolID.imageReferenceLayer)
-                    .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
-            );
-
-            this.mainTools.push(
-                new MainTool().id(MainToolID.misc)
-                    .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
-            );
-
-            this.mainTools.push(
-                new MainTool().id(MainToolID.edit)
-                    .subTool(this.tool_LineBrushSelect, this.subToolImages[2], 0)
-                    .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 0)
-                    .subTool(this.tool_LinePointBrushSelect, this.subToolImages[2], 0)
-                    .subTool(this.tool_EditModeMain, this.subToolImages[2], 0)
-                    .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
-            );
-
-            // Modal tools
-            this.vectorLayer_ModalTools[<int>ModalToolID.none] = null;
-            this.vectorLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
-            this.vectorLayer_ModalTools[<int>ModalToolID.ratate] = this.tool_Transform_Lattice_Rotate;
-            this.vectorLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_Lattice_Scale;
-
-            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.none] = null;
-            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_ReferenceImage_GrabMove;
-            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.ratate] = this.tool_Transform_ReferenceImage_Rotate;
-            this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_ReferenceImage_Scale;
-
-            // Selection tools
-            this.selectionTools[<int>OperationUnitID.none] = null;
-            this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
-            this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
-            this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
-
-            //this.currentTool = this.tool_DrawLine;
-            //this.currentTool = this.tool_AddPoint;
-            //this.currentTool = this.tool_ScratchLine;
-            this.currentTool = this.tool_Posing3d_LocateHead;
-        }
-
-        protected isEventDisabled() {
-
-            if (this.isWhileLoading()) {
-                return true;
-            }
-
-            if (this.isModalShown()) {
-                return true;
-            }
-
-            return false;
-        }
-
-        // Continuous processes
-
-        run() {
-
-            let context = this.toolContext;
-            let env = this.toolEnv;
-
-            if (this.isDeferredWindowResizeWaiting) {
-
-                this.isDeferredWindowResizeWaiting = false;
-
-                this.resizeWindows();
-
-                this.toolEnv.setRedrawAllWindows();
-            }
-
-            // Process animation time
-
-            let currentTime = (new Date().getTime());
-            if (this.lastTime == 0) {
-
-                this.elapsedTime = 100;
-            }
-            else {
-
-                this.elapsedTime = currentTime - this.lastTime;
-            }
-            this.lastTime = currentTime;
-
-            this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
-            if (this.selectCurrentLayerAnimationTime < 0) {
-
-                this.selectCurrentLayerAnimationTime = 0;
-            }
-
-            // Process animation
-
-            if (context.animationPlaying) {
-
-                let aniSetting = context.document.animationSettingData;
-
-                aniSetting.currentTimeFrame += 1;
-
-                if (aniSetting.currentTimeFrame >= aniSetting.loopEndFrame) {
-
-                    aniSetting.currentTimeFrame = aniSetting.loopStartFrame;
-                }
-
-                this.setCurrentFrame(aniSetting.currentTimeFrame);
-
-                env.setRedrawMainWindow();
-                env.setRedrawTimeLineWindow();
-            }
-        }
-
-        // Events
-
-        protected setEvents() { // @virtual
-        }
-
-        // Core data system for layer and animation
+        // Layer and animation operations
 
         updateLayerStructure() { // @implements MainEditor
 
             this.collectViewContext();
             this.layerWindow_CollectItems();
             this.layerWindow_CaluculateLayout(this.layerWindow);
-            this.subtoolWindow_CollectViewItems();
-            this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
-            this.palletSelector_CaluculateLayout();
+            //this.subtoolWindow_CollectViewItems();
+            //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+            //this.palletSelector_CaluculateLayout();
         }
 
         collectViewContext() {
@@ -1898,7 +1628,7 @@ namespace ManualTracingTool {
         drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer @virtual
         }
 
-        // HTML  (virtual functions)
+        // HTML helper (virtual functions)
 
         getInputElementText(id: string): string { // @virtual
             return null;

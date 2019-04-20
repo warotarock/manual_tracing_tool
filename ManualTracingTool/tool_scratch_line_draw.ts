@@ -443,9 +443,10 @@ namespace ManualTracingTool {
 
             let processingState = new SubjoinProcessingState();
 
-            // correct subjoining porocessing-info
+            // process forward direction for edit line
             this.executeProcessLine(processingState, this.editLine, true, env);
 
+            // process backward direction for edit line if not processed
             if (!processingState.isAvailable) {
 
                 this.editLine.points = ListReverse(this.editLine.points);
@@ -455,6 +456,7 @@ namespace ManualTracingTool {
                 this.executeProcessLine(processingState, this.editLine, true, env);
             }
 
+            // process to connect to another line
             if (processingState.isAvailable) {
 
                 processingState.nearestLine = null;
@@ -486,7 +488,7 @@ namespace ManualTracingTool {
             }
             else {
 
-                this.executeAddDrawLine(this.editLine, env);
+                //this.executeAddDrawLine(this.editLine, env);
             }
 
             this.editLine = null;
