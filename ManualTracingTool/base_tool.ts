@@ -493,7 +493,26 @@ namespace ManualTracingTool {
             this.currentVectorLine.isEditTarget = isEditTarget;
         }
 
-        getCurrentLayerColor(): Vec4 {
+        getCurrentLayerLineColor(): Vec4 {
+
+            let color: Vec4 = null;
+
+            if (this.currentVectorLayer != null) {
+
+                if (this.currentVectorLayer.drawLineType == DrawLineTypeID.palletColor) {
+
+                    color = this.toolContext.document.palletColors[this.currentVectorLayer.line_PalletColorIndex].color;
+                }
+                else {
+
+                    color = this.currentVectorLayer.layerColor;
+                }
+            }
+
+            return color;
+        }
+
+        getCurrentLayerFillColor(): Vec4 {
 
             let color: Vec4 = null;
 
@@ -570,6 +589,8 @@ namespace ManualTracingTool {
     }
 
     export class ToolDrawingStyle {
+
+        selectedButtonColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
 
         linePointColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         testColor = vec4.fromValues(0.0, 0.7, 0.0, 1.0);

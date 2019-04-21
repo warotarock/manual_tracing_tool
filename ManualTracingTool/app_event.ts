@@ -896,15 +896,33 @@ namespace ManualTracingTool {
 
                 if (env.currentVectorLayer != null) {
 
-                    let layoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
+                    let button_LayoutArea = this.hitTestLayout(wnd.commandButtonAreas, e.location[0], e.location[1]);
 
-                    if (layoutArea != null) {
+                    if (button_LayoutArea != null) {
 
-                        let palletColorIndex = layoutArea.index;
+                        wnd.currentTargetID = button_LayoutArea.index;
+
+                        env.setRedrawColorSelectorWindow();
+                    }
+
+                    let pallet_LayoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
+
+                    if (pallet_LayoutArea != null) {
+
+                        let palletColorIndex = pallet_LayoutArea.index;
                         let color = documentData.palletColors[palletColorIndex];
 
-                        env.currentVectorLayer.fill_PalletColorIndex = palletColorIndex;
-                        vec4.copy(env.currentVectorLayer.fillColor, color.color);
+                        let destColor = this.getPalletSelectorWindow_SelectedColor();
+                        vec4.copy(destColor, color.color);
+
+                        if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+
+                            env.currentVectorLayer.line_PalletColorIndex = palletColorIndex;
+                        }
+                        else if (wnd.currentTargetID == PalletSelectorWindowButtonID.fillColor) {
+
+                            env.currentVectorLayer.fill_PalletColorIndex = palletColorIndex;
+                        }
 
                         env.setRedrawLayerWindow();
                         env.setRedrawMainWindowEditorWindow();
@@ -922,7 +940,7 @@ namespace ManualTracingTool {
 
                 let numberValue = this.getInputElementNumber(numberID, 0.0);
 
-                let color = this.toolEnv.getCurrentLayerColor();
+                let color = this.getPalletSelectorWindow_CurrentColor();
 
                 if (color != null) {
 
@@ -938,7 +956,7 @@ namespace ManualTracingTool {
 
                 let rangeValue = this.getInputElementRangeValue(rangeID, 0.0, 1.0);
 
-                let color = this.toolEnv.getCurrentLayerColor();
+                let color = this.getPalletSelectorWindow_CurrentColor();
 
                 if (color != null) {
 
@@ -948,7 +966,6 @@ namespace ManualTracingTool {
                 this.toolEnv.setRedrawMainWindow();
                 this.toolEnv.setRedrawColorSelectorWindow();
                 this.toolEnv.setRedrawColorMixerWindow();
-
             });
         }
 
@@ -963,7 +980,7 @@ namespace ManualTracingTool {
                 let satValue = this.getInputElementNumber(this.ID.colorMixer_sat + this.ID.colorMixer_id_number, 0.0);
                 let valValue = this.getInputElementNumber(this.ID.colorMixer_val + this.ID.colorMixer_id_number, 0.0);
 
-                let color = this.toolEnv.getCurrentLayerColor();
+                let color = this.getPalletSelectorWindow_CurrentColor();
 
                 if (color != null) {
 
@@ -981,7 +998,7 @@ namespace ManualTracingTool {
                 let satValue = this.getInputElementRangeValue(this.ID.colorMixer_sat + this.ID.colorMixer_id_range, 0.0, 1.0);
                 let valValue = this.getInputElementRangeValue(this.ID.colorMixer_val + this.ID.colorMixer_id_range, 0.0, 1.0);
 
-                let color = this.toolEnv.getCurrentLayerColor();
+                let color = this.getPalletSelectorWindow_CurrentColor();
 
                 if (color != null) {
 
@@ -1009,7 +1026,7 @@ namespace ManualTracingTool {
             this.canvasRender.setContext(wnd);
             this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
 
-            let color = this.toolEnv.getCurrentLayerColor();
+            let color = this.toolEnv.getCurrentLayerFillColor();
 
             if (color != null) {
 

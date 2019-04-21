@@ -384,8 +384,8 @@ namespace ManualTracingTool {
 
             this.palletSelectorWindow.commandButtonAreas = new List<RectangleLayoutArea>();
 
-            this.palletSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PalletSelectorWindowButtonID.lineColor).setIcon(1));
-            this.palletSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PalletSelectorWindowButtonID.fillColor).setIcon(2));
+            this.palletSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PalletSelectorWindowButtonID.lineColor).setIcon(5));
+            this.palletSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PalletSelectorWindowButtonID.fillColor).setIcon(6));
         }
 
         // Subtool window
@@ -1877,6 +1877,8 @@ namespace ManualTracingTool {
         itemBottomMargin = 5.0;
 
         itemAreas = new List<RectangleLayoutArea>();
+
+        currentTargetID = PalletSelectorWindowButtonID.lineColor;
     }
 
     export enum LayerWindowButtonID {

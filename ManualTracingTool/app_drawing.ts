@@ -836,6 +836,43 @@ namespace ManualTracingTool {
             this.drawVectorLineSegment(line, startIndex, endIndex, 1.0, 0.0, useAdjustingLocation);
         }
 
+        // LayoutArea / Button drawing
+
+        private drawLayerWindow_LayerWindowButtonBackground(layoutArea: RectangleLayoutArea, isSelected: boolean) {
+
+            let dstX = layoutArea.left;
+            let dstY = layoutArea.top;
+            let scale = 1.0;
+            let dstWidth = layoutArea.getWidth() * scale;
+            let dstHeight = layoutArea.getHeight() * scale;
+
+            if (isSelected) {
+
+                this.canvasRender.setFillColorV(this.toolDrawEnv.style.selectedButtonColor);
+
+                this.canvasRender.fillRect(dstX, dstY, dstWidth, dstHeight);
+            }
+        }
+
+        private drawLayerWindow_LayerWindowButton(layoutArea: RectangleLayoutArea) {
+
+            let srcWidth = 64.0;
+            let srcHeight = 64.0;
+            let srcX = 0.0;
+            let srcY = (<int>layoutArea.iconID - 1) * srcHeight;
+            let dstX = layoutArea.left;
+            let dstY = layoutArea.top;
+            let scale = 1.0;
+            let dstWidth = layoutArea.getWidth() * scale;
+            let dstHeight = layoutArea.getHeight() * scale;
+
+            let srcImage = this.layerButtonImage;
+
+            this.canvasRender.drawImage(srcImage.image.imageData
+                , srcX, srcY, srcWidth, srcHeight
+                , dstX, dstY, dstWidth, dstHeight);
+        }
+
         // WebGL window
 
         private drawWebGLWindow(mainWindow: CanvasWindow, webglWindow: CanvasWindow, pickingWindow: CanvasWindow) {
@@ -975,25 +1012,6 @@ namespace ManualTracingTool {
 
                 this.drawLayerWindow_LayerWindowButton(button);
             }
-        }
-
-        private drawLayerWindow_LayerWindowButton(layoutArea: RectangleLayoutArea) {
-
-            let srcWidth = 64.0;
-            let srcHeight = 64.0;
-            let srcX = 0.0;
-            let srcY = (<int>layoutArea.iconID - 1) * srcHeight;
-            let dstX = layoutArea.left;
-            let dstY = layoutArea.top;
-            let scale = 1.0;
-            let dstWidth = layoutArea.getWidth() * scale;
-            let dstHeight = layoutArea.getHeight() * scale;
-
-            let srcImage = this.layerButtonImage;
-
-            this.canvasRender.drawImage(srcImage.image.imageData
-                , srcX, srcY, srcWidth, srcHeight
-                , dstX, dstY, dstWidth, dstHeight);
         }
 
         private drawLayerWindow_LayerItems(layerWindow: LayerWindow) {
@@ -1229,6 +1247,10 @@ namespace ManualTracingTool {
 
             for (let layoutArea of wnd.commandButtonAreas) {
 
+                let isSelected = (<int>wnd.currentTargetID == layoutArea.index);
+
+                this.drawLayerWindow_LayerWindowButtonBackground(layoutArea, isSelected);
+
                 this.drawLayerWindow_LayerWindowButton(layoutArea);
             }
         }
@@ -1244,10 +1266,17 @@ namespace ManualTracingTool {
 
             let viewWidth = wnd.width;
 
-            let currenPalletColorIndex = -1;
+            let currentPalletColorIndex = -1;
             if (env.currentVectorLayer != null) {
 
-                currenPalletColorIndex = env.currentVectorLayer.fill_PalletColorIndex;
+                if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+
+                    currentPalletColorIndex = env.currentVectorLayer.line_PalletColorIndex;
+                }
+                else if (wnd.currentTargetID == PalletSelectorWindowButtonID.fillColor) {
+
+                    currentPalletColorIndex = env.currentVectorLayer.fill_PalletColorIndex;
+                }
             }
 
             for (let layoutArea of wnd.itemAreas) {
@@ -1273,7 +1302,7 @@ namespace ManualTracingTool {
                 this.canvasRender.setStrokeWidth(1.0);
                 this.canvasRender.drawRectangle(x + 0.5, y + 0.5, itemWidth, itemHeight);
 
-                if (palletColorIndex == currenPalletColorIndex) {
+                if (palletColorIndex == currentPalletColorIndex) {
 
                     this.canvasRender.setStrokeWidth(1.5);
                     this.canvasRender.drawRectangle(x + 0.5 - 1.0, y + 0.5 - 1.0, itemWidth + 2.0, itemHeight + 2.0);
@@ -1285,6 +1314,36 @@ namespace ManualTracingTool {
 
         private hsv = vec4.create();
 
+        protected getPalletSelectorWindow_SelectedColor(): Vec4 {
+
+            let wnd = this.palletSelectorWindow;
+            let env = this.toolEnv;
+
+            if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+
+                return env.currentVectorLayer.layerColor;
+            }
+            else {
+
+                return env.currentVectorLayer.fillColor;
+            }
+        }
+
+        protected getPalletSelectorWindow_CurrentColor(): Vec4 {
+
+            let wnd = this.palletSelectorWindow;
+            let env = this.toolEnv;
+
+            if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+
+                return env.getCurrentLayerLineColor();
+            }
+            else {
+
+                return env.getCurrentLayerFillColor();
+            }
+        }
+
         private drawColorMixerWindow() {
 
             let wnd = this.palletSelectorWindow;
@@ -1292,7 +1351,7 @@ namespace ManualTracingTool {
             let env = this.toolEnv;
             let documentData = context.document;
 
-            let color = env.getCurrentLayerColor();
+            let color = this.getPalletSelectorWindow_CurrentColor();
 
             if (color != null) {
 
