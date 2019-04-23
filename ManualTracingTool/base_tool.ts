@@ -590,7 +590,7 @@ namespace ManualTracingTool {
 
     export class ToolDrawingStyle {
 
-        selectedButtonColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
+        selectedButtonColor = vec4.fromValues(0.90, 0.90, 1.0, 1.0);
 
         linePointColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         testColor = vec4.fromValues(0.0, 0.7, 0.0, 1.0);

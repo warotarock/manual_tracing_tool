@@ -1856,7 +1856,7 @@ namespace ManualTracingTool {
 
     export class PalletSelectorWindow extends ToolBaseWindow {
 
-        leftMargin = 7.0;
+        leftMargin = 4.0;
         topMargin = 5.0;
         rightMargin = 5.0;
 
@@ -1871,7 +1871,7 @@ namespace ManualTracingTool {
         commandButtonAreas = new List<RectangleLayoutArea>();
 
         itemScale = 1.0;
-        itemWidth = 33.0;
+        itemWidth = 34.0;
         itemHeight = 15.0;
         itemRightMargin = 5.0;
         itemBottomMargin = 5.0;
