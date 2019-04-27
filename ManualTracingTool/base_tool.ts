@@ -166,6 +166,63 @@ namespace ManualTracingTool {
 
         frame = 0;
         layers = new List<ViewKeyframeLayer>();
+
+        static findViewKeyframe(viewKeyframes: List<ViewKeyframe>, frame: int): ViewKeyframe {
+
+            let keyframeIndex = ViewKeyframe.findViewKeyframeIndex(viewKeyframes, frame);
+
+            if (keyframeIndex != -1) {
+
+                return viewKeyframes[keyframeIndex];
+            }
+            else {
+
+                return null;
+            }
+        }
+
+        static findViewKeyframeIndex(viewKeyframes: List<ViewKeyframe>, frame: int): int {
+
+            let resultIndex = 0;
+
+            for (let index = 0; index < viewKeyframes.length; index++) {
+
+                if (viewKeyframes[index].frame > frame) {
+                    break;
+                }
+
+                resultIndex = index;
+            }
+
+            return resultIndex;
+        }
+
+        static findViewKeyframeLayerIndex(viewKeyFrame: ViewKeyframe, layer: Layer): int {
+
+            for (let index = 0; index < viewKeyFrame.layers.length; index++) {
+
+                if (viewKeyFrame.layers[index].layer == layer) {
+
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        static findViewKeyframeLayer(viewKeyFrame: ViewKeyframe, layer: Layer): ViewKeyframeLayer {
+
+            let index = this.findViewKeyframeLayerIndex(viewKeyFrame, layer);
+
+            if (index != -1) {
+
+                return viewKeyFrame.layers[index];
+            }
+            else {
+
+                return null;
+            }
+        }
     }
 
     export class ViewLayerContext {

@@ -3,7 +3,7 @@ namespace ManualTracingTool {
 
     // Base tool classes
 
-    export class Tool_Posing3d_ToolBase extends ToolBase {
+    export class Tool_Posing3d_ToolBase extends ModalToolBase {
 
         inputSideOptionCount = 0;
         editPoint: LinePoint = null; 
@@ -478,7 +478,7 @@ namespace ManualTracingTool {
 
     export class Tool_Posing3d_LocateHead extends Tool_Posing3d_LineInputToolBase {
 
-        helpText = 'マウスで円を描いてみてください。頭の配置が決まります。<br />次の操作に移るには画面右のパネルの「頭の向き」をクリックします。';
+        helpText = 'マウスでクリックすると頭の位置が決まり、さらにドラッグすると頭の大きさが変更できます。<br />次の操作に移るには画面右のパネルの「頭の向き」をクリックします。';
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -490,37 +490,127 @@ namespace ManualTracingTool {
 
         tempVec3 = vec3.fromValues(0.0, 0.0, 0.0);
         centerLocationSum = vec3.fromValues(0.0, 0.0, 0.0);
-        centerLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        centerLocation3D = vec3.fromValues(0.0, 0.0, 0.0);
         subLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        inputRadius = 0.0;
+        inputRadiusAdjustRate = 1.2;
+        minInputRadius = 25.0;
+
+        prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
+
+            if (env.currentPosingData == null) {
+                return false;
+            }
+
+            vec3.copy(this.centerLocationSum, e.location);
+            this.inputRadius = this.minInputRadius;
+
+            return true;
+        }
+
+        mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            if (env.currentPosingData == null) {
+                return;
+            }
+
+            if (e.isLeftButtonPressing()) {
+
+                env.startModalTool(this);
+
+                this.executeCommand(env);
+            }
+        }
+
+        mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            if (env.currentPosingData == null) {
+                return;
+            }
+
+            if (!e.isLeftButtonPressing() || !env.isModalToolRunning()) {
+                return;
+            }
+
+            vec3.subtract(this.subLocation, e.location, this.centerLocationSum);
+            this.inputRadius = vec3.length(this.subLocation);
+            if (this.inputRadius < this.minInputRadius) {
+
+                this.inputRadius = this.minInputRadius;
+            }
+
+            this.executeCommand(env);
+        }
+
+        mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            if (env.currentPosingData == null) {
+                return;
+            }
+
+            if (!env.isModalToolRunning()) {
+                return;
+            }
+
+            env.endModalTool();
+        }
 
         protected executeCommand(env: ToolEnvironment) {
 
+            /*
             // Center of head sphere
-            let locationCountSum = 0.0;
+            //let locationCountSum = 0.0;
             vec3.set(this.centerLocationSum, 0.0, 0.0, 0.0);
-            let lastLength = 0.0;
+            //let lastLength = 0.0;
+            let totalCount = 0.0;
             for (let point of this.editLine.points) {
 
-                let segmentLength = point.totalLength - lastLength;
-                vec3.scale(this.tempVec3, point.location, segmentLength / this.editLine.totalLength);
-                vec3.add(this.centerLocationSum, this.centerLocationSum, this.tempVec3);
+                //let segmentLength = point.totalLength - lastLength;
+                //vec3.scale(this.tempVec3, point.location, segmentLength / this.editLine.totalLength);
+                //vec3.add(this.centerLocationSum, this.centerLocationSum, this.tempVec3);
+                //lastLength = point.totalLength;
 
-                lastLength = point.totalLength;
+                vec3.add(this.centerLocationSum, this.centerLocationSum, point.location);
+                totalCount += 1;
             }
 
+            if (totalCount > 0) {
+
+                vec3.scale(this.centerLocationSum, this.centerLocationSum, 1 / totalCount);
+            }
+            */
+
+            //console.log('頭の配置');
+            //console.log(this.centerLocationSum);
+
+            /*
             // Radius
             let radiusSum = 0.0;
-            let lastLength2 = 0.0;
+            //let lastLength2 = 0.0;
+            let totalCount2 = 0.0;
             for (let point of this.editLine.points) {
 
-                let segmentLength = point.totalLength - lastLength2;
-                vec3.subtract(this.subLocation, point.location, this.centerLocationSum);
-                radiusSum += vec3.length(this.subLocation) * (segmentLength / this.editLine.totalLength);
+                //let segmentLength = point.totalLength - lastLength2;
+                //vec3.subtract(this.subLocation, point.location, this.centerLocationSum);
+                //radiusSum += vec3.length(this.subLocation) * (segmentLength / this.editLine.totalLength);
+                //lastLength2 = point.totalLength;
 
-                lastLength2 = point.totalLength;
+                vec3.subtract(this.subLocation, point.location, this.centerLocationSum);
+                radiusSum += vec3.length(this.subLocation);
+                totalCount2 += 1;
             }
 
-            // Expects model is located 2.0m away from camera at first, then calculate zoom rate
+            if (totalCount2 > 0) {
+
+                radiusSum *= 1 / totalCount2;
+            }
+
+            //console.log(radiusSum);
+            */
+
+            let radiusSum = this.inputRadius * this.inputRadiusAdjustRate;
+
+            // Expects model is located 2.0m away from camera at first, then calculate zoom rate as real3DViewHalfWidth
             //     headSphereSize[m] / real3DViewHalfWidth[m] = radiusSum[px] / real2DViewWidth[px]
             //     real3DViewHalfWidth[m] / headSphereSize[m] = real2DViewWidth[px] / radiusSum[px]
             //     real3DViewHalfWidth[m]                     = (real2DViewWidth[px] / radiusSum[px]) * headSphereSize[m]
@@ -539,15 +629,17 @@ namespace ManualTracingTool {
             // debug
 
             env.posing3DView.calculate3DLocationFrom2DLocation(
-                this.centerLocation
+                this.centerLocation3D
                 , this.centerLocationSum
                 , 2.0 // 2.0m
                 , env.currentPosingData.real3DViewHalfWidth);
 
+            //console.log(this.centerLocation);
+
             // Set inputs
             let headLocationInputData = env.currentPosingData.headLocationInputData;
 
-            vec3.copy(headLocationInputData.center, this.centerLocation);
+            vec3.copy(headLocationInputData.center, this.centerLocation3D);
             headLocationInputData.radius = radiusSum;
             headLocationInputData.editLine = this.editLine;
             headLocationInputData.inputDone = true;

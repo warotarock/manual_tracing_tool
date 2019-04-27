@@ -1,7 +1,38 @@
 
 namespace ManualTracingTool {
 
-    export class Main_Event extends Main_Drawing {
+    export class App_Event extends App_Document {
+
+        isEventSetDone = false;
+
+        // Backward interfaces
+
+        protected onWindowBlur() { // @virtual
+        }
+
+        protected onWindowFocus() { // @virtual
+        }
+
+        protected startReloadDocument() { // @virtual
+        }
+
+        protected startReloadDocumentFromText(textData: string) { // @virtual
+        }
+
+        protected resetDocument() { // @virtual
+        }
+
+        protected saveDocument() { // @virtual
+        }
+
+        protected openDocumentSettingDialog() { // @virtual
+        }
+
+        protected setDefferedWindowResize() { // @virtual
+        }
+
+        protected onModalWindowClosed() { // @virtual
+        }
 
         // Events
 
@@ -109,18 +140,12 @@ namespace ManualTracingTool {
 
             window.addEventListener('blur', (e: Event) => {
 
-                if (this.mainProcessState == MainProcessStateID.running) {
-
-                    this.mainProcessState = MainProcessStateID.pause;
-                }
+                this.onWindowBlur();
             });
 
             window.addEventListener('focus', (e: Event) => {
 
-                if (this.mainProcessState == MainProcessStateID.pause) {
-
-                    this.mainProcessState = MainProcessStateID.running;
-                }
+                this.onWindowFocus();
             });
 
             document.addEventListener('dragover', (e: DragEvent) => {
@@ -160,13 +185,17 @@ namespace ManualTracingTool {
                     let file = e.dataTransfer.files[0];
                     let reader = new FileReader();
 
+                    let filePath = '';
                     if (file['path'] != undefined) {
-                        this.regsterLastUsedFile(file['path']);
+                        filePath = file['path'];
                     }
                     else {
-                        this.regsterLastUsedFile(file.name);
+                        filePath = file.name;
                     }
-                    this.updateHeaderDocumentFileName();
+
+                    this.regsterLastUsedFile(filePath);
+
+                    this.setHeaderDocumentFileName(filePath);
 
                     reader.addEventListener('load', (e: any) => {
 
@@ -601,6 +630,20 @@ namespace ManualTracingTool {
             }
         }
 
+        protected mousemoveHittest(location: Vec3, minDistance: float): boolean {
+
+            this.hittest_Line_IsCloseTo.startProcess();
+
+            if (this.toolEnv.currentVectorGeometry != null) {
+
+                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
+            }
+
+            this.hittest_Line_IsCloseTo.endProcess();
+
+            return this.hittest_Line_IsCloseTo.isChanged;
+        }
+
         protected mainWindow_mouseup() {
 
             let context = this.toolContext;
@@ -694,7 +737,9 @@ namespace ManualTracingTool {
 
         protected layerWindow_mousedown_LayerCommandButton(clickedX: float, clickedY: float, doubleClicked: boolean) {
 
-            let hitedButton = this.hitTestLayout(this.layerWindowCommandButtons, clickedX, clickedY);
+            let wnd = this.layerWindow;
+
+            let hitedButton = this.hitTestLayout(wnd.layerWindowCommandButtons, clickedX, clickedY);
 
             if (hitedButton != null) {
 
@@ -730,16 +775,18 @@ namespace ManualTracingTool {
 
         protected layerWindow_mousedown_LayerItem(clickedX: float, clickedY: float, doubleClicked: boolean) {
 
-            if (this.layerWindowItems.length == 0) {
+            let wnd = this.layerWindow;
+
+            if (wnd.layerWindowItems.length == 0) {
                 return;
             }
 
-            let firstItem = this.layerWindowItems[0];
+            let firstItem = wnd.layerWindowItems[0];
             let selectedIndex = Math.floor((clickedY - firstItem.top) / firstItem.getHeight());
 
-            if (selectedIndex >= 0 && selectedIndex < this.layerWindowItems.length) {
+            if (selectedIndex >= 0 && selectedIndex < wnd.layerWindowItems.length) {
 
-                let selectedItem = this.layerWindowItems[selectedIndex];
+                let selectedItem = wnd.layerWindowItems[selectedIndex];
                 let selectedLayer = selectedItem.layer;
 
                 if (clickedX <= selectedItem.textLeft) {
@@ -1227,19 +1274,7 @@ namespace ManualTracingTool {
 
             if (key == 'n' && env.isCtrlKeyPressing()) {
 
-                this.document = this.createDefaultDocumentData();
-
-                this.toolContext.document = this.document;
-                this.initializeContext();
-
-                this.updateLayerStructure();
-                this.setCurrentLayer(null);
-                this.setCurrentFrame(0);
-                this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
-
-                this.setHeaderDefaultDocumentFileName();
-
-                this.toolEnv.setRedrawAllWindows();
+                this.resetDocument();
 
                 return;
             }
@@ -1521,7 +1556,7 @@ namespace ManualTracingTool {
                     let pickX = this.mainWindow.toolMouseEvent.offsetX + pickingPosition[0];
                     let pickY = this.mainWindow.toolMouseEvent.offsetY + pickingPosition[1];
 
-                    pickedLayer = this.layerPicking(this.mainWindow, pickX, pickY);
+                    pickedLayer = this.pickLayer(this.mainWindow, this.currentKeyframe, pickX, pickY);
 
                     if (pickedLayer != null) {
                         break;
@@ -1815,7 +1850,7 @@ namespace ManualTracingTool {
 
         protected htmlWindow_resize(e: Event) {
 
-            this.isDeferredWindowResizeWaiting = true;
+            this.setDefferedWindowResize();
         }
 
         protected htmlWindow_contextmenu(e): boolean {

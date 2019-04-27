@@ -150,11 +150,11 @@ namespace ManualTracingTool {
     // ・リサンプリングツールで線の太さがビューのスケールに応じて変わってしまっている？→スムージング処理中の不具合だった
     // ・線スクラッチの点削減ツールの実現
 
-    var _Main: Main_Event;
+    var _Main: App_Main;
 
     window.onload = () => {
 
-        _Main = new Main_Event();
+        _Main = new App_Main();
         _Main.mainWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.mainCanvas);
         _Main.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.editorCanvas);
         _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.webglCanvas);

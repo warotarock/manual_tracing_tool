@@ -582,4 +582,10 @@ namespace ManualTracingTool {
             delete layer.ID;
         }
     }
+
+    export enum DocumentBackGroundTypeID {
+
+        lastPalletColor = 1,
+        transparent = 2,
+    }
 }

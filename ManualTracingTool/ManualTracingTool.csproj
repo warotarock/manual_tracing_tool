@@ -86,6 +86,8 @@
   <ItemGroup>
     <TypeScriptCompile Include="app_event.ts" />
     <TypeScriptCompile Include="app_drawing.ts" />
+    <TypeScriptCompile Include="app_document.ts" />
+    <TypeScriptCompile Include="app_tool.ts" />
     <TypeScriptCompile Include="app_view.ts" />
     <TypeScriptCompile Include="app_main.ts" />
     <TypeScriptCompile Include="base_tool.ts" />

@@ -1,146 +1,137 @@
 
 namespace ManualTracingTool {
 
-    export class Main_Drawing extends Main_View {
+    export class App_Drawing extends App_View implements MainEditorDrawer {
 
-        // Drawings
+        // Resources
 
-        draw() {
+        drawStyle = new ToolDrawingStyle();
 
-            this.toolEnv.updateContext();
+        systemImage: ImageResource = null;
+        subToolImages = new List<ImageResource>();
+        layerButtonImage: ImageResource = null;
 
-            if (this.footerText != this.footerTextBefore) {
+        // Work variable
 
-                this.getElement('footer').innerHTML = this.footerText;
-                this.footerTextBefore = this.footerText;
-            }
+        chestInvMat4 = mat4.create();
+        hipsInvMat4 = mat4.create();
 
-            if (this.toolContext.redrawMainWindow) {
+        editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
 
-                this.toolContext.redrawMainWindow = false;
+        tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 
-                this.clearWindow(this.mainWindow);
+        layerPickingPositions = [[0.0, 0.0], [0.0, -2.0], [2.0, 0.0], [0.0, 2.0], [-2.0, 0.0]];
 
-                this.drawMainWindow(this.mainWindow, false);
+        // Common drawing methods
 
-                if (this.selectCurrentLayerAnimationTime > 0.0) {
-
-                    this.toolEnv.setRedrawMainWindow();
-                }
-            }
-
-            if (this.toolContext.redrawEditorWindow) {
-
-                this.toolContext.redrawEditorWindow = false;
-
-                this.clearWindow(this.editorWindow);
-
-                this.drawEditorWindow(this.editorWindow, this.mainWindow);
-            }
-
-            if (this.toolContext.redrawLayerWindow) {
-
-                this.toolContext.redrawLayerWindow = false;
-
-                this.clearWindow(this.layerWindow);
-                this.drawLayerWindow(this.layerWindow);
-            }
-
-            if (this.toolContext.redrawSubtoolWindow) {
-
-                this.toolContext.redrawSubtoolWindow = false;
-
-                this.clearWindow(this.subtoolWindow);
-                this.subtoolWindow_Draw(this.subtoolWindow);
-            }
-
-            if (this.toolContext.redrawPalletSelectorWindow) {
-
-                this.toolContext.redrawPalletSelectorWindow = false;
-
-                this.clearWindow(this.palletSelectorWindow);
-                this.drawPalletSelectorWindow();
-            }
-
-            if (this.toolContext.redrawColorMixerWindow) {
-
-                this.toolContext.redrawColorMixerWindow = false;
-
-                this.drawColorMixerWindow();
-            }
-
-            if (this.toolContext.redrawTimeLineWindow) {
-
-                this.toolContext.redrawTimeLineWindow = false;
-
-                this.clearWindow(this.timeLineWindow);
-                this.drawTimeLineWindow(this.timeLineWindow);
-            }
-
-            if (this.toolContext.redrawWebGLWindow) {
-
-                this.toolContext.redrawWebGLWindow = false;
-
-                this.drawWebGLWindow(this.mainWindow, this.webglWindow, this.pickingWindow);
-            }
-
-            if (this.toolContext.redrawHeaderWindow) {
-
-                this.toolContext.redrawHeaderWindow = false;
-                this.updateHeaderButtons();
-            }
-
-            if (this.toolContext.redrawFooterWindow) {
-
-                this.toolContext.redrawFooterWindow = false;
-                this.updateFooterMessage();
-            }
-        }
-
-        // Main window
-
-        protected clearWindow(canvasWindow: CanvasWindow) { // @override
+        protected clearWindow(canvasWindow: CanvasWindow) {
 
             this.canvasRender.setContext(canvasWindow);
 
             this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
         }
 
-        protected drawMainWindow(canvasWindow: CanvasWindow, isExporting: boolean) { // @override
+        private drawButtonBackground(layoutArea: RectangleLayoutArea, isSelected: boolean) {
 
-            if (this.currentKeyframe == null) {
-                return;
-            }
+            let dstX = layoutArea.left;
+            let dstY = layoutArea.top;
+            let scale = 1.0;
+            let dstWidth = layoutArea.getWidth() * scale;
+            let dstHeight = layoutArea.getHeight() * scale;
 
-            let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
+            if (isSelected) {
 
-            let env = this.toolEnv;
+                this.canvasRender.setFillColorV(this.toolDrawEnv.style.selectedButtonColor);
 
-            this.canvasRender.setContext(canvasWindow);
-
-            let viewKeyframe = this.currentKeyframe;
-
-            for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
-                let viewKeyFrameLayer = viewKeyframe.layers[i];
-
-                if (isExporting && !viewKeyFrameLayer.layer.isRenderTarget) {
-                    continue;
-                }
-
-                this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document)
-            }
-
-            if (env.isEditMode()) {
-
-                for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
-                    let viewKeyFrameLayer = viewKeyframe.layers[i];
-
-                    this.drawLayerForEditMode(viewKeyFrameLayer, currentLayerOnly, this.document)
-                }
+                this.canvasRender.fillRect(dstX, dstY, dstWidth, dstHeight);
             }
         }
 
-        private drawLayer(viewKeyFrameLayer: ViewKeyframeLayer, currentLayerOnly: boolean, documentData: DocumentData) {
+        private drawButtonImage(layoutArea: RectangleLayoutArea) {
+
+            let srcWidth = 64.0;
+            let srcHeight = 64.0;
+            let srcX = 0.0;
+            let srcY = (<int>layoutArea.iconID - 1) * srcHeight;
+            let dstX = layoutArea.left;
+            let dstY = layoutArea.top;
+            let scale = 1.0;
+            let dstWidth = layoutArea.getWidth() * scale;
+            let dstHeight = layoutArea.getHeight() * scale;
+
+            let srcImage = this.layerButtonImage;
+
+            this.canvasRender.drawImage(srcImage.image.imageData
+                , srcX, srcY, srcWidth, srcHeight
+                , dstX, dstY, dstWidth, dstHeight);
+        }
+
+        // MainEditorDrawer implementations
+
+        drawMouseCursor() { // @implements MainEditorDrawer
+
+            this.canvasRender.beginPath();
+
+            this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
+            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
+
+            this.canvasRender.circle(
+                this.mainWindow.toolMouseEvent.location[0]
+                , this.mainWindow.toolMouseEvent.location[1]
+                , this.getCurrentViewScaleLineWidth(this.toolContext.mouseCursorRadius)
+            );
+
+            this.canvasRender.stroke();
+        }
+
+        drawMouseCursorCircle(radius: float) { // @implements MainEditorDrawer
+
+            this.canvasRender.beginPath();
+
+            this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
+            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
+
+            this.canvasRender.circle(
+                this.mainWindow.toolMouseEvent.location[0]
+                , this.mainWindow.toolMouseEvent.location[1]
+                , radius
+            );
+
+            this.canvasRender.stroke();
+        }
+
+        drawEditorEditLineStroke(line: VectorLine) { // @implements MainEditorDrawer
+
+            this.drawEditLineStroke(line);
+        }
+
+        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+
+            this.drawVectorLineStroke(line, color, 1.0, strokeWidthBolding, useAdjustingLocation);
+        }
+
+        drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+
+            this.drawVectorLinePoints(line, color, useAdjustingLocation);
+        }
+
+        drawEditorVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+
+            this.drawVectorLinePoint(point, color, useAdjustingLocation);
+        }
+
+        drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+
+            this.drawVectorLineSegment(line, startIndex, endIndex, 1.0, 0.0, useAdjustingLocation);
+        }
+
+        // Main window
+
+        protected drawMainWindow(canvasWindow: CanvasWindow, isExporting: boolean) { // @virtual
+        }
+
+        protected drawLayer(viewKeyFrameLayer: ViewKeyframeLayer, currentLayerOnly: boolean, documentData: DocumentData, isModalToolRunning: boolean) {
 
             let layer = viewKeyFrameLayer.layer;
 
@@ -155,7 +146,7 @@ namespace ManualTracingTool {
             if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
-                this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData);
+                this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData, isModalToolRunning);
             }
             else if (layer.type == LayerTypeID.groupLayer) {
 
@@ -168,11 +159,11 @@ namespace ManualTracingTool {
             else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
 
                 let ifrLayer = <ImageFileReferenceLayer>layer;
-                this.drawImageFileReferenceLayer(ifrLayer);
+                this.drawImageFileReferenceLayer(ifrLayer, isModalToolRunning);
             }
         }
 
-        private drawLayerForEditMode(viewKeyFrameLayer: ViewKeyframeLayer, currentLayerOnly: boolean, documentData: DocumentData) {
+        protected drawLayerForEditMode(viewKeyFrameLayer: ViewKeyframeLayer, currentLayerOnly: boolean, documentData: DocumentData, isModalToolRunning: boolean) {
 
             let layer = viewKeyFrameLayer.layer;
 
@@ -187,11 +178,11 @@ namespace ManualTracingTool {
             if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
-                this.drawVectorLayerForEditMode(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData);
+                this.drawVectorLayerForEditMode(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData, isModalToolRunning);
             }
         }
 
-        private drawVectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData) {
+        protected drawVectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isModalToolRunning: boolean) {
 
             let context = this.toolContext;
             let env = this.toolEnv;
@@ -210,7 +201,7 @@ namespace ManualTracingTool {
 
             // drawing geometry lines
 
-            let useAdjustingLocation = this.isModalToolRunning();
+            let useAdjustingLocation = isModalToolRunning;
 
             for (let group of geometry.groups) {
 
@@ -235,7 +226,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData) {
+        protected drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isModalToolRunning: boolean) {
 
             let context = this.toolContext;
 
@@ -249,7 +240,7 @@ namespace ManualTracingTool {
 
             // drawing geometry lines
 
-            let useAdjustingLocation = this.isModalToolRunning();
+            let useAdjustingLocation = isModalToolRunning;
 
             for (let group of geometry.groups) {
 
@@ -293,7 +284,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) {
+        protected drawVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) {
 
             if (line.points.length == 0) {
                 return;
@@ -304,7 +295,7 @@ namespace ManualTracingTool {
             this.drawVectorLineSegment(line, 0, line.points.length - 1, strokeWidthBiasRate, strokeWidthBolding, useAdjustingLocation);
         }
 
-        private drawVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+        protected drawVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
             if (line.points.length == 0) {
                 return;
@@ -330,13 +321,13 @@ namespace ManualTracingTool {
             }
         }
 
-        private lineWidthAdjust(width: float) {
+        protected lineWidthAdjust(width: float) {
 
             //return Math.floor(width * 5) / 5;
             return width;
         }
 
-        private drawVectorLineFill(line: VectorLine, color: Vec4, useAdjustingLocation: boolean, isFillContinuing: boolean) {
+        protected drawVectorLineFill(line: VectorLine, color: Vec4, useAdjustingLocation: boolean, isFillContinuing: boolean) {
 
             if (line.points.length <= 1) {
                 return;
@@ -404,7 +395,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+        protected drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
             if (line.points.length < 2) {
                 return;
@@ -509,7 +500,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private drawVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) {
+        protected drawVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) {
 
             let viewScale = this.canvasRender.getViewScale();
 
@@ -541,12 +532,12 @@ namespace ManualTracingTool {
             this.canvasRender.fill();
         }
 
-        private drawEditLineStroke(line: VectorLine) {
+        protected drawEditLineStroke(line: VectorLine) {
 
             this.drawVectorLineStroke(line, this.drawStyle.editingLineColor, 1.0, 2.0, false);
         }
 
-        private drawEditLinePoints(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4) {
+        protected drawEditLinePoints(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4) {
 
             this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
 
@@ -559,7 +550,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private getLineColor(layer: VectorLayer, documentData: DocumentData) {
+        protected getLineColor(layer: VectorLayer, documentData: DocumentData) {
 
             let color: Vec4;
             if (layer.drawLineType == DrawLineTypeID.layerColor) {
@@ -579,7 +570,7 @@ namespace ManualTracingTool {
             return color;
         }
 
-        private getFillColor(layer: VectorLayer, documentData: DocumentData) {
+        protected getFillColor(layer: VectorLayer, documentData: DocumentData) {
 
             let color: Vec4;
             if (layer.fillAreaType == FillAreaTypeID.fillColor) {
@@ -599,17 +590,17 @@ namespace ManualTracingTool {
             return color;
         }
 
-        private getCurrentViewScaleLineWidth(width: float) {
+        protected getCurrentViewScaleLineWidth(width: float) {
 
             return width / this.canvasRender.getViewScale();
         }
 
-        getViewScaledSize(width: float) { // @override
+        protected getViewScaledSize(width: float) {
 
             return width / this.canvasRender.getViewScale();
         }
 
-        private drawImageFileReferenceLayer(layer: ImageFileReferenceLayer) {
+        protected drawImageFileReferenceLayer(layer: ImageFileReferenceLayer, isModalToolRunning: boolean) {
 
             if (layer.imageResource == null
                 || layer.imageResource.image == null
@@ -620,7 +611,7 @@ namespace ManualTracingTool {
 
             let image = layer.imageResource.image.imageData;
 
-            let isModal = this.isModalToolRunning();
+            let isModal = isModalToolRunning;
 
             let location = (isModal ? layer.adjustingLocation : layer.location);
             let rotation = (isModal ? layer.adjustingRotation[0] : layer.rotation[0]);
@@ -646,14 +637,9 @@ namespace ManualTracingTool {
             this.canvasRender.setGlobalAlpha(1.0);
         }
 
-        protected layerPicking(canvasWindow: CanvasWindow, pickLocationX: float, pickLocationY: float): Layer {
-
-            if (this.layerWindowItems == null || this.currentKeyframe == null) {
-                return null;
-            }
+        protected pickLayer(canvasWindow: CanvasWindow, viewKeyframe: ViewKeyframe, pickLocationX: float, pickLocationY: float): Layer {
 
             let documentData = this.toolContext.document;
-            let viewKeyframe = this.currentKeyframe;
 
             let pickedLayer = null;
             for (let viewKeyframeLayer of viewKeyframe.layers) {
@@ -670,7 +656,7 @@ namespace ManualTracingTool {
 
                 this.canvasRender.setContext(canvasWindow);
 
-                this.drawVectorLayer(vectorLayer, viewKeyframeLayer.vectorLayerKeyframe.geometry, documentData);
+                this.drawVectorLayer(vectorLayer, viewKeyframeLayer.vectorLayerKeyframe.geometry, documentData, false);
 
                 this.canvasRender.pickColor(this.tempColor4, canvasWindow, pickLocationX, pickLocationY);
 
@@ -686,64 +672,11 @@ namespace ManualTracingTool {
             return pickedLayer;
         }
 
-        // Editor window
-
-        private drawEditorWindow(editorWindow: CanvasWindow, mainWindow: CanvasWindow) {
-
-            let context = this.toolContext;
-
-            mainWindow.updateViewMatrix();
-            mainWindow.copyTransformTo(editorWindow);
-
-            this.canvasRender.setContext(editorWindow);
-
-            if (this.toolEnv.needsDrawOperatorCursor()) {
-
-                this.drawOperatorCursor();
-            }
-
-            if (this.toolEnv.isDrawMode()) {
-
-                if (this.currentTool == this.tool_DrawLine) {
-
-                    if (this.tool_DrawLine.editLine != null) {
-
-                        this.drawEditLineStroke(this.tool_DrawLine.editLine);
-                    }
-                }
-                else if (context.mainToolID == MainToolID.posing) {
-
-                    //for (let subtool of this.mainTools[<int>MainToolID.posing].subTools) {
-
-                    //    let posingTools = <Tool_Posing3d_ToolBase>subtool;
-
-                    //    if (posingTools.editLine != null) {
-
-                    //        this.drawRawLine(editorWindow, posingTools.editLine);
-                    //    }
-                    //}
-
-                    if (this.currentTool == this.tool_Posing3d_LocateHead
-                        && this.tool_Posing3d_LocateHead.editLine != null) {
-
-                        this.drawEditLineStroke(this.tool_Posing3d_LocateHead.editLine);
-                    }
-                }
-            }
-
-            if (this.currentTool != null) {
-
-                this.toolEnv.updateContext();
-                this.toolDrawEnv.setVariables(editorWindow);
-                this.currentTool.onDrawEditor(this.toolEnv, this.toolDrawEnv);
-            }
-        }
-
         private operatorCurosrLineDash = [2.0, 2.0];
         private operatorCurosrLineDashScaled = [0.0, 0.0];
         private operatorCurosrLineDashNone = [];
 
-        private drawOperatorCursor() {
+        protected drawOperatorCursor() {
 
             this.canvasRender.beginPath();
 
@@ -777,105 +710,9 @@ namespace ManualTracingTool {
             this.canvasRender.setLineDash(this.operatorCurosrLineDashNone);
         }
 
-        // MainEditorDrawer implementations
-
-        drawMouseCursor() { // @override
-
-            this.canvasRender.beginPath();
-
-            this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
-            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
-
-            this.canvasRender.circle(
-                this.mainWindow.toolMouseEvent.location[0]
-                , this.mainWindow.toolMouseEvent.location[1]
-                , this.getCurrentViewScaleLineWidth(this.toolContext.mouseCursorRadius)
-            );
-
-            this.canvasRender.stroke();
-        }
-
-        drawMouseCursorCircle(radius: float) { // @override
-
-            this.canvasRender.beginPath();
-
-            this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
-            this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
-
-            this.canvasRender.circle(
-                this.mainWindow.toolMouseEvent.location[0]
-                , this.mainWindow.toolMouseEvent.location[1]
-                , radius
-            );
-
-            this.canvasRender.stroke();
-        }
-
-        drawEditorEditLineStroke(line: VectorLine) { // @override
-
-            this.drawEditLineStroke(line);
-        }
-
-        drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @override
-
-            this.drawVectorLineStroke(line, color, 1.0, strokeWidthBolding, useAdjustingLocation);
-        }
-
-        drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @override
-
-            this.drawVectorLinePoints(line, color, useAdjustingLocation);
-        }
-
-        drawEditorVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) { // @override
-
-            this.drawVectorLinePoint(point, color, useAdjustingLocation);
-        }
-
-        drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @override
-
-            this.drawVectorLineSegment(line, startIndex, endIndex, 1.0, 0.0, useAdjustingLocation);
-        }
-
-        // LayoutArea / Button drawing
-
-        private drawLayerWindow_LayerWindowButtonBackground(layoutArea: RectangleLayoutArea, isSelected: boolean) {
-
-            let dstX = layoutArea.left;
-            let dstY = layoutArea.top;
-            let scale = 1.0;
-            let dstWidth = layoutArea.getWidth() * scale;
-            let dstHeight = layoutArea.getHeight() * scale;
-
-            if (isSelected) {
-
-                this.canvasRender.setFillColorV(this.toolDrawEnv.style.selectedButtonColor);
-
-                this.canvasRender.fillRect(dstX, dstY, dstWidth, dstHeight);
-            }
-        }
-
-        private drawLayerWindow_LayerWindowButton(layoutArea: RectangleLayoutArea) {
-
-            let srcWidth = 64.0;
-            let srcHeight = 64.0;
-            let srcX = 0.0;
-            let srcY = (<int>layoutArea.iconID - 1) * srcHeight;
-            let dstX = layoutArea.left;
-            let dstY = layoutArea.top;
-            let scale = 1.0;
-            let dstWidth = layoutArea.getWidth() * scale;
-            let dstHeight = layoutArea.getHeight() * scale;
-
-            let srcImage = this.layerButtonImage;
-
-            this.canvasRender.drawImage(srcImage.image.imageData
-                , srcX, srcY, srcWidth, srcHeight
-                , dstX, dstY, dstWidth, dstHeight);
-        }
-
         // WebGL window
 
-        private drawWebGLWindow(mainWindow: CanvasWindow, webglWindow: CanvasWindow, pickingWindow: CanvasWindow) {
+        protected drawWebGLWindow(webglWindow: CanvasWindow, layerWindowItems: List<LayerWindowItem>, mainWindow: CanvasWindow, pickingWindow: CanvasWindow) {
 
             let env = this.toolEnv;
 
@@ -900,9 +737,9 @@ namespace ManualTracingTool {
                 this.posing3dView.drawManipulaters(posingLayer, env);
             }
 
-            for (let index = this.layerWindowItems.length - 1; index >= 0; index--) {
+            for (let index = layerWindowItems.length - 1; index >= 0; index--) {
 
-                let item = this.layerWindowItems[index];
+                let item = layerWindowItems[index];
 
                 if (item.layer.type != LayerTypeID.posingLayer) {
                     continue;
@@ -917,34 +754,34 @@ namespace ManualTracingTool {
 
         // Layer window
 
-        protected layerWindow_CaluculateLayout(layerWindow: LayerWindow) { // @override
+        protected layerWindow_CaluculateLayout(wnd: LayerWindow) { // @override
 
             // layer item buttons
-            this.layerWindowLayoutArea.copyRectangle(layerWindow);
-            this.layerWindowLayoutArea.bottom = layerWindow.height - 1.0;
+            wnd.layerWindowLayoutArea.copyRectangle(wnd);
+            wnd.layerWindowLayoutArea.bottom = wnd.height - 1.0;
 
-            this.layerWindow_CaluculateLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
+            this.layerWindow_CaluculateLayout_CommandButtons(wnd, wnd.layerWindowLayoutArea);
 
-            if (this.layerWindowCommandButtons.length > 0) {
+            if (wnd.layerWindowCommandButtons.length > 0) {
 
-                let lastButton = this.layerWindowCommandButtons[this.layerWindowCommandButtons.length - 1];
-                this.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0;// lastButton.bottom + 1.0;
+                let lastButton = wnd.layerWindowCommandButtons[wnd.layerWindowCommandButtons.length - 1];
+                wnd.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0;// lastButton.bottom + 1.0;
             }
 
             // layer items
-            this.layerWindow_CaluculateLayout_LayerWindowItem(layerWindow, this.layerWindowLayoutArea);
+            this.layerWindow_CaluculateLayout_LayerWindowItem(wnd, wnd.layerWindowLayoutArea);
         }
 
-        private layerWindow_CaluculateLayout_CommandButtons(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
+        protected layerWindow_CaluculateLayout_CommandButtons(wnd: LayerWindow, layoutArea: RectangleLayoutArea) {
 
             let x = layoutArea.left;
-            let y = layerWindow.viewLocation[1]; // layoutArea.top;
-            let unitWidth = layerWindow.layerItemButtonWidth * layerWindow.layerItemButtonScale;
-            let unitHeight = layerWindow.layerItemButtonHeight * layerWindow.layerItemButtonScale;
+            let y = wnd.viewLocation[1]; // layoutArea.top;
+            let unitWidth = wnd.layerItemButtonWidth * wnd.layerItemButtonScale;
+            let unitHeight = wnd.layerItemButtonHeight * wnd.layerItemButtonScale;
 
-            layerWindow.layerCommandButtonButtom = unitHeight + 1.0;
+            wnd.layerCommandButtonButtom = unitHeight + 1.0;
 
-            for (let button of this.layerWindowCommandButtons) {
+            for (let button of wnd.layerWindowCommandButtons) {
 
                 button.left = x;
                 button.right = x + unitWidth - 1;
@@ -953,25 +790,25 @@ namespace ManualTracingTool {
 
                 x += unitWidth;
 
-                layerWindow.layerItemButtonButtom = button.bottom + 1.0;
+                wnd.layerItemButtonButtom = button.bottom + 1.0;
             }
         }
 
-        private layerWindow_CaluculateLayout_LayerWindowItem(layerWindow: LayerWindow, layoutArea: RectangleLayoutArea) {
+        protected layerWindow_CaluculateLayout_LayerWindowItem(wnd: LayerWindow, layoutArea: RectangleLayoutArea) {
 
             let currentY = layoutArea.top;
 
-            let itemHeight = layerWindow.layerItemHeight;
+            let itemHeight = wnd.layerItemHeight;
 
             let margine = itemHeight * 0.1;
             let iconWidth = (itemHeight - margine * 2);
             let textLeftMargin = itemHeight * 0.3;
 
-            for (let item of this.layerWindowItems) {
+            for (let item of wnd.layerWindowItems) {
 
                 item.left = 0.0;
                 item.top = currentY;
-                item.right = layerWindow.width - 1;
+                item.right = wnd.width - 1;
                 item.bottom = currentY + itemHeight - 1;
 
                 item.marginLeft = margine;
@@ -984,45 +821,45 @@ namespace ManualTracingTool {
                 currentY += itemHeight;
             }
 
-            layerWindow.layerItemsBottom = currentY;
+            wnd.layerItemsBottom = currentY;
         }
 
-        private drawLayerWindow(layerWindow: LayerWindow) {
+        protected drawLayerWindow(wnd: LayerWindow) {
 
-            this.canvasRender.setContext(layerWindow);
+            this.canvasRender.setContext(wnd);
 
-            this.drawLayerWindow_LayerItems(layerWindow);
+            this.drawLayerWindow_LayerItems(wnd);
 
-            this.drawLayerWindow_LayerWindowButtons(layerWindow);
+            this.drawLayerWindow_LayerWindowButtons(wnd);
         }
 
-        private drawLayerWindow_LayerWindowButtons(layerWindow: LayerWindow) {
+        protected drawLayerWindow_LayerWindowButtons(wnd: LayerWindow) {
 
-            this.layerWindow_CaluculateLayout_CommandButtons(layerWindow, this.layerWindowLayoutArea);
+            this.layerWindow_CaluculateLayout_CommandButtons(wnd, wnd.layerWindowLayoutArea);
 
-            if (this.layerWindowCommandButtons.length > 0) {
+            if (wnd.layerWindowCommandButtons.length > 0) {
 
-                let button = this.layerWindowCommandButtons[0];
+                let button = wnd.layerWindowCommandButtons[0];
 
                 this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
-                this.canvasRender.fillRect(0.0, button.top, layerWindow.width - 1, button.getHeight());
+                this.canvasRender.fillRect(0.0, button.top, wnd.width - 1, button.getHeight());
             }
 
-            for (let button of this.layerWindowCommandButtons) {
+            for (let button of wnd.layerWindowCommandButtons) {
 
-                this.drawLayerWindow_LayerWindowButton(button);
-            }
-        }
-
-        private drawLayerWindow_LayerItems(layerWindow: LayerWindow) {
-
-            for (let item of this.layerWindowItems) {
-
-                this.drawLayerWindowItem(item, layerWindow.layerItemFontSize);
+                this.drawButtonImage(button);
             }
         }
 
-        private drawLayerWindowItem(item: LayerWindowItem, fontSize: float) {
+        protected drawLayerWindow_LayerItems(wnd: LayerWindow) {
+
+            for (let item of wnd.layerWindowItems) {
+
+                this.drawLayerWindowItem(item, wnd.layerItemFontSize);
+            }
+        }
+
+        protected drawLayerWindowItem(item: LayerWindowItem, fontSize: float) {
 
             let layer = item.layer;
 
@@ -1072,326 +909,33 @@ namespace ManualTracingTool {
             this.canvasRender.fillText(layer.name, item.textLeft + depthOffset, bottom - bottomMargin);
         }
 
-        // Subtool window
+        // Timeline window
 
-        subToolItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
-        subToolItemSeperatorLineColor = vec4.fromValues(0.0, 0.0, 0.0, 0.5);
+        protected drawTimeLineWindow_CommandButtons(wnd: TimeLineWindow, animationPlaying: boolean) {
 
-        private subtoolWindow_Draw(subtoolWindow: SubtoolWindow) {
+            // Play / Stop
+            {
+                let srcX = 0;
+                let srcY = 196;
+                let srcW = 128;
+                let srcH = 128;
+                let dstW = 45;
+                let dstH = 45;
+                let dstX = wnd.getTimeLineLeft() / 2 - dstW / 2 + 1;
+                let dstY = wnd.height / 2 - dstH / 2 + 1;
 
-            this.canvasRender.setContext(subtoolWindow);
+                if (animationPlaying) {
 
-            let context = this.toolContext;
-
-            let currentMainTool = this.getCurrentMainTool();
-
-            let scale = subtoolWindow.subToolItemScale;
-            let fullWidth = subtoolWindow.width - 1;
-            let unitWidth = subtoolWindow.subToolItemUnitWidth;
-            let unitHeight = subtoolWindow.subToolItemUnitHeight;
-
-            let lastY = 0.0;
-
-            for (let viewItem of this.subToolViewItems) {
-
-                let tool = viewItem.tool;
-                let srcImage = tool.toolBarImage;
-
-                if (srcImage == null) {
-                    continue;
+                    srcX = 128;
                 }
 
-                let srcY = tool.toolBarImageIndex * unitHeight;
-                let dstY = viewItem.top;
-
-                // Draw subtool image
-                if (tool == this.currentTool) {
-
-                    this.canvasRender.setFillColorV(this.subToolItemSelectedColor);
-                }
-                else {
-
-                    this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
-                }
-                this.canvasRender.fillRect(0, dstY, fullWidth, unitHeight * scale);
-
-                if (tool.isAvailable(this.toolEnv)) {
-
-                    this.canvasRender.setGlobalAlpha(1.0);
-                }
-                else {
-
-                    this.canvasRender.setGlobalAlpha(0.5);
-                }
-
-                this.canvasRender.drawImage(srcImage.image.imageData
-                    , 0, srcY, unitWidth, unitHeight
-                    , 0, dstY, unitWidth * scale, unitHeight * scale);
-
-                // Draw subtool option buttons
-                for (let button of viewItem.buttons) {
-
-                    let buttonWidth = 128 * scale;
-                    let buttonHeight = 128 * scale;
-
-                    button.left = unitWidth * scale * 0.8;
-                    button.top = dstY;
-                    button.right = button.left + buttonWidth - 1;
-                    button.bottom = button.top + buttonHeight - 1;
-
-                    let inpuSideID = tool.getInputSideID(button.index, this.toolEnv);
-                    if (inpuSideID == InputSideID.front) {
-
-                        this.canvasRender.drawImage(this.systemImage.image.imageData
-                            , 0, 0, 128, 128
-                            , button.left, button.top, buttonWidth, buttonHeight);
-                    }
-                    else if (inpuSideID == InputSideID.back) {
-
-                        this.canvasRender.drawImage(this.systemImage.image.imageData
-                            , 128, 0, 128, 128
-                            , button.left, button.top, buttonWidth, buttonHeight);
-                    }
-                }
-
-                this.canvasRender.setStrokeWidth(0.0);
-                this.canvasRender.setStrokeColorV(this.subToolItemSeperatorLineColor);
-                this.canvasRender.drawLine(0, dstY, fullWidth, dstY);
-
-                lastY = dstY + unitHeight * scale;
-            }
-
-            this.canvasRender.setGlobalAlpha(1.0);
-
-            this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
-        }
-
-        // PalletSelector window
-
-        protected palletSelector_CaluculateLayout() { // @override
-
-            this.palletSelector_CaluculateLayout_CommandButtons();
-
-            this.palletSelector_CaluculateLayout_PalletItems();
-        }
-
-        protected palletSelector_CaluculateLayout_CommandButtons() {
-
-            let wnd = this.palletSelectorWindow;
-            let context = this.toolContext;
-            let env = this.toolEnv;
-
-            let x = 0.0;
-            let y = 0.0;
-            let unitWidth = wnd.buttonWidth * wnd.buttonScale;
-            let unitHeight = wnd.buttonHeight * wnd.buttonScale;
-
-            for (let layoutArea of wnd.commandButtonAreas) {
-
-                layoutArea.left = x;
-                layoutArea.top = y;
-                layoutArea.right = x + unitWidth - 1;
-                layoutArea.bottom = y + unitHeight - 1;
-
-                x += unitWidth;
-            }
-
-            wnd.commandButtonsBottom = y + unitHeight + wnd.buttonBottomMargin;
-        }
-
-        protected palletSelector_CaluculateLayout_PalletItems() {
-
-            let wnd = this.palletSelectorWindow;
-            let context = this.toolContext;
-            let env = this.toolEnv;
-
-            let x = wnd.leftMargin;
-            let y = wnd.commandButtonsBottom;
-            let itemWidth = wnd.itemWidth * wnd.itemScale;
-            let itemHeight = wnd.itemHeight * wnd.itemScale;
-
-            let viewWidth = wnd.width;
-
-            wnd.itemAreas = new List<RectangleLayoutArea>();
-
-            for (let palletColorIndex = 0; palletColorIndex < DocumentData.maxPalletColors; palletColorIndex++) {
-
-                let layoutArea = new RectangleLayoutArea();
-                layoutArea.index = palletColorIndex;
-                layoutArea.left = x;
-                layoutArea.top = y;
-                layoutArea.right = x + itemWidth + wnd.itemRightMargin - 1;
-                layoutArea.bottom = y + itemHeight + wnd.itemBottomMargin - 1;
-                wnd.itemAreas.push(layoutArea);
-
-                x += itemWidth + wnd.itemRightMargin;
-
-                if (x + itemWidth >= viewWidth - wnd.rightMargin) {
-
-                    x = wnd.leftMargin;
-                    y += itemHeight + wnd.itemBottomMargin;
-                }
+                this.canvasRender.drawImage(this.systemImage.image.imageData, srcX, srcY, srcW, srcH, dstX, dstY, dstW, dstH);
             }
         }
 
-        private drawPalletSelectorWindow() {
+        protected drawTimeLineWindow_TimeLine(wnd: TimeLineWindow, documentData: DocumentData, viewKeyframes: List<ViewKeyframe>, currentVectorLayer: VectorLayer) {
 
-            this.drawPalletSelectorWindow_CommandButtons();
-
-            this.drawPalletSelectorWindow_PalletItems();
-        }
-
-        private drawPalletSelectorWindow_CommandButtons() {
-
-            let wnd = this.palletSelectorWindow;
-
-            for (let layoutArea of wnd.commandButtonAreas) {
-
-                let isSelected = (<int>wnd.currentTargetID == layoutArea.index);
-
-                this.drawLayerWindow_LayerWindowButtonBackground(layoutArea, isSelected);
-
-                this.drawLayerWindow_LayerWindowButton(layoutArea);
-            }
-        }
-
-        private drawPalletSelectorWindow_PalletItems() {
-
-            let wnd = this.palletSelectorWindow;
-            let context = this.toolContext;
-            let env = this.toolEnv;
-            let documentData = context.document;
-
-            this.canvasRender.setContext(wnd);
-
-            let viewWidth = wnd.width;
-
-            let currentPalletColorIndex = -1;
-            if (env.currentVectorLayer != null) {
-
-                if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
-
-                    currentPalletColorIndex = env.currentVectorLayer.line_PalletColorIndex;
-                }
-                else if (wnd.currentTargetID == PalletSelectorWindowButtonID.fillColor) {
-
-                    currentPalletColorIndex = env.currentVectorLayer.fill_PalletColorIndex;
-                }
-            }
-
-            for (let layoutArea of wnd.itemAreas) {
-
-                let palletColorIndex = layoutArea.index;
-
-                if (palletColorIndex > documentData.palletColors.length) {
-                    break;
-                }
-
-                let x = layoutArea.left;
-                let y = layoutArea.top;
-                let itemWidth = layoutArea.getWidth() - wnd.itemRightMargin;
-                let itemHeight = layoutArea.getHeight() - wnd.itemBottomMargin;
-
-                let palletColor = documentData.palletColors[palletColorIndex];
-
-                this.canvasRender.setFillColorV(palletColor.color);
-                this.canvasRender.setStrokeColorV(env.drawStyle.palletSelectorItemEdgeColor);
-
-                this.canvasRender.fillRect(x + 0.5, y + 0.5, itemWidth, itemHeight);
-
-                this.canvasRender.setStrokeWidth(1.0);
-                this.canvasRender.drawRectangle(x + 0.5, y + 0.5, itemWidth, itemHeight);
-
-                if (palletColorIndex == currentPalletColorIndex) {
-
-                    this.canvasRender.setStrokeWidth(1.5);
-                    this.canvasRender.drawRectangle(x + 0.5 - 1.0, y + 0.5 - 1.0, itemWidth + 2.0, itemHeight + 2.0);
-                }
-            }
-        }
-
-        // ColorMixer window
-
-        private hsv = vec4.create();
-
-        protected getPalletSelectorWindow_SelectedColor(): Vec4 {
-
-            let wnd = this.palletSelectorWindow;
-            let env = this.toolEnv;
-
-            if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
-
-                return env.currentVectorLayer.layerColor;
-            }
-            else {
-
-                return env.currentVectorLayer.fillColor;
-            }
-        }
-
-        protected getPalletSelectorWindow_CurrentColor(): Vec4 {
-
-            let wnd = this.palletSelectorWindow;
-            let env = this.toolEnv;
-
-            if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
-
-                return env.getCurrentLayerLineColor();
-            }
-            else {
-
-                return env.getCurrentLayerFillColor();
-            }
-        }
-
-        private drawColorMixerWindow() {
-
-            let wnd = this.palletSelectorWindow;
-            let context = this.toolContext;
-            let env = this.toolEnv;
-            let documentData = context.document;
-
-            let color = this.getPalletSelectorWindow_CurrentColor();
-
-            if (color != null) {
-
-                this.setColorMixerValue(this.ID.colorMixer_red, color[0]);
-                this.setColorMixerValue(this.ID.colorMixer_green, color[1]);
-                this.setColorMixerValue(this.ID.colorMixer_blue, color[2]);
-                this.setColorMixerValue(this.ID.colorMixer_alpha, color[3]);
-
-                Maths.rgbToHSV(this.hsv, color[0], color[1], color[2])
-
-                this.setColorMixerValue(this.ID.colorMixer_hue, this.hsv[0]);
-                this.setColorMixerValue(this.ID.colorMixer_sat, this.hsv[1]);
-                this.setColorMixerValue(this.ID.colorMixer_val, this.hsv[2]);
-            }
-            else {
-
-                this.setColorMixerValue(this.ID.colorMixer_red, 0.0);
-                this.setColorMixerValue(this.ID.colorMixer_green, 0.0);
-                this.setColorMixerValue(this.ID.colorMixer_blue, 0.0);
-                this.setColorMixerValue(this.ID.colorMixer_alpha, 0.0);
-
-                this.setColorMixerValue(this.ID.colorMixer_hue, 0.0);
-                this.setColorMixerValue(this.ID.colorMixer_sat, 0.0);
-                this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
-            }
-        }
-
-        private setColorMixerValue(id: string, colorValue: float) {
-
-            this.setInputElementNumber2Decimal(id + this.ID.colorMixer_id_number, colorValue);
-            this.setInputElementRangeValue(id + this.ID.colorMixer_id_range, colorValue, 0.0, 1.0);
-        }
-
-        // TimeLine window
-
-        private drawTimeLineWindow(wnd: TimeLineWindow) {
-
-            let context = this.toolContext;
-            let env = this.toolEnv;
-            let aniSetting = context.document.animationSettingData;
+            let aniSetting = documentData.animationSettingData;
 
             let left = wnd.getTimeLineLeft();
             let right = wnd.getTimeLineRight();
@@ -1402,26 +946,6 @@ namespace ManualTracingTool {
             let frameLineBottom = wnd.height - 1.0 - frameNumberHeight;
             let frameLineHeight = 10.0;
             let secondFrameLineHeight = 30.0;
-
-            // Control buttons
-
-            {
-                let srcX = 0;
-                let srcY = 196;
-                let srcW = 128;
-                let srcH = 128;
-                let dstW = 45;
-                let dstH = 45;
-                let dstX = left / 2 - dstW / 2 + 1;
-                let dstY = wnd.height / 2 - dstH / 2 + 1;
-
-                if (context.animationPlaying) {
-
-                    srcX = 128;
-                }
-
-                this.canvasRender.drawImage(this.systemImage.image.imageData, srcX, srcY, srcW, srcH, dstX, dstY, dstW, dstH);
-            }
 
             // Current frame
 
@@ -1449,7 +973,7 @@ namespace ManualTracingTool {
             this.canvasRender.setStrokeWidth(1.0);
             this.canvasRender.setFillColorV(this.drawStyle.timeLineKeyFrameColor);
 
-            for (let viewKeyframe of this.viewLayerContext.keyframes) {
+            for (let viewKeyframe of viewKeyframes) {
 
                 let frame = viewKeyframe.frame;
 
@@ -1487,18 +1011,18 @@ namespace ManualTracingTool {
             this.canvasRender.setStrokeWidth(1.0);
             this.canvasRender.setFillColorV(this.drawStyle.timeLineLayerKeyFrameColor);
 
-            if (env.currentVectorLayer != null) {
+            if (currentVectorLayer != null) {
 
-                let viewKeyFrame = this.findViewKeyframe(aniSetting.currentTimeFrame);
+                let viewKeyFrame = ViewKeyframe.findViewKeyframe(viewKeyframes, aniSetting.currentTimeFrame);
                 let layerIndex = -1;
                 if (viewKeyFrame != null) {
 
-                    layerIndex = this.findViewKeyframeLayerIndex(viewKeyFrame, env.currentVectorLayer);
+                    layerIndex = ViewKeyframe.findViewKeyframeLayerIndex(viewKeyFrame, currentVectorLayer);
                 }
 
                 if (layerIndex != -1) {
 
-                    for (let viewKeyframe of this.viewLayerContext.keyframes) {
+                    for (let viewKeyframe of viewKeyframes) {
 
                         let frame = viewKeyframe.frame;
 
@@ -1519,7 +1043,6 @@ namespace ManualTracingTool {
                         }
                     }
                 }
-
             }
 
             // Left panel
@@ -1547,6 +1070,175 @@ namespace ManualTracingTool {
             }
 
             this.canvasRender.drawLine(left, frameLineBottom, right, frameLineBottom);
+        }
+
+        // PalletSelector window
+
+        protected palletSelector_CaluculateLayout() {
+
+            this.palletSelector_CaluculateLayout_CommandButtons();
+
+            this.palletSelector_CaluculateLayout_PalletItems();
+        }
+
+        private palletSelector_CaluculateLayout_CommandButtons() {
+
+            let wnd = this.palletSelectorWindow;
+            let context = this.toolContext;
+            let env = this.toolEnv;
+
+            let x = 0.0;
+            let y = 0.0;
+            let unitWidth = wnd.buttonWidth * wnd.buttonScale;
+            let unitHeight = wnd.buttonHeight * wnd.buttonScale;
+
+            for (let layoutArea of wnd.commandButtonAreas) {
+
+                layoutArea.left = x;
+                layoutArea.top = y;
+                layoutArea.right = x + unitWidth - 1;
+                layoutArea.bottom = y + unitHeight - 1;
+
+                x += unitWidth;
+            }
+
+            wnd.commandButtonsBottom = y + unitHeight + wnd.buttonBottomMargin;
+        }
+
+        private palletSelector_CaluculateLayout_PalletItems() {
+
+            let wnd = this.palletSelectorWindow;
+            let context = this.toolContext;
+            let env = this.toolEnv;
+
+            let x = wnd.leftMargin;
+            let y = wnd.commandButtonsBottom;
+            let itemWidth = wnd.itemWidth * wnd.itemScale;
+            let itemHeight = wnd.itemHeight * wnd.itemScale;
+
+            let viewWidth = wnd.width;
+
+            wnd.itemAreas = new List<RectangleLayoutArea>();
+
+            for (let palletColorIndex = 0; palletColorIndex < DocumentData.maxPalletColors; palletColorIndex++) {
+
+                let layoutArea = new RectangleLayoutArea();
+                layoutArea.index = palletColorIndex;
+                layoutArea.left = x;
+                layoutArea.top = y;
+                layoutArea.right = x + itemWidth + wnd.itemRightMargin - 1;
+                layoutArea.bottom = y + itemHeight + wnd.itemBottomMargin - 1;
+                wnd.itemAreas.push(layoutArea);
+
+                x += itemWidth + wnd.itemRightMargin;
+
+                if (x + itemWidth >= viewWidth - wnd.rightMargin) {
+
+                    x = wnd.leftMargin;
+                    y += itemHeight + wnd.itemBottomMargin;
+                }
+            }
+        }
+
+        protected drawPalletSelectorWindow_CommandButtons(wnd: PalletSelectorWindow) {
+
+            for (let layoutArea of wnd.commandButtonAreas) {
+
+                let isSelected = (<int>wnd.currentTargetID == layoutArea.index);
+
+                this.drawButtonBackground(layoutArea, isSelected);
+
+                this.drawButtonImage(layoutArea);
+            }
+        }
+
+        protected drawPalletSelectorWindow_PalletItems(wnd: PalletSelectorWindow, documentData: DocumentData, currentVectorLayer: VectorLayer) {
+
+            this.canvasRender.setContext(wnd);
+
+            let viewWidth = wnd.width;
+
+            let currentPalletColorIndex = -1;
+            if (currentVectorLayer != null) {
+
+                if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+
+                    currentPalletColorIndex = currentVectorLayer.line_PalletColorIndex;
+                }
+                else if (wnd.currentTargetID == PalletSelectorWindowButtonID.fillColor) {
+
+                    currentPalletColorIndex = currentVectorLayer.fill_PalletColorIndex;
+                }
+            }
+
+            for (let layoutArea of wnd.itemAreas) {
+
+                let palletColorIndex = layoutArea.index;
+
+                if (palletColorIndex > documentData.palletColors.length) {
+                    break;
+                }
+
+                let x = layoutArea.left;
+                let y = layoutArea.top;
+                let itemWidth = layoutArea.getWidth() - wnd.itemRightMargin;
+                let itemHeight = layoutArea.getHeight() - wnd.itemBottomMargin;
+
+                let palletColor = documentData.palletColors[palletColorIndex];
+
+                this.canvasRender.setFillColorV(palletColor.color);
+                this.canvasRender.setStrokeColorV(this.drawStyle.palletSelectorItemEdgeColor);
+
+                this.canvasRender.fillRect(x + 0.5, y + 0.5, itemWidth, itemHeight);
+
+                this.canvasRender.setStrokeWidth(1.0);
+                this.canvasRender.drawRectangle(x + 0.5, y + 0.5, itemWidth, itemHeight);
+
+                if (palletColorIndex == currentPalletColorIndex) {
+
+                    this.canvasRender.setStrokeWidth(1.5);
+                    this.canvasRender.drawRectangle(x + 0.5 - 1.0, y + 0.5 - 1.0, itemWidth + 2.0, itemHeight + 2.0);
+                }
+            }
+        }
+
+        // ColorMixer window
+
+        private hsv = vec4.create();
+
+        protected drawColorMixerWindow_SetInputControls() {
+
+            let wnd = this.palletSelectorWindow;
+            let context = this.toolContext;
+            let env = this.toolEnv;
+            let documentData = context.document;
+
+            let color = this.getPalletSelectorWindow_CurrentColor();
+
+            if (color != null) {
+
+                this.setColorMixerValue(this.ID.colorMixer_red, color[0]);
+                this.setColorMixerValue(this.ID.colorMixer_green, color[1]);
+                this.setColorMixerValue(this.ID.colorMixer_blue, color[2]);
+                this.setColorMixerValue(this.ID.colorMixer_alpha, color[3]);
+
+                Maths.rgbToHSV(this.hsv, color[0], color[1], color[2])
+
+                this.setColorMixerValue(this.ID.colorMixer_hue, this.hsv[0]);
+                this.setColorMixerValue(this.ID.colorMixer_sat, this.hsv[1]);
+                this.setColorMixerValue(this.ID.colorMixer_val, this.hsv[2]);
+            }
+            else {
+
+                this.setColorMixerValue(this.ID.colorMixer_red, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_green, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_blue, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_alpha, 0.0);
+
+                this.setColorMixerValue(this.ID.colorMixer_hue, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_sat, 0.0);
+                this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
+            }
         }
     }
 }

@@ -331,6 +331,21 @@ namespace ManualTracingTool {
 
         // Operation inputs
 
+        mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+
+            if (!env.isModalToolRunning()) {
+
+                this.startLatticeTransform(env);
+            }
+            else {
+
+                if (e.isRightButtonPressing()) {
+
+                    this.cancelTransform(env);
+                }
+            }
+        }
+
         mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             if (env.isModalToolRunning()) {
@@ -479,21 +494,6 @@ namespace ManualTracingTool {
             }
 
             return false;
-        }
-
-        mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
-
-            if (!env.isModalToolRunning()) {
-
-                this.startLatticeTransform(env);
-            }
-            else {
-
-                if (e.isRightButtonPressing()) {
-
-                    this.cancelTransform(env);
-                }
-            }
         }
 
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @override

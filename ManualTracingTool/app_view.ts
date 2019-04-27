@@ -1,11 +1,107 @@
 
 namespace ManualTracingTool {
 
-    export class Main_View extends Main_Core {
+    export class App_View {
+
+        // UI elements
+
+        mainWindow = new MainWindow();
+        editorWindow = new CanvasWindow();
+        webglWindow = new CanvasWindow();
+        pickingWindow = new PickingWindow();
+        layerWindow = new LayerWindow();
+        subtoolWindow = new SubtoolWindow();
+        timeLineWindow = new TimeLineWindow();
+        palletSelectorWindow = new PalletSelectorWindow();
+        colorMixerWindow_colorCanvas = new ColorCanvasWindow();
+        palletColorModal_colorCanvas = new ColorCanvasWindow();
+        posing3dView = new Posing3DView();
+
+        renderingWindow = new CanvasWindow();
+
+        activeCanvasWindow: CanvasWindow = null;
+
+        canvasRender = new CanvasRender();
+        webGLRender = new WebGLRender();
+
+        ID = new HTMLElementID();
+
+        layerTypeNameDictionary: List<string> = [
+            'none',
+            'root',
+            'ベクター レイヤー',
+            'グループ レイヤー',
+            '画像ファイル レイヤー',
+            '３Dポーズ レイヤー',
+            'ベクター参照 レイヤー'
+        ];
+
+        // UI states
+
+        selectCurrentLayerAnimationLayer: Layer = null;
+        selectCurrentLayerAnimationTime = 0.0;
+        selectCurrentLayerAnimationTimeMax = 0.4;
+
+        isViewLocationMoved = false;
+        homeViewLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        lastViewLocation = vec3.fromValues(0.0, 0.0, 0.0);
+        lastViewScale = 1.0;
+        lastViewRotation = 0.0;
+
+        // Integrated tool system
+
+        toolContext: ToolContext = null;
+        toolEnv: ToolEnvironment = null;
+        toolDrawEnv: ToolDrawingEnvironment = null;
+        viewLayerContext = new ViewLayerContext();
+
+        // Work variable
+
+        view2DMatrix = mat4.create();
+        invView2DMatrix = mat4.create();
+        tempVec3 = vec3.create();
+        tempVec4 = vec4.create();
+        tempColor4 = vec4.create();
+        tempMat4 = mat4.create();
+        fromLocation = vec3.create();
+        toLocation = vec3.create();
+        upVector = vec3.create();
+
+        // Backward interfaces
+
+        protected getDocument(): DocumentData { // @virtual
+
+            return null;
+        }
+
+        protected getLocalSetting(): LocalSetting { // @virtual
+
+            return null;
+        }
+
+        protected getCurrentMainTool(): MainTool { // @virtual
+
+            return null;
+        }
+
+        protected getCurrentTool(): ToolBase { // @virtual
+
+            return null;
+        }
+
+        protected isWhileLoading(): boolean { // @virtual
+
+            return false;
+        }
+
+        protected isEventDisabled(): boolean { // @virtual
+
+            return false;
+        }
 
         // Initializing devices not depending media resoures
 
-        protected initializeViewDevices() { // @override
+        protected initializeViewDevices() {
 
             this.resizeWindows();
 
@@ -36,15 +132,11 @@ namespace ManualTracingTool {
 
             this.initializeLayerWindow();
             this.initializePalletSelectorWindow();
-
-            this.layerWindow_CaluculateLayout(this.layerWindow);
-            this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
-            this.palletSelector_CaluculateLayout();
         }
 
         // Starting ups after loading resources
 
-        protected initializeViewState() { // @override
+        protected initializeViewState() {
 
             this.mainWindow.centerLocationRate[0] = 0.5;
             this.mainWindow.centerLocationRate[1] = 0.5;
@@ -54,13 +146,11 @@ namespace ManualTracingTool {
 
             this.setCanvasSizeFromStyle(this.palletColorModal_colorCanvas);
             this.drawPalletColorMixer(this.palletColorModal_colorCanvas);
-
-            this.updateLayerStructure();
         }
 
         // View management
 
-        protected resizeWindows() { // @override
+        protected resizeWindows() {
 
             this.resizeCanvasToParent(this.mainWindow);
             this.fitCanvas(this.editorWindow, this.mainWindow);
@@ -272,28 +362,179 @@ namespace ManualTracingTool {
             env.setRedrawMainWindowEditorWindow();
         }
 
-        // Layer window
+        protected collectViewContext() {
 
-        layerWindowLayoutArea = new RectangleLayoutArea();
-        layerWindowItems = new List<LayerWindowItem>();
-        layerWindowCommandButtons: List<RectangleLayoutArea> = null;
+            let context = this.toolContext;
+            let aniSetting = context.document.animationSettingData;
+
+            // Collects layers
+
+            let layers = new List<Layer>();
+            Layer.collectLayerRecursive(layers, this.toolContext.document.rootLayer);
+
+            // Creates all view-keyframes.
+
+            let viewKeyFrames = new List<ViewKeyframe>();
+            this.collectViewContext_CollectKeyframes(viewKeyFrames, layers);
+            let sortedViewKeyFrames = viewKeyFrames.sort((a, b) => { return a.frame - b.frame });
+
+            this.viewLayerContext.keyframes = sortedViewKeyFrames;
+
+            // Collects layers for each view-keyframes
+
+            this.collectViewContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
+        }
+
+        protected collectViewContext_CollectLayersRecursive(result: List<Layer>, parentLayer: Layer) {
+
+            for (let layer of parentLayer.childLayers) {
+
+                result.push(layer);
+
+                if (layer.childLayers.length > 0) {
+
+                    this.collectViewContext_CollectLayersRecursive(result, layer);
+                }
+            }
+        }
+
+        protected collectViewContext_CollectKeyframes(result: List<ViewKeyframe>, layers: List<Layer>) {
+
+            let keyframeDictionary = new Dictionary<boolean>();
+
+            for (let layer of layers) {
+
+                if (VectorLayer.isVectorLayer(layer)) {
+
+                    let vectorLayer = <VectorLayer>(layer);
+
+                    for (let keyframe of vectorLayer.keyframes) {
+
+                        let frameText = keyframe.frame.toString();
+
+                        if (!DictionaryContainsKey(keyframeDictionary, frameText)) {
+
+                            let viewKeyframe = new ViewKeyframe();
+                            viewKeyframe.frame = keyframe.frame;
+                            result.push(viewKeyframe);
+
+                            keyframeDictionary[frameText] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        protected collectViewContext_CollectKeyframeLayers(result: List<ViewKeyframe>, layers: List<Layer>) {
+
+            // All view-keyframes contains view-layer info for all layer.
+
+            for (let viewKeyframe of result) {
+
+                for (let layer of layers) {
+
+                    let keyframeLayer = new ViewKeyframeLayer();
+                    keyframeLayer.layer = layer;
+
+                    if (VectorLayer.isVectorLayer(layer)) {
+
+                        let vectorLayer = <VectorLayer>layer;
+
+                        let max_KeyFrame: VectorLayerKeyframe = null;
+                        for (let keyframe of vectorLayer.keyframes) {
+
+                            if (keyframe.frame > viewKeyframe.frame) {
+                                break;
+                            }
+
+                            max_KeyFrame = keyframe;
+                        }
+
+                        if (max_KeyFrame == null) {
+
+                            throw ('The document contains a layer that has no keyframe!');
+                        }
+
+                        keyframeLayer.vectorLayerKeyframe = max_KeyFrame;
+                    }
+
+                    viewKeyframe.layers.push(keyframeLayer);
+                }
+            }
+        }
+
+        protected findNextViewKeyframeIndex(startFrame: int, searchDirection: int): int {
+
+            let resultFrame = -1;
+
+            let viewKeyframes = this.viewLayerContext.keyframes;
+
+            let startKeyframeIndex = ViewKeyframe.findViewKeyframeIndex(viewKeyframes, startFrame);
+
+            if (startKeyframeIndex == -1) {
+                return -1;
+            }
+
+            let resultIndex = startKeyframeIndex + searchDirection;
+
+            if (resultIndex < 0) {
+
+                return 0;
+            }
+
+            if (resultIndex >= viewKeyframes.length) {
+
+                return viewKeyframes.length - 1;
+            }
+
+            return resultIndex;
+        }
+
+        protected findNextViewKeyframeFrame(startFrame: int, searchDirection: int): int {
+
+            let resultFrame = -1;
+
+            let keyframeIndex = this.findNextViewKeyframeIndex(startFrame, searchDirection);
+
+            if (keyframeIndex == -1) {
+
+                return -2;
+            }
+            else {
+
+                return this.viewLayerContext.keyframes[keyframeIndex].frame;
+            }
+        }
+
+        // Message box
+
+        protected showMessageBox(text: string) {
+
+            alert(text);
+        }
+
+        // Layer window
 
         private initializeLayerWindow() {
 
-            this.layerWindowCommandButtons = new List<RectangleLayoutArea>();
-            this.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.addLayer).setIcon(1));
-            this.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.deleteLayer).setIcon(2));
-            this.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.moveUp).setIcon(3));
-            this.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.moveDown).setIcon(4));
+            let wnd = this.layerWindow;
+
+            wnd.layerWindowCommandButtons = new List<RectangleLayoutArea>();
+            wnd.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.addLayer).setIcon(1));
+            wnd.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.deleteLayer).setIcon(2));
+            wnd.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.moveUp).setIcon(3));
+            wnd.layerWindowCommandButtons.push((new RectangleLayoutArea()).setIndex(<int>LayerWindowButtonID.moveDown).setIcon(4));
         }
 
-        protected layerWindow_CollectItems() { // @override
+        protected layerWindow_CollectItems(document: DocumentData) {
 
-            this.layerWindowItems = new List<LayerWindowItem>();
-            this.collectLayerWindowItemsRecursive(this.layerWindowItems, this.document.rootLayer, 0);
+            let wnd = this.layerWindow;
+
+            wnd.layerWindowItems = new List<LayerWindowItem>();
+            this.collectLayerWindowItemsRecursive(wnd.layerWindowItems, document.rootLayer, 0);
 
             let previousItem: LayerWindowItem = null;
-            for (let item of this.layerWindowItems) {
+            for (let item of wnd.layerWindowItems) {
 
                 item.previousItem = previousItem;
 
@@ -327,7 +568,7 @@ namespace ManualTracingTool {
 
                 if (layer.childLayers.length > 0) {
 
-                    this.collectLayerWindowItemsRecursive(this.layerWindowItems, layer, currentDepth + 1);
+                    this.collectLayerWindowItemsRecursive(result, layer, currentDepth + 1);
                 }
 
                 siblingItem = item;
@@ -336,8 +577,10 @@ namespace ManualTracingTool {
 
         protected findCurrentLayerLayerWindowItemIndex() {
 
-            for (let index = 0; index < this.layerWindowItems.length; index++) {
-                let item = this.layerWindowItems[index];
+            let wnd = this.layerWindow;
+
+            for (let index = 0; index < wnd.layerWindowItems.length; index++) {
+                let item = wnd.layerWindowItems[index];
 
                 if (item.layer == this.toolContext.currentLayer) {
 
@@ -350,11 +593,13 @@ namespace ManualTracingTool {
 
         protected findCurrentLayerLayerWindowItem(): LayerWindowItem {
 
+            let wnd = this.layerWindow;
+
             let index = this.findCurrentLayerLayerWindowItemIndex();
 
             if (index != -1) {
 
-                let item = this.layerWindowItems[index];
+                let item = wnd.layerWindowItems[index];
 
                 return item;
             }
@@ -378,6 +623,14 @@ namespace ManualTracingTool {
             }
         }
 
+        protected layerWindow_UnselectAllLayer() {
+
+            for (let item of this.layerWindow.layerWindowItems) {
+
+                item.layer.isSelected = false;
+            }
+        }
+
         // Pallet selector window
 
         protected initializePalletSelectorWindow() {
@@ -392,7 +645,7 @@ namespace ManualTracingTool {
 
         subToolViewItems = new List<SubToolViewItem>();
 
-        protected subtoolWindow_CollectViewItems() { // @override
+        protected subtoolWindow_CollectViewItems() {
 
             this.subToolViewItems = new List<SubToolViewItem>();
 
@@ -418,7 +671,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected subtoolWindow_CaluculateLayout(subtoolWindow: SubtoolWindow) { // @override
+        protected subtoolWindow_CaluculateLayout(subtoolWindow: SubtoolWindow) {
 
             let scale = subtoolWindow.subToolItemScale;
             let fullWidth = subtoolWindow.width - 1;
@@ -437,6 +690,44 @@ namespace ManualTracingTool {
             }
 
             subtoolWindow.subToolItemsBottom = currentY;
+        }
+
+        // Color mixer window
+
+        protected getPalletSelectorWindow_SelectedColor(): Vec4 {
+
+            let wnd = this.palletSelectorWindow;
+            let env = this.toolEnv;
+
+            if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+
+                return env.currentVectorLayer.layerColor;
+            }
+            else {
+
+                return env.currentVectorLayer.fillColor;
+            }
+        }
+
+        protected getPalletSelectorWindow_CurrentColor(): Vec4 {
+
+            let wnd = this.palletSelectorWindow;
+            let env = this.toolEnv;
+
+            if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+
+                return env.getCurrentLayerLineColor();
+            }
+            else {
+
+                return env.getCurrentLayerFillColor();
+            }
+        }
+
+        protected setColorMixerValue(id: string, colorValue: float) {
+
+            this.setInputElementNumber2Decimal(id + this.ID.colorMixer_id_number, colorValue);
+            this.setInputElementRangeValue(id + this.ID.colorMixer_id_range, colorValue, 0.0, 1.0);
         }
 
         // Dialogs
@@ -475,7 +766,7 @@ namespace ManualTracingTool {
             };
         }
 
-        protected isModalShown(): boolean { // @override
+        protected isModalShown(): boolean {
 
             return (this.currentModalDialogID != null && this.currentModalDialogID != this.ID.none);
         }
@@ -772,11 +1063,6 @@ namespace ManualTracingTool {
             this.palletColorWindow_EditLayer = null;
         }
 
-        public openDocumentSettingDialog() { // @override
-
-            this.openDocumentSettingModal();
-        }
-
         protected openOperationOptionModal() {
 
             if (this.isModalShown()) {
@@ -798,57 +1084,6 @@ namespace ManualTracingTool {
             }
 
             this.openModal(this.ID.newLayerCommandOptionModal, null);
-        }
-
-        protected onNewLayerCommandOptionModal() {
-
-            if (this.currentModalDialogResult != this.ID.newLayerCommandOptionModal_ok) {
-
-                return;
-            }
-
-            var newLayerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, NewLayerTypeID.vectorLayer);
-
-            // Select command
-
-            let layerCommand: Command_Layer_CommandBase = null;
-
-            if (newLayerType == NewLayerTypeID.vectorLayer) {
-
-                layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
-            }
-            else if (newLayerType == NewLayerTypeID.vectorLayer_Fill) {
-
-                let command = new Command_Layer_AddVectorLayerToCurrentPosition();
-                command.createForFillColor = true;
-
-                layerCommand = command;
-            }
-            else if (newLayerType == NewLayerTypeID.vectorLayerReferenceLayer) {
-
-                layerCommand = new Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition();
-            }
-            else if (newLayerType == NewLayerTypeID.groupLayer) {
-
-                layerCommand = new Command_Layer_AddGroupLayerToCurrentPosition();
-            }
-            else if (newLayerType == NewLayerTypeID.posingLayer) {
-
-                layerCommand = new Command_Layer_AddPosingLayerToCurrentPosition();
-            }
-            else if (newLayerType == NewLayerTypeID.imageFileReferenceLayer) {
-
-                layerCommand = new Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
-            }
-
-            if (layerCommand == null) {
-
-                return;
-            }
-
-            // Execute command
-
-            this.executeLayerCommand(layerCommand);
         }
 
         protected openFileDialogModal(targetID: OpenFileDialogTargetID, filePath: string) {
@@ -878,11 +1113,12 @@ namespace ManualTracingTool {
 
             if (targetID == OpenFileDialogTargetID.imageFileReferenceLayerFilePath) {
 
-                if (this.currentTool != null) {
+                let currentTool = this.getCurrentTool();
+                if (currentTool != null) {
 
                     if (!StringIsNullOrEmpty(filePath)) {
 
-                        this.currentTool.onOpenFile(filePath, this.toolEnv);
+                        currentTool.onOpenFile(filePath, this.toolEnv);
                     }
                 }
             }
@@ -900,28 +1136,32 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.setInputElementNumber(this.ID.documentSettingModal_ViewScale, this.document.defaultViewScale);
-            this.setInputElementNumber(this.ID.documentSettingModal_LineWidth, this.document.lineWidthBiasRate);
-            this.setInputElementNumber(this.ID.documentSettingModal_FrameLeft, this.document.documentFrame[0]);
-            this.setInputElementNumber(this.ID.documentSettingModal_FrameTop, this.document.documentFrame[1]);
-            this.setInputElementNumber(this.ID.documentSettingModal_FrameRight, this.document.documentFrame[2]);
-            this.setInputElementNumber(this.ID.documentSettingModal_FrameBottom, this.document.documentFrame[3]);
+            let documentData = this.getDocument();
+
+            this.setInputElementNumber(this.ID.documentSettingModal_ViewScale, documentData.defaultViewScale);
+            this.setInputElementNumber(this.ID.documentSettingModal_LineWidth, documentData.lineWidthBiasRate);
+            this.setInputElementNumber(this.ID.documentSettingModal_FrameLeft, documentData.documentFrame[0]);
+            this.setInputElementNumber(this.ID.documentSettingModal_FrameTop, documentData.documentFrame[1]);
+            this.setInputElementNumber(this.ID.documentSettingModal_FrameRight, documentData.documentFrame[2]);
+            this.setInputElementNumber(this.ID.documentSettingModal_FrameBottom, documentData.documentFrame[3]);
 
             this.openModal(this.ID.documentSettingModal, null);
         }
 
         protected onClosedDocumentSettingModal() {
 
-            this.document.defaultViewScale = this.getInputElementNumber(this.ID.documentSettingModal_ViewScale, 1.0);
-            if (this.document.defaultViewScale < this.mainWindow.minViewScale) {
+            let documentData = this.getDocument();
 
-                this.document.defaultViewScale = this.mainWindow.minViewScale;
+            documentData.defaultViewScale = this.getInputElementNumber(this.ID.documentSettingModal_ViewScale, 1.0);
+            if (documentData.defaultViewScale < this.mainWindow.minViewScale) {
+
+                documentData.defaultViewScale = this.mainWindow.minViewScale;
             }
-            this.document.lineWidthBiasRate = this.getInputElementNumber(this.ID.documentSettingModal_LineWidth, 1.0);
-            this.document.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft, -512);
-            this.document.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop, -512);
-            this.document.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight, 512);
-            this.document.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom, 512);
+            documentData.lineWidthBiasRate = this.getInputElementNumber(this.ID.documentSettingModal_LineWidth, 1.0);
+            documentData.documentFrame[0] = this.getInputElementNumber(this.ID.documentSettingModal_FrameLeft, -512);
+            documentData.documentFrame[1] = this.getInputElementNumber(this.ID.documentSettingModal_FrameTop, -512);
+            documentData.documentFrame[2] = this.getInputElementNumber(this.ID.documentSettingModal_FrameRight, 512);
+            documentData.documentFrame[3] = this.getInputElementNumber(this.ID.documentSettingModal_FrameBottom, 512);
         }
 
         protected openExportImageFileModal() {
@@ -949,81 +1189,6 @@ namespace ManualTracingTool {
             }
 
             this.openModal(this.ID.exportImageFileModal, null);
-        }
-
-        protected onClosedExportImageFileModal() {
-
-            if (this.currentModalDialogResult != this.ID.exportImageFileModal_ok) {
-                return;
-            }
-
-            let fileName = this.getInputElementText(this.ID.exportImageFileModal_fileName);
-
-            if (StringIsNullOrEmpty(fileName)) {
-                return;
-            }
-
-            let backGroundType = this.getRadioElementIntValue(this.ID.exportImageFileModal_backGroundType, 1);
-            let scale = this.getInputElementNumber(this.ID.exportImageFileModal_scale, 1.0);
-
-            let frameLeft = Math.floor(this.document.documentFrame[0]);
-            let frameTop = Math.floor(this.document.documentFrame[1]);
-            let documentWidth = Math.floor(this.document.documentFrame[2]) - frameLeft + 1;
-            let documentHeight = Math.floor(this.document.documentFrame[3]) - frameTop + 1;
-
-            let imageLeft = Math.floor(frameLeft);
-            let imageTop = Math.floor(frameTop);
-            let imageWidth = Math.floor(documentWidth * scale);
-            let imageHeight = Math.floor(documentHeight * scale);
-
-            if (imageWidth > 0 && imageHeight > 0) {
-
-                let canvas = this.renderingWindow.canvas;
-                canvas.width = imageWidth;
-                canvas.height = imageHeight;
-
-                this.renderingWindow.width = imageWidth;
-                this.renderingWindow.height = imageHeight;
-                this.renderingWindow.viewLocation[0] = imageLeft;
-                this.renderingWindow.viewLocation[1] = imageTop;
-                this.renderingWindow.viewScale = scale;
-                this.renderingWindow.viewRotation = 0.0;
-                this.renderingWindow.centerLocationRate[0] = 0.0;
-                this.renderingWindow.centerLocationRate[1] = 0.0;
-                this.clearWindow(this.renderingWindow);
-                if (backGroundType == 1) {
-
-                    this.canvasRender.setFillColorV(this.document.palletColors[this.document.palletColors.length - 1].color);
-                    this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
-                }
-                this.drawMainWindow(this.renderingWindow, true);
-
-                let exportPath = this.localSetting.exportPath;
-                let imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
-                let extText = '.png';
-                if (imageType == 2) {
-                    extText = '.jpg';
-                }
-                let fileFullPath = exportPath + '/' + fileName + extText;
-
-                let imageTypeText = 'image/png';
-                if (imageType == 2) {
-                    imageTypeText = 'image/jpeg';
-                }
-                var dataUrl = canvas.toDataURL(imageTypeText, 0.9);
-                var data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
-                var buf = new Buffer(data, 'base64');
-
-                fs.writeFile(fileFullPath, buf, (error) => {
-                    if (error) {
-                        this.showMessageBox(error);
-                    }
-                });
-
-                // Free canvas memory
-                canvas.width = 10;
-                canvas.height = 10;
-            }
         }
 
         protected openNewKeyframeModal() {
@@ -1093,59 +1258,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected onModalWindowClosed() {
-
-            if (this.currentModalDialogID == this.ID.layerPropertyModal) {
-
-                this.onClosedLayerPropertyModal();
-            }
-            else if (this.currentModalDialogID == this.ID.palletColorModal) {
-
-                this.onClosedPalletColorModal();
-            }
-            else if (this.currentModalDialogID == this.ID.operationOptionModal) {
-
-                this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth, 1.0);
-                this.toolContext.drawLineMinWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineMinWidth, 0.1);
-
-                let operationUnitID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, OperationUnitID.linePoint);
-
-                this.setCurrentOperationUnitID(operationUnitID);
-            }
-            else if (this.currentModalDialogID == this.ID.newLayerCommandOptionModal) {
-
-                this.onNewLayerCommandOptionModal();
-            }
-            else if (this.currentModalDialogID == this.ID.openFileDialogModal) {
-
-                this.onClosedFileDialogModal();
-            }
-            else if (this.currentModalDialogID == this.ID.documentSettingModal) {
-
-                this.onClosedDocumentSettingModal();
-            }
-            else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
-
-                this.onClosedExportImageFileModal();
-            }
-            else if (this.currentModalDialogID == this.ID.newKeyframeModal) {
-
-                this.onClosedNewKeyframeModal();
-            }
-            else if (this.currentModalDialogID == this.ID.deleteKeyframeModal) {
-
-                this.onClosedDeleteKeyframeModal();
-            }
-
-            this.currentModalDialogID = this.ID.none;
-            this.currentModalDialogResult = this.ID.none;
-
-            this.toolEnv.setRedrawMainWindowEditorWindow();
-            this.toolEnv.setRedrawLayerWindow();
-            this.toolEnv.setRedrawSubtoolWindow();
-        }
-
-        public openFileDialog(targetID: OpenFileDialogTargetID) { // @override
+        public openFileDialog(targetID: OpenFileDialogTargetID) {
 
             if (targetID == OpenFileDialogTargetID.imageFileReferenceLayerFilePath) {
 
@@ -1244,7 +1357,7 @@ namespace ManualTracingTool {
 
         // Header window
 
-        protected updateHeaderButtons() { // @override
+        protected updateHeaderButtons() {
 
             {
                 let isButtonON = (this.toolContext.editMode == EditModeID.drawMode
@@ -1283,70 +1396,23 @@ namespace ManualTracingTool {
             }
         }
 
-        protected updateHeaderDocumentFileName() { // @override
+        protected setHeaderDocumentFileName(lastURL: string) {
 
-            if (this.localSetting.lastUsedFilePaths.length > 0) {
-
-                let filePath = this.localSetting.lastUsedFilePaths[0];
-
-                this.setInputElementText(this.ID.fileName, filePath);
-            }
-            else {
-
-                this.setInputElementText(this.ID.fileName, DocumentLogic.getDefaultDocumentFileName(this.localSetting));
-            }
-        }
-
-        protected setHeaderDefaultDocumentFileName() { // @override
-
-            this.setInputElementText(this.ID.fileName, DocumentLogic.getDefaultDocumentFileName(this.localSetting));
+            this.setInputElementText(this.ID.fileName, lastURL);
         }
 
         // Footer window
 
-        footerText: string = '';
-        footerTextBefore: string = '';
+        protected footerText: string = '';
+        protected footerTextBefore: string = '';
 
-        protected updateFooterMessage() { // @override
+        protected updateFooterText() {
 
-            let context = this.toolContext;
-            let modeText = '';
+            if (this.footerText != this.footerTextBefore) {
 
-            if (this.toolEnv.isDrawMode()) {
-
-                modeText = 'DrawMode';
+                this.getElement(this.ID.footer).innerHTML = this.footerText;
+                this.footerTextBefore = this.footerText;
             }
-            else if (this.toolEnv.isEditMode()) {
-
-                modeText = 'SelectMode';
-            }
-
-            let toolText = '';
-
-            if (this.toolEnv.isDrawMode()) {
-
-                if (this.currentTool == this.tool_DrawLine) {
-
-                    toolText = 'Draw line';
-                }
-                else if (this.currentTool == this.tool_ScratchLine) {
-
-                    toolText = 'Scratch line';
-                }
-                else if (this.currentTool == this.tool_Posing3d_LocateHead) {
-
-                    toolText = 'Posing(Head location)';
-                }
-            }
-            else if (this.toolEnv.isEditMode()) {
-
-                toolText = '';
-            }
-
-
-            this.footerText = modeText + ' ' + toolText;
-
-            this.footerText = this.currentTool.helpText;
         }
 
         // Hit test
@@ -1377,155 +1443,6 @@ namespace ManualTracingTool {
 
                 return false;
             }
-        }
-
-        protected mousemoveHittest(location: Vec3, minDistance: float): boolean {
-
-            this.hittest_Line_IsCloseTo.startProcess();
-
-            if (this.toolEnv.currentVectorGeometry != null) {
-
-                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
-            }
-
-            this.hittest_Line_IsCloseTo.endProcess();
-
-            return this.hittest_Line_IsCloseTo.isChanged;
-        }
-
-        // Common functions
-
-        protected setLayerCommandParameters(layerCommand: Command_Layer_CommandBase, currentLayerWindowItem: LayerWindowItem) {
-
-            // Collects layer items for command
-            let currentLayer: Layer = currentLayerWindowItem.layer;
-            let currentLayerParent: Layer = currentLayerWindowItem.parentLayer;
-
-            let previousLayer: Layer = null;
-            let previousLayerParent: Layer = null;
-            if (currentLayerWindowItem.layer.type == LayerTypeID.groupLayer) {
-
-                if (currentLayerWindowItem.previousSiblingItem != null) {
-
-                    previousLayer = currentLayerWindowItem.previousSiblingItem.layer;
-                    previousLayerParent = currentLayerWindowItem.previousSiblingItem.parentLayer;
-                }
-            }
-            else {
-
-                if (currentLayerWindowItem.previousItem != null) {
-
-                    previousLayer = currentLayerWindowItem.previousItem.layer;
-                    previousLayerParent = currentLayerWindowItem.previousItem.parentLayer;
-                }
-            }
-
-            let nextLayer: Layer = null;
-            let nextLayerParent: Layer = null;
-            if (currentLayerWindowItem.layer.type == LayerTypeID.groupLayer) {
-
-                if (currentLayerWindowItem.nextSiblingItem != null) {
-
-                    nextLayer = currentLayerWindowItem.nextSiblingItem.layer;
-                    nextLayerParent = currentLayerWindowItem.nextSiblingItem.parentLayer;
-                }
-            }
-            else {
-
-                if (currentLayerWindowItem.nextItem != null) {
-
-                    nextLayer = currentLayerWindowItem.nextItem.layer;
-                    nextLayerParent = currentLayerWindowItem.nextItem.parentLayer;
-                }
-            }
-
-            layerCommand.setPrameters(
-                currentLayer
-                , currentLayerParent
-                , previousLayer
-                , previousLayerParent
-                , nextLayer
-                , nextLayerParent
-            );
-        }
-
-        protected executeLayerCommand(layerCommand: Command_Layer_CommandBase) {
-
-            let currentLayerWindowItem = this.findCurrentLayerLayerWindowItem();
-
-            if (currentLayerWindowItem == null) {
-
-                return;
-            }
-
-            this.setLayerCommandParameters(layerCommand, currentLayerWindowItem);
-
-            if (layerCommand.isAvailable(this.toolEnv)) {
-
-                layerCommand.execute(this.toolEnv);
-
-                this.toolContext.commandHistory.addCommand(layerCommand);
-            }
-        }
-
-        protected startVectorLayerModalTool(modalToolID: ModalToolID) {
-
-            let modalTool = this.vectorLayer_ModalTools[<int>modalToolID];
-
-            if (modalTool == null) {
-
-                return;
-            }
-
-            this.startModalTool(modalTool);
-        }
-
-        protected startImageFileReferenceLayerModalTool(modalToolID: ModalToolID) {
-
-            let modalTool = this.imageFileReferenceLayer_ModalTools[<int>modalToolID];
-
-            if (modalTool == null) {
-
-                return;
-            }
-
-            this.startModalTool(modalTool);
-        }
-
-        protected layerWindow_UnselectAllLayer() { // @override
-
-            for (let item of this.layerWindowItems) {
-
-                item.layer.isSelected = false;
-            }
-        }
-
-        protected selectNextOrPreviousLayer(selectNext: boolean) {
-
-            let item = this.findCurrentLayerLayerWindowItem();
-
-            if (selectNext) {
-
-                if (item.nextItem != null) {
-
-                    this.setCurrentLayer(item.nextItem.layer);
-                }
-            }
-            else {
-
-                if (item.previousItem != null) {
-
-                    this.setCurrentLayer(item.previousItem.layer);
-                }
-            }
-        }
-
-        // Drawing for export
-
-        protected clearWindow(canvasWindow: CanvasWindow) { // @virtual
-        }
-
-        protected drawMainWindow(canvasWindow: CanvasWindow, isExporting: boolean) { // @virtual
         }
 
         // HTML helper
@@ -1559,7 +1476,7 @@ namespace ManualTracingTool {
             return element;
         }
 
-        getInputElementText(id: string): string { // @override
+        getInputElementText(id: string): string {
 
             let element = <HTMLInputElement>(document.getElementById(id));
 
@@ -1719,6 +1636,12 @@ namespace ManualTracingTool {
         layerItemVisibilityIconRight = 24.0;
 
         layerItemsBottom = 0.0;
+
+        layerWindowLayoutArea = new RectangleLayoutArea();
+
+        layerWindowItems = new List<LayerWindowItem>();
+
+        layerWindowCommandButtons: List<RectangleLayoutArea> = null;
     }
 
     export class SubtoolWindow extends ToolBaseWindow {
@@ -1939,6 +1862,8 @@ namespace ManualTracingTool {
         none = 'none';
 
         fileName = 'fileName';
+
+        footer = 'footer';
 
         mainCanvas = 'mainCanvas';
         editorCanvas = 'editorCanvas';
