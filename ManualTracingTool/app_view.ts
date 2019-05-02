@@ -378,24 +378,11 @@ namespace ManualTracingTool {
             this.collectViewContext_CollectKeyframes(viewKeyFrames, layers);
             let sortedViewKeyFrames = viewKeyFrames.sort((a, b) => { return a.frame - b.frame });
 
-            this.viewLayerContext.keyframes = sortedViewKeyFrames;
-
             // Collects layers for each view-keyframes
 
             this.collectViewContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
-        }
 
-        protected collectViewContext_CollectLayersRecursive(result: List<Layer>, parentLayer: Layer) {
-
-            for (let layer of parentLayer.childLayers) {
-
-                result.push(layer);
-
-                if (layer.childLayers.length > 0) {
-
-                    this.collectViewContext_CollectLayersRecursive(result, layer);
-                }
-            }
+            this.viewLayerContext.keyframes = sortedViewKeyFrames;
         }
 
         protected collectViewContext_CollectKeyframes(result: List<ViewKeyframe>, layers: List<Layer>) {

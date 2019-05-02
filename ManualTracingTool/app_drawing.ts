@@ -135,7 +135,7 @@ namespace ManualTracingTool {
 
             let layer = viewKeyFrameLayer.layer;
 
-            if (!layer.isVisible && !currentLayerOnly) {
+            if (!layer.isHierarchicalVisible && !currentLayerOnly) {
                 return;
             }
 
@@ -167,7 +167,7 @@ namespace ManualTracingTool {
 
             let layer = viewKeyFrameLayer.layer;
 
-            if (!layer.isVisible && !currentLayerOnly) {
+            if (!layer.isHierarchicalVisible && !currentLayerOnly) {
                 return;
             }
 
@@ -646,7 +646,7 @@ namespace ManualTracingTool {
 
                 let layer = viewKeyframeLayer.layer;
 
-                if (!layer.isVisible || !VectorLayer.isVectorLayer(layer)) {
+                if (!layer.isHierarchicalVisible || !VectorLayer.isVectorLayer(layer)) {
                     continue;
                 }
 
@@ -722,7 +722,7 @@ namespace ManualTracingTool {
             mainWindow.copyTransformTo(pickingWindow);
             mainWindow.copyTransformTo(webglWindow);
 
-            if (env.currentPosingLayer != null && env.currentPosingLayer.isVisible
+            if (env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
                 && this.toolContext.mainToolID == MainToolID.posing
             ) {
 

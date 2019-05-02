@@ -3,7 +3,7 @@ namespace ManualTracingTool {
 
     export class Tool_EditDocumentFrame extends Tool_Transform_Lattice {
 
-        helpText = '4キーで設定ダイアログを開きます。';
+        helpText = 'エクスポート範囲を設定します。座標は整数値になります。<br />正確な座標値を確認するには4キーで設定ダイアログを開きます。';
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -75,10 +75,10 @@ namespace ManualTracingTool {
 
             let command = new Command_EditDocumentFrame();
             command.targetDocument = env.document;
-            command.newDocumentFrame[0] = this.latticePoints[0].location[0];
-            command.newDocumentFrame[1] = this.latticePoints[0].location[1];
-            command.newDocumentFrame[2] = this.latticePoints[2].location[0];
-            command.newDocumentFrame[3] = this.latticePoints[2].location[1];
+            command.newDocumentFrame[0] = Math.floor(this.latticePoints[0].location[0]);
+            command.newDocumentFrame[1] = Math.floor(this.latticePoints[0].location[1]);
+            command.newDocumentFrame[2] = Math.floor(this.latticePoints[2].location[0]);
+            command.newDocumentFrame[3] = Math.floor(this.latticePoints[2].location[1]);
             command.execute(env);
 
             env.commandHistory.addCommand(command);

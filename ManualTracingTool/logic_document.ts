@@ -60,6 +60,10 @@ namespace ManualTracingTool {
                 layer.isRenderTarget = true;
             }
 
+            if (layer.isHierarchicalVisible == undefined) {
+                layer.isHierarchicalVisible = true;
+            }
+
             if (layer.type == LayerTypeID.vectorLayer) {
 
                 let vectorLayer = <VectorLayer>layer;

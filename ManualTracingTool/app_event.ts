@@ -792,6 +792,7 @@ namespace ManualTracingTool {
                 if (clickedX <= selectedItem.textLeft) {
 
                     this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
+                    this.updateLayerStructure();
                     this.activateCurrentTool();
 
                     this.toolEnv.setRedrawMainWindowEditorWindow();
@@ -1556,7 +1557,7 @@ namespace ManualTracingTool {
                     let pickX = this.mainWindow.toolMouseEvent.offsetX + pickingPosition[0];
                     let pickY = this.mainWindow.toolMouseEvent.offsetY + pickingPosition[1];
 
-                    pickedLayer = this.pickLayer(this.mainWindow, this.currentKeyframe, pickX, pickY);
+                    pickedLayer = this.pickLayer(this.mainWindow, this.currentViewKeyframe, pickX, pickY);
 
                     if (pickedLayer != null) {
                         break;
@@ -1762,14 +1763,14 @@ namespace ManualTracingTool {
 
             if (key == 'k' || key == 'l') {
 
-                if (this.currentKeyframe != null) {
+                if (this.currentViewKeyframe != null) {
 
                     var add_FrameTime = 1;
                     if (key == 'k') {
                         add_FrameTime = -1;
                     }
 
-                    var newFrame = this.currentKeyframe.frame + add_FrameTime;
+                    var newFrame = this.currentViewKeyframe.frame + add_FrameTime;
 
                     if (newFrame < 0) {
 
@@ -1790,9 +1791,9 @@ namespace ManualTracingTool {
                         newFrame = this.previousKeyframe.frame + 1;
                     }
 
-                    if (this.currentKeyframe.frame != newFrame) {
+                    if (this.currentViewKeyframe.frame != newFrame) {
 
-                        for (let viewKeyFrameLayer of this.currentKeyframe.layers) {
+                        for (let viewKeyFrameLayer of this.currentViewKeyframe.layers) {
 
                             if (viewKeyFrameLayer.hasKeyframe()) {
 
@@ -1800,7 +1801,7 @@ namespace ManualTracingTool {
                             }
                         }
 
-                        this.currentKeyframe.frame = newFrame;
+                        this.currentViewKeyframe.frame = newFrame;
 
                         env.setRedrawMainWindowEditorWindow();
                         env.setRedrawTimeLineWindow();

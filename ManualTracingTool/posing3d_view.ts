@@ -375,7 +375,7 @@ namespace ManualTracingTool {
 
         drawPosingModel(posingLayer: PosingLayer, env: ToolEnvironment) {
 
-            if (!posingLayer.isVisible) {
+            if (!posingLayer.isHierarchicalVisible) {
                 return;
             }
 

@@ -43,7 +43,10 @@ namespace ManualTracingTool {
 
         layerColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 
-        // file only
+        // runtime
+        isHierarchicalVisible = true;
+
+        // when serialized only
         ID: int;
 
         static collectLayerRecursive(result: List<Layer>, parentLayer: Layer) {
@@ -55,6 +58,19 @@ namespace ManualTracingTool {
                 if (layer.childLayers.length > 0) {
 
                     Layer.collectLayerRecursive(result, layer);
+                }
+            }
+        }
+
+        static updateHierarchicalVisiblityRecursive(parentLayer: Layer) {
+
+            for (let layer of parentLayer.childLayers) {
+
+                layer.isHierarchicalVisible = layer.isVisible && parentLayer.isHierarchicalVisible;
+
+                if (layer.childLayers.length > 0) {
+
+                    Layer.updateHierarchicalVisiblityRecursive(layer);
                 }
             }
         }

@@ -615,7 +615,7 @@ namespace ManualTracingTool {
 
         protected drawMainWindow(canvasWindow: CanvasWindow, isExporting: boolean) { // @override
 
-            if (this.currentKeyframe == null) {
+            if (this.currentViewKeyframe == null) {
                 return;
             }
 
@@ -625,12 +625,10 @@ namespace ManualTracingTool {
 
             this.canvasRender.setContext(canvasWindow);
 
-            let viewKeyframe = this.currentKeyframe;
-
             let isModalToolRunning = this.isModalToolRunning();
 
-            for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
-                let viewKeyFrameLayer = viewKeyframe.layers[i];
+            for (let i = this.currentViewKeyframe.layers.length - 1; i >= 0; i--) {
+                let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
 
                 if (isExporting && !viewKeyFrameLayer.layer.isRenderTarget) {
                     continue;
@@ -641,8 +639,8 @@ namespace ManualTracingTool {
 
             if (env.isEditMode()) {
 
-                for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
-                    let viewKeyFrameLayer = viewKeyframe.layers[i];
+                for (let i = this.currentViewKeyframe.layers.length - 1; i >= 0; i--) {
+                    let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
 
                     this.drawLayerForEditMode(viewKeyFrameLayer, currentLayerOnly, this.document, isModalToolRunning)
                 }
@@ -812,24 +810,6 @@ namespace ManualTracingTool {
             this.canvasRender.setGlobalAlpha(1.0);
 
             this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
-        }
-
-        // Layer and animation operations
-
-        updateLayerStructure() { // @implements MainEditor
-
-            let documentData = this.getDocument();
-
-            this.collectViewContext();
-
-            // Re-set current keyframe and collects informations
-            this.setCurrentFrame(documentData.animationSettingData.currentTimeFrame);
-
-            this.layerWindow_CollectItems(documentData);
-            this.layerWindow_CaluculateLayout(this.layerWindow);
-            //this.subtoolWindow_CollectViewItems();
-            //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
-            //this.palletSelector_CaluculateLayout();
         }
 
         // View operations

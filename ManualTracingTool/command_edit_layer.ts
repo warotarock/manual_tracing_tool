@@ -122,7 +122,14 @@ namespace ManualTracingTool {
 
             this.insertTo_Layer_NewChildLayerList = ListClone(parentLayer.childLayers);
 
-            ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, layer);
+            if (insertIndex < this.insertTo_Layer_NewChildLayerList.length) {
+
+                ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, layer);
+            }
+            else {
+
+                this.insertTo_Layer_NewChildLayerList.push(layer);
+            }
 
             parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
 
@@ -438,7 +445,20 @@ namespace ManualTracingTool {
 
         executeCommand(env: ToolEnvironment) { // @override
 
-            if (this.currentLayerParent == this.previousLayerParent) {
+            if (this.previousLayer.type == LayerTypeID.groupLayer) {
+
+                if (this.previousLayer == this.currentLayerParent) {
+
+                    this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+                    this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer, env);
+                }
+                else {
+
+                    this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+                    this.executeLayerInsert(this.previousLayer, this.previousLayer.childLayers.length, this.currentLayer, env);
+                }
+            }
+            else if (this.previousLayerParent == this.currentLayerParent) {
 
                 this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex - 1, env);
                 env.setCurrentLayer(this.currentLayer);
@@ -475,7 +495,12 @@ namespace ManualTracingTool {
 
         executeCommand(env: ToolEnvironment) { // @override
 
-            if (this.currentLayerParent == this.nextLayerParent) {
+            if (this.nextLayer.type == LayerTypeID.groupLayer) {
+
+                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+                this.executeLayerInsert(this.nextLayer, 0, this.currentLayer, env);
+            }
+            else if (this.currentLayerParent == this.nextLayerParent) {
 
                 this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex + 1, env);
                 env.setCurrentLayer(this.currentLayer);

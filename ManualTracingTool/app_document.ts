@@ -356,5 +356,25 @@ namespace ManualTracingTool {
                 canvas.height = 10;
             }
         }
+
+        // Layer and animation operations
+
+        updateLayerStructure() { // @implements MainEditor
+
+            let documentData = this.getDocument();
+
+            Layer.updateHierarchicalVisiblityRecursive(documentData.rootLayer);
+
+            this.collectViewContext();
+
+            // Re-set current keyframe and collects informations
+            this.setCurrentFrame(documentData.animationSettingData.currentTimeFrame);
+
+            this.layerWindow_CollectItems(documentData);
+            this.layerWindow_CaluculateLayout(this.layerWindow);
+            //this.subtoolWindow_CollectViewItems();
+            //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+            //this.palletSelector_CaluculateLayout();
+        }
     }
 }

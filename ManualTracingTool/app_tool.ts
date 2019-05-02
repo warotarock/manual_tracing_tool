@@ -12,7 +12,7 @@ namespace ManualTracingTool {
         mainTools = new List<MainTool>();
 
         currentTool: ToolBase = null;
-        currentKeyframe: ViewKeyframe = null;
+        currentViewKeyframe: ViewKeyframe = null;
         previousKeyframe: ViewKeyframe = null;
         nextKeyframe: ViewKeyframe = null;
 
@@ -340,7 +340,7 @@ namespace ManualTracingTool {
 
         public setCurrentLayer(layer: Layer) { // @implements MainEditor
 
-            let viewKeyframe = this.currentKeyframe;
+            let viewKeyframe = this.currentViewKeyframe;
 
             this.toolContext.currentLayer = layer;
 
@@ -405,7 +405,7 @@ namespace ManualTracingTool {
             let aniSetting = context.document.animationSettingData;
             let viewKeyframes = this.viewLayerContext.keyframes;
 
-            let before_CurrentKeyframe = this.currentKeyframe;
+            let before_CurrentKeyframe = this.currentViewKeyframe;
 
             aniSetting.currentTimeFrame = frame;
 
@@ -423,7 +423,7 @@ namespace ManualTracingTool {
 
             if (keyframeIndex != -1) {
 
-                this.currentKeyframe = viewKeyframes[keyframeIndex];
+                this.currentViewKeyframe = viewKeyframes[keyframeIndex];
 
                 if (keyframeIndex - 1 >= 0) {
 
@@ -451,7 +451,7 @@ namespace ManualTracingTool {
                 this.setCurrentLayer(context.currentLayer);
             }
 
-            if (this.currentKeyframe != before_CurrentKeyframe) {
+            if (this.currentViewKeyframe != before_CurrentKeyframe) {
 
                 //this.collectViewContext_CollectEditTargets();
             }
@@ -547,13 +547,13 @@ namespace ManualTracingTool {
 
             // Collects layers
 
-            if (this.currentKeyframe != null) {
+            if (this.currentViewKeyframe != null) {
 
-                for (let viewKeyframeLayer of this.currentKeyframe.layers) {
+                for (let viewKeyframeLayer of this.currentViewKeyframe.layers) {
 
                     let layer = viewKeyframeLayer.layer;
 
-                    if (layer.isSelected && layer.isVisible) {
+                    if (layer.isSelected && layer.isHierarchicalVisible) {
 
                         editableKeyframeLayers.push(viewKeyframeLayer);
                     }
