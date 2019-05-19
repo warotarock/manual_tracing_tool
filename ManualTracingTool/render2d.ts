@@ -30,6 +30,8 @@ namespace ManualTracingTool {
             vec3.copy(targetWindow.centerLocationRate, this.centerLocationRate);
             targetWindow.viewScale = this.viewScale;
             targetWindow.viewRotation = this.viewRotation;
+            targetWindow.mirrorX = this.mirrorX;
+            targetWindow.mirrorY = this.mirrorY;
             mat4.copy(targetWindow.transformMatrix, this.transformMatrix);
         }
 

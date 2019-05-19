@@ -1376,6 +1376,8 @@ namespace ManualTracingTool {
                     vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
                     this.mainWindow.viewScale = context.document.defaultViewScale;
                     this.mainWindow.viewRotation = 0.0;
+                    this.mainWindow.mirrorX = false;
+                    this.mainWindow.mirrorY = false;
                     this.isViewLocationMoved = false;
                 }
                 else if (this.isViewLocationMoved) {
@@ -1544,6 +1546,7 @@ namespace ManualTracingTool {
                     this.selectNextOrPreviousLayer(false);
                     this.startShowingCurrentLayer();
                     env.setRedrawLayerWindow();
+                    env.setRedrawSubtoolWindow();
                 }
 
                 return;
@@ -1599,6 +1602,7 @@ namespace ManualTracingTool {
                             this.selectNextOrPreviousLayer(true);
                             this.startShowingCurrentLayer();
                             env.setRedrawLayerWindow();
+                            env.setRedrawSubtoolWindow();
                         }
                         else {
 

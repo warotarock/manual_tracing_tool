@@ -40,6 +40,9 @@ namespace ManualTracingTool {
     // ・collectEditTargetViewKeyframeLayersは何度も実行する必要はないのだが、選択状態が変わったりするたびに更新する必要があり辛いので現状リストを生成しているのでなんとかしたい
 
     // 既知のバグ (remaining bugs)
+    // ・グループレイヤー
+    // 　・グループレイヤー下のレイヤーがレイヤーウィンドウで一番下にあるとき下移動でグループを抜け出せない
+    // 　・グループレイヤー外のレイヤーを上移動でグループに入れるとき、グループの一番最後に挿入されるのでなく最初に挿入される
     // ・編集単位が辺のときでも線全体が選択色で表示される
     // ・レイヤーウィンドウでレイヤー移動時にグループの中に入れなくなっている
     // ・点の移動ツールなどで右クリックでキャンセルしたときに点の位置がモーダル中の位置で表示されつづけていた
@@ -206,37 +209,43 @@ namespace ManualTracingTool {
 
     function run() {
 
-        if (_Main.mainProcessState == MainProcessStateID.pause) {
+        try {
 
-            setTimeout(run, 1000);
-            return;
+            if (_Main.mainProcessState == MainProcessStateID.pause) {
+
+                setTimeout(run, 1000);
+                return;
+            }
+            else if (_Main.mainProcessState == MainProcessStateID.running) {
+
+                _Main.run();
+                _Main.draw();
+            }
+            else if (_Main.mainProcessState == MainProcessStateID.systemResourceLoading) {
+
+                _Main.processLoadingSystemResources();
+            }
+            else if (_Main.mainProcessState == MainProcessStateID.initialDocumentJSONLoading) {
+
+                _Main.processLoadingDocumentJSON();
+            }
+            else if (_Main.mainProcessState == MainProcessStateID.documentResourceLoading
+                || _Main.mainProcessState == MainProcessStateID.initialDocumentResourceLoading) {
+
+                _Main.processLoadingDocumentResources();
+            }
+
+            if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
+
+                setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
+            }
+            else {
+
+                setTimeout(run, 1000 / 60);
+            }
         }
-        else if (_Main.mainProcessState == MainProcessStateID.running) {
-
-            _Main.run();
-            _Main.draw();
-        }
-        else if (_Main.mainProcessState == MainProcessStateID.systemResourceLoading) {
-
-            _Main.processLoadingSystemResources();
-        }
-        else if (_Main.mainProcessState == MainProcessStateID.initialDocumentJSONLoading) {
-
-            _Main.processLoadingDocumentJSON();
-        }
-        else if (_Main.mainProcessState == MainProcessStateID.documentResourceLoading
-            || _Main.mainProcessState == MainProcessStateID.initialDocumentResourceLoading) {
-
-            _Main.processLoadingDocumentResources();
-        }
-
-        if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
-
-            setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
-        }
-        else {
-
-            setTimeout(run, 1000 / 60);
+        catch (e) {
+            console.log(e);
         }
     }
 }

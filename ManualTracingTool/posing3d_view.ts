@@ -643,6 +643,9 @@ namespace ManualTracingTool {
 
             mat4.copy(this.modelMatrix, locationMatrix);
 
+            let wnd = this.webglWindow;
+            this.render.setCullingBackFace(!wnd.mirrorX);
+
             if (flipSide) {
 
                 mat4.scale(this.modelMatrix, this.modelMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
@@ -666,8 +669,6 @@ namespace ManualTracingTool {
             shader.setProjectionMatrix(this.projectionMatrix);
             shader.setModelViewMatrix(this.modelViewMatrix);
             shader.setNormalMatrix(this.normalMatrix);
-
-            this.render.setCullingBackFace(true);
         }
 
         private drawZTestSphere(locationMatrix: Mat4, inputSideID: InputSideID, env: ToolEnvironment) {
@@ -748,12 +749,21 @@ namespace ManualTracingTool {
             mat4.ortho(this.real3DProjectionMatrix, -real3DViewHalfWidth, real3DViewHalfWidth, -real3DViewHalfWidth, real3DViewHalfWidth, 0.1, 10.0);
             mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, -orthoWidth, orthoWidth, 0.1, 10.0);
 
-            let viewOffsetX = -(wnd.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
-            let viewOffsetY = (wnd.viewLocation[1]) / real2DViewHalfHeight;
+            // 2D rendering
             mat4.identity(this.tmpMatrix);
-            mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, aspect, 1.0, 1.0));
-            mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -wnd.viewRotation * Math.PI / 180.0);
-            mat4.translate(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, viewOffsetX / aspect, viewOffsetY, 0.0));
+            {
+                let viewOffsetX = -(wnd.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
+                let viewOffsetY = (wnd.viewLocation[1]) / real2DViewHalfHeight;
+                mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, aspect, 1.0, 1.0));
+                if (wnd.mirrorX) {
+                    mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
+                }
+                if (wnd.mirrorY) {
+                    mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
+                }
+                mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -wnd.viewRotation * Math.PI / 180.0);
+                mat4.translate(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, viewOffsetX / aspect, viewOffsetY, 0.0));
+            }
 
             mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
 
