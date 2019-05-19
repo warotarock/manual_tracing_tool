@@ -91,6 +91,8 @@ namespace ManualTracingTool {
 
                 Logic_Edit_Line.calculateParameters(this.editLine);
 
+                this.editLine = this.generateCutoutedResampledLine(this.editLine, env);
+
                 this.executeCommand(env);
 
                 env.setRedrawMainWindowEditorWindow();
