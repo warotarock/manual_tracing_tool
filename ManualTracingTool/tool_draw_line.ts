@@ -66,7 +66,7 @@ namespace ManualTracingTool {
 
             this.executeCommand(env);
 
-            env.setRedrawMainWindow();
+            env.setRedrawCurrentLayer();
             env.setRedrawEditorWindow();
 
             this.editLine = null;

@@ -48,6 +48,14 @@ namespace ManualTracingTool {
         protected onLineSegmentNotHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @virtual
 
         }
+
+        protected onLineHited(line: VectorLine) { // @virtual
+
+        }
+
+        protected onLineNotHited(line: VectorLine) { // @virtual
+
+        }
     }
 
     export interface IHitTest_VectorLayerLinePoint {
@@ -142,6 +150,8 @@ namespace ManualTracingTool {
 
             this.existsPointHitTest = false;
 
+            let lineHited = false;
+
             for (let i = 0; i + 1 < line.points.length; i++) {
 
                 let point1 = line.points[i];
@@ -156,6 +166,7 @@ namespace ManualTracingTool {
                 if (distanceSQ < minDistance) {
 
                     this.onLineSegmentHited(line, point1, point2, location, Math.sqrt(minDistance), distanceSQ);
+                    lineHited = true;
                 }
                 else {
 
@@ -165,6 +176,15 @@ namespace ManualTracingTool {
                 if (this.existsPointHitTest) {
                     break;
                 }
+            }
+
+            if (lineHited) {
+
+                this.onLineHited(line);
+            }
+            else {
+
+                this.onLineNotHited(line);
             }
         }
     }
@@ -197,17 +217,21 @@ namespace ManualTracingTool {
 
         protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @override
 
+            // to stop hit test early
+            this.existsPointHitTest = true;
+        }
+
+        protected onLineHited(line: VectorLine) { // @override
+
             if (!line.isCloseToMouse) {
 
                 this.isChanged = true;
             }
 
             line.isCloseToMouse = true;
-
-            this.existsPointHitTest = true;
         }
 
-        protected onLineSegmentNotHited(line: VectorLine, point1: LinePoint, point2: LinePoint) { // @override
+        protected onLineNotHited(line: VectorLine) { // @override
 
             if (line.isCloseToMouse) {
 

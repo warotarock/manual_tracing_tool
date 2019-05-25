@@ -8,16 +8,20 @@ namespace ManualTracingTool {
         mainWindow = new MainWindow();
         editorWindow = new CanvasWindow();
         webglWindow = new CanvasWindow();
-        pickingWindow = new PickingWindow();
         layerWindow = new LayerWindow();
         subtoolWindow = new SubtoolWindow();
         timeLineWindow = new TimeLineWindow();
         palletSelectorWindow = new PalletSelectorWindow();
         colorMixerWindow_colorCanvas = new ColorCanvasWindow();
         palletColorModal_colorCanvas = new ColorCanvasWindow();
-        posing3dView = new Posing3DView();
 
-        renderingWindow = new CanvasWindow();
+        foreLayerRenderWindow = new CanvasWindow();
+        backLayerRenderWindow = new CanvasWindow();
+
+        exportRenderWindow = new CanvasWindow();
+
+        pickingWindow = new PickingWindow();
+        posing3dView = new Posing3DView();
 
         activeCanvasWindow: CanvasWindow = null;
 
@@ -107,7 +111,8 @@ namespace ManualTracingTool {
 
             this.mainWindow.context = this.mainWindow.canvas.getContext('2d');
             this.editorWindow.context = this.editorWindow.canvas.getContext('2d');
-            this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
+            this.foreLayerRenderWindow.context = this.foreLayerRenderWindow.canvas.getContext('2d');
+            this.backLayerRenderWindow.context = this.backLayerRenderWindow.canvas.getContext('2d');
 
             this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
             this.subtoolWindow.context = this.subtoolWindow.canvas.getContext('2d');
@@ -117,7 +122,7 @@ namespace ManualTracingTool {
 
             this.timeLineWindow.context = this.timeLineWindow.canvas.getContext('2d');
 
-            this.renderingWindow.context = this.renderingWindow.canvas.getContext('2d');
+            this.exportRenderWindow.context = this.exportRenderWindow.canvas.getContext('2d');
             this.palletColorModal_colorCanvas.context = this.palletColorModal_colorCanvas.canvas.getContext('2d');
 
             this.canvasRender.setContext(this.layerWindow);
@@ -127,6 +132,8 @@ namespace ManualTracingTool {
 
                 throw ('３Ｄ機能を初期化できませんでした。');
             }
+
+            this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
 
             this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
 
@@ -154,8 +161,10 @@ namespace ManualTracingTool {
 
             this.resizeCanvasToParent(this.mainWindow);
             this.fitCanvas(this.editorWindow, this.mainWindow);
+            this.fitCanvas(this.foreLayerRenderWindow, this.mainWindow);
+            this.fitCanvas(this.backLayerRenderWindow, this.mainWindow);
             this.fitCanvas(this.webglWindow, this.mainWindow);
-            this.fitCanvas(this.pickingWindow, this.mainWindow);
+            //this.fitCanvas(this.pickingWindow, this.mainWindow); depth picking is not used now
 
             this.resizeCanvasToParent(this.layerWindow);
             this.resizeCanvasToParent(this.subtoolWindow);

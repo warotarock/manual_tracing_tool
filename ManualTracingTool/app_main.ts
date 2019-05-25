@@ -533,11 +533,10 @@ namespace ManualTracingTool {
 
             if (this.toolContext.redrawMainWindow) {
 
+                this.drawMainWindow(this.mainWindow, this.toolContext.redrawCurrentLayer);
+
                 this.toolContext.redrawMainWindow = false;
-
-                this.clearWindow(this.mainWindow);
-
-                this.drawMainWindow(this.mainWindow, false);
+                this.toolContext.redrawCurrentLayer = false;
 
                 if (this.selectCurrentLayerAnimationTime > 0.0) {
 
@@ -613,37 +612,144 @@ namespace ManualTracingTool {
             }
         }
 
-        protected drawMainWindow(canvasWindow: CanvasWindow, isExporting: boolean) { // @override
+        activeLayerBufferDrawn = false;
+
+        protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean) { // @override
 
             if (this.currentViewKeyframe == null) {
                 return;
             }
 
-            let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
-
             let env = this.toolEnv;
-
-            this.canvasRender.setContext(canvasWindow);
-
+            let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
             let isModalToolRunning = this.isModalToolRunning();
 
-            for (let i = this.currentViewKeyframe.layers.length - 1; i >= 0; i--) {
-                let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
+            let maxLayerIndex = this.currentViewKeyframe.layers.length - 1;
 
-                if (isExporting && !viewKeyFrameLayer.layer.isRenderTarget) {
-                    continue;
+            let currentLayerIndex = -1;
+            if (redrawActiveLayerOnly && env.currentLayer != null) {
+
+                for (let i = 0; i <= maxLayerIndex; i++) {
+
+                    let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
+
+                    if (viewKeyFrameLayer.layer == env.currentLayer) {
+
+                        currentLayerIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            this.clearWindow(canvasWindow);
+
+            if (currentLayerIndex != -1) {
+
+                if (currentLayerIndex < maxLayerIndex) {
+
+                    // Draw back layers to buffer if requested
+                    if (!this.activeLayerBufferDrawn) {
+
+                        this.mainWindow.copyTransformTo(this.backLayerRenderWindow);
+                        this.clearWindow(this.backLayerRenderWindow);
+                        this.drawLayers(this.backLayerRenderWindow, maxLayerIndex, currentLayerIndex + 1, false, currentLayerOnly, isModalToolRunning);
+                    }
+
+                    // Draw back layers from buffer
+                    this.canvasRender.setContext(canvasWindow);
+                    this.canvasRender.resetTransform();
+                    this.canvasRender.drawImage(this.backLayerRenderWindow.canvas
+                        , 0, 0, this.backLayerRenderWindow.width, this.backLayerRenderWindow.height
+                        , 0, 0, canvasWindow.width, canvasWindow.height);
                 }
 
-                this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document, isModalToolRunning)
+                // Draw current layer
+                this.drawLayers(canvasWindow, currentLayerIndex, currentLayerIndex, false, currentLayerOnly, isModalToolRunning);
+
+                if (currentLayerIndex > 0) {
+
+                    // Draw fore layers if requested
+                    if (!this.activeLayerBufferDrawn) {
+
+                        this.mainWindow.copyTransformTo(this.foreLayerRenderWindow);
+                        this.clearWindow(this.foreLayerRenderWindow);
+                        this.drawLayers(this.foreLayerRenderWindow, currentLayerIndex - 1, 0, false, currentLayerOnly, isModalToolRunning);
+                    }
+
+                    // Draw fore layers from buffer
+                    this.canvasRender.setContext(canvasWindow);
+                    this.canvasRender.resetTransform();
+                    this.canvasRender.drawImage(this.foreLayerRenderWindow.canvas
+                        , 0, 0, this.foreLayerRenderWindow.width, this.foreLayerRenderWindow.height
+                        , 0, 0, canvasWindow.width, canvasWindow.height);
+                }
+
+                this.activeLayerBufferDrawn = true;
+            }
+            else {
+
+                this.drawLayers(canvasWindow, maxLayerIndex, 0, false, currentLayerOnly, isModalToolRunning);
+
+                this.activeLayerBufferDrawn = false;
             }
 
             if (env.isEditMode()) {
 
+                this.canvasRender.setContext(canvasWindow);
+
                 for (let i = this.currentViewKeyframe.layers.length - 1; i >= 0; i--) {
+
                     let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
+                    let layer = viewKeyFrameLayer.layer;
+
+                    if (currentLayerOnly) {
+
+                        if (layer != this.selectCurrentLayerAnimationLayer) {
+                            continue;
+                        }
+                    }
+                    else {
+
+                        if (!layer.isHierarchicalVisible) {
+                            continue;
+                        }
+                    }
 
                     this.drawLayerForEditMode(viewKeyFrameLayer, currentLayerOnly, this.document, isModalToolRunning)
                 }
+            }
+        }
+
+        protected drawLayers(canvasWindow: CanvasWindow, startIndex: int, endIndex: int, isExporting: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
+
+            this.canvasRender.setContext(canvasWindow);
+
+            for (let i = startIndex; i >= endIndex; i--) {
+
+                let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
+                let layer = viewKeyFrameLayer.layer;
+
+                if (isExporting) {
+
+                    if (!layer.isHierarchicalVisible
+                        || !layer.isRenderTarget) {
+                        continue;
+                    }
+                }
+                else if (currentLayerOnly) {
+
+                    if (layer != this.selectCurrentLayerAnimationLayer) {
+                        continue;
+                    }
+                }
+                else {
+
+                    if (!layer.isHierarchicalVisible) {
+                        continue;
+                    }
+                }
+
+                this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document, isModalToolRunning)
             }
         }
 
@@ -686,6 +792,11 @@ namespace ManualTracingTool {
                 this.toolDrawEnv.setVariables(editorWindow);
                 this.currentTool.onDrawEditor(this.toolEnv, this.toolDrawEnv);
             }
+        }
+
+        protected drawExportImage(canvasWindow: CanvasWindow) { // @override
+
+            this.drawLayers(canvasWindow, this.currentViewKeyframe.layers.length - 1, 0, true, false, false);
         }
 
         protected drawTimeLineWindow() {

@@ -270,6 +270,7 @@ namespace ManualTracingTool {
         currentImageFileReferenceLayer: ImageFileReferenceLayer = null;
 
         redrawMainWindow = false;
+        redrawCurrentLayer = false;
         redrawEditorWindow = false;
         redrawLayerWindow = false;
         redrawSubtoolWindow = false;
@@ -419,6 +420,13 @@ namespace ManualTracingTool {
         setRedrawMainWindow() {
 
             this.toolContext.redrawMainWindow = true;
+            this.toolContext.redrawCurrentLayer = false;
+        }
+
+        setRedrawCurrentLayer() {
+
+            this.toolContext.redrawMainWindow = true;
+            this.toolContext.redrawCurrentLayer = true;
         }
 
         setRedrawEditorWindow() {

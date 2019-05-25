@@ -34,7 +34,7 @@ namespace ManualTracingTool {
                 this.startSelection(e, env);
                 this.processSelection(e, env);
 
-                env.setRedrawMainWindow();
+                env.setRedrawCurrentLayer();
                 env.setRedrawEditorWindow();
             }
         }
@@ -52,7 +52,7 @@ namespace ManualTracingTool {
                 if (e.isLeftButtonPressing()) {
 
                     this.processSelection(e, env);
-                    env.setRedrawMainWindow();
+                    env.setRedrawCurrentLayer();
                 }
             }
 
@@ -71,7 +71,7 @@ namespace ManualTracingTool {
 
                 this.endSelection(env);
 
-                env.setRedrawMainWindow();
+                env.setRedrawCurrentLayer();
             }
 
             env.setRedrawEditorWindow();
@@ -152,7 +152,7 @@ namespace ManualTracingTool {
         toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.linePoint);
-            env.setRedrawMainWindow();
+            env.setRedrawCurrentLayer();
         }
 
         prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
@@ -190,7 +190,7 @@ namespace ManualTracingTool {
         toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.line);
-            env.setRedrawMainWindow();
+            env.setRedrawCurrentLayer();
         }
     }
 
@@ -201,7 +201,7 @@ namespace ManualTracingTool {
         toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.lineSegment);
-            env.setRedrawMainWindow();
+            env.setRedrawCurrentLayer();
         }
     }
 

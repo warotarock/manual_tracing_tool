@@ -67,6 +67,12 @@ namespace ManualTracingTool {
                 , dstX, dstY, dstWidth, dstHeight);
         }
 
+        // Document
+
+        protected drawExportImage(canvasWindow: CanvasWindow) { // @virtual
+
+        }
+
         // MainEditorDrawer implementations
 
         drawMouseCursor() { // @implements MainEditorDrawer
@@ -135,14 +141,6 @@ namespace ManualTracingTool {
 
             let layer = viewKeyFrameLayer.layer;
 
-            if (!layer.isHierarchicalVisible && !currentLayerOnly) {
-                return;
-            }
-
-            if (currentLayerOnly && layer != this.selectCurrentLayerAnimationLayer) {
-                return;
-            }
-
             if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
@@ -167,14 +165,6 @@ namespace ManualTracingTool {
 
             let layer = viewKeyFrameLayer.layer;
 
-            if (!layer.isHierarchicalVisible && !currentLayerOnly) {
-                return;
-            }
-
-            if (currentLayerOnly) {
-                return;
-            }
-
             if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
@@ -188,6 +178,7 @@ namespace ManualTracingTool {
             let env = this.toolEnv;
 
             let isSelectedLayer = (layer.isSelected);
+            let isEditMode = env.isEditMode();
 
             // drawing parameters
 
@@ -198,6 +189,11 @@ namespace ManualTracingTool {
 
             vec4.copy(this.editOtherLayerLineColor, lineColor);
             this.editOtherLayerLineColor[3] *= 0.3;
+
+            if (isEditMode) {
+
+                lineColor = this.editOtherLayerLineColor;
+            }
 
             // drawing geometry lines
 
@@ -216,7 +212,7 @@ namespace ManualTracingTool {
                     }
                 }
 
-                if (env.isDrawMode() && layer.drawLineType != DrawLineTypeID.none) {
+                if (layer.drawLineType != DrawLineTypeID.none) {
 
                     for (let line of group.lines) {
 
@@ -248,10 +244,9 @@ namespace ManualTracingTool {
 
                     if (!isSelectedLayer) {
 
-                        if (layer.drawLineType != DrawLineTypeID.none) {
-
-                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, widthRate, 0.0, useAdjustingLocation);
-                        }
+                        //if (layer.drawLineType != DrawLineTypeID.none) {
+                        //    this.drawVectorLineStroke(line, this.editOtherLayerLineColor, widthRate, 0.0, useAdjustingLocation);
+                        //}
                     }
                     else {
 

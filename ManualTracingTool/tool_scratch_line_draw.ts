@@ -95,7 +95,8 @@ namespace ManualTracingTool {
 
                 this.executeCommand(env);
 
-                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawCurrentLayer();
+                env.setRedrawEditorWindow();
 
                 return;
             }
@@ -495,7 +496,8 @@ namespace ManualTracingTool {
 
             this.editLine = null;
 
-            env.setRedrawMainWindowEditorWindow();
+            env.setRedrawCurrentLayer();
+            env.setRedrawEditorWindow();
         }
     }
 }

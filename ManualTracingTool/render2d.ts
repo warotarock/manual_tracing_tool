@@ -106,7 +106,7 @@ namespace ManualTracingTool {
 
             canvasWindow.updateViewMatrix();
 
-            this.updateContextTransformByWindow(canvasWindow);
+            this.setContextTransformByWindow(canvasWindow);
         }
 
         getViewScale(): float {
@@ -114,33 +114,40 @@ namespace ManualTracingTool {
             return this.viewScale;
         }
 
+        resetTransform() {
+
+            mat4.identity(this.tempMat);
+
+            this.setContextTransform(this.tempMat);
+        }
+
         setTransform(canvasWindow: CanvasWindow) {
 
             canvasWindow.updateViewMatrix();
 
-            this.updateContextTransformByWindow(canvasWindow);
+            this.setContextTransformByWindow(canvasWindow);
         }
 
         setLocalTransForm(matrix: Mat4) {
 
             mat4.multiply(this.tempMat, this.currentTransform, matrix);
 
-            this.updateContextTransform(this.tempMat);
+            this.setContextTransform(this.tempMat);
         }
 
         cancelLocalTransForm() {
 
-            this.updateContextTransform(this.currentTransform);
+            this.setContextTransform(this.currentTransform);
         }
 
-        private updateContextTransformByWindow(canvasWindow: CanvasWindow) {
+        private setContextTransformByWindow(canvasWindow: CanvasWindow) {
 
             mat4.copy(this.currentTransform, canvasWindow.transformMatrix);
 
-            this.updateContextTransform(canvasWindow.transformMatrix);
+            this.setContextTransform(canvasWindow.transformMatrix);
         }
 
-        private updateContextTransform(matrix: Mat4) {
+        private setContextTransform(matrix: Mat4) {
 
             this.context.setTransform(
                 matrix[0], matrix[1],

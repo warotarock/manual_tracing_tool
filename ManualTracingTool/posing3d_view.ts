@@ -387,8 +387,9 @@ namespace ManualTracingTool {
             this.render.clearDepthBuffer();
 
             if (this.isHeadDrawable(posingData)) {
+
                 this.setShaderParameters(posingData.headMatrix, false, this.posingFigureShader);
-                this.posingFigureShader.setAlpha(1.0);
+                this.posingFigureShader.setAlpha(posingLayer.layerColor[3]);
                 this.drawModel(this.headModel.model, this.imageResurces[0].image);
             }
 
@@ -427,7 +428,7 @@ namespace ManualTracingTool {
                     }
 
                     this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
-                    this.posingFigureShader.setAlpha(drawingUnit.visualModelAlpha);
+                    this.posingFigureShader.setAlpha(drawingUnit.visualModelAlpha * posingLayer.layerColor[3]);
                     this.drawModel(drawingUnit.modelResource.model, this.imageResurces[0].image);
 
                     //this.drawAxis(drawingUnit.targetData.matrix, 0.2, 0.5, env);
@@ -644,13 +645,15 @@ namespace ManualTracingTool {
             mat4.copy(this.modelMatrix, locationMatrix);
 
             let wnd = this.webglWindow;
-            this.render.setCullingBackFace(!wnd.mirrorX);
+            let cullingBackFace = !wnd.mirrorX;
 
             if (flipSide) {
 
                 mat4.scale(this.modelMatrix, this.modelMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
-                this.render.setCullingBackFace(false);
+                //cullingBackFace = !cullingBackFace;
             }
+
+            this.render.setCullingBackFace(cullingBackFace);
 
             mat4.multiply(this.modelViewMatrix, this.viewMatrix, this.modelMatrix);
 
@@ -1003,5 +1006,4 @@ namespace ManualTracingTool {
             this.gl.uniform1f(this.uMaxDepth, depth);
         }
     }
-
 }

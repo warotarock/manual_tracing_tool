@@ -130,7 +130,8 @@ namespace ManualTracingTool {
 
                 this.executeCommand(env);
 
-                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawCurrentLayer();
+                env.setRedrawEditorWindow();
 
                 return;
             }
@@ -250,7 +251,8 @@ namespace ManualTracingTool {
 
                 env.setCurrentVectorLine(hitedLine, true);
 
-                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawCurrentLayer();
+                env.setRedrawEditorWindow();
             }
         }
 

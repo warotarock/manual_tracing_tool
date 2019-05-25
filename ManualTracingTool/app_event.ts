@@ -600,7 +600,7 @@ namespace ManualTracingTool {
 
                 let isHitChanged = this.mousemoveHittest(e.location, this.toolEnv.mouseCursorViewRadius);
                 if (isHitChanged) {
-                    this.toolEnv.setRedrawMainWindow();
+                    this.toolEnv.setRedrawCurrentLayer();
                 }
 
                 this.currentTool.mouseMove(e, this.toolEnv);
@@ -632,12 +632,14 @@ namespace ManualTracingTool {
 
         protected mousemoveHittest(location: Vec3, minDistance: float): boolean {
 
+            if (this.toolEnv.currentVectorGeometry == null) {
+
+                return false;
+            }
+
             this.hittest_Line_IsCloseTo.startProcess();
 
-            if (this.toolEnv.currentVectorGeometry != null) {
-
-                this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
-            }
+            this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
 
             this.hittest_Line_IsCloseTo.endProcess();
 

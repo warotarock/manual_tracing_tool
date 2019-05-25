@@ -308,25 +308,25 @@ namespace ManualTracingTool {
 
             if (imageWidth > 0 && imageHeight > 0) {
 
-                let canvas = this.renderingWindow.canvas;
+                let canvas = this.exportRenderWindow.canvas;
                 canvas.width = imageWidth;
                 canvas.height = imageHeight;
 
-                this.renderingWindow.width = imageWidth;
-                this.renderingWindow.height = imageHeight;
-                this.renderingWindow.viewLocation[0] = imageLeft;
-                this.renderingWindow.viewLocation[1] = imageTop;
-                this.renderingWindow.viewScale = scale;
-                this.renderingWindow.viewRotation = 0.0;
-                this.renderingWindow.centerLocationRate[0] = 0.0;
-                this.renderingWindow.centerLocationRate[1] = 0.0;
-                this.clearWindow(this.renderingWindow);
+                this.exportRenderWindow.width = imageWidth;
+                this.exportRenderWindow.height = imageHeight;
+                this.exportRenderWindow.viewLocation[0] = imageLeft;
+                this.exportRenderWindow.viewLocation[1] = imageTop;
+                this.exportRenderWindow.viewScale = scale;
+                this.exportRenderWindow.viewRotation = 0.0;
+                this.exportRenderWindow.centerLocationRate[0] = 0.0;
+                this.exportRenderWindow.centerLocationRate[1] = 0.0;
+                this.clearWindow(this.exportRenderWindow);
                 if (backGroundType == DocumentBackGroundTypeID.lastPalletColor) {
 
                     this.canvasRender.setFillColorV(documentData.palletColors[documentData.palletColors.length - 1].color);
                     this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
                 }
-                this.drawMainWindow(this.renderingWindow, true);
+                this.drawExportImage(this.exportRenderWindow);
 
                 let localSetting = this.getLocalSetting();
                 let exportPath = localSetting.exportPath;

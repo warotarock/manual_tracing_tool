@@ -304,7 +304,7 @@ namespace ManualTracingTool {
 
             env.commandHistory.addCommand(command);
 
-            env.setRedrawMainWindow();
+            env.setRedrawCurrentLayer();
         }
     }
 
