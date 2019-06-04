@@ -3,7 +3,7 @@ namespace ManualTracingTool {
 
     export class Tool_Select_All_LinePoint extends ToolBase {
 
-        execute(env: ToolEnvironment) {
+        executeToggleSelection(env: ToolEnvironment) {
 
             if (env.currentVectorLayer == null) {
 
@@ -12,15 +12,34 @@ namespace ManualTracingTool {
 
             let existsSelectedPoints = this.isSelectedAnyPoint(env);
 
+            this.executeModifySelection(existsSelectedPoints, env);
+        }
+
+        executeSelectAll(env: ToolEnvironment) {
+
+            this.executeModifySelection(false, env);
+        }
+
+        executeClearSelectAll(env: ToolEnvironment) {
+
+            this.executeModifySelection(true, env);
+        }
+
+        private executeModifySelection(clearSelection: boolean, env: ToolEnvironment) {
+
             let selectionInfo: VectorLayerEditorSelectionInfo;
 
-            if (existsSelectedPoints) {
+            if (clearSelection) {
 
                 selectionInfo = this.createSelectionInfo_ClearAllSelection(env);
             }
             else {
 
                 selectionInfo = this.createSelectionInfo_SelectAll(env);
+            }
+
+            if (selectionInfo.selectedPoints.length == 0) {
+                return;
             }
 
             selectionInfo.updateLineSelectionState();

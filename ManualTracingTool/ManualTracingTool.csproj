@@ -91,6 +91,7 @@
     <TypeScriptCompile Include="app_view.ts" />
     <TypeScriptCompile Include="app_main.ts" />
     <TypeScriptCompile Include="base_tool.ts" />
+    <TypeScriptCompile Include="command_edit_copy.ts" />
     <TypeScriptCompile Include="command_edit_animation.ts" />
     <TypeScriptCompile Include="command_edit_layer.ts" />
     <TypeScriptCompile Include="command_delete_points.ts" />

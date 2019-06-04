@@ -230,6 +230,12 @@ namespace ManualTracingTool {
         keyframes: List<ViewKeyframe> = null;
     }
 
+    export class ToolClipboard {
+
+        copy_VectorGroup: VectorGroup = null;
+    }
+
+
     export class ToolContext {
 
         mainEditor: MainEditor = null;
@@ -237,6 +243,7 @@ namespace ManualTracingTool {
         commandHistory: CommandHistory = null;
 
         document: DocumentData = null;
+        clipboard = new ToolClipboard();
 
         mainWindow: CanvasWindow = null;
         pickingWindow: PickingWindow = null;
@@ -319,16 +326,14 @@ namespace ManualTracingTool {
         commandHistory: CommandHistory = null;
 
         operatorCursor: OperatorCursor = null;
-        //latticePoints: List<LatticePoint> = null;
-        //rectangleArea: Logic_Edit_Points_RectangleArea = null;
 
         document: DocumentData = null;
+        clipboard: ToolClipboard = null;
 
         drawLineBaseWidth = 1.0;
         drawLineMinWidth = 1.0;
 
         currentLayer: Layer = null;
-        //editableKeyframeLayers: List<ViewKeyframeLayer> = null;
 
         currentVectorLayer: VectorLayer = null;
         currentVectorGeometry: VectorLayerGeometry = null;
@@ -374,6 +379,7 @@ namespace ManualTracingTool {
             //this.rectangleArea = this.toolContext.rectangleArea;
 
             this.document = this.toolContext.document;
+            this.clipboard = this.toolContext.clipboard;
 
             this.drawLineBaseWidth = this.toolContext.drawLineBaseWidth;
             this.drawLineMinWidth = this.toolContext.drawLineMinWidth;

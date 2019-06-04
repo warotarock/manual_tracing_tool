@@ -1369,6 +1369,46 @@ namespace ManualTracingTool {
                 return;
             }
 
+            if (env.isCtrlKeyPressing() && key == 'c') {
+
+                if (env.isEditMode()) {
+
+                    if (this.toolContext.currentVectorGroup != null) {
+
+                        let command = new Command_CopyGeometry();
+                        if (command.prepareEditData(env)) {
+
+                            command.execute(env);
+                        }
+                    }
+                }
+
+                return;
+            }
+
+            if (env.isCtrlKeyPressing() && key == 'v') {
+
+                if (env.isEditMode()) {
+
+                    if (this.toolContext.currentVectorGroup != null) {
+
+                        let command = new Command_PasteGeometry();
+                        if (command.prepareEditData(env)) {
+
+                            this.tool_SelectAllPoints.executeClearSelectAll(env);
+
+                            command.execute(env);
+                            command.isContinued = true;
+                            this.toolContext.commandHistory.addCommand(command);
+                        }
+
+                        env.setRedrawCurrentLayer();
+                    }
+                }
+
+                return;
+            }
+
             if (key == 'Home' || key == 'q') {
 
                 if (env.isShiftKeyPressing()) {
@@ -1513,6 +1553,7 @@ namespace ManualTracingTool {
                 env.setRedrawMainWindowEditorWindow();
                 env.setRedrawTimeLineWindow();
             }
+
             if (key == 'i') {
 
                 return;
@@ -1540,7 +1581,7 @@ namespace ManualTracingTool {
 
                 if (env.isEditMode()) {
 
-                    this.tool_SelectAllPoints.execute(env);
+                    this.tool_SelectAllPoints.executeToggleSelection(env);
                     this.activateCurrentTool();
                 }
                 else {
