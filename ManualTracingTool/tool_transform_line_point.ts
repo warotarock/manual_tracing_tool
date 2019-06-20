@@ -79,7 +79,7 @@ namespace ManualTracingTool {
 
                         for (let point of line.points) {
 
-                            if (!point.isSelected) {
+                            if (!point.isSelected && !line.isSelected) {
 
                                 continue;
                             }
