@@ -97,11 +97,19 @@ namespace ManualTracingTool {
         private currentTransform = mat4.create();
         private tempVec3 = vec3.create();
         private tempMat = mat4.create();
+        private viewCenterX = 0.0;
+        private viewCenterY = 0.0;
+        private viewWidth = 1.0;
+        private viewHeight = 1.0;
         private viewScale = 1.0;
 
         setContext(canvasWindow: CanvasWindow) {
 
             this.context = canvasWindow.context;
+            this.viewCenterX = canvasWindow.viewLocation[0];
+            this.viewCenterY = canvasWindow.viewLocation[1];
+            this.viewWidth = canvasWindow.width;
+            this.viewHeight = canvasWindow.height;
             this.viewScale = canvasWindow.viewScale;
 
             canvasWindow.updateViewMatrix();
@@ -153,6 +161,33 @@ namespace ManualTracingTool {
                 matrix[0], matrix[1],
                 matrix[4], matrix[5],
                 matrix[12], matrix[13]);
+        }
+
+        calculateViewRectangle(result: Vec4, canvasWindow: CanvasWindow) {
+
+        }
+
+        isInViewRectangle(left: float, top: float, right: float, bottom: float) {
+
+            let width = right - left;
+            let height = bottom - top;
+
+            let centerX = (right + left) * 0.5;
+            let centerY = (bottom + top) * 0.5;
+
+            let range = Math.sqrt(Math.pow(width * 0.5, 2) + Math.pow(height * 0.5, 2));
+
+            let viewWidth = this.viewWidth;
+            let viewHeight = this.viewHeight;
+
+            let viewCenterX = this.viewCenterX;
+            let viewCenterY = this.viewCenterY;
+
+            let viewRange = Math.sqrt(Math.pow(viewWidth * 0.5, 2) + Math.pow(viewHeight * 0.5, 2)) / this.viewScale;
+
+            let distance = Math.sqrt(Math.pow(centerX - viewCenterX, 2) + Math.pow(centerY - viewCenterY, 2));
+
+            return ((distance - range) < viewRange);
         }
 
         clearRect(left: int, top: int, width: int, height: int) {
@@ -250,7 +285,7 @@ namespace ManualTracingTool {
 
         setLineCap(lineCap: CanvasRenderLineCap) {
 
-            this.context.lineCap = CanvasRenderLineCap[lineCap];
+            this.context.lineCap = <CanvasLineCap>(CanvasRenderLineCap[lineCap]);
         }
 
         beginPath() {

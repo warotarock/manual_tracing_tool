@@ -114,7 +114,7 @@ namespace ManualTracingTool {
 
         drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
-            this.drawVectorLineStroke(line, color, 1.0, strokeWidthBolding, useAdjustingLocation);
+            this.drawVectorLineStroke(line, color, 1.0, strokeWidthBolding, useAdjustingLocation, false);
         }
 
         drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
@@ -134,17 +134,17 @@ namespace ManualTracingTool {
 
         // Main window
 
-        protected drawMainWindow(canvasWindow: CanvasWindow, isExporting: boolean) { // @virtual
+        protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean) { // @virtual
         }
 
-        protected drawLayer(viewKeyFrameLayer: ViewKeyframeLayer, currentLayerOnly: boolean, documentData: DocumentData, isModalToolRunning: boolean) {
+        protected drawLayer(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
 
             let layer = viewKeyFrameLayer.layer;
 
             if (VectorLayer.isVectorLayer(layer)) {
 
                 let vectorLayer = <VectorLayer>layer;
-                this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData, isModalToolRunning);
+                this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData, isExporting, isModalToolRunning);
             }
             else if (layer.type == LayerTypeID.groupLayer) {
 
@@ -172,7 +172,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected drawVectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isModalToolRunning: boolean) {
+        protected drawVectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
 
             let context = this.toolContext;
             let env = this.toolEnv;
@@ -216,7 +216,7 @@ namespace ManualTracingTool {
 
                     for (let line of group.lines) {
 
-                        this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation);
+                        this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
                     }
                 }
             }
@@ -252,7 +252,7 @@ namespace ManualTracingTool {
 
                         if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
 
-                            this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, false);
 
                             this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
                         }
@@ -272,16 +272,20 @@ namespace ManualTracingTool {
 
                             let lineWidthBolding = (line.isCloseToMouse ? 2.0 : 0.0);
 
-                            this.drawVectorLineStroke(line, color, widthRate, lineWidthBolding, useAdjustingLocation);
+                            this.drawVectorLineStroke(line, color, widthRate, lineWidthBolding, useAdjustingLocation, false);
                         }
                     }
                 }
             }
         }
 
-        protected drawVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) {
+        protected drawVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean, isExporting: boolean) {
 
             if (line.points.length == 0) {
+                return;
+            }
+
+            if (!isExporting && !this.canvasRender.isInViewRectangle(line.left, line.top, line.right, line.bottom)) {
                 return;
             }
 
@@ -529,7 +533,7 @@ namespace ManualTracingTool {
 
         protected drawEditLineStroke(line: VectorLine) {
 
-            this.drawVectorLineStroke(line, this.drawStyle.editingLineColor, 1.0, 2.0, false);
+            this.drawVectorLineStroke(line, this.drawStyle.editingLineColor, 1.0, 2.0, false, false);
         }
 
         protected drawEditLinePoints(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4) {
@@ -651,7 +655,7 @@ namespace ManualTracingTool {
 
                 this.canvasRender.setContext(canvasWindow);
 
-                this.drawVectorLayer(vectorLayer, viewKeyframeLayer.vectorLayerKeyframe.geometry, documentData, false);
+                this.drawVectorLayer(vectorLayer, viewKeyframeLayer.vectorLayerKeyframe.geometry, documentData, false, false);
 
                 this.canvasRender.pickColor(this.tempColor4, canvasWindow, pickLocationX, pickLocationY);
 

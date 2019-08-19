@@ -626,33 +626,55 @@ namespace ManualTracingTool {
 
             let maxLayerIndex = this.currentViewKeyframe.layers.length - 1;
 
+            let editLayerStartIndex = -1;
+            let editLayerEndIndex = -1;
             let currentLayerIndex = -1;
-            if (redrawActiveLayerOnly && env.currentLayer != null) {
+            if (redrawActiveLayerOnly) {
 
                 for (let i = 0; i <= maxLayerIndex; i++) {
 
                     let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
 
-                    if (viewKeyFrameLayer.layer == env.currentLayer) {
+                    if (viewKeyFrameLayer.layer.isSelected) {
 
-                        currentLayerIndex = i;
-                        break;
+                        if (editLayerStartIndex == -1) {
+
+                            editLayerStartIndex = i;
+                        }
+
+                        editLayerEndIndex = i;
+                    }
+                }
+
+                if (editLayerStartIndex == -1 && env.currentLayer != null) {
+
+                    for (let i = 0; i <= maxLayerIndex; i++) {
+
+                        let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
+
+                        if (viewKeyFrameLayer.layer == env.currentLayer) {
+
+                            currentLayerIndex = i;
+                            editLayerStartIndex = i;
+                            editLayerEndIndex = i;
+                            break;
+                        }
                     }
                 }
             }
 
             this.clearWindow(canvasWindow);
 
-            if (currentLayerIndex != -1) {
+            if (editLayerStartIndex != -1) {
 
-                if (currentLayerIndex < maxLayerIndex) {
+                if (editLayerStartIndex < maxLayerIndex) {
 
                     // Draw back layers to buffer if requested
                     if (!this.activeLayerBufferDrawn) {
 
                         this.mainWindow.copyTransformTo(this.backLayerRenderWindow);
                         this.clearWindow(this.backLayerRenderWindow);
-                        this.drawLayers(this.backLayerRenderWindow, maxLayerIndex, currentLayerIndex + 1, false, currentLayerOnly, isModalToolRunning);
+                        this.drawLayers(this.backLayerRenderWindow, maxLayerIndex, editLayerStartIndex + 1, false, currentLayerOnly, isModalToolRunning);
                     }
 
                     // Draw back layers from buffer
@@ -664,16 +686,16 @@ namespace ManualTracingTool {
                 }
 
                 // Draw current layer
-                this.drawLayers(canvasWindow, currentLayerIndex, currentLayerIndex, false, currentLayerOnly, isModalToolRunning);
+                this.drawLayers(canvasWindow, editLayerStartIndex, editLayerEndIndex, false, currentLayerOnly, isModalToolRunning);
 
-                if (currentLayerIndex > 0) {
+                if (editLayerEndIndex > 0) {
 
                     // Draw fore layers if requested
                     if (!this.activeLayerBufferDrawn) {
 
                         this.mainWindow.copyTransformTo(this.foreLayerRenderWindow);
                         this.clearWindow(this.foreLayerRenderWindow);
-                        this.drawLayers(this.foreLayerRenderWindow, currentLayerIndex - 1, 0, false, currentLayerOnly, isModalToolRunning);
+                        this.drawLayers(this.foreLayerRenderWindow, editLayerEndIndex - 1, 0, false, currentLayerOnly, isModalToolRunning);
                     }
 
                     // Draw fore layers from buffer
@@ -749,7 +771,7 @@ namespace ManualTracingTool {
                     }
                 }
 
-                this.drawLayer(viewKeyFrameLayer, currentLayerOnly, this.document, isModalToolRunning)
+                this.drawLayer(viewKeyFrameLayer, this.document, isExporting, currentLayerOnly, isModalToolRunning)
             }
         }
 

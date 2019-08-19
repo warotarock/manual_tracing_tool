@@ -199,7 +199,10 @@ namespace ManualTracingTool {
 
                     reader.addEventListener('load', (e: any) => {
 
-                        this.startReloadDocumentFromText(reader.result);
+                        if (typeof (reader.result) === 'string') {
+
+                            this.startReloadDocumentFromText(reader.result);
+                        }
                     });
 
                     reader.readAsText(file);
@@ -1388,22 +1391,19 @@ namespace ManualTracingTool {
 
             if (env.isCtrlKeyPressing() && key == 'v') {
 
-                if (env.isEditMode()) {
+                if (this.toolContext.currentVectorGroup != null) {
 
-                    if (this.toolContext.currentVectorGroup != null) {
+                    let command = new Command_PasteGeometry();
+                    if (command.prepareEditData(env)) {
 
-                        let command = new Command_PasteGeometry();
-                        if (command.prepareEditData(env)) {
+                        this.tool_SelectAllPoints.executeClearSelectAll(env);
 
-                            this.tool_SelectAllPoints.executeClearSelectAll(env);
-
-                            command.execute(env);
-                            command.isContinued = true;
-                            this.toolContext.commandHistory.addCommand(command);
-                        }
-
-                        env.setRedrawCurrentLayer();
+                        command.execute(env);
+                        command.isContinued = true;
+                        this.toolContext.commandHistory.addCommand(command);
                     }
+
+                    env.setRedrawCurrentLayer();
                 }
 
                 return;
@@ -1595,6 +1595,24 @@ namespace ManualTracingTool {
                 return;
             }
 
+            if (key == 'h') {
+
+                if (env.isEditMode()) {
+
+                }
+                else {
+
+
+                    this.setCurrentMainTool(MainToolID.drawLine);
+                    this.setCurrentSubTool(<int>DrawLineToolSubToolID.extrudeLine);
+                    this.currentTool.keydown(e, env);
+                    env.setRedrawMainWindowEditorWindow();
+                    env.setRedrawSubtoolWindow();
+                }
+
+                return;
+            }
+
             if (key == 'w') {
 
                 let pickedLayer: Layer = null;
@@ -1638,33 +1656,30 @@ namespace ManualTracingTool {
 
                 if (env.isDrawMode()) {
 
-                    if (!env.needsDrawOperatorCursor()) {
+                    if (this.currentTool.keydown(e, env)) {
 
-                        if (key == 's') {
-
-                            this.selectNextOrPreviousLayer(true);
-                            this.startShowingCurrentLayer();
-                            env.setRedrawLayerWindow();
-                            env.setRedrawSubtoolWindow();
-                        }
-                        else {
-
-                            if (!this.currentTool.keydown(e, env)) {
-
-                                // Switch to scratch line tool
-                                if (key == 'g') {
-
-                                    this.setCurrentMainTool(MainToolID.drawLine);
-                                    this.setCurrentSubTool(<int>DrawLineToolSubToolID.scratchLine);
-                                    this.currentTool.keydown(e, env);
-                                    env.setRedrawMainWindowEditorWindow();
-                                    env.setRedrawSubtoolWindow();
-                                }
-                            }
-                        }
+                        // Switch to scratch line tool
                     }
+                    else if (key == 'g') {
+
+                        this.setCurrentMainTool(MainToolID.drawLine);
+                        this.setCurrentSubTool(<int>DrawLineToolSubToolID.scratchLine);
+                        this.currentTool.keydown(e, env);
+                        env.setRedrawMainWindowEditorWindow();
+                        env.setRedrawSubtoolWindow();
+                    }
+                    else if (key == 's') {
+
+                        this.selectNextOrPreviousLayer(true);
+                        this.startShowingCurrentLayer();
+                        env.setRedrawLayerWindow();
+                        env.setRedrawSubtoolWindow();
+                    }
+
+                    return;
                 }
-                else if (env.isEditMode()) {
+
+                if (env.isEditMode()) {
 
                     let modalToolID = ModalToolID.grabMove;
 
@@ -1692,6 +1707,8 @@ namespace ManualTracingTool {
 
                         this.startImageFileReferenceLayerModalTool(modalToolID);
                     }
+
+                    return;
                 }
             }
 

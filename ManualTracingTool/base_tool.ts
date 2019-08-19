@@ -235,7 +235,6 @@ namespace ManualTracingTool {
         copy_VectorGroup: VectorGroup = null;
     }
 
-
     export class ToolContext {
 
         mainEditor: MainEditor = null;
@@ -431,8 +430,12 @@ namespace ManualTracingTool {
 
         setRedrawCurrentLayer() {
 
+            if (!this.toolContext.redrawMainWindow) {
+
+                this.toolContext.redrawCurrentLayer = true;
+            }
+
             this.toolContext.redrawMainWindow = true;
-            this.toolContext.redrawCurrentLayer = true;
         }
 
         setRedrawEditorWindow() {

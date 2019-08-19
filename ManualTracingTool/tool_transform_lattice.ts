@@ -358,7 +358,8 @@ namespace ManualTracingTool {
 
                 this.processTransform(env);
 
-                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawCurrentLayer();
+                env.setRedrawEditorWindow();
             }
             else {
 

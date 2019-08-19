@@ -130,6 +130,8 @@ namespace ManualTracingTool {
 
                         if (newLine.points.length > 0) {
 
+                            Logic_Edit_Line.calculateParameters(newLine);
+
                             copy_GroupData.lines.push(newLine);
                         }
                     }

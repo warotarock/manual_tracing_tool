@@ -243,7 +243,7 @@ namespace ManualTracingTool {
             }
             else {
 
-                setTimeout(run, 1000 / 60);
+                window.requestAnimationFrame(run);
             }
         }
         catch (e) {
