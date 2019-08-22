@@ -381,9 +381,9 @@ namespace ManualTracingTool {
 
             line.left = left;
             line.top = top;
-
             line.right = right;
             line.bottom = bottom;
+            line.range = Math.sqrt(Math.pow((right - left) * 0.5, 2) + Math.pow((bottom - top) * 0.5, 2));
 
             line.isSelected = isSelected;
 
@@ -393,6 +393,10 @@ namespace ManualTracingTool {
                 Logic_Edit_Points.calculatePointTotalLength(line.points, 0.0);
 
                 line.totalLength = line.points[line.points.length - 1].totalLength;
+            }
+            else {
+
+                line.totalLength = 0.0;
             }
 
             // Calculate curvature

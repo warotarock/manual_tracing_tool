@@ -141,6 +141,8 @@ namespace ManualTracingTool {
                                     delete point['adjustedLocation'];
                                 }
                             }
+
+                            Logic_Edit_Line.calculateParameters(line);
                         }
                     }
                 }
@@ -240,6 +242,12 @@ namespace ManualTracingTool {
                             delete line.modifyFlag;
                             delete line.isCloseToMouse;
                             delete line.isEditTarget;
+                            delete line.left;
+                            delete line.top;
+                            delete line.right;
+                            delete line.bottom;
+                            delete line.range;
+                            delete line.totalLength;
 
                             for (let point of line.points) {
 

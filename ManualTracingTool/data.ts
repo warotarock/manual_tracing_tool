@@ -135,19 +135,19 @@ namespace ManualTracingTool {
         continuousFill = false;
         isSelected = false;
 
-        left = 999999.0;
-        top = 999999.0;
-
-        right = -999999.0;
-        bottom = -999999.0;
-
-        totalLength = 0.0;
-
         // runtime
         modifyFlag = VectorLineModifyFlagID.none;
 
         isCloseToMouse = false;
         isEditTarget = false;
+
+        left = 999999.0;
+        top = 999999.0;
+        right = -999999.0;
+        bottom = -999999.0;
+        range = 0.0;
+
+        totalLength = 0.0;
     }
 
     export enum VectorGroupModifyFlagID {

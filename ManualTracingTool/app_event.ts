@@ -956,6 +956,7 @@ namespace ManualTracingTool {
                         wnd.currentTargetID = button_LayoutArea.index;
 
                         env.setRedrawColorSelectorWindow();
+                        env.setRedrawColorMixerWindow();
                     }
 
                     let pallet_LayoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
@@ -1079,7 +1080,7 @@ namespace ManualTracingTool {
             this.canvasRender.setContext(wnd);
             this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
 
-            let color = this.toolEnv.getCurrentLayerFillColor();
+            let color = this.getPalletSelectorWindow_CurrentColor();
 
             if (color != null) {
 
@@ -1356,16 +1357,28 @@ namespace ManualTracingTool {
                 if (env.isEditMode()) {
 
                     if (this.toolContext.currentVectorLayer != null
-                        && this.toolContext.currentVectorGeometry != null) {
+                        && this.toolContext.currentVectorGeometry != null
+                        && this.toolContext.currentVectorGroup != null) {
+
+                        let withCut = (key == 'x' && env.isCtrlKeyPressing());
 
                         let command = new Command_DeleteSelectedPoints();
                         if (command.prepareEditTargets(this.toolContext.currentVectorLayer, this.toolContext.currentVectorGeometry)) {
 
+                            if (withCut) {
+
+                                let command = new Command_CopyGeometry();
+                                if (command.prepareEditData(env)) {
+
+                                    command.execute(env);
+                                }
+                            }
+
                             command.execute(env);
                             this.toolContext.commandHistory.addCommand(command);
-                        }
 
-                        env.setRedrawMainWindow();
+                            env.setRedrawMainWindow();
+                        }
                     }
                 }
 
@@ -1399,7 +1412,6 @@ namespace ManualTracingTool {
                         this.tool_SelectAllPoints.executeClearSelectAll(env);
 
                         command.execute(env);
-                        command.isContinued = true;
                         this.toolContext.commandHistory.addCommand(command);
                     }
 
