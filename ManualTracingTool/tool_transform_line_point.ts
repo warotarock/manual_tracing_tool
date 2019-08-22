@@ -79,7 +79,8 @@ namespace ManualTracingTool {
 
                         for (let point of line.points) {
 
-                            if (!point.isSelected && !line.isSelected) {
+                            if ((env.operationUnitID != OperationUnitID.line && !point.isSelected)
+                                || !line.isSelected) {
 
                                 continue;
                             }
