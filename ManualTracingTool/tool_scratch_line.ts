@@ -245,10 +245,6 @@ namespace ManualTracingTool {
 
             if (hitedLine != null) {
 
-                if (env.currentVectorLine != null) {
-                    env.currentVectorLine.isEditTarget = false;
-                }
-
                 env.setCurrentVectorLine(hitedLine, true);
 
                 env.setRedrawCurrentLayer();

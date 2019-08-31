@@ -563,8 +563,6 @@ namespace ManualTracingTool {
 
             this.toolContext.currentVectorLine = line;
             this.currentVectorLine = line;
-
-            this.currentVectorLine.isEditTarget = isEditTarget;
         }
 
         getCurrentLayerLineColor(): Vec4 {

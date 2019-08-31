@@ -167,10 +167,6 @@ namespace ManualTracingTool {
                 matrix[12], matrix[13]);
         }
 
-        calculateViewRectangle(result: Vec4, canvasWindow: CanvasWindow) {
-
-        }
-
         isInViewRectangle(left: float, top: float, right: float, bottom: float, range: float) {
 
             let centerX = (right + left) * 0.5;

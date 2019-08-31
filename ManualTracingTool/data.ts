@@ -139,7 +139,6 @@ namespace ManualTracingTool {
         modifyFlag = VectorLineModifyFlagID.none;
 
         isCloseToMouse = false;
-        isEditTarget = false;
 
         left = 999999.0;
         top = 999999.0;

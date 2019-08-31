@@ -286,7 +286,7 @@ namespace ManualTracingTool {
             }
 
             if (!isExporting
-                && !this.canvasRender.isInViewRectangle(line.left, line.top, line.right, line.bottom, line.range)
+                && (line.range != 0.0 && !this.canvasRender.isInViewRectangle(line.left, line.top, line.right, line.bottom, line.range))
                 //&& this.toolEnv.isShiftKeyPressing() // for clipping test
             ) {
                 return;

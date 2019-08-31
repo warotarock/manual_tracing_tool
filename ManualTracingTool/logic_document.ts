@@ -112,7 +112,6 @@ namespace ManualTracingTool {
                         for (let line of group.lines) {
 
                             line.modifyFlag = VectorLineModifyFlagID.none;
-                            line.isEditTarget = false;
                             line.isCloseToMouse = false;
 
                             if (line['strokeWidth'] != undefined) {
@@ -241,7 +240,6 @@ namespace ManualTracingTool {
 
                             delete line.modifyFlag;
                             delete line.isCloseToMouse;
-                            delete line.isEditTarget;
                             delete line.left;
                             delete line.top;
                             delete line.right;
