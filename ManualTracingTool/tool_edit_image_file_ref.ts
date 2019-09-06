@@ -131,20 +131,32 @@ namespace ManualTracingTool {
 
         protected prepareLatticePoints(env: ToolEnvironment): boolean { // @override
             
-            let image = env.currentImageFileReferenceLayer.imageResource.image;
+            this.calculateImageLatticePoints(
+                env.currentImageFileReferenceLayer.imageResource.image,
+                env.currentImageFileReferenceLayer.location,
+                env.currentImageFileReferenceLayer.rotation,
+                env.currentImageFileReferenceLayer.scale
+            );
+
+            this.resetLatticePointLocationToBaseLocation();
+
+            return true;
+        }
+
+        protected calculateImageLatticePoints(image: RenderImage, location: Vec3, rotation: Vec3, scaling: Vec3) {
 
             // calculate matrix
 
             mat4.identity(this.transformMatrix);
 
-            mat4.translate(this.transformMatrix, this.transformMatrix, env.currentImageFileReferenceLayer.location);
+            mat4.translate(this.transformMatrix, this.transformMatrix, location);
 
-            let angle = env.currentImageFileReferenceLayer.rotation[0];
+            let angle = rotation[0];
             mat4.rotateZ(this.transformMatrix, this.transformMatrix, angle);
 
             vec3.set(this.imageSize, image.width, image.height, 0.0);
             mat4.scale(this.transformMatrix, this.transformMatrix, this.imageSize);
-            mat4.scale(this.transformMatrix, this.transformMatrix, env.currentImageFileReferenceLayer.scale);
+            mat4.scale(this.transformMatrix, this.transformMatrix, scaling);
 
             // calculate lattice points
 
@@ -159,10 +171,6 @@ namespace ManualTracingTool {
 
             vec3.set(this.pointLocation, 0.0, 1.0, 0.0);
             vec3.transformMat4(this.latticePoints[3].baseLocation, this.pointLocation, this.transformMatrix);
-
-            this.resetLatticePointLocationToBaseLocation();
-
-            return true;
         }
 
         protected setLatticeLocation(env: ToolEnvironment) { // @override
@@ -182,6 +190,37 @@ namespace ManualTracingTool {
 
             let ifrLayer = env.currentImageFileReferenceLayer;
             let image = ifrLayer.imageResource.image;
+
+            if (this.transformModifyType == TransformModifyType.one) {
+
+                if (this.transformType == TransformType.grabMove) {
+
+                    ifrLayer.adjustingLocation[0] = -ifrLayer.imageResource.image.width / 2;
+                    ifrLayer.adjustingLocation[1] = -ifrLayer.imageResource.image.height / 2;
+                }
+                else if (this.transformType == TransformType.rotate) {
+
+                    ifrLayer.adjustingRotation[0] = 0.0;
+                }
+                else if (this.transformType == TransformType.scale) {
+
+                    vec3.set(ifrLayer.adjustingScale, 1.0, 1.0, 1.0);
+                }
+
+
+                this.calculateImageLatticePoints(
+                    env.currentImageFileReferenceLayer.imageResource.image,
+                    env.currentImageFileReferenceLayer.adjustingLocation,
+                    env.currentImageFileReferenceLayer.adjustingRotation,
+                    env.currentImageFileReferenceLayer.adjustingScale
+                );
+
+                this.resetLatticePointLocationToBaseLocation();
+
+                this.transformModifyType = TransformModifyType.none;
+
+                return;
+            }
 
             // location
             vec3.copy(ifrLayer.adjustingLocation, this.latticePoints[0].location);

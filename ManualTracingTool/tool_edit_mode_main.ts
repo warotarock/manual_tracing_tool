@@ -64,11 +64,14 @@ namespace ManualTracingTool {
 
             for (let viewKeyframeLayer of editableKeyframeLayers) {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                if (VectorLayer.isVectorLayer(viewKeyframeLayer.layer)) {
 
-                    for (let line of group.lines) {
+                    for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
-                        Logic_Edit_Points.calculateSurroundingRectangle(this.baseRectangleArea, this.baseRectangleArea, line.points, selectedOnly);
+                        for (let line of group.lines) {
+
+                            Logic_Edit_Points.calculateSurroundingRectangle(this.baseRectangleArea, this.baseRectangleArea, line.points, selectedOnly);
+                        }
                     }
                 }
             }
