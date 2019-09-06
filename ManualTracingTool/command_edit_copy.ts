@@ -1,5 +1,26 @@
 ﻿
+declare var require: any;
+
+interface Clipboard {
+
+    writeText(text: string, type: string);
+    readText(key: string): string;
+    availableFormats(type: string): string;
+}
+
 namespace ManualTracingTool {
+
+    let clipboard: Clipboard = (typeof (require) != 'undefined') ? require('electron').clipboard : {
+        writeText(text: string, type: string) {
+            window.localStorage.setItem('clipboard', text);
+        },
+        readText(type: string): string {
+            return window.localStorage.getItem('clipboard');
+        },
+        availableFormats(type: string): string {
+            return window.localStorage.getItem('clipboard') ? 'clipboard' : null;
+        }
+    };
 
     class Command_EditGeometry_EditData {
 
@@ -156,13 +177,16 @@ namespace ManualTracingTool {
 
         execute(env: ToolEnvironment) { // @override
 
-            env.clipboard.copy_VectorGroup = this.copy_VectorGroup;
+            // env.clipboard.copy_VectorGroup = this.copy_VectorGroup;
+
+            clipboard.writeText(JSON.stringify(this.copy_VectorGroup));
         }
     }
 
     export class Command_PasteGeometry extends CommandBase {
 
         editData: Command_EditGeometry_EditData = null;
+        copy_Lines: List<VectorLine> = null;
 
         prepareEditData(env: ToolEnvironment): boolean {
 
@@ -175,9 +199,9 @@ namespace ManualTracingTool {
             this.editData.oldLines = env.currentVectorGroup.lines;
             this.editData.newLines = ListClone(env.currentVectorGroup.lines);
 
-            let copy_Lines: List<VectorLine> = JSON.parse(JSON.stringify(env.clipboard.copy_VectorGroup.lines));
+            // let copy_Lines: List<VectorLine> = JSON.parse(JSON.stringify(env.clipboard.copy_VectorGroup.lines));
 
-            for (let line of copy_Lines) {
+            for (let line of this.copy_Lines) {
 
                 line.isSelected = true;
 
@@ -187,15 +211,36 @@ namespace ManualTracingTool {
                 }
             }
 
-            ListAddRange(this.editData.newLines, copy_Lines);
+            ListAddRange(this.editData.newLines, this.copy_Lines);
 
             return true;
         }
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
-            return (env.currentVectorGroup != null
-                && env.clipboard.copy_VectorGroup != null);
+            // return (env.currentVectorGroup != null
+            //     && env.clipboard.copy_VectorGroup != null);
+
+            if (clipboard.availableFormats('clipboard') == null) {
+                return false;
+            }
+
+            try {
+
+                let copy_group = JSON.parse(clipboard.readText('clipboard'))
+
+                if (!copy_group || !copy_group.lines) {
+                    return false;
+                }
+
+                this.copy_Lines = copy_group.lines;
+            }
+            catch (e) {
+
+                return false;
+            }
+
+            return true;
         }
 
         execute(env: ToolEnvironment) { // @override

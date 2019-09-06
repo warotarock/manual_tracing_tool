@@ -199,6 +199,13 @@ namespace ManualTracingTool {
         static fixSaveDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
 
             this.fixSaveDocumentData_FixLayer_Recursive(document.rootLayer, info);
+
+            for (let i = 0; i < document.palletColors.length; i++) {
+
+                let palletColor = document.palletColors[i];
+
+                palletColor.color = [palletColor.color[0], palletColor.color[1], palletColor.color[2], palletColor.color[3]];
+            }
         }
 
         static fixSaveDocumentData_SetID_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
@@ -228,9 +235,13 @@ namespace ManualTracingTool {
 
         static fixSaveDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
 
+            layer.layerColor = [layer.layerColor[0], layer.layerColor[1], layer.layerColor[2], layer.layerColor[3]];
+
             if (layer.type == LayerTypeID.vectorLayer) {
 
                 let vectorLayer = <VectorLayer>layer;
+
+                vectorLayer.fillColor = [vectorLayer.fillColor[0], vectorLayer.fillColor[1], vectorLayer.fillColor[2], vectorLayer.fillColor[3]];
 
                 for (let keyframe of vectorLayer.keyframes) {
 
@@ -248,6 +259,8 @@ namespace ManualTracingTool {
                             delete line.totalLength;
 
                             for (let point of line.points) {
+
+                                point.location = [point.location[0], point.location[1], point.location[2]];
 
                                 delete point.adjustingLocation;
                                 delete point.tempLocation;
@@ -267,6 +280,10 @@ namespace ManualTracingTool {
             else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
 
                 let ifrLayer = <ImageFileReferenceLayer>layer;
+
+                ifrLayer.location = [ifrLayer.location[0], ifrLayer.location[1], ifrLayer.location[2]];
+                ifrLayer.rotation = [ifrLayer.rotation[0], ifrLayer.rotation[1], ifrLayer.rotation[2]];
+                ifrLayer.scale = [ifrLayer.scale[0], ifrLayer.scale[1], ifrLayer.scale[2]];
 
                 delete ifrLayer.imageResource;
                 delete ifrLayer.imageLoading;
