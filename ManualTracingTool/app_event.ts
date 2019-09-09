@@ -196,6 +196,7 @@ namespace ManualTracingTool {
                     this.regsterLastUsedFile(filePath);
 
                     this.setHeaderDocumentFileName(filePath);
+                    this.setExportImageFileNameFromFileName();
 
                     reader.addEventListener('load', (e: any) => {
 
@@ -816,7 +817,7 @@ namespace ManualTracingTool {
 
                         if (this.toolEnv.isShiftKeyPressing()) {
 
-                            this.setLayerSelection(selectedLayer, true);
+                            this.setLayerSelection(selectedLayer, !selectedLayer.isSelected);
                             this.activateCurrentTool();
                             this.startShowingLayerItem(selectedItem);
                         }

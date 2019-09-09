@@ -1170,21 +1170,26 @@ namespace ManualTracingTool {
 
             if (StringIsNullOrEmpty(exportFileName)) {
 
-                let fileName = this.getInputElementText(this.ID.fileName);
-                let lastSeperatorIndex = StringLastIndexOf(fileName, '\\');
-                if (lastSeperatorIndex == -1) {
-                    lastSeperatorIndex = StringLastIndexOf(fileName, '/');
-                }
-                let separatorDotIndex = StringLastIndexOf(fileName, '.');
-                if (lastSeperatorIndex != -1 && separatorDotIndex != -1 && separatorDotIndex - lastSeperatorIndex > 0) {
-
-                    fileName = StringSubstring(fileName, lastSeperatorIndex + 1, separatorDotIndex - lastSeperatorIndex - 1);
-                }
-
-                this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
+                this.setExportImageFileNameFromFileName();
             }
 
             this.openModal(this.ID.exportImageFileModal, null);
+        }
+
+        protected setExportImageFileNameFromFileName() {
+
+            let fileName = this.getInputElementText(this.ID.fileName);
+            let lastSeperatorIndex = StringLastIndexOf(fileName, '\\');
+            if (lastSeperatorIndex == -1) {
+                lastSeperatorIndex = StringLastIndexOf(fileName, '/');
+            }
+            let separatorDotIndex = StringLastIndexOf(fileName, '.');
+            if (lastSeperatorIndex != -1 && separatorDotIndex != -1 && separatorDotIndex - lastSeperatorIndex > 0) {
+
+                fileName = StringSubstring(fileName, lastSeperatorIndex + 1, separatorDotIndex - lastSeperatorIndex - 1);
+            }
+
+            this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
         }
 
         protected openNewKeyframeModal() {
