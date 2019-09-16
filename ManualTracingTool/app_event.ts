@@ -548,7 +548,11 @@ namespace ManualTracingTool {
             }
 
             // View operation
-            if (e.isRightButtonPressing() || e.isCenterButtonPressing()) {
+            if (e.isRightButtonPressing() && this.toolEnv.isShiftKeyPressing()) {
+
+                this.setOperatorCursorLocationToMouse();
+            }
+            else if (e.isRightButtonPressing() || e.isCenterButtonPressing()) {
 
                 this.mainWindow_MouseViewOperationStart();
             }
@@ -1245,8 +1249,7 @@ namespace ManualTracingTool {
 
             if (key == '.' && env.needsDrawOperatorCursor()) {
 
-                vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
-                this.toolEnv.setRedrawEditorWindow();
+                this.setOperatorCursorLocationToMouse();
             }
 
             if (this.isModalToolRunning()) {
@@ -1941,6 +1944,12 @@ namespace ManualTracingTool {
             }
 
             return false;
+        }
+
+        protected setOperatorCursorLocationToMouse() {
+
+            vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
+            this.toolEnv.setRedrawEditorWindow();
         }
     }
 }

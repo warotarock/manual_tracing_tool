@@ -41,7 +41,7 @@ namespace ManualTracingTool {
 
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @virtual
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @virtual
 
         }
 
@@ -84,9 +84,11 @@ namespace ManualTracingTool {
             this.afterHitTest();
         }
 
-        protected hitTest(geometry: VectorLayerGeometry, location: Vec3, minDistance: float) {
+        protected hitTest(geometry: VectorLayerGeometry, location: Vec3, minDistanceSQ: float) {
 
             this.beforeHitTestToLayer(geometry);
+
+            let minDistance = Math.sqrt(minDistanceSQ);
 
             for (let group of geometry.groups) {
 
@@ -96,9 +98,20 @@ namespace ManualTracingTool {
 
                     this.beforeHitTestToLine(group, line);
 
+                    let lineHited = false;
+
                     if (this.hitTest_LineRectangle(line, location, minDistance)) {
 
-                        this.processHitTestToLine(group, line, location, minDistance);
+                        lineHited = this.processHitTestToLine(group, line, location, minDistanceSQ);
+                    }
+
+                    if (lineHited) {
+
+                        this.onLineHited(line);
+                    }
+                    else {
+
+                        this.onLineNotHited(line);
                     }
 
                     this.afterHitTestToLine(group, line);
@@ -115,14 +128,15 @@ namespace ManualTracingTool {
             return HitTest_Line.hitTestLocationToLineByRectangle(location, line, minDistance);
         }
 
-        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistance: float) { // @virtual
+        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistance: float): boolean { // @virtual
 
+            return false;
         }
     }
 
     export class HitTest_LinePoint_PointToPointByDistance extends HitTest_LinePointBase {
 
-        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistance: float) { // @override
+        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistance: float): boolean { // @override
 
             this.existsPointHitTest = false;
 
@@ -141,12 +155,14 @@ namespace ManualTracingTool {
                     break;
                 }
             }
+
+            return this.existsPointHitTest;
         }
     }
 
     export class HitTest_Line_PointToLineByDistance extends HitTest_LinePointBase {
 
-        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistance: float) { // @override
+        protected processHitTestToLine(group: VectorGroup, line: VectorLine, location: Vec3, minDistanceSQ: float): boolean { // @override
 
             this.existsPointHitTest = false;
 
@@ -163,9 +179,9 @@ namespace ManualTracingTool {
                     location[0], location[1]
                 );
 
-                if (distanceSQ < minDistance) {
+                if (distanceSQ < minDistanceSQ) {
 
-                    this.onLineSegmentHited(line, point1, point2, location, Math.sqrt(minDistance), distanceSQ);
+                    this.onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ);
                     lineHited = true;
                 }
                 else {
@@ -178,14 +194,7 @@ namespace ManualTracingTool {
                 }
             }
 
-            if (lineHited) {
-
-                this.onLineHited(line);
-            }
-            else {
-
-                this.onLineNotHited(line);
-            }
+            return lineHited;
         }
     }
 
@@ -198,7 +207,7 @@ namespace ManualTracingTool {
             this.hitedLine = null;
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
             this.hitedLine = line;
 
@@ -215,7 +224,7 @@ namespace ManualTracingTool {
             this.isChanged = false;
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
             // to stop hit test early
             this.existsPointHitTest = true;

@@ -48,9 +48,9 @@ namespace ManualTracingTool {
         protected beforeHitTestToLine(group: VectorGroup, line: VectorLine) { // @override
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
-            this.createEditPoint(line, point1, point2, location, minDistance);
+            this.createEditPoint(line, point1, point2, location, minDistanceSQ);
         }
 
         protected afterHitTestToLine(group: VectorGroup, line: VectorLine) { // @override
@@ -59,13 +59,25 @@ namespace ManualTracingTool {
         protected afterHitTestToGroup(geometry: VectorLayerGeometry, group: VectorGroup) { // @override
         }
 
-        private createEditPoint(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistance: float) {
+        private createEditPoint(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float) {
 
             let edited = false;
+            let done = false;
 
             let segmentLength = vec3.distance(point1.location, point2.location);
 
-            if (segmentLength > 0.0) {
+            if (segmentLength <= 0.0) {
+
+                edited = true;
+                point1.adjustingLengthFrom = 0.0; // セグメント全体が削除
+                point1.adjustingLengthTo = 1.0;
+
+                done = true;
+            }
+
+            let dy: float;
+
+            if (!done) {
 
                 Maths.mat4SegmentMat(this.segmentMat4, this.normalVec, point1.location, point2.location);
                 mat4.invert(this.invMat4, this.segmentMat4);
@@ -73,9 +85,17 @@ namespace ManualTracingTool {
                 vec3.set(this.localLocation, location[0], location[1], 0.0);
                 vec3.transformMat4(this.localLocation, this.localLocation, this.invMat4);
 
-                let dy = 0 - this.localLocation[1];
-                let r = minDistance;
-                let dx = Math.sqrt(r * r - dy * dy);
+                dy = 0 - this.localLocation[1];
+
+                if (minDistanceSQ - dy * dy < 0) {
+
+                    dy = 0.01;
+                }
+            }
+
+            if (!done) {
+
+                let dx = Math.sqrt(minDistanceSQ - dy * dy);
                 let x1 = this.localLocation[0] - dx;
                 let x2 = this.localLocation[0] + dx;
 
@@ -104,7 +124,7 @@ namespace ManualTracingTool {
                 else if (x1 < 0.0 && x2 > segmentLength) {
 
                     edited = true;
-                    point1.adjustingLengthFrom = 0.0;
+                    point1.adjustingLengthFrom = 0.0; // セグメント全体が削除
                     point1.adjustingLengthTo = 1.0;
                 }
                 else if (x1 > 0.0 && x2 < segmentLength) {
@@ -123,12 +143,6 @@ namespace ManualTracingTool {
                         point1.adjustingLengthTo = toX;
                     }
                 }
-            }
-            else {
-
-                edited = true;
-                point1.adjustingLengthFrom = 0.0;
-                point1.adjustingLengthTo = 1.0;
             }
 
             if (edited) {

@@ -122,6 +122,8 @@ namespace ManualTracingTool {
 
                                 point.modifyFlag = LinePointModifyFlagID.none;
 
+                                point.location[2] = 0.0;
+
                                 point.adjustingLocation = vec3.create();
                                 vec3.copy(point.adjustingLocation, point.location);
 

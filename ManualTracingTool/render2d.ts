@@ -59,7 +59,7 @@ namespace ManualTracingTool {
 
             mat4.identity(result);
 
-            mat4.translate(result, result, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 1.0));
+            mat4.translate(result, result, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 0.0));
             mat4.scale(result, result, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
             if (this.mirrorX) {
                 mat4.scale(result, result, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
