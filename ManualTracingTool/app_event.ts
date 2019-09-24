@@ -348,6 +348,8 @@ namespace ManualTracingTool {
                 this.onModalWindowClosed();
             });
 
+            this.setEvents_ModalCloseButton(this.ID.messageDialogModal_ok);
+
             this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_ok);
             this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_cancel);
 
@@ -1739,6 +1741,7 @@ namespace ManualTracingTool {
                 this.openLayerPropertyModal(layerItem.layer, layerItem);
             }
 
+            /*
             if (key == '2') {
 
                 let layerItem = this.findCurrentLayerLayerWindowItem();
@@ -1752,6 +1755,7 @@ namespace ManualTracingTool {
                 this.openPalletColorModal(
                     OpenPalletColorModalMode.FillColor, this.toolContext.document, layerItem.layer);
             }
+            */
 
             if (key == '4') {
 

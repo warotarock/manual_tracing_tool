@@ -502,13 +502,6 @@ namespace ManualTracingTool {
             }
         }
 
-        // Message box
-
-        protected showMessageBox(text: string) {
-
-            alert(text);
-        }
-
         // Layer window
 
         private initializeLayerWindow() {
@@ -782,6 +775,17 @@ namespace ManualTracingTool {
             );
 
             modal.open();
+        }
+
+        protected showMessageBox(text: string) {
+
+            if (this.isModalShown()) {
+                return;
+            }
+
+            this.setElementText(this.ID.messageDialogModal_message, text);
+
+            this.openModal(this.ID.messageDialogModal, this.ID.messageDialogModal_ok);
         }
 
         protected openLayerPropertyModal(layer: Layer, layerWindowItem: LayerWindowItem) {
@@ -1173,7 +1177,7 @@ namespace ManualTracingTool {
                 this.setExportImageFileNameFromFileName();
             }
 
-            this.openModal(this.ID.exportImageFileModal, null);
+            this.openModal(this.ID.exportImageFileModal, this.ID.exportImageFileModal_ok);
         }
 
         protected setExportImageFileNameFromFileName() {
@@ -1898,6 +1902,10 @@ namespace ManualTracingTool {
         colorMixer_hue = 'colorMixer_hue';
         colorMixer_sat = 'colorMixer_sat';
         colorMixer_val = 'colorMixer_val';
+
+        messageDialogModal = '#messageDialogModal';
+        messageDialogModal_message = 'messageDialogModal_message';
+        messageDialogModal_ok = 'messageDialogModal_ok';
 
         openFileDialogModal = '#openFileDialogModal';
         openFileDialogModal_file = 'openFileDialogModal_file';

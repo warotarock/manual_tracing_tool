@@ -1,6 +1,4 @@
 ﻿
-declare var require: any;
-
 interface Clipboard {
 
     writeText(text: string, type: string);
@@ -9,18 +7,6 @@ interface Clipboard {
 }
 
 namespace ManualTracingTool {
-
-    let clipboard: Clipboard = (typeof (require) != 'undefined') ? require('electron').clipboard : {
-        writeText(text: string, type: string) {
-            window.localStorage.setItem('clipboard', text);
-        },
-        readText(type: string): string {
-            return window.localStorage.getItem('clipboard');
-        },
-        availableFormats(type: string): string {
-            return window.localStorage.getItem('clipboard') ? 'clipboard' : null;
-        }
-    };
 
     class Command_EditGeometry_EditData {
 
@@ -179,7 +165,7 @@ namespace ManualTracingTool {
 
             // env.clipboard.copy_VectorGroup = this.copy_VectorGroup;
 
-            clipboard.writeText(JSON.stringify(this.copy_VectorGroup));
+            Platform.clipboard.writeText(JSON.stringify(this.copy_VectorGroup));
         }
     }
 
@@ -221,13 +207,13 @@ namespace ManualTracingTool {
             // return (env.currentVectorGroup != null
             //     && env.clipboard.copy_VectorGroup != null);
 
-            if (clipboard.availableFormats('clipboard') == null) {
+            if (Platform.clipboard.availableFormats('clipboard') == null) {
                 return false;
             }
 
             try {
 
-                let copy_group = JSON.parse(clipboard.readText('clipboard'))
+                let copy_group = JSON.parse(Platform.clipboard.readText('clipboard'))
 
                 if (!copy_group || !copy_group.lines) {
                     return false;

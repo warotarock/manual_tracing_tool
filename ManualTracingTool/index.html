@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';" />
     <title>Manual tracing tool</title>
     <script src="./external/glmatrix/gl-matrix-min.js"></script>
 
@@ -12,6 +13,7 @@
 
     <link rel="stylesheet" href="app.css" type="text/css" />
     <script src="./src/conversion.js"></script>
+    <script src="./src/platform.js"></script>
     <script src="./src/render2d.js"></script>
     <script src="./src/render3d.js"></script>
     <script src="./src/data.js"></script>
@@ -323,37 +325,48 @@
             padding: 20px;
         }
 
-            .modalDialogWindow.openFileDialogModal {
-                width: 400px;
+            .modalDialogWindow.messageDialogModal {
+                min-width: 400px;
                 height: 100px;
             }
 
-            .modalDialogWindow.openFileDialogModal_file {
-                background-color: #ddd;
-                margin-left: 5px;
-                margin-top: 5px;
-                width: 100%;
+        div#messageDialogModal_message {
+            text-align: center;
+            width: 400px;
+            padding: 15px;
+        }
+
+        .modalDialogWindow.openFileDialogModal {
+            width: 400px;
+            height: 100px;
+        }
+
+        .modalDialogWindow.openFileDialogModal_file {
+            background-color: #ddd;
+            margin-left: 5px;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .modalDialogWindow.layerPropertyModal {
+            width: 400px;
+            height: 340px;
+            position: absolute;
+            bottom: 100px;
+        }
+
+            .modalDialogWindow.layerPropertyModal input {
+                margin-left: 15px;
+                margin-top: 15px;
             }
 
-            .modalDialogWindow.layerPropertyModal {
-                width: 400px;
-                height: 340px;
-                position: absolute;
-                bottom: 100px;
+                .modalDialogWindow.layerPropertyModal input[type=checkbox] {
+                    margin-top: 0px;
+                }
+
+            .modalDialogWindow.layerPropertyModal div {
+                margin-top: 15px;
             }
-
-                .modalDialogWindow.layerPropertyModal input {
-                    margin-left: 15px;
-                    margin-top: 15px;
-                }
-
-                    .modalDialogWindow.layerPropertyModal input[type=checkbox] {
-                        margin-top: 0px;
-                    }
-
-                .modalDialogWindow.layerPropertyModal div {
-                    margin-top: 15px;
-                }
 
         #layerPropertyModal_layerAlpha {
             width: 200px;
@@ -590,8 +603,15 @@
             </div>
         </div>
     </main>
-    <footer id="footer">
-    </footer>
+    <footer id="footer"></footer>
+
+    <div id="messageDialogModal" class="modalDialogWindow messageDialogModal">
+        <div id="messageDialogModal_message">
+        </div>
+        <div class="OKCalcelButtons">
+            <input type="button" id="messageDialogModal_ok" value="OK">
+        </div>
+    </div>
 
     <div id="openFileDialogModal" class="modalDialogWindow openFileDialogModal">
         <label>

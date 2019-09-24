@@ -170,6 +170,8 @@ namespace ManualTracingTool {
 
     window.onload = () => {
 
+        Platform.settings.load();
+
         _Main = new App_Main();
         _Main.mainWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.mainCanvas);
         _Main.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.editorCanvas);

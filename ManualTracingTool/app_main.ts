@@ -1,6 +1,5 @@
 
 declare var Custombox: any;
-declare var require: any;
 declare var Buffer: any;
 
 namespace ManualTracingTool {
@@ -264,17 +263,23 @@ namespace ManualTracingTool {
 
         protected onWindowBlur() { // @override
 
+            console.log('Window blur');
+
             if (this.mainProcessState == MainProcessStateID.running) {
 
                 this.mainProcessState = MainProcessStateID.pause;
+                console.log('  mainProcessState -> pause');
             }
         }
 
         protected onWindowFocus() { // @virtual
 
+            console.log('Window focus');
+
             if (this.mainProcessState == MainProcessStateID.pause) {
 
                 this.mainProcessState = MainProcessStateID.running;
+                console.log('  mainProcessState -> running');
             }
         }
 

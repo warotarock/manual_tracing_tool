@@ -1,8 +1,4 @@
 
-declare var Custombox: any;
-declare var require: any;
-declare var Buffer: any;
-
 namespace ManualTracingTool {
 
     export class App_Tool extends App_Drawing {

@@ -84,6 +84,7 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="platform.ts" />
     <TypeScriptCompile Include="app_event.ts" />
     <TypeScriptCompile Include="app_drawing.ts" />
     <TypeScriptCompile Include="app_document.ts" />

@@ -1,13 +1,5 @@
 
-declare var require: any;
-
 namespace ManualTracingTool {
-
-    let fs = (typeof (require) != 'undefined') ? require('fs') : {
-        writeFile(fileName, text) {
-            window.localStorage.setItem(fileName, text);
-        }
-    };
 
     export class App_Document extends App_Tool {
 
@@ -31,33 +23,42 @@ namespace ManualTracingTool {
 
         protected loadSettings() {
 
-            let index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
-            let localSettingText = window.localStorage.getItem(this.localStorage_SettingKey + index);
+            let index = Platform.settings.getItem(this.localStorage_SettingIndexKey);
+            let localSetting: LocalSetting = Platform.settings.getItem(this.localStorage_SettingKey + index);
 
-            if (!StringIsNullOrEmpty(localSettingText)) {
+            if (localSetting != null) {
 
-                this.localSetting = JSON.parse(localSettingText);
+                this.localSetting = localSetting;
             }
         }
 
         protected saveSettings() {
 
-            let index = window.localStorage.getItem(this.localStorage_SettingIndexKey);
+            let index = Platform.settings.getItem(this.localStorage_SettingIndexKey);
 
-            window.localStorage.setItem(this.localStorage_SettingKey + index, JSON.stringify(this.localSetting));
+            Platform.settings.setItem(this.localStorage_SettingKey + index, this.localSetting);
         }
 
         protected regsterLastUsedFile(filePath: string) {
 
-            for (let index = 0; index < this.localSetting.lastUsedFilePaths.length; index++) {
+            let paths = this.localSetting.lastUsedFilePaths;
 
-                if (this.localSetting.lastUsedFilePaths[index] == filePath) {
+            for (let index = 0; index < paths.length; index++) {
 
-                    ListRemoveAt(this.localSetting.lastUsedFilePaths, index);
+                if (paths[index] == filePath) {
+
+                    ListRemoveAt(paths, index);
                 }
             }
 
-            ListInsertAt(this.localSetting.lastUsedFilePaths, 0, filePath);
+            ListInsertAt(paths, 0, filePath);
+
+            if (paths.length > 5) {
+
+                paths = ListGetRange(paths, 0, 5);
+            }
+
+            this.localSetting.lastUsedFilePaths = paths;
         }
 
         // Loading document resources
@@ -94,7 +95,7 @@ namespace ManualTracingTool {
 
         protected createDefaultDocumentData(): DocumentData {
 
-            let saveData = window.localStorage.getItem(this.tempFileNameKey);
+            let saveData = Platform.settings.getItem(this.tempFileNameKey);
 
             if (!StringIsNullOrEmpty(saveData)) {
 
@@ -280,11 +281,11 @@ namespace ManualTracingTool {
 
             if (forceToLocalStrage) {
 
-                window.localStorage.setItem(this.tempFileNameKey, JSON.stringify(copy));
+                Platform.settings.setItem(this.tempFileNameKey, copy);
             }
             else {
 
-                fs.writeFile(filePath, JSON.stringify(copy), function (error) {
+                Platform.fs.writeFile(filePath, JSON.stringify(copy), function (error) {
                     if (error != null) {
                         this.showMessageBox('error : ' + error);
                     }
@@ -341,11 +342,10 @@ namespace ManualTracingTool {
                 if (imageType == 2) {
                     imageTypeText = 'image/jpeg';
                 }
-                var dataUrl = canvas.toDataURL(imageTypeText, 0.9);
-                var data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
-                var buf = new Buffer(data, 'base64');
 
-                fs.writeFile(fileFullPath, buf, (error) => {
+                const dataUrl = canvas.toDataURL(imageTypeText, 0.9);
+                const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+                Platform.fs.writeFile(fileFullPath, base64Data, 'base64', (error) => {
                     if (error) {
                         this.showMessageBox(error);
                     }
