@@ -79,6 +79,8 @@ namespace ManualTracingTool {
                 && StringIsNullOrEmpty(this.localSetting.lastUsedFilePaths[0])) {
 
                 this.document = this.createDefaultDocumentData();
+
+                this.resetContext();
             }
             else {
 
