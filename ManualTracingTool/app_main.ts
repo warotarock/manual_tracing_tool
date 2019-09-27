@@ -166,6 +166,8 @@ namespace ManualTracingTool {
 
         protected startReloadDocument() { // @override
 
+            this.resetContext();
+
             this.document = new DocumentData();
 
             let fileName = this.getInputElementText(this.ID.fileName);
@@ -178,6 +180,8 @@ namespace ManualTracingTool {
 
         protected startReloadDocumentFromURL(url: string) { // @override
 
+            this.resetContext();
+
             this.document = new DocumentData();
 
             this.startLoadingDocument(this.document, url);
@@ -188,6 +192,8 @@ namespace ManualTracingTool {
         }
 
         protected startReloadDocumentFromText(textData: string) { // @override
+
+            this.resetContext();
 
             this.document = new DocumentData();
 
@@ -275,6 +281,11 @@ namespace ManualTracingTool {
             this.toolEnv = new ToolEnvironment(this.toolContext);
             this.toolDrawEnv = new ToolDrawingEnvironment();
             this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
+        }
+
+        protected resetContext() {
+
+            this.initializeContext();
         }
 
         protected initializeModals() {
