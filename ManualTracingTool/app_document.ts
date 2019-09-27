@@ -8,6 +8,10 @@ namespace ManualTracingTool {
         localStorage_SettingKey = 'MTT-Settings';
         localStorage_SettingIndexKey = 'MTT-Settings Index';
         tempFileNameKey = 'Manual tracing tool save data';
+        oraScriptPath = './external/ora_js/';
+        oraVectorFileName = 'mttf.json';
+
+        // Backward interface implementations
 
         protected getDocument(): DocumentData { // @override
 
@@ -17,6 +21,23 @@ namespace ManualTracingTool {
         protected getLocalSetting(): LocalSetting { // @override
 
             return this.localSetting;
+        }
+
+        // Backward interface definitions
+
+        protected startReloadDocument() { // @virtual
+        }
+
+        protected startReloadDocumentFromURL(url: string) { // @virtual
+        }
+
+        protected startReloadDocumentFromText(textData: string) { // @virtual
+        }
+
+        protected resetDocument() { // @virtual
+        }
+
+        protected saveDocument() { // @virtual
         }
 
         // System settings
@@ -39,7 +60,7 @@ namespace ManualTracingTool {
             Platform.settings.setItem(this.localStorage_SettingKey + index, this.localSetting);
         }
 
-        protected regsterLastUsedFile(filePath: string) {
+        protected registerLastUsedFile(filePath: string) {
 
             let paths = this.localSetting.lastUsedFilePaths;
 
@@ -53,9 +74,9 @@ namespace ManualTracingTool {
 
             ListInsertAt(paths, 0, filePath);
 
-            if (paths.length > 5) {
+            if (paths.length > this.localSetting.maxLastUsedFilePaths) {
 
-                paths = ListGetRange(paths, 0, 5);
+                paths = ListGetRange(paths, 0, this.localSetting.maxLastUsedFilePaths);
             }
 
             this.localSetting.lastUsedFilePaths = paths;
@@ -92,6 +113,21 @@ namespace ManualTracingTool {
         }
 
         // Document data operations
+
+        protected getDocumentFileTypeFromName(filePath: string): DocumentFileType {
+
+            let fileType = DocumentFileType.json;
+            if (StringLastIndexOf(filePath, '.json') == filePath.length - 5) {
+
+                fileType = DocumentFileType.json;
+            }
+            else if (StringLastIndexOf(filePath, '.ora') == filePath.length - 4) {
+
+                fileType = DocumentFileType.ora;
+            }
+
+            return fileType;
+        }
 
         protected createDefaultDocumentData(): DocumentData {
 
@@ -249,7 +285,7 @@ namespace ManualTracingTool {
             return null;
         }
 
-        finishLayerLoading_Recursive(layer: Layer) {
+        protected finishLayerLoading_Recursive(layer: Layer) {
 
             if (layer.type == LayerTypeID.imageFileReferenceLayer) {
 
@@ -270,7 +306,7 @@ namespace ManualTracingTool {
             }
         }
 
-        saveDocumentData(filePath: string, documentData: DocumentData, forceToLocalStrage: boolean) {
+        protected createSaveDocumentData(documentData: DocumentData): any {
 
             let info = new DocumentDataSaveInfo();
             DocumentLogic.fixSaveDocumentData_SetID_Recursive(documentData.rootLayer, info);
@@ -279,84 +315,186 @@ namespace ManualTracingTool {
             let copy = JSON.parse(JSON.stringify(documentData));
             DocumentLogic.fixSaveDocumentData(copy, info);
 
+            return copy;
+        }
+
+        protected saveDocumentData(filePath: string, documentData: DocumentData, forceToLocalStrage: boolean) {
+
+            let save_DocumentData = this.createSaveDocumentData(documentData);
+
+            this.registerLastUsedFile(filePath);
+
             if (forceToLocalStrage) {
 
-                Platform.settings.setItem(this.tempFileNameKey, copy);
+                Platform.settings.setItem(this.tempFileNameKey, save_DocumentData);
+
+                return;
             }
-            else {
 
-                Platform.fs.writeFile(filePath, JSON.stringify(copy), function (error) {
-                    if (error != null) {
-                        this.showMessageBox('error : ' + error);
-                    }
-                });
+            let fileType = this.getDocumentFileTypeFromName(filePath);
 
-                this.regsterLastUsedFile(filePath);
+            if (fileType == DocumentFileType.json) {
+
+                this.saveDocumentJsonFile(filePath, save_DocumentData, DocumentBackGroundTypeID.transparent);
             }
-        }
+            else if (fileType == DocumentFileType.ora) {
 
-        exportImageFile(fileName: string, documentData: DocumentData, scale: float, backGroundType: DocumentBackGroundTypeID) {
-
-            let frameLeft = Math.floor(documentData.documentFrame[0]);
-            let frameTop = Math.floor(documentData.documentFrame[1]);
-            let documentWidth = Math.floor(documentData.documentFrame[2]) - frameLeft + 1;
-            let documentHeight = Math.floor(documentData.documentFrame[3]) - frameTop + 1;
-
-            let imageLeft = Math.floor(frameLeft);
-            let imageTop = Math.floor(frameTop);
-            let imageWidth = Math.floor(documentWidth * scale);
-            let imageHeight = Math.floor(documentHeight * scale);
-
-            if (imageWidth > 0 && imageHeight > 0) {
-
-                let canvas = this.exportRenderWindow.canvas;
-                canvas.width = imageWidth;
-                canvas.height = imageHeight;
-
-                this.exportRenderWindow.width = imageWidth;
-                this.exportRenderWindow.height = imageHeight;
-                this.exportRenderWindow.viewLocation[0] = imageLeft;
-                this.exportRenderWindow.viewLocation[1] = imageTop;
-                this.exportRenderWindow.viewScale = scale;
-                this.exportRenderWindow.viewRotation = 0.0;
-                this.exportRenderWindow.centerLocationRate[0] = 0.0;
-                this.exportRenderWindow.centerLocationRate[1] = 0.0;
-                this.clearWindow(this.exportRenderWindow);
-                if (backGroundType == DocumentBackGroundTypeID.lastPalletColor) {
-
-                    this.canvasRender.setFillColorV(documentData.palletColors[documentData.palletColors.length - 1].color);
-                    this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
-                }
-                this.drawExportImage(this.exportRenderWindow);
-
-                let localSetting = this.getLocalSetting();
-                let exportPath = localSetting.exportPath;
-                let imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
-                let extText = '.png';
-                if (imageType == 2) {
-                    extText = '.jpg';
-                }
-                let fileFullPath = exportPath + '/' + fileName + extText;
-
-                let imageTypeText = 'image/png';
-                if (imageType == 2) {
-                    imageTypeText = 'image/jpeg';
-                }
-
-                const dataUrl = canvas.toDataURL(imageTypeText, 0.9);
-                const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
-                Platform.fs.writeFile(fileFullPath, base64Data, 'base64', (error) => {
-                    if (error) {
-                        this.showMessageBox(error);
-                    }
-                });
-
-                // Free canvas memory
-                canvas.width = 10;
-                canvas.height = 10;
+                this.saveDocumentOraFile(filePath, save_DocumentData, DocumentBackGroundTypeID.transparent);
             }
         }
 
+        protected saveDocumentJsonFile(filePath: string, documentData: DocumentData, backGroundType: DocumentBackGroundTypeID) {
+
+            Platform.fs.writeFile(filePath, JSON.stringify(documentData), function (error) {
+                if (error != null) {
+                    this.showMessageBox('error : ' + error);
+                }
+            });
+        }
+
+        protected saveDocumentOraFile(filePath: string, documentData: DocumentData, backGroundType: DocumentBackGroundTypeID) {
+
+            let canvas = this.createExportImage(documentData, 1.0, backGroundType);
+
+            ora.scriptsPath = this.oraScriptPath;
+
+            let oraFile = new ora.Ora(canvas.width, canvas.height);
+
+            let layer = oraFile.addLayer('marged', 0);
+            layer.image = canvas;
+            layer.opacity = 0.7;
+            layer.x = 0;
+            layer.y = 0;
+
+            let localSetting = this.getLocalSetting();
+
+            let save_DocumentData = this.createSaveDocumentData(documentData);
+
+            oraFile.save(
+                this.oraVectorFileName
+                , JSON.stringify(save_DocumentData)
+                , (dataURL: string) => {
+
+                    let base64Data = dataURL.substr(dataURL.indexOf(',') + 1);
+
+                    Platform.fs.writeFile(filePath, base64Data, 'base64', (error) => {
+                        if (error) {
+                            this.showMessageBox(error);
+                        }
+                    });
+                }
+            );
+        }
+
+        protected createExportImage(documentData: DocumentData, scale: float, backGroundType: DocumentBackGroundTypeID): HTMLCanvasElement {
+
+            let layout = DocumentData.getDocumentLayout(documentData);
+
+            let imageLeft = Math.floor(layout.left);
+            let imageTop = Math.floor(layout.top);
+            let imageWidth = Math.floor(layout.width * scale);
+            let imageHeight = Math.floor(layout.height * scale);
+
+            if (imageWidth <= 0 || imageHeight <= 0) {
+
+                return null;
+            }
+
+            //let canvas = this.exportRenderWindow.canvas;
+            let canvas = document.createElement('canvas');
+            this.exportRenderWindow.context = canvas.getContext('2d');
+            canvas.width = imageWidth;
+            canvas.height = imageHeight;
+
+            this.exportRenderWindow.canvas = canvas;
+            this.exportRenderWindow.width = imageWidth;
+            this.exportRenderWindow.height = imageHeight;
+            this.exportRenderWindow.viewLocation[0] = imageLeft;
+            this.exportRenderWindow.viewLocation[1] = imageTop;
+            this.exportRenderWindow.viewScale = scale;
+            this.exportRenderWindow.viewRotation = 0.0;
+            this.exportRenderWindow.centerLocationRate[0] = 0.0;
+            this.exportRenderWindow.centerLocationRate[1] = 0.0;
+
+            this.clearWindow(this.exportRenderWindow);
+
+            if (backGroundType == DocumentBackGroundTypeID.lastPalletColor) {
+
+                this.canvasRender.setFillColorV(documentData.palletColors[documentData.palletColors.length - 1].color);
+                this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
+            }
+
+            this.drawExportImage(this.exportRenderWindow);
+
+            return canvas;
+        }
+
+        protected exportImageFile(fileName: string, documentData: DocumentData, scale: float, backGroundType: DocumentBackGroundTypeID) {
+
+            let canvas = this.createExportImage(documentData, scale, backGroundType);
+
+            if (canvas == null) {
+
+                return;
+            }
+
+            let localSetting = this.getLocalSetting();
+            let exportPath = localSetting.exportPath;
+
+            let imageType = this.getRadioElementIntValue(this.ID.exportImageFileModal_imageFileType, 1);
+
+            let extText = '.png';
+            if (imageType == 2) {
+                extText = '.jpg';
+            }
+
+            let fileFullPath = exportPath + '/' + fileName + extText;
+
+            let imageTypeText = 'image/png';
+            if (imageType == 2) {
+                imageTypeText = 'image/jpeg';
+            }
+
+            let dataURL = canvas.toDataURL(imageTypeText, 0.9);
+            let base64Data = dataURL.substr(dataURL.indexOf(',') + 1);
+            Platform.fs.writeFile(fileFullPath, base64Data, 'base64', (error) => {
+                if (error) {
+                    this.showMessageBox(error);
+                }
+            });
+
+            // Free canvas memory
+            canvas.width = 10;
+            canvas.height = 10;
+        }
+
+        protected startLoadDocumentOraFile(filePath: string, file: File) {
+
+            var zipfs = new zip.fs.FS();
+            zip.workerScriptsPath = this.oraScriptPath;
+
+            zipfs.importBlob(file, () => {
+
+                var entry = zipfs.find(this.oraVectorFileName);
+
+                if (entry) {
+
+                    entry.getText((text: string) => {
+
+                        this.registerLastUsedFile(filePath);
+
+                        this.setHeaderDocumentFileName(filePath);
+                        this.setExportImageFileNameFromFileName();
+
+                        this.startReloadDocumentFromText(text);
+                    });
+                }
+                else {
+
+                    console.log('error: failed to read from ora file.');
+                }
+            });
+        }
         // Layer and animation operations
 
         updateLayerStructure() { // @implements MainEditor

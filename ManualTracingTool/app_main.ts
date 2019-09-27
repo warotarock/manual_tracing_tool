@@ -103,23 +103,47 @@ namespace ManualTracingTool {
 
         protected startLoadingDocument(documentData: DocumentData, url: string) {
 
+            let fileType = this.getDocumentFileTypeFromName(url);
+
+            if (fileType == DocumentFileType.none) {
+
+                console.log('error: not supported file type.');
+                return;
+            }
+
             let xhr = new XMLHttpRequest();
             xhr.open('GET', url);
-            xhr.responseType = 'json';
             xhr.timeout = 3000;
+
+            if (fileType == DocumentFileType.json) {
+
+                xhr.responseType = 'json';
+            }
+            else if (fileType == DocumentFileType.ora) {
+
+                xhr.responseType = 'blob';
+            }
 
             xhr.addEventListener('load',
                 (e: Event) => {
 
-                    let data: any;
-                    if (xhr.responseType == 'json') {
-                        data = xhr.response;
-                    }
-                    else {
-                        data = JSON.parse(xhr.response);
-                    }
+                    if (fileType == DocumentFileType.json) {
 
-                    this.storeLoadedDocument(documentData, data);
+                        let data: any;
+                        if (xhr.responseType == 'json') {
+                            data = xhr.response;
+                        }
+                        else {
+                            data = JSON.parse(xhr.response);
+                        }
+
+                        this.storeLoadedDocument(documentData, data);
+
+                    }
+                    else if (fileType == DocumentFileType.ora) {
+
+                        this.startLoadDocumentOraFile(url, xhr.response);
+                    }
                 }
             );
 
@@ -143,7 +167,6 @@ namespace ManualTracingTool {
         protected startReloadDocument() { // @override
 
             this.document = new DocumentData();
-            this.initializeContext();
 
             let fileName = this.getInputElementText(this.ID.fileName);
             this.startLoadingDocument(this.document, fileName);
@@ -153,10 +176,20 @@ namespace ManualTracingTool {
             this.toolEnv.setRedrawAllWindows();
         }
 
+        protected startReloadDocumentFromURL(url: string) { // @override
+
+            this.document = new DocumentData();
+
+            this.startLoadingDocument(this.document, url);
+
+            this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
+
+            this.toolEnv.setRedrawAllWindows();
+        }
+
         protected startReloadDocumentFromText(textData: string) { // @override
 
             this.document = new DocumentData();
-            this.initializeContext();
 
             let data = JSON.parse(textData);
             this.storeLoadedDocument(this.document, data);
@@ -483,7 +516,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected isWhileLoading(): boolean { //@override
+        protected isWhileLoading(): boolean { // @override
 
             return (this.mainProcessState == MainProcessStateID.systemResourceLoading
                 || this.mainProcessState == MainProcessStateID.documentResourceLoading);
@@ -506,7 +539,7 @@ namespace ManualTracingTool {
             this.toolEnv.setRedrawAllWindows();
         }
 
-        protected saveDocument() { //@override
+        protected saveDocument() { // @override
 
             let filePath = this.getInputElementText(this.ID.fileName);
 

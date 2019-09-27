@@ -7,6 +7,7 @@ namespace ManualTracingTool {
 
         exportPath: string = null;
         lastUsedFilePaths: List<string> = new List<string>();
+        maxLastUsedFilePaths = 5;
         referenceDirectoryPath: string = null;
         currentDirectoryPath: string = null;
     }
@@ -527,6 +528,21 @@ namespace ManualTracingTool {
         vec4.fromValues(198 / 255.0, 155 / 255.0, 148 / 255.0, 1.0),
     ];
 
+    export interface DocumentLayout {
+
+        left: int;
+        top: int;
+        width: int;
+        height: int;
+    }
+
+    export enum DocumentFileType {
+
+        none = 0,
+        json = 1,
+        ora = 2,
+    }
+
     export class DocumentData {
 
         static maxPalletColors = 50;
@@ -564,6 +580,16 @@ namespace ManualTracingTool {
                 vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
                 documentData.palletColors.push(palletColor);
             }
+        }
+
+        static getDocumentLayout(documentData: DocumentData): DocumentLayout {
+
+            let frameLeft = Math.floor(documentData.documentFrame[0]);
+            let frameTop = Math.floor(documentData.documentFrame[1]);
+            let documentWidth = Math.floor(documentData.documentFrame[2]) - frameLeft + 1;
+            let documentHeight = Math.floor(documentData.documentFrame[3]) - frameTop + 1;
+
+            return { left: frameLeft, top: frameTop, width: documentWidth, height: documentHeight };
         }
     }
 

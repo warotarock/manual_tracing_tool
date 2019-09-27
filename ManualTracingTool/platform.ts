@@ -18,8 +18,9 @@ namespace Platform {
 
         data = {
             "MTT-Settings Index": 3,
-            "MTT-Settings1": {
+            "MTT-Settings1": <ManualTracingTool.LocalSetting>{
                 "lastUsedFilePaths": [],
+                "maxLastUsedFilePaths": 5,
                 "exportPath": ".\\",
                 "referenceDirectoryPath": ".\\",
                 "currentDirectoryPath": ".\\"

@@ -71,7 +71,7 @@ namespace ManualTracingTool {
         toLocation = vec3.create();
         upVector = vec3.create();
 
-        // Backward interfaces
+        // Backward interface definitions
 
         protected getDocument(): DocumentData { // @virtual
 
@@ -1699,7 +1699,6 @@ namespace ManualTracingTool {
 
             return this;
         }
-
 
         getWidth(): float {
 

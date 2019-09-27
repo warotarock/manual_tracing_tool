@@ -5,24 +5,12 @@ namespace ManualTracingTool {
 
         isEventSetDone = false;
 
-        // Backward interfaces
+        // Backward interface definitions
 
         protected onWindowBlur() { // @virtual
         }
 
         protected onWindowFocus() { // @virtual
-        }
-
-        protected startReloadDocument() { // @virtual
-        }
-
-        protected startReloadDocumentFromText(textData: string) { // @virtual
-        }
-
-        protected resetDocument() { // @virtual
-        }
-
-        protected saveDocument() { // @virtual
         }
 
         protected openDocumentSettingDialog() { // @virtual
@@ -36,7 +24,7 @@ namespace ManualTracingTool {
 
         // Events
 
-        protected setEvents() { // @override
+        protected setEvents() {
 
             if (this.isEventSetDone) {
                 return;
@@ -178,36 +166,7 @@ namespace ManualTracingTool {
 
             document.addEventListener('drop', (e: DragEvent) => {
 
-                e.preventDefault();
-
-                if (e.dataTransfer.files.length > 0) {
-
-                    let file = e.dataTransfer.files[0];
-                    let reader = new FileReader();
-
-                    let filePath = '';
-                    if (file['path'] != undefined) {
-                        filePath = file['path'];
-                    }
-                    else {
-                        filePath = file.name;
-                    }
-
-                    this.regsterLastUsedFile(filePath);
-
-                    this.setHeaderDocumentFileName(filePath);
-                    this.setExportImageFileNameFromFileName();
-
-                    reader.addEventListener('load', (e: any) => {
-
-                        if (typeof (reader.result) === 'string') {
-
-                            this.startReloadDocumentFromText(reader.result);
-                        }
-                    });
-
-                    reader.readAsText(file);
-                }
+                this.document_drop(e);
             });
 
             // Menu buttons
@@ -1931,6 +1890,59 @@ namespace ManualTracingTool {
             }
 
             return false;
+        }
+
+        protected document_drop(e: DragEvent) {
+
+            e.preventDefault();
+
+            // Check file exists
+            if (e.dataTransfer.files.length == 0) {
+
+                console.log('error: no dropped files.');
+                return;
+            }
+
+            // Get file path or name
+            let file = e.dataTransfer.files[0];
+
+            let filePath = '';
+            if ('path' in file) {
+                filePath = file['path'];
+            }
+            else {
+                filePath = file.name;
+            }
+
+            if (StringIsNullOrEmpty(filePath)) {
+
+                console.log('error: cannot get file path.');
+                return;
+            }
+
+            // Get document type from name
+            let fileType = this.getDocumentFileTypeFromName(filePath);
+
+            if (fileType == DocumentFileType.none) {
+
+                console.log('error: not supported file type.');
+                return;
+            }
+
+            // Read file for each extention
+            if (fileType == DocumentFileType.json) {
+
+                this.registerLastUsedFile(filePath);
+
+                this.setHeaderDocumentFileName(filePath);
+                this.setExportImageFileNameFromFileName();
+
+                this.startReloadDocumentFromURL(filePath);
+            }
+            else if (fileType == DocumentFileType.ora) {
+
+                this.startLoadDocumentOraFile(filePath, file);
+            }
         }
 
         protected htmlWindow_resize(e: Event) {
