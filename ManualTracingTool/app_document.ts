@@ -362,9 +362,6 @@ namespace ManualTracingTool {
 
             let layer = oraFile.addLayer('marged', 0);
             layer.image = canvas;
-            layer.opacity = 0.7;
-            layer.x = 0;
-            layer.y = 0;
 
             let localSetting = this.getLocalSetting();
 
