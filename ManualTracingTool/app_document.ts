@@ -3,7 +3,6 @@ namespace ManualTracingTool {
 
     export class App_Document extends App_Tool {
 
-        document: DocumentData = null;
         localSetting = new LocalSetting();
         localStorage_SettingKey = 'MTT-Settings';
         localStorage_SettingIndexKey = 'MTT-Settings Index';
@@ -13,11 +12,6 @@ namespace ManualTracingTool {
 
         // Backward interface implementations
 
-        protected getDocument(): DocumentData { // @override
-
-            return this.document;
-        }
-
         protected getLocalSetting(): LocalSetting { // @override
 
             return this.localSetting;
@@ -25,19 +19,27 @@ namespace ManualTracingTool {
 
         // Backward interface definitions
 
-        protected startReloadDocument() { // @virtual
-        }
-
-        protected startReloadDocumentFromURL(url: string) { // @virtual
-        }
-
-        protected startReloadDocumentFromText(textData: string) { // @virtual
-        }
-
         protected resetDocument() { // @virtual
         }
 
         protected saveDocument() { // @virtual
+        }
+
+        protected startReloadDocument() { // @virtual
+
+            // To request reloading in App_Event
+        }
+
+        protected startReloadDocumentFromFile(file: File, url: string) { // @virtual
+
+            // To request reloading for File drop event in App_Event
+        }
+
+        protected startReloadDocumentFromText(documentData: DocumentData, textData: string, filePath: string) { // @virtual
+
+            // To call App_Main function in App_Document to start loading from text after extructing from .ora file
+            //   case 1:                           App_Main(start loading at startup) -> App_Document.startStoreDocumentOraFile -> App_Main(this function)
+            //   case 2: App_Event(drop a file) -> App_Main(start loading for a file) -> App_Document.startStoreDocumentOraFile -> App_Main(this function)
         }
 
         // System settings
@@ -84,16 +86,95 @@ namespace ManualTracingTool {
 
         // Loading document resources
 
-        protected fixLoadedDocumentData() {
+        protected startLoadingDocumentURL(documentData: DocumentData, url: string) {
 
-            let info = new DocumentDataSaveInfo();
-            info.modelFile = this.modelFile;
+            let fileType = this.getDocumentFileTypeFromName(url);
 
-            DocumentLogic.fixLoadedDocumentData_CollectLayers_Recursive(this.document.rootLayer, info);
-            DocumentLogic.fixLoadedDocumentData(this.document, info);
+            if (fileType == DocumentFileType.none) {
+
+                console.log('error: not supported file type.');
+                return;
+            }
+
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', url);
+            xhr.timeout = 3000;
+
+            if (fileType == DocumentFileType.json) {
+
+                xhr.responseType = 'json';
+            }
+            else if (fileType == DocumentFileType.ora) {
+
+                xhr.responseType = 'blob';
+            }
+
+            xhr.addEventListener('load',
+                (e: Event) => {
+
+                    if (fileType == DocumentFileType.json) {
+
+                        let data: any;
+                        if (xhr.responseType == 'json') {
+                            data = xhr.response;
+                        }
+                        else {
+                            data = JSON.parse(xhr.response);
+                        }
+
+                        this.storeLoadedDocumentJSON(documentData, data, url);
+
+                    }
+                    else if (fileType == DocumentFileType.ora) {
+
+                        this.startLoadDocumentOraFile(documentData, xhr.response, url);
+                    }
+                }
+            );
+
+            xhr.addEventListener('timeout',
+                (e: Event) => {
+
+                    documentData.hasErrorOnLoading = true;
+                }
+            );
+
+            xhr.addEventListener('error',
+                (e: Event) => {
+
+                    documentData.hasErrorOnLoading = true;
+                }
+            );
+
+            xhr.send();
         }
 
-        protected storeLoadedDocument(documentData: DocumentData, loadedData: DocumentData) {
+        protected startLoadDocumentOraFile(documentData: DocumentData, file: File, filePath: string) {
+
+            var zipfs = new zip.fs.FS();
+            zip.workerScriptsPath = this.oraScriptPath;
+
+            zipfs.importBlob(file, () => {
+
+                var entry = zipfs.find(this.oraVectorFileName);
+
+                if (entry) {
+
+                    entry.getText((text: string) => {
+
+                        this.startReloadDocumentFromText(documentData, text, filePath);
+
+                        this.updateFileNameRelatedUI(filePath);
+                    });
+                }
+                else {
+
+                    console.log('error: failed to read from ora file.');
+                }
+            });
+        }
+
+        protected storeLoadedDocumentJSON(documentData: DocumentData, loadedData: DocumentData, filePath: string) {
 
             documentData.rootLayer = loadedData.rootLayer;
             documentData.documentFrame = loadedData.documentFrame;
@@ -105,11 +186,30 @@ namespace ManualTracingTool {
 
                 documentData.palletColors = loadedData.palletColors;
             }
+
             documentData.defaultViewScale = loadedData.defaultViewScale;
             documentData.lineWidthBiasRate = loadedData.lineWidthBiasRate;
             documentData.animationSettingData = loadedData.animationSettingData;
 
             documentData.loaded = true;
+
+            this.updateFileNameRelatedUI(filePath);
+        }
+
+        protected fixLoadedDocumentData(documentData: DocumentData) {
+
+            let info = new DocumentDataSaveInfo();
+            info.modelFile = this.modelFile;
+
+            DocumentLogic.fixLoadedDocumentData_CollectLayers_Recursive(documentData.rootLayer, info);
+            DocumentLogic.fixLoadedDocumentData(documentData, info);
+        }
+
+        private updateFileNameRelatedUI(filePath: string) {
+
+            this.registerLastUsedFile(filePath);
+            this.setHeaderDocumentFileName(filePath);
+            this.setExportImageFileNameFromFileName();
         }
 
         // Document data operations
@@ -335,11 +435,11 @@ namespace ManualTracingTool {
 
             if (fileType == DocumentFileType.json) {
 
-                this.saveDocumentJsonFile(filePath, save_DocumentData, DocumentBackGroundTypeID.transparent);
+                this.saveDocumentJsonFile(filePath, save_DocumentData, documentData.exportBackGroundType);
             }
             else if (fileType == DocumentFileType.ora) {
 
-                this.saveDocumentOraFile(filePath, save_DocumentData, DocumentBackGroundTypeID.transparent);
+                this.saveDocumentOraFile(filePath, save_DocumentData, documentData.exportBackGroundType);
             }
         }
 
@@ -463,53 +563,6 @@ namespace ManualTracingTool {
             // Free canvas memory
             canvas.width = 10;
             canvas.height = 10;
-        }
-
-        protected startLoadDocumentOraFile(filePath: string, file: File) {
-
-            var zipfs = new zip.fs.FS();
-            zip.workerScriptsPath = this.oraScriptPath;
-
-            zipfs.importBlob(file, () => {
-
-                var entry = zipfs.find(this.oraVectorFileName);
-
-                if (entry) {
-
-                    entry.getText((text: string) => {
-
-                        this.registerLastUsedFile(filePath);
-
-                        this.setHeaderDocumentFileName(filePath);
-                        this.setExportImageFileNameFromFileName();
-
-                        this.startReloadDocumentFromText(text);
-                    });
-                }
-                else {
-
-                    console.log('error: failed to read from ora file.');
-                }
-            });
-        }
-        // Layer and animation operations
-
-        updateLayerStructure() { // @implements MainEditor
-
-            let documentData = this.getDocument();
-
-            Layer.updateHierarchicalVisiblityRecursive(documentData.rootLayer);
-
-            this.collectViewContext();
-
-            // Re-set current keyframe and collects informations
-            this.setCurrentFrame(documentData.animationSettingData.currentTimeFrame);
-
-            this.layerWindow_CollectItems(documentData);
-            this.layerWindow_CaluculateLayout(this.layerWindow);
-            //this.subtoolWindow_CollectViewItems();
-            //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
-            //this.palletSelector_CaluculateLayout();
         }
     }
 }

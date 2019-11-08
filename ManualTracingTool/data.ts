@@ -45,6 +45,7 @@ namespace ManualTracingTool {
         layerColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 
         // runtime
+        isHierarchicalSelected = true;
         isHierarchicalVisible = true;
 
         // when serialized only
@@ -67,6 +68,7 @@ namespace ManualTracingTool {
 
             for (let layer of parentLayer.childLayers) {
 
+                layer.isHierarchicalSelected = layer.isVisible && parentLayer.isHierarchicalSelected;
                 layer.isHierarchicalVisible = layer.isVisible && parentLayer.isHierarchicalVisible;
 
                 if (layer.childLayers.length > 0) {
@@ -78,6 +80,7 @@ namespace ManualTracingTool {
     }
 
     // Vector layer
+
     export enum LinePointModifyFlagID {
 
         none = 0,
@@ -258,12 +261,14 @@ namespace ManualTracingTool {
     }
 
     // Group layer
+
     export class GroupLayer extends Layer {
 
         type = LayerTypeID.groupLayer;
     }
 
     // Image file reference layer
+
     export class ImageFileReferenceLayer extends Layer {
 
         type = LayerTypeID.imageFileReferenceLayer;
@@ -285,6 +290,7 @@ namespace ManualTracingTool {
     }
 
     // Posing
+
     export class PosingModel {
 
         // Head to body
@@ -551,6 +557,7 @@ namespace ManualTracingTool {
         documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
         defaultViewScale = 1.0;
         lineWidthBiasRate = 1.0;
+        exportBackGroundType = DocumentBackGroundTypeID.lastPalletColor;
         palletColors = new List<PalletColor>();
         animationSettingData = new AnimationSettingData();
 

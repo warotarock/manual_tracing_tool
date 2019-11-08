@@ -37,7 +37,7 @@ namespace ManualTracingTool {
 
     export class Tool_ScratchLineDraw extends ManualTracingTool.Tool_ScratchLine {
 
-        helpText = '線を描きます。既存の線の端点近くに線を描いた場合、線を結合します。';
+        helpText = '既存の線の端点近くに線を描いて線を結合します。';
 
         editLineVec = vec3.fromValues(0.0, 0.0, 0.0);
         targetLineVec = vec3.fromValues(0.0, 0.0, 0.0);

@@ -73,11 +73,6 @@ namespace ManualTracingTool {
 
         // Backward interface definitions
 
-        protected getDocument(): DocumentData { // @virtual
-
-            return null;
-        }
-
         protected getLocalSetting(): LocalSetting { // @virtual
 
             return null;
@@ -374,12 +369,11 @@ namespace ManualTracingTool {
         protected collectViewContext() {
 
             let context = this.toolContext;
-            let aniSetting = context.document.animationSettingData;
 
             // Collects layers
 
             let layers = new List<Layer>();
-            Layer.collectLayerRecursive(layers, this.toolContext.document.rootLayer);
+            Layer.collectLayerRecursive(layers, context.document.rootLayer);
 
             // Creates all view-keyframes.
 
@@ -609,14 +603,6 @@ namespace ManualTracingTool {
             else if (item.top > viewTop + layerWindow.height - layerWindow.layerItemHeight * 2.0) {
 
                 layerWindow.viewLocation[1] = item.top - layerWindow.height + layerWindow.layerItemHeight * 2.0;
-            }
-        }
-
-        protected layerWindow_UnselectAllLayer() {
-
-            for (let item of this.layerWindow.layerWindowItems) {
-
-                item.layer.isSelected = false;
             }
         }
 
@@ -1136,7 +1122,7 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let documentData = this.getDocument();
+            let documentData = this.toolContext.document;
 
             this.setInputElementNumber(this.ID.documentSettingModal_ViewScale, documentData.defaultViewScale);
             this.setInputElementNumber(this.ID.documentSettingModal_LineWidth, documentData.lineWidthBiasRate);
@@ -1150,7 +1136,7 @@ namespace ManualTracingTool {
 
         protected onClosedDocumentSettingModal() {
 
-            let documentData = this.getDocument();
+            let documentData = this.toolContext.document;
 
             documentData.defaultViewScale = this.getInputElementNumber(this.ID.documentSettingModal_ViewScale, 1.0);
             if (documentData.defaultViewScale < this.mainWindow.minViewScale) {
@@ -1176,6 +1162,8 @@ namespace ManualTracingTool {
 
                 this.setExportImageFileNameFromFileName();
             }
+
+            this.setRadioElementIntValue(this.ID.exportImageFileModal_backGroundType, <int>this.toolContext.document.exportBackGroundType);
 
             this.openModal(this.ID.exportImageFileModal, this.ID.exportImageFileModal_ok);
         }

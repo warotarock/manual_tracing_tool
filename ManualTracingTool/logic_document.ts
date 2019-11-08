@@ -41,6 +41,10 @@ namespace ManualTracingTool {
                 document.lineWidthBiasRate = 1.0;
             }
 
+            if (document.exportBackGroundType == undefined) {
+                document.exportBackGroundType = DocumentBackGroundTypeID.lastPalletColor;
+            }
+
             this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
         }
 

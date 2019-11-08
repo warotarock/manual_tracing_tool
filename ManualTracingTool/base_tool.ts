@@ -230,6 +230,37 @@ namespace ManualTracingTool {
         keyframes: List<ViewKeyframe> = null;
     }
 
+    export class DrawPassBuffer {
+
+        canvas: HTMLCanvasElement = null;
+        glTexture: WebGLTexture = null;
+
+        width = 0;
+        height = 0;
+    }
+
+    export enum DrawPathOperationTypeID {
+
+        none = 0,
+        beginDrawing = 1,
+        draw = 2,
+        prepareBuffer = 3,
+        flushBuffer = 4
+    }
+
+    export class DrawPathStep {
+
+        layer: Layer = null;
+        viewKeyframeLayer: ViewKeyframeLayer = null;
+
+        operationType = DrawPathOperationTypeID.none;
+    }
+
+    export class DrawPathContext {
+
+        steps = new List<DrawPathStep>();
+    }
+
     export class ToolClipboard {
 
         copy_VectorGroup: VectorGroup = null;

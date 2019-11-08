@@ -382,11 +382,11 @@ namespace ManualTracingTool {
                 this.toolContext.currentImageFileReferenceLayer = null;
             }
 
-            this.layerWindow_UnselectAllLayer();
+            this.unselectAllLayer();
 
             if (layer != null) {
 
-                layer.isSelected = true;
+                this.setLayerSelection(layer, true);
             }
 
             this.setCurrentMainToolForCurentLayer();
@@ -450,6 +450,18 @@ namespace ManualTracingTool {
             if (this.currentViewKeyframe != before_CurrentKeyframe) {
 
                 //this.collectViewContext_CollectEditTargets();
+            }
+        }
+
+        protected unselectAllLayer() {
+
+            if (this.toolContext.document != null) {
+
+            }
+
+            for (let item of this.layerWindow.layerWindowItems) {
+
+                item.layer.isSelected = false;
             }
         }
 

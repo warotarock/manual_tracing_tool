@@ -10,22 +10,83 @@ namespace ManualTracingTool {
         startup,
         pause,
         systemResourceLoading,
-        initialDocumentJSONLoading,
-        initialDocumentResourceLoading,
-        running,
+        documentJSONLoading,
         documentResourceLoading,
-        documentJSONLoading
+        running
     }
 
     export class App_Main extends App_Event implements MainEditor {
 
         // Main process management
+
         mainProcessState = MainProcessStateID.startup;
         isDeferredWindowResizeWaiting = false;
         lastTime: long = 0;
         elapsedTime: long = 0;
 
+        loadingDocument: DocumentData = null;
         loadingDocumentImageResources: List<ImageResource> = null;
+
+        // Backward interface implementations
+
+        protected isWhileLoading(): boolean { // @override
+
+            return (this.mainProcessState == MainProcessStateID.systemResourceLoading
+                || this.mainProcessState == MainProcessStateID.documentResourceLoading);
+        }
+
+        protected setDefferedWindowResize() { // @override
+
+            this.isDeferredWindowResizeWaiting = true;
+        }
+
+        protected isEventDisabled(): boolean { // @override
+
+            if (this.isWhileLoading()) {
+                return true;
+            }
+
+            if (this.isModalShown()) {
+                return true;
+            }
+
+            return false;
+        }
+
+        protected resetDocument() { // @override
+
+            let documentData = this.createDefaultDocumentData();
+
+            this.initializeContext(documentData);
+
+            this.updateLayerStructure();
+            this.setCurrentLayer(null);
+            this.setCurrentFrame(0);
+            this.setCurrentLayer(documentData.rootLayer.childLayers[0]);
+
+            this.setHeaderDefaultDocumentFileName();
+
+            this.toolEnv.setRedrawAllWindows();
+        }
+
+        protected saveDocument() { // @override
+
+            let documentData = this.toolContext.document;
+
+            let filePath = this.getInputElementText(this.ID.fileName);
+
+            if (StringIsNullOrEmpty(filePath)) {
+
+                this.showMessageBox('ファイル名が指定されていません。');
+                return;
+            }
+
+            this.saveDocumentData(filePath, documentData, false);
+
+            this.saveSettings();
+
+            this.showMessageBox('保存しました。');
+        }
 
         // Initializing devices not depending media resoures
 
@@ -60,6 +121,8 @@ namespace ManualTracingTool {
 
         processLoadingSystemResources() {
 
+            // Check loading states
+
             if (!this.modelFile.loaded) {
                 return;
             }
@@ -73,38 +136,53 @@ namespace ManualTracingTool {
 
             // Loading finished
 
-            // Start loading document data
-
             if (this.localSetting.lastUsedFilePaths.length == 0
                 && StringIsNullOrEmpty(this.localSetting.lastUsedFilePaths[0])) {
 
-                this.document = this.createDefaultDocumentData();
+                let newDocument = this.createDefaultDocumentData();
 
-                this.resetContext();
+                this.start(newDocument);
             }
             else {
 
                 let lastURL = this.localSetting.lastUsedFilePaths[0];
 
-                this.document = new DocumentData();
-                this.startLoadingDocument(this.document, lastURL);
+                let newDocument = new DocumentData();
+                this.startLoadingDocumentURL(newDocument, lastURL);
+
+                this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, newDocument);
 
                 this.setHeaderDocumentFileName(lastURL);
             }
-
-            this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
-        }
-
-        protected setHeaderDefaultDocumentFileName() {
-
-            let fileName = DocumentLogic.getDefaultDocumentFileName(this.localSetting);
-            this.setHeaderDocumentFileName(fileName);
         }
 
         // Loading document resources
 
-        protected startLoadingDocument(documentData: DocumentData, url: string) {
+        private setDocumentLoadingState(state: MainProcessStateID, documentData: DocumentData) {
 
+            this.mainProcessState = state;
+            this.loadingDocument = documentData;
+        }
+
+        protected startReloadDocument() { // @override
+
+            let documentData = new DocumentData();
+
+            let fileName = this.getInputElementText(this.ID.fileName);
+
+            this.startLoadingDocumentURL(documentData, fileName);
+
+            this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, documentData);
+        }
+
+        protected startReloadDocumentFromFile(file: File, url: string) { // @override
+
+            if (StringIsNullOrEmpty(url) && file == null) {
+
+                throw ('both of url and file are null or empty');
+            }
+
+            // Get document type from name
             let fileType = this.getDocumentFileTypeFromName(url);
 
             if (fileType == DocumentFileType.none) {
@@ -113,132 +191,206 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let xhr = new XMLHttpRequest();
-            xhr.open('GET', url);
-            xhr.timeout = 3000;
+            if (fileType == DocumentFileType.json && !StringIsNullOrEmpty(url)) {
 
-            if (fileType == DocumentFileType.json) {
+                let documentData = new DocumentData();
 
-                xhr.responseType = 'json';
+                this.startLoadingDocumentURL(documentData, url);
+
+                this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, documentData);
             }
-            else if (fileType == DocumentFileType.ora) {
+            else if (fileType == DocumentFileType.ora && file != null) {
 
-                xhr.responseType = 'blob';
+                let documentData = new DocumentData();
+
+                this.startLoadDocumentOraFile(documentData, file, url);
+
+                this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, documentData);
             }
+            else {
 
-            xhr.addEventListener('load',
-                (e: Event) => {
-
-                    if (fileType == DocumentFileType.json) {
-
-                        let data: any;
-                        if (xhr.responseType == 'json') {
-                            data = xhr.response;
-                        }
-                        else {
-                            data = JSON.parse(xhr.response);
-                        }
-
-                        this.storeLoadedDocument(documentData, data);
-
-                    }
-                    else if (fileType == DocumentFileType.ora) {
-
-                        this.startLoadDocumentOraFile(url, xhr.response);
-                    }
-                }
-            );
-
-            xhr.addEventListener('timeout',
-                (e: Event) => {
-
-                    documentData.hasErrorOnLoading = true;
-                }
-            );
-
-            xhr.addEventListener('error',
-                (e: Event) => {
-
-                    documentData.hasErrorOnLoading = true;
-                }
-            );
-
-            xhr.send();
+                console.log('error: not supported file type.');
+                return;
+            }
         }
 
-        protected startReloadDocument() { // @override
-
-            this.resetContext();
-
-            this.document = new DocumentData();
-
-            let fileName = this.getInputElementText(this.ID.fileName);
-            this.startLoadingDocument(this.document, fileName);
-
-            this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
-
-            this.toolEnv.setRedrawAllWindows();
-        }
-
-        protected startReloadDocumentFromURL(url: string) { // @override
-
-            this.resetContext();
-
-            this.document = new DocumentData();
-
-            this.startLoadingDocument(this.document, url);
-
-            this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
-
-            this.toolEnv.setRedrawAllWindows();
-        }
-
-        protected startReloadDocumentFromText(textData: string) { // @override
-
-            this.resetContext();
-
-            this.document = new DocumentData();
+        protected startReloadDocumentFromText(documentData: DocumentData, textData: string, filePath: string) { // @override
 
             let data = JSON.parse(textData);
-            this.storeLoadedDocument(this.document, data);
-
-            this.mainProcessState = MainProcessStateID.initialDocumentJSONLoading;
-
-            this.toolEnv.setRedrawAllWindows();
+            this.storeLoadedDocumentJSON(documentData, data, filePath);
         }
 
         processLoadingDocumentJSON() {
 
-            if (this.document.hasErrorOnLoading) {
+            if (this.loadingDocument.hasErrorOnLoading) {
 
                 //this.showMessageBox('ドキュメントの読み込みに失敗しました。デフォルトのドキュメントを開きます。');
 
-                this.document = this.createDefaultDocumentData();
+                this.loadingDocument = this.createDefaultDocumentData();
 
                 this.setHeaderDefaultDocumentFileName();
 
                 this.mainProcessState = MainProcessStateID.running;
             }
 
-            if (!this.document.loaded) {
+            if (!this.loadingDocument.loaded) {
                 return;
             }
 
-            this.fixLoadedDocumentData();
+            this.fixLoadedDocumentData(this.loadingDocument);
 
-            this.startLoadingDocumentResources(this.document);
-            this.mainProcessState = MainProcessStateID.initialDocumentResourceLoading;
+            this.startLoadingDocumentResources(this.loadingDocument);
+
+            this.setDocumentLoadingState(MainProcessStateID.documentResourceLoading, this.loadingDocument);
+        }
+
+        startLoadingDocumentResourcesProcess(document: DocumentData) { // @implements MainEditor
+
+            this.startLoadingDocumentResources(document);
+
+            this.setDocumentLoadingState(MainProcessStateID.documentResourceLoading, this.loadingDocument);
+        }
+
+        processLoadingDocumentResources() {
+
+            // Check loading states
+
+            for (let imageResource of this.loadingDocumentImageResources) {
+
+                if (!imageResource.loaded) {
+                    return;
+                }
+            }
+
+            // Loading finished
+
+            this.finishLayerLoading_Recursive(this.loadingDocument.rootLayer);
+
+            this.start(this.loadingDocument);
+
+            this.loadingDocument == null;
+        }
+
+        private startLoadingDocumentResources(document: DocumentData) {
+
+            this.loadingDocumentImageResources = new List<ImageResource>();
+
+            for (let layer of document.rootLayer.childLayers) {
+
+                this.startLoadingDocumentResourcesRecursive(layer, this.loadingDocumentImageResources);
+            }
+        }
+
+        private startLoadingDocumentResourcesRecursive(layer: Layer, loadingDocumentImageResources: List<ImageResource>) {
+
+            if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                // Create an image resource
+
+                let ifrLayer = <ImageFileReferenceLayer>layer;
+
+                if (ifrLayer.imageResource == null) {
+
+                    ifrLayer.imageResource = new ImageResource();
+                }
+
+                // Load an image file
+
+                let imageResource = ifrLayer.imageResource;
+
+                if (!imageResource.loaded && !StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
+
+                    let refFileBasePath = this.localSetting.referenceDirectoryPath;
+
+                    if (!StringIsNullOrEmpty(refFileBasePath)) {
+
+                        imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
+                    }
+                    else {
+
+                        imageResource.fileName = ifrLayer.imageFilePath;
+                    }
+
+                    this.loadTexture(imageResource, imageResource.fileName);
+
+                    loadingDocumentImageResources.push(imageResource);
+                }
+            }
+
+            for (let chldLayer of layer.childLayers) {
+
+                this.startLoadingDocumentResourcesRecursive(chldLayer, loadingDocumentImageResources);
+            }
+        }
+
+        private loadTexture(imageResource: ImageResource, url: string) {
+
+            let image = new Image();
+
+            imageResource.image.imageData = image;
+
+            image.addEventListener('load',
+                () => {
+                    if (imageResource.isGLTexture) {
+                        this.webGLRender.initializeImageTexture(imageResource.image);
+                    }
+                    imageResource.loaded = true;
+                    imageResource.image.width = image.width;
+                    imageResource.image.height = image.height;
+                }
+            );
+
+            image.src = url;
+        }
+
+        private loadModels(modelFile: ModelFile, url: string) {
+
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', url);
+            xhr.responseType = 'json';
+
+            xhr.addEventListener('load',
+                (e: Event) => {
+
+                    let data: any;
+                    if (xhr.responseType == 'json') {
+                        data = xhr.response;
+                    }
+                    else {
+                        data = JSON.parse(xhr.response);
+                    }
+
+                    for (let modelData of data.static_models) {
+
+                        let modelResource = new ModelResource();
+                        modelResource.modelName = modelData.name;
+
+                        this.webGLRender.initializeModelBuffer(modelResource.model, modelData.vertices, modelData.indices, 4 * modelData.vertexStride); // 4 = size of float
+
+                        modelFile.modelResources.push(modelResource);
+                        modelFile.modelResourceDictionary[modelData.name] = modelResource;
+                    }
+
+                    for (let modelData of data.skin_models) {
+
+                        modelFile.posingModelDictionary[modelData.name] = this.createPosingModel(modelData);
+                    }
+
+                    modelFile.loaded = true;
+                }
+            );
+
+            xhr.send();
         }
 
         // Starting ups after loading resources
 
-        protected start() {
+        protected start(documentData: DocumentData) {
 
-            this.initializeContext();
+            this.initializeContext(documentData);
             this.initializeTools();
             this.initializeViewState();
             this.updateLayerStructure();
-            this.initializeModals();
 
             this.setCurrentMainTool(MainToolID.drawLine);
             //this.setCurrentMainTool(MainToolID.posing);
@@ -246,7 +398,7 @@ namespace ManualTracingTool {
             this.setCurrentOperationUnitID(this.toolContext.operationUnitID);
 
             this.setCurrentFrame(0);
-            this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
+            this.setCurrentLayer(documentData.rootLayer.childLayers[0]);
             //this.collectViewContext_CollectEditTargets();
 
             this.toolEnv.updateContext();
@@ -265,7 +417,7 @@ namespace ManualTracingTool {
             this.mainProcessState = MainProcessStateID.running;
         }
 
-        protected initializeContext() {
+        protected initializeContext(documentData: DocumentData) {
 
             this.toolContext = new ToolContext();
 
@@ -273,7 +425,7 @@ namespace ManualTracingTool {
             this.toolContext.drawStyle = this.drawStyle;
             this.toolContext.commandHistory = new CommandHistory();
 
-            this.toolContext.document = this.document;
+            this.toolContext.document = documentData;
 
             this.toolContext.mainWindow = this.mainWindow;
             this.toolContext.pickingWindow = this.pickingWindow;
@@ -285,26 +437,9 @@ namespace ManualTracingTool {
             this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
         }
 
-        protected resetContext() {
+        private resetContext(documentData: DocumentData) {
 
-            this.initializeContext();
-        }
-
-        protected initializeModals() {
-
-        }
-
-        protected isEventDisabled(): boolean { // @override
-
-            if (this.isWhileLoading()) {
-                return true;
-            }
-
-            if (this.isModalShown()) {
-                return true;
-            }
-
-            return false;
+            this.initializeContext(documentData);
         }
 
         protected onWindowBlur() { // @override
@@ -386,192 +521,28 @@ namespace ManualTracingTool {
 
         // Document data operations
 
-        protected loadTexture(imageResource: ImageResource, url: string) {
+        updateLayerStructure() { // @override @implements MainEditor
 
-            let image = new Image();
+            let documentData = this.toolContext.document;
 
-            imageResource.image.imageData = image;
+            Layer.updateHierarchicalVisiblityRecursive(documentData.rootLayer);
 
-            image.addEventListener('load',
-                () => {
-                    if (imageResource.isGLTexture) {
-                        this.webGLRender.initializeImageTexture(imageResource.image);
-                    }
-                    imageResource.loaded = true;
-                    imageResource.image.width = image.width;
-                    imageResource.image.height = image.height;
-                }
-            );
+            this.collectViewContext();
 
-            image.src = url;
+            // Re-set current keyframe and collects informations
+            this.setCurrentFrame(documentData.animationSettingData.currentTimeFrame);
+
+            this.layerWindow_CollectItems(documentData);
+            this.layerWindow_CaluculateLayout(this.layerWindow);
+            //this.subtoolWindow_CollectViewItems();
+            //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+            //this.palletSelector_CaluculateLayout();
         }
 
-        protected loadModels(modelFile: ModelFile, url: string) {
+        private setHeaderDefaultDocumentFileName() {
 
-            let xhr = new XMLHttpRequest();
-            xhr.open('GET', url);
-            xhr.responseType = 'json';
-
-            xhr.addEventListener('load',
-                (e: Event) => {
-
-                    let data: any;
-                    if (xhr.responseType == 'json') {
-                        data = xhr.response;
-                    }
-                    else {
-                        data = JSON.parse(xhr.response);
-                    }
-
-                    for (let modelData of data.static_models) {
-
-                        let modelResource = new ModelResource();
-                        modelResource.modelName = modelData.name;
-
-                        this.webGLRender.initializeModelBuffer(modelResource.model, modelData.vertices, modelData.indices, 4 * modelData.vertexStride); // 4 = size of float
-
-                        modelFile.modelResources.push(modelResource);
-                        modelFile.modelResourceDictionary[modelData.name] = modelResource;
-                    }
-
-                    for (let modelData of data.skin_models) {
-
-                        modelFile.posingModelDictionary[modelData.name] = this.createPosingModel(modelData);
-                    }
-
-                    modelFile.loaded = true;
-                }
-            );
-
-            xhr.send();
-        }
-
-        startLoadingDocumentResourcesProcess(document: DocumentData) { // @implements MainEditor
-
-            this.startLoadingDocumentResources(document);
-
-            this.mainProcessState = MainProcessStateID.documentResourceLoading;
-        }
-
-        protected startLoadingDocumentResources(document: DocumentData) {
-
-            this.loadingDocumentImageResources = new List<ImageResource>();
-
-            for (let layer of document.rootLayer.childLayers) {
-
-                this.startLoadingDocumentResourcesRecursive(layer, this.loadingDocumentImageResources);
-            }
-        }
-
-        protected startLoadingDocumentResourcesRecursive(layer: Layer, loadingDocumentImageResources: List<ImageResource>) {
-
-            if (layer.type == LayerTypeID.imageFileReferenceLayer) {
-
-                // Create an image resource
-
-                let ifrLayer = <ImageFileReferenceLayer>layer;
-
-                if (ifrLayer.imageResource == null) {
-
-                    ifrLayer.imageResource = new ImageResource();
-                }
-
-                // Load an image file
-
-                let imageResource = ifrLayer.imageResource;
-
-                if (!imageResource.loaded && !StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
-
-                    let refFileBasePath = this.localSetting.referenceDirectoryPath;
-
-                    if (!StringIsNullOrEmpty(refFileBasePath)) {
-
-                        imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
-                    }
-                    else {
-
-                        imageResource.fileName = ifrLayer.imageFilePath;
-                    }
-
-                    this.loadTexture(imageResource, imageResource.fileName);
-
-                    loadingDocumentImageResources.push(imageResource);
-                }
-            }
-
-            for (let chldLayer of layer.childLayers) {
-
-                this.startLoadingDocumentResourcesRecursive(chldLayer, loadingDocumentImageResources);
-            }
-        }
-
-        processLoadingDocumentResources() {
-
-            for (let imageResource of this.loadingDocumentImageResources) {
-
-                if (!imageResource.loaded) {
-                    return;
-                }
-            }
-
-            // Loading finished
-            if (this.mainProcessState == MainProcessStateID.initialDocumentResourceLoading) {
-
-                this.start();
-            }
-            else {
-
-                this.finishLayerLoading_Recursive(this.document.rootLayer);
-
-                this.mainProcessState = MainProcessStateID.running;
-
-                this.toolEnv.setRedrawAllWindows();
-            }
-        }
-
-        protected isWhileLoading(): boolean { // @override
-
-            return (this.mainProcessState == MainProcessStateID.systemResourceLoading
-                || this.mainProcessState == MainProcessStateID.documentResourceLoading);
-        }
-
-        protected resetDocument() { // @override
-
-            this.document = this.createDefaultDocumentData();
-
-            this.toolContext.document = this.document;
-            this.initializeContext();
-
-            this.updateLayerStructure();
-            this.setCurrentLayer(null);
-            this.setCurrentFrame(0);
-            this.setCurrentLayer(this.document.rootLayer.childLayers[0]);
-
-            this.setHeaderDefaultDocumentFileName();
-
-            this.toolEnv.setRedrawAllWindows();
-        }
-
-        protected saveDocument() { // @override
-
-            let filePath = this.getInputElementText(this.ID.fileName);
-
-            if (StringIsNullOrEmpty(filePath)) {
-
-                this.showMessageBox('ファイル名が指定されていません。');
-                return;
-            }
-
-            this.saveDocumentData(filePath, this.document, false);
-
-            this.saveSettings();
-
-            this.showMessageBox('保存しました。');
-        }
-
-        protected setDefferedWindowResize() { // @override
-
-            this.isDeferredWindowResizeWaiting = true;
+            let fileName = DocumentLogic.getDefaultDocumentFileName(this.localSetting);
+            this.setHeaderDocumentFileName(fileName);
         }
 
         // Main drawing process
@@ -664,6 +635,80 @@ namespace ManualTracingTool {
         }
 
         activeLayerBufferDrawn = false;
+
+        drawPathContext = new DrawPathContext();
+
+        protected collectDrawPaths() {
+
+            let documentData = this.toolContext.document;
+
+            let drawPathSteps = new List<DrawPathStep>();
+
+            // insert a step for begining
+            let drawPathStep = new DrawPathStep();
+            drawPathStep.layer = documentData.rootLayer;
+            drawPathStep.operationType = DrawPathOperationTypeID.beginDrawing;
+
+            drawPathSteps.push(drawPathStep);
+
+            // collect steps recursive
+            this.collectDrawPasths_Recursive(drawPathSteps, documentData.rootLayer);
+
+            // attach layers to paths
+            this.setVirekeyframeToDrawPath(drawPathSteps, this.currentViewKeyframe.layers);
+
+            this.drawPathContext.steps = drawPathSteps;
+        }
+
+        protected collectDrawPasths_Recursive(result: List<DrawPathStep>, parentLayer: Layer) {
+
+            for (let i = parentLayer.childLayers.length - 1; i >= 0; i--) {
+
+                let layer = parentLayer[i];
+
+                let drawPathStep = new DrawPathStep();
+                drawPathStep.layer = layer;
+
+                result.push(drawPathStep);
+
+                if (layer.type == LayerTypeID.groupLayer) {
+
+                    // a step to begin buffering
+                    drawPathStep.operationType = DrawPathOperationTypeID.prepareBuffer;
+
+                    // insert steps for group children
+                    this.collectDrawPasths_Recursive(result, layer);
+
+                    // insert a step to finish buffering
+                    let end_DrawPathStep = new DrawPathStep();
+                    end_DrawPathStep.layer = layer;
+                    drawPathStep.operationType = DrawPathOperationTypeID.flushBuffer;
+
+                    result.push(end_DrawPathStep);
+                }
+                else {
+
+                    drawPathStep.operationType = DrawPathOperationTypeID.draw;
+                }
+            }
+        }
+
+        protected setVirekeyframeToDrawPath(drawPathSteps: List<DrawPathStep>, viewKeyframeLayers: Array<ViewKeyframeLayer>) {
+
+            for (let drawPathStep of drawPathSteps) {
+
+                drawPathStep.viewKeyframeLayer = null;
+
+                for (let viewKeyframeLayer of viewKeyframeLayers) {
+
+                    if (viewKeyframeLayer.layer == drawPathStep.layer) {
+
+                        drawPathStep.viewKeyframeLayer = viewKeyframeLayer;
+                        break;
+                    }
+                }
+            }
+        }
 
         protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean) { // @override
 
@@ -789,7 +834,7 @@ namespace ManualTracingTool {
                         }
                     }
 
-                    this.drawLayerForEditMode(viewKeyFrameLayer, currentLayerOnly, this.document, isModalToolRunning)
+                    this.drawLayerForEditMode(viewKeyFrameLayer, currentLayerOnly, this.toolContext.document, isModalToolRunning)
                 }
             }
         }
@@ -823,7 +868,7 @@ namespace ManualTracingTool {
                     }
                 }
 
-                this.drawLayer(viewKeyFrameLayer, this.document, isExporting, currentLayerOnly, isModalToolRunning)
+                this.drawLayer(viewKeyFrameLayer, this.toolContext.document, isExporting, currentLayerOnly, isModalToolRunning)
             }
         }
 
@@ -1066,9 +1111,7 @@ namespace ManualTracingTool {
             let backGroundType = <DocumentBackGroundTypeID>(this.getRadioElementIntValue(this.ID.exportImageFileModal_backGroundType, 1));
             let scale = this.getInputElementNumber(this.ID.exportImageFileModal_scale, 1.0);
 
-            let documentData = this.getDocument();
-
-            this.exportImageFile(fileName, documentData, scale, backGroundType);
+            this.exportImageFile(fileName, this.toolContext.document, scale, backGroundType);
         }
 
         protected onNewLayerCommandOptionModal() {

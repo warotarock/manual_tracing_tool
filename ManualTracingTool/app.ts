@@ -231,12 +231,11 @@ namespace ManualTracingTool {
 
                 _Main.processLoadingSystemResources();
             }
-            else if (_Main.mainProcessState == MainProcessStateID.initialDocumentJSONLoading) {
+            else if (_Main.mainProcessState == MainProcessStateID.documentJSONLoading) {
 
                 _Main.processLoadingDocumentJSON();
             }
-            else if (_Main.mainProcessState == MainProcessStateID.documentResourceLoading
-                || _Main.mainProcessState == MainProcessStateID.initialDocumentResourceLoading) {
+            else if (_Main.mainProcessState == MainProcessStateID.documentResourceLoading) {
 
                 _Main.processLoadingDocumentResources();
             }

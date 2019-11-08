@@ -22,6 +22,9 @@ namespace ManualTracingTool {
         protected onModalWindowClosed() { // @virtual
         }
 
+        protected updateLayerStructure() { // @virtual
+        }
+
         // Events
 
         protected setEvents() {
@@ -1920,29 +1923,8 @@ namespace ManualTracingTool {
                 return;
             }
 
-            // Get document type from name
-            let fileType = this.getDocumentFileTypeFromName(filePath);
-
-            if (fileType == DocumentFileType.none) {
-
-                console.log('error: not supported file type.');
-                return;
-            }
-
-            // Read file for each extention
-            if (fileType == DocumentFileType.json) {
-
-                this.registerLastUsedFile(filePath);
-
-                this.setHeaderDocumentFileName(filePath);
-                this.setExportImageFileNameFromFileName();
-
-                this.startReloadDocumentFromURL(filePath);
-            }
-            else if (fileType == DocumentFileType.ora) {
-
-                this.startLoadDocumentOraFile(filePath, file);
-            }
+            // Start loading document
+            this.startReloadDocumentFromFile(file, filePath);
         }
 
         protected htmlWindow_resize(e: Event) {
