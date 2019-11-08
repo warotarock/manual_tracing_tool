@@ -795,6 +795,8 @@ namespace ManualTracingTool {
                             this.startShowingCurrentLayer();
                         }
 
+                        Layer.updateHierarchicalStatesRecursive(selectedLayer);
+
                         this.toolEnv.setRedrawMainWindowEditorWindow();
                     }
                 }

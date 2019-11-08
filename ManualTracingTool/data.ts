@@ -64,18 +64,28 @@ namespace ManualTracingTool {
             }
         }
 
-        static updateHierarchicalVisiblityRecursive(parentLayer: Layer) {
+        static updateHierarchicalStatesRecursive(parentLayer: Layer) {
 
             for (let layer of parentLayer.childLayers) {
 
-                layer.isHierarchicalSelected = layer.isVisible && parentLayer.isHierarchicalSelected;
-                layer.isHierarchicalVisible = layer.isVisible && parentLayer.isHierarchicalVisible;
+                layer.isHierarchicalSelected = layer.isSelected || Layer.isSelected(parentLayer);
+                layer.isHierarchicalVisible = layer.isVisible && Layer.isVisible(parentLayer);
 
                 if (layer.childLayers.length > 0) {
 
-                    Layer.updateHierarchicalVisiblityRecursive(layer);
+                    Layer.updateHierarchicalStatesRecursive(layer);
                 }
             }
+        }
+
+        static isSelected(layer: Layer): boolean {
+
+            return (layer.isSelected || layer.isHierarchicalSelected);
+        }
+
+        static isVisible(layer: Layer): boolean {
+
+            return (layer.isVisible && layer.isHierarchicalVisible);
         }
     }
 

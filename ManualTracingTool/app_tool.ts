@@ -392,7 +392,6 @@ namespace ManualTracingTool {
             this.setCurrentMainToolForCurentLayer();
 
             this.activateCurrentTool();
-            //this.collectViewContext_CollectEditTargets();
         }
 
         public setCurrentFrame(frame: int) { // @implements MainEditor
@@ -455,28 +454,21 @@ namespace ManualTracingTool {
 
         protected unselectAllLayer() {
 
-            if (this.toolContext.document != null) {
-
-            }
-
             for (let item of this.layerWindow.layerWindowItems) {
 
                 item.layer.isSelected = false;
+                item.layer.isHierarchicalSelected = false;
             }
         }
 
         public setLayerSelection(layer: Layer, isSelected: boolean) {
 
             layer.isSelected = isSelected;
-
-            //this.collectViewContext_CollectEditTargets();
         }
 
         protected setLayerVisiblity(layer: Layer, isVisible: boolean) {
 
             layer.isVisible = isVisible;
-
-            //this.collectViewContext_CollectEditTargets();
         }
 
         protected activateCurrentTool() {
@@ -561,7 +553,7 @@ namespace ManualTracingTool {
 
                     let layer = viewKeyframeLayer.layer;
 
-                    if (layer.isSelected && layer.isHierarchicalVisible) {
+                    if (Layer.isSelected(layer) && Layer.isVisible(layer)) {
 
                         editableKeyframeLayers.push(viewKeyframeLayer);
                     }

@@ -483,7 +483,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
             );
         }
@@ -661,7 +661,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && env.currentPosingData.headLocationInputData.inputDone
             );
@@ -680,7 +680,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && env.currentPosingData.headLocationInputData.inputDone
                 );
@@ -699,7 +699,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && env.currentPosingData.bodyLocationInputData.inputDone
             );
@@ -718,7 +718,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && (env.currentPosingData.bodyLocationInputData.inputDone || env.currentPosingData.bodyRotationInputData.inputDone)
             );
@@ -745,7 +745,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && (env.currentPosingData.bodyLocationInputData.inputDone || env.currentPosingData.bodyRotationInputData.inputDone)
             );
@@ -784,7 +784,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && env.currentPosingData.hipsLocationInputData.inputDone
             );
@@ -818,7 +818,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && env.currentPosingData.leftArm1LocationInputData.inputDone
             );
@@ -837,7 +837,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && env.currentPosingData.rightArm1LocationInputData.inputDone
             );
@@ -856,7 +856,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && env.currentPosingData.leftLeg1LocationInputData.inputDone
             );
@@ -875,7 +875,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && env.currentPosingData.rightLeg1LocationInputData.inputDone
             );

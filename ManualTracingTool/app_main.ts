@@ -525,7 +525,7 @@ namespace ManualTracingTool {
 
             let documentData = this.toolContext.document;
 
-            Layer.updateHierarchicalVisiblityRecursive(documentData.rootLayer);
+            Layer.updateHierarchicalStatesRecursive(documentData.rootLayer);
 
             this.collectViewContext();
 
@@ -731,7 +731,7 @@ namespace ManualTracingTool {
 
                     let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
 
-                    if (viewKeyFrameLayer.layer.isSelected) {
+                    if (Layer.isSelected(viewKeyFrameLayer.layer)) {
 
                         if (editLayerEndIndex == -1) {
 
@@ -829,7 +829,7 @@ namespace ManualTracingTool {
                     }
                     else {
 
-                        if (!layer.isHierarchicalVisible) {
+                        if (!Layer.isVisible(layer)) {
                             continue;
                         }
                     }
@@ -850,8 +850,7 @@ namespace ManualTracingTool {
 
                 if (isExporting) {
 
-                    if (!layer.isHierarchicalVisible
-                        || !layer.isRenderTarget) {
+                    if (!Layer.isVisible(layer) || !layer.isRenderTarget) {
                         continue;
                     }
                 }
@@ -863,7 +862,7 @@ namespace ManualTracingTool {
                 }
                 else {
 
-                    if (!layer.isHierarchicalVisible) {
+                    if (!Layer.isVisible(layer)) {
                         continue;
                     }
                 }

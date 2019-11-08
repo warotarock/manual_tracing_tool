@@ -65,7 +65,11 @@ namespace ManualTracingTool {
             }
 
             if (layer.isHierarchicalVisible == undefined) {
-                layer.isHierarchicalVisible = true;
+                layer.isHierarchicalVisible = layer.isVisible;
+            }
+
+            if (layer.isHierarchicalSelected == undefined) {
+                layer.isHierarchicalSelected = layer.isSelected;
             }
 
             if (layer.type == LayerTypeID.vectorLayer) {
@@ -202,6 +206,16 @@ namespace ManualTracingTool {
             }
         }
 
+        static vec3ToArray(vec: Vec3): float[] {
+
+            return [vec[0], vec[1], vec[2]];
+        }
+
+        static vec4ToArray(vec: Vec4): float[] {
+
+            return [vec[0], vec[1], vec[2], vec[3]];
+        }
+
         static fixSaveDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
 
             this.fixSaveDocumentData_FixLayer_Recursive(document.rootLayer, info);
@@ -210,7 +224,7 @@ namespace ManualTracingTool {
 
                 let palletColor = document.palletColors[i];
 
-                palletColor.color = [palletColor.color[0], palletColor.color[1], palletColor.color[2], palletColor.color[3]];
+                palletColor.color = DocumentLogic.vec4ToArray(palletColor.color);
             }
         }
 
@@ -247,7 +261,7 @@ namespace ManualTracingTool {
 
                 let vectorLayer = <VectorLayer>layer;
 
-                vectorLayer.fillColor = [vectorLayer.fillColor[0], vectorLayer.fillColor[1], vectorLayer.fillColor[2], vectorLayer.fillColor[3]];
+                vectorLayer.fillColor = DocumentLogic.vec4ToArray(vectorLayer.fillColor);
 
                 for (let keyframe of vectorLayer.keyframes) {
 
@@ -266,7 +280,7 @@ namespace ManualTracingTool {
 
                             for (let point of line.points) {
 
-                                point.location = [point.location[0], point.location[1], point.location[2]];
+                                point.location = DocumentLogic.vec3ToArray(point.location);
 
                                 delete point.adjustingLocation;
                                 delete point.tempLocation;
@@ -287,9 +301,9 @@ namespace ManualTracingTool {
 
                 let ifrLayer = <ImageFileReferenceLayer>layer;
 
-                ifrLayer.location = [ifrLayer.location[0], ifrLayer.location[1], ifrLayer.location[2]];
-                ifrLayer.rotation = [ifrLayer.rotation[0], ifrLayer.rotation[1], ifrLayer.rotation[2]];
-                ifrLayer.scale = [ifrLayer.scale[0], ifrLayer.scale[1], ifrLayer.scale[2]];
+                ifrLayer.location = DocumentLogic.vec3ToArray(ifrLayer.location);
+                ifrLayer.rotation = DocumentLogic.vec3ToArray(ifrLayer.rotation);
+                ifrLayer.scale = DocumentLogic.vec3ToArray(ifrLayer.scale);
 
                 delete ifrLayer.imageResource;
                 delete ifrLayer.imageLoading;
@@ -300,6 +314,8 @@ namespace ManualTracingTool {
             else if (layer.type == LayerTypeID.posingLayer) {
 
                 let posingLayer = <PosingLayer>layer;
+
+                // TODO: Vec3、Vec4データも変換する
 
                 // TODO: 他のデータも削除する
                 delete posingLayer.posingData.bodyLocationInputData.parentMatrix;

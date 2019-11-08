@@ -25,7 +25,7 @@ namespace ManualTracingTool {
 
             return (
                 env.currentVectorLayer != null
-                && env.currentVectorLayer.isHierarchicalVisible
+                && Layer.isVisible(env.currentVectorLayer)
             );
         }
 
@@ -104,7 +104,7 @@ namespace ManualTracingTool {
 
             for (let viewKeyframeLayer of editableKeyframeLayers) {
 
-                if (!viewKeyframeLayer.layer.isSelected || !viewKeyframeLayer.layer.isHierarchicalVisible) {
+                if (!Layer.isSelected(viewKeyframeLayer.layer) || !Layer.isVisible(viewKeyframeLayer.layer)) {
                     continue;
                 }
 

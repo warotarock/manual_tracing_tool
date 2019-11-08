@@ -177,7 +177,7 @@ namespace ManualTracingTool {
             let context = this.toolContext;
             let env = this.toolEnv;
 
-            let isSelectedLayer = (layer.isSelected);
+            let isSelectedLayer = Layer.isSelected(layer);
             let isEditMode = env.isEditMode();
 
             // drawing parameters
@@ -226,7 +226,7 @@ namespace ManualTracingTool {
 
             let context = this.toolContext;
 
-            let isSelectedLayer = (layer.isSelected);
+            let isSelectedLayer = Layer.isSelected(layer);
 
             // drawing parameters
             let widthRate = context.document.lineWidthBiasRate;
@@ -648,7 +648,7 @@ namespace ManualTracingTool {
 
                 let layer = viewKeyframeLayer.layer;
 
-                if (!layer.isHierarchicalVisible || !VectorLayer.isVectorLayer(layer)) {
+                if (!Layer.isVisible(layer) || !VectorLayer.isVectorLayer(layer)) {
                     continue;
                 }
 
@@ -724,7 +724,7 @@ namespace ManualTracingTool {
             mainWindow.copyTransformTo(pickingWindow);
             mainWindow.copyTransformTo(webglWindow);
 
-            if (env.currentPosingLayer != null && env.currentPosingLayer.isHierarchicalVisible
+            if (env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && this.toolContext.mainToolID == MainToolID.posing
             ) {
 
@@ -876,11 +876,11 @@ namespace ManualTracingTool {
 
             let depthOffset = 10.0 * item.hierarchyDepth;
 
-            if (layer.isSelected && layer == this.toolContext.currentLayer) {
+            if (Layer.isSelected(layer) && layer == this.toolContext.currentLayer) {
 
                 this.canvasRender.setFillColorV(this.drawStyle.layerWindowItemActiveLayerColor);
             }
-            else if (layer.isSelected) {
+            else if (Layer.isSelected(layer)) {
 
                 this.canvasRender.setFillColorV(this.drawStyle.layerWindowItemSelectedColor);
             }
@@ -892,7 +892,7 @@ namespace ManualTracingTool {
 
             // Visible/Unvisible icon
             let srcImage = this.systemImage.image;
-            let iconIndex = (item.layer.isVisible ? 0.0 : 1.0);
+            let iconIndex = (Layer.isVisible(item.layer) ? 0.0 : 1.0);
             let srcWidth = srcImage.width * 0.125;
             let srcHeight = srcImage.height * 0.125;
             let srcX = srcWidth * iconIndex;

@@ -12,7 +12,7 @@ namespace ManualTracingTool {
 
             return (
                 env.currentVectorLayer != null
-                && env.currentVectorLayer.isHierarchicalVisible
+                && Layer.isVisible(env.currentVectorLayer)
             );
         }
 
