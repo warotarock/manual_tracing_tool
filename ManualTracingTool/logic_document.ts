@@ -72,6 +72,12 @@ namespace ManualTracingTool {
                 layer.isHierarchicalSelected = layer.isSelected;
             }
 
+            if (layer.isMaskedByBelowLayer == undefined) {
+                layer.isMaskedByBelowLayer = false;
+            }
+
+            layer.bufferCanvasWindow = null;
+
             if (layer.type == LayerTypeID.vectorLayer) {
 
                 let vectorLayer = <VectorLayer>layer;
@@ -255,7 +261,9 @@ namespace ManualTracingTool {
 
         static fixSaveDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
 
-            layer.layerColor = [layer.layerColor[0], layer.layerColor[1], layer.layerColor[2], layer.layerColor[3]];
+            delete layer.bufferCanvasWindow;
+
+            layer.layerColor = this.vec4ToArray(layer.layerColor);
 
             if (layer.type == LayerTypeID.vectorLayer) {
 

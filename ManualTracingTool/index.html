@@ -3,8 +3,10 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self';" />
+
     <title>Manual tracing tool</title>
+
     <script src="./external/glmatrix/gl-matrix-min.js"></script>
 
     <link href="./external/custombox/custombox.min.css" rel="stylesheet">
@@ -103,6 +105,11 @@
             background-color: #fff;
         }
 
+        .nameInputTextBox {
+            width: 250px;
+            padding-left: 5px;
+        }
+
         div.fileNameText {
             width: 350px;
             height: 27px;
@@ -116,11 +123,12 @@
             margin-left: 10px;
         }
 
-        #fileName {
-            width: 100%;
-            height: 18px;
-            border: none;
-        }
+            div.fileNameText input[type=text] {
+                width: 100%;
+                height: 18px;
+                border: none;
+                padding-left: 5px;
+            }
 
         div.fileCommandButton {
             width: 33px;
@@ -318,10 +326,6 @@
             text-align: right;
         }
 
-        .nameInputTextBox {
-            width: 250px;
-        }
-
         .modalDialogWindow {
             background-color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -355,22 +359,24 @@
 
         .modalDialogWindow.layerPropertyModal {
             width: 400px;
-            height: 340px;
+            height: 380px;
             position: absolute;
             bottom: 100px;
         }
 
-            .modalDialogWindow.layerPropertyModal input {
-                margin-left: 15px;
+            .modalDialogWindow.layerPropertyModal div {
                 margin-top: 15px;
             }
 
-                .modalDialogWindow.layerPropertyModal input[type=checkbox] {
-                    margin-top: 0px;
-                }
+            .modalDialogWindow.layerPropertyModal input {
+                margin-left: 10px;
+            }
 
-            .modalDialogWindow.layerPropertyModal div {
-                margin-top: 15px;
+            .modalDialogWindow.layerPropertyModal input[type=radio] {
+                margin-left: 15px;
+            }
+
+            .modalDialogWindow.layerPropertyModal input[type=checkbox] {
             }
 
         #layerPropertyModal_layerAlpha {
@@ -631,26 +637,30 @@
 
     <div id="layerPropertyModal" class="modalDialogWindow layerPropertyModal">
         <label id="layerPropertyModal_layerTypeName">
-            レイヤー
-        </label><br />
-        <label>
-            名前
-            <input type="text" id="layerPropertyModal_layerName" class="nameInputTextBox" onfocus="this.select();" />
-        </label><br />
-        <label>
-            レイヤー色　
-            <input type="color" id="layerPropertyModal_layerColor">
+            レイヤータイプ
         </label>
-        <label>
+        <div>
+            <label>
+                名前
+                <input type="text" id="layerPropertyModal_layerName" class="nameInputTextBox" onfocus="this.select();" />
+            </label>
+        </div>
+        <div>
+            <label>
+                レイヤー色　
+                <input type="color" id="layerPropertyModal_layerColor">
+            </label>
             <input type="range" id="layerPropertyModal_layerAlpha" min="0" max="500">
-        </label><br />
+        </div>
+        <div>
+        </div>
         <label>
-            塗りつぶし色
-            <input type="color" id="layerPropertyModal_fillColor">
-        </label>
-        <label>
+            <label>
+                塗りつぶし色
+                <input type="color" id="layerPropertyModal_fillColor">
+            </label>
             <input type="range" id="layerPropertyModal_fillColorAlpha" min="0" max="500">
-        </label><br />
+        </label>
         <div>
             線<br />
             <label>
@@ -683,8 +693,12 @@
             </label>
         </div>
         <div>
+            設定<br />
             <label>
-                エクスポート<input type="checkbox" id="layerPropertyModal_isRenderTarget" value="1">
+                <input type="checkbox" id="layerPropertyModal_isRenderTarget" value="1">エクスポート
+            </label><br />
+            <label>
+                <input type="checkbox" id="layerPropertyModal_isMaskedBelowLayer" value="1">下のレイヤーでマスク
             </label>
         </div>
     </div>

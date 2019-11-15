@@ -718,7 +718,7 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentPosingLayer != null && Layer.isVisible(Layer.isVisible(env.currentPosingLayer)
+                env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && env.currentPosingData != null
                 && (env.currentPosingData.bodyLocationInputData.inputDone || env.currentPosingData.bodyRotationInputData.inputDone)
             );

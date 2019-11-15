@@ -137,7 +137,7 @@ namespace ManualTracingTool {
         protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean) { // @virtual
         }
 
-        protected drawLayer(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
+        protected drawLayer(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
 
             let layer = viewKeyFrameLayer.layer;
 
@@ -613,11 +613,9 @@ namespace ManualTracingTool {
 
             let image = layer.imageResource.image.imageData;
 
-            let isModal = isModalToolRunning;
-
-            let location = (isModal ? layer.adjustingLocation : layer.location);
-            let rotation = (isModal ? layer.adjustingRotation[0] : layer.rotation[0]);
-            let scale = (isModal ? layer.adjustingScale : layer.scale);
+            let location = (isModalToolRunning ? layer.adjustingLocation : layer.location);
+            let rotation = (isModalToolRunning ? layer.adjustingRotation[0] : layer.rotation[0]);
+            let scale = (isModalToolRunning ? layer.adjustingScale : layer.scale);
 
             mat4.identity(this.tempMat4);
             mat4.translate(this.tempMat4, this.tempMat4, location);

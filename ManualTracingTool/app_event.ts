@@ -22,9 +22,6 @@ namespace ManualTracingTool {
         protected onModalWindowClosed() { // @virtual
         }
 
-        protected updateLayerStructure() { // @virtual
-        }
-
         // Events
 
         protected setEvents() {
@@ -766,7 +763,7 @@ namespace ManualTracingTool {
                 if (clickedX <= selectedItem.textLeft) {
 
                     this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
-                    this.updateLayerStructure();
+                    Layer.updateHierarchicalStatesRecursive(selectedItem.layer);
                     this.activateCurrentTool();
 
                     this.toolEnv.setRedrawMainWindowEditorWindow();
@@ -1701,7 +1698,7 @@ namespace ManualTracingTool {
 
             if (key == '1') {
 
-                let layerItem = this.findCurrentLayerLayerWindowItem();
+                let layerItem = this.layerWindow_FindCurrentItem();
                 this.openLayerPropertyModal(layerItem.layer, layerItem);
             }
 

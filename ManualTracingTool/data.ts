@@ -39,6 +39,7 @@ namespace ManualTracingTool {
         isVisible = true;
         isSelected = false;
         isRenderTarget = true;
+        isMaskedByBelowLayer = false;
 
         childLayers = new List<Layer>();
 
@@ -47,6 +48,7 @@ namespace ManualTracingTool {
         // runtime
         isHierarchicalSelected = true;
         isHierarchicalVisible = true;
+        bufferCanvasWindow: CanvasWindow = null;
 
         // when serialized only
         ID: int;

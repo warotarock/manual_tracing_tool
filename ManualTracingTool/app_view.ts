@@ -98,27 +98,31 @@ namespace ManualTracingTool {
             return false;
         }
 
+        protected onLayerPropertyModalClosed() { // @virtual
+
+        }
+
         // Initializing devices not depending media resoures
 
         protected initializeViewDevices() {
 
             this.resizeWindows();
 
-            this.mainWindow.context = this.mainWindow.canvas.getContext('2d');
-            this.editorWindow.context = this.editorWindow.canvas.getContext('2d');
-            this.foreLayerRenderWindow.context = this.foreLayerRenderWindow.canvas.getContext('2d');
-            this.backLayerRenderWindow.context = this.backLayerRenderWindow.canvas.getContext('2d');
+            this.mainWindow.initializeContext();
+            this.editorWindow.initializeContext();
+            this.foreLayerRenderWindow.initializeContext();
+            this.backLayerRenderWindow.initializeContext();
 
-            this.layerWindow.context = this.layerWindow.canvas.getContext('2d');
-            this.subtoolWindow.context = this.subtoolWindow.canvas.getContext('2d');
+            this.layerWindow.initializeContext();
+            this.subtoolWindow.initializeContext();
 
-            this.palletSelectorWindow.context = this.palletSelectorWindow.canvas.getContext('2d');
-            this.colorMixerWindow_colorCanvas.context = this.colorMixerWindow_colorCanvas.canvas.getContext('2d');
+            this.palletSelectorWindow.initializeContext();
+            this.colorMixerWindow_colorCanvas.initializeContext();
 
-            this.timeLineWindow.context = this.timeLineWindow.canvas.getContext('2d');
+            this.timeLineWindow.initializeContext();
 
-            this.exportRenderWindow.context = this.exportRenderWindow.canvas.getContext('2d');
-            this.palletColorModal_colorCanvas.context = this.palletColorModal_colorCanvas.canvas.getContext('2d');
+            this.exportRenderWindow.initializeContext();
+            this.palletColorModal_colorCanvas.initializeContext();
 
             this.canvasRender.setContext(this.layerWindow);
             this.canvasRender.setFontSize(18.0);
@@ -128,11 +132,11 @@ namespace ManualTracingTool {
                 throw ('３Ｄ機能を初期化できませんでした。');
             }
 
-            this.pickingWindow.context = this.pickingWindow.canvas.getContext('2d');
+            this.pickingWindow.initializeContext();
 
             this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
 
-            this.initializeLayerWindow();
+            this.layerWindow_Initialize();
             this.initializePalletSelectorWindow();
         }
 
@@ -159,7 +163,6 @@ namespace ManualTracingTool {
             this.fitCanvas(this.foreLayerRenderWindow, this.mainWindow);
             this.fitCanvas(this.backLayerRenderWindow, this.mainWindow);
             this.fitCanvas(this.webglWindow, this.mainWindow);
-            //this.fitCanvas(this.pickingWindow, this.mainWindow); depth picking is not used now
 
             this.resizeCanvasToParent(this.layerWindow);
             this.resizeCanvasToParent(this.subtoolWindow);
@@ -320,13 +323,13 @@ namespace ManualTracingTool {
                 this.selectCurrentLayerAnimationTime = this.selectCurrentLayerAnimationTimeMax;
                 this.toolEnv.setRedrawMainWindow();
 
-                this.setLayerWindowViewLocationToItem(item);
+                this.layerWindow_SetViewLocationToItem(item);
             }
         }
 
         protected startShowingCurrentLayer() {
 
-            let item = this.findCurrentLayerLayerWindowItem();
+            let item = this.layerWindow_FindCurrentItem();
 
             this.startShowingLayerItem(item);
         }
@@ -366,7 +369,9 @@ namespace ManualTracingTool {
             env.setRedrawMainWindowEditorWindow();
         }
 
-        protected collectViewContext() {
+        // ViewKeyframe for timeline
+
+        protected collectViewKeyframeContext() {
 
             let context = this.toolContext;
 
@@ -378,17 +383,17 @@ namespace ManualTracingTool {
             // Creates all view-keyframes.
 
             let viewKeyFrames = new List<ViewKeyframe>();
-            this.collectViewContext_CollectKeyframes(viewKeyFrames, layers);
+            this.collectViewKeyframeContext_CollectKeyframes(viewKeyFrames, layers);
             let sortedViewKeyFrames = viewKeyFrames.sort((a, b) => { return a.frame - b.frame });
 
             // Collects layers for each view-keyframes
 
-            this.collectViewContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
+            this.collectViewKeyframeContext_CollectKeyframeLayers(sortedViewKeyFrames, layers);
 
             this.viewLayerContext.keyframes = sortedViewKeyFrames;
         }
 
-        protected collectViewContext_CollectKeyframes(result: List<ViewKeyframe>, layers: List<Layer>) {
+        private collectViewKeyframeContext_CollectKeyframes(result: List<ViewKeyframe>, layers: List<Layer>) {
 
             let keyframeDictionary = new Dictionary<boolean>();
 
@@ -415,7 +420,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected collectViewContext_CollectKeyframeLayers(result: List<ViewKeyframe>, layers: List<Layer>) {
+        private collectViewKeyframeContext_CollectKeyframeLayers(result: List<ViewKeyframe>, layers: List<Layer>) {
 
             // All view-keyframes contains view-layer info for all layer.
 
@@ -496,9 +501,9 @@ namespace ManualTracingTool {
             }
         }
 
-        // Layer window
+        // Laye window
 
-        private initializeLayerWindow() {
+        private layerWindow_Initialize() {
 
             let wnd = this.layerWindow;
 
@@ -514,7 +519,7 @@ namespace ManualTracingTool {
             let wnd = this.layerWindow;
 
             wnd.layerWindowItems = new List<LayerWindowItem>();
-            this.collectLayerWindowItemsRecursive(wnd.layerWindowItems, document.rootLayer, 0);
+            this.layerWindow_CollectItemsRecursive(wnd.layerWindowItems, document.rootLayer, 0);
 
             let previousItem: LayerWindowItem = null;
             for (let item of wnd.layerWindowItems) {
@@ -530,7 +535,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private collectLayerWindowItemsRecursive(result: List<LayerWindowItem>, parentLayer: Layer, currentDepth: int) {
+        private layerWindow_CollectItemsRecursive(result: List<LayerWindowItem>, parentLayer: Layer, currentDepth: int) {
 
             let siblingItem = null;
 
@@ -551,14 +556,14 @@ namespace ManualTracingTool {
 
                 if (layer.childLayers.length > 0) {
 
-                    this.collectLayerWindowItemsRecursive(result, layer, currentDepth + 1);
+                    this.layerWindow_CollectItemsRecursive(result, layer, currentDepth + 1);
                 }
 
                 siblingItem = item;
             }
         }
 
-        protected findCurrentLayerLayerWindowItemIndex() {
+        protected layerWindow_FindCurrentItemIndex() {
 
             let wnd = this.layerWindow;
 
@@ -574,11 +579,11 @@ namespace ManualTracingTool {
             return -1;
         }
 
-        protected findCurrentLayerLayerWindowItem(): LayerWindowItem {
+        protected layerWindow_FindCurrentItem(): LayerWindowItem {
 
             let wnd = this.layerWindow;
 
-            let index = this.findCurrentLayerLayerWindowItemIndex();
+            let index = this.layerWindow_FindCurrentItemIndex();
 
             if (index != -1) {
 
@@ -590,7 +595,7 @@ namespace ManualTracingTool {
             return null;
         }
 
-        protected setLayerWindowViewLocationToItem(item: LayerWindowItem) {
+        protected layerWindow_SetViewLocationToItem(item: LayerWindowItem) {
 
             let layerWindow = this.layerWindow;
 
@@ -792,6 +797,7 @@ namespace ManualTracingTool {
             this.setInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, layer.layerColor[3], 0.0, 1.0);
 
             this.setInputElementBoolean(this.ID.layerPropertyModal_isRenderTarget, layer.isRenderTarget);
+            this.setInputElementBoolean(this.ID.layerPropertyModal_isMaskedBelowLayer, layer.isMaskedByBelowLayer);
 
             // for each layer type properties
 
@@ -830,6 +836,7 @@ namespace ManualTracingTool {
             layer.layerColor[3] = this.getInputElementRangeValue(this.ID.layerPropertyModal_layerAlpha, 0.0, 1.0);
 
             layer.isRenderTarget = this.getInputElementBoolean(this.ID.layerPropertyModal_isRenderTarget);
+            layer.isMaskedByBelowLayer = this.getInputElementBoolean(this.ID.layerPropertyModal_isMaskedBelowLayer);
 
             if (VectorLayer.isVectorLayer(layer)) {
 
@@ -844,6 +851,8 @@ namespace ManualTracingTool {
             }
 
             this.layerPropertyWindow_EditLayer = null;
+
+            this.onLayerPropertyModalClosed();
         }
 
         protected openPalletColorModal(mode: OpenPalletColorModalMode, documentData: DocumentData, layer: Layer) {
@@ -1909,6 +1918,7 @@ namespace ManualTracingTool {
         layerPropertyModal_fillColorAlpha = 'layerPropertyModal_fillColorAlpha';
         layerPropertyModal_fillAreaType = 'layerPropertyModal_fillAreaType';
         layerPropertyModal_isRenderTarget = 'layerPropertyModal_isRenderTarget';
+        layerPropertyModal_isMaskedBelowLayer = 'layerPropertyModal_isMaskedBelowLayer';
 
         palletColorModal = '#palletColorModal';
         palletColorModal_targetName = 'palletColorModal_targetName';

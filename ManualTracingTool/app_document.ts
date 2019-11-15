@@ -497,15 +497,10 @@ namespace ManualTracingTool {
                 return null;
             }
 
-            //let canvas = this.exportRenderWindow.canvas;
-            let canvas = document.createElement('canvas');
-            this.exportRenderWindow.context = canvas.getContext('2d');
-            canvas.width = imageWidth;
-            canvas.height = imageHeight;
+            this.exportRenderWindow.createCanvas();
+            this.exportRenderWindow.setCanvasSize(imageWidth, imageHeight);
+            this.exportRenderWindow.initializeContext();
 
-            this.exportRenderWindow.canvas = canvas;
-            this.exportRenderWindow.width = imageWidth;
-            this.exportRenderWindow.height = imageHeight;
             this.exportRenderWindow.viewLocation[0] = imageLeft;
             this.exportRenderWindow.viewLocation[1] = imageTop;
             this.exportRenderWindow.viewScale = scale;
@@ -522,6 +517,8 @@ namespace ManualTracingTool {
             }
 
             this.drawExportImage(this.exportRenderWindow);
+
+            let canvas = this.exportRenderWindow.releaseCanvas();
 
             return canvas;
         }

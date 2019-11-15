@@ -24,6 +24,34 @@ namespace ManualTracingTool {
 
         private tempVec3 = vec3.create();
 
+        createCanvas() {
+
+            this.canvas = document.createElement('canvas');
+        }
+
+        releaseCanvas(): HTMLCanvasElement {
+
+            let canvas = this.canvas;
+
+            this.canvas = null;
+
+            return canvas;
+        }
+
+        setCanvasSize(width: int, height: int) {
+
+            this.canvas.width = width;
+            this.canvas.height = height;
+
+            this.width = width;
+            this.height = height;
+        }
+
+        initializeContext() {
+
+            this.context = this.canvas.getContext('2d');
+        }
+
         copyTransformTo(targetWindow: CanvasWindow) {
 
             vec3.copy(targetWindow.viewLocation, this.viewLocation);
@@ -175,6 +203,11 @@ namespace ManualTracingTool {
             let distance = Math.sqrt(Math.pow(centerX - this.viewCenterX, 2) + Math.pow(centerY - this.viewCenterY, 2));
 
             return ((distance - range) < this.viewRange);
+        }
+
+        setCompositeOperation(operationText: 'source-over' | 'source-atop') {
+
+            this.context.globalCompositeOperation = operationText;
         }
 
         clearRect(left: int, top: int, width: int, height: int) {

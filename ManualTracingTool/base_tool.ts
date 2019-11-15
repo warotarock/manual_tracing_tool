@@ -239,19 +239,35 @@ namespace ManualTracingTool {
         height = 0;
     }
 
+    export enum TempVirtualLayerTypeID {
+
+        none = 0,
+        normal = 1,
+        virtualGroup = 2,
+    }
+
+    export class TempVirtualLayer {
+
+        type = TempVirtualLayerTypeID.none;
+        layer: Layer = null;
+        children = new List<TempVirtualLayer>();
+    }
+
     export enum DrawPathOperationTypeID {
 
         none = 0,
         beginDrawing = 1,
-        draw = 2,
-        prepareBuffer = 3,
-        flushBuffer = 4
+        endDrawing = 2,
+        draw = 3,
+        prepareBuffer = 4,
+        flushBuffer = 5
     }
 
     export class DrawPathStep {
 
         layer: Layer = null;
         viewKeyframeLayer: ViewKeyframeLayer = null;
+        isSelected = false;
 
         operationType = DrawPathOperationTypeID.none;
     }
@@ -259,6 +275,8 @@ namespace ManualTracingTool {
     export class DrawPathContext {
 
         steps = new List<DrawPathStep>();
+        activeDrawPathStartIndex = -1;
+        activeDrawPathEndIndex = -1;
     }
 
     export class ToolClipboard {

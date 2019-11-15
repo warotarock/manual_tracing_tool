@@ -334,18 +334,17 @@ namespace ManualTracingTool {
             this.toolContext.operationUnitID = operationUnitID;
         }
 
-        public setCurrentLayer(layer: Layer) { // @implements MainEditor
+        protected updateContextCurrentRefferences() {
 
             let viewKeyframe = this.currentViewKeyframe;
+            let currentLayer = this.toolContext.currentLayer;
 
-            this.toolContext.currentLayer = layer;
+            if (currentLayer != null && VectorLayer.isVectorLayer(currentLayer) && viewKeyframe != null) {
 
-            if (layer != null && VectorLayer.isVectorLayer(layer) && viewKeyframe != null) {
-
-                let viewKeyframeLayer = ViewKeyframe.findViewKeyframeLayer(viewKeyframe, layer);
+                let viewKeyframeLayer = ViewKeyframe.findViewKeyframeLayer(viewKeyframe, currentLayer);
                 let geometry = viewKeyframeLayer.vectorLayerKeyframe.geometry;
 
-                this.toolContext.currentVectorLayer = <VectorLayer>layer;
+                this.toolContext.currentVectorLayer = <VectorLayer>currentLayer;
                 this.toolContext.currentVectorGeometry = geometry;
                 this.toolContext.currentVectorGroup = geometry.groups[0];
             }
@@ -356,9 +355,9 @@ namespace ManualTracingTool {
                 this.toolContext.currentVectorGroup = null;
             }
 
-            if (layer != null && layer.type == LayerTypeID.posingLayer) {
+            if (currentLayer != null && currentLayer.type == LayerTypeID.posingLayer) {
 
-                let posingLayer = <PosingLayer>layer;
+                let posingLayer = <PosingLayer>currentLayer;
 
                 this.toolContext.currentPosingLayer = posingLayer;
                 this.toolContext.currentPosingData = posingLayer.posingData;
@@ -371,9 +370,9 @@ namespace ManualTracingTool {
                 this.toolContext.currentPosingModel = null;
             }
 
-            if (layer != null && layer.type == LayerTypeID.imageFileReferenceLayer) {
+            if (currentLayer != null && currentLayer.type == LayerTypeID.imageFileReferenceLayer) {
 
-                let imageFileReferenceLayer = <ImageFileReferenceLayer>layer;
+                let imageFileReferenceLayer = <ImageFileReferenceLayer>currentLayer;
 
                 this.toolContext.currentImageFileReferenceLayer = imageFileReferenceLayer;
             }
@@ -382,12 +381,20 @@ namespace ManualTracingTool {
                 this.toolContext.currentImageFileReferenceLayer = null;
             }
 
+        }
+
+        public setCurrentLayer(layer: Layer) { // @implements MainEditor
+
             this.unselectAllLayer();
 
             if (layer != null) {
 
                 this.setLayerSelection(layer, true);
             }
+
+            this.toolContext.currentLayer = layer;
+
+            this.updateContextCurrentRefferences();
 
             this.setCurrentMainToolForCurentLayer();
 
@@ -400,17 +407,17 @@ namespace ManualTracingTool {
             let aniSetting = context.document.animationSettingData;
             let viewKeyframes = this.viewLayerContext.keyframes;
 
-            let before_CurrentKeyframe = this.currentViewKeyframe;
-
             aniSetting.currentTimeFrame = frame;
 
             // Find current keyframe for frame
 
             if (aniSetting.currentTimeFrame < 0) {
+
                 aniSetting.currentTimeFrame = 0;
             }
 
             if (aniSetting.currentTimeFrame > aniSetting.maxFrame) {
+
                 aniSetting.currentTimeFrame = aniSetting.maxFrame;
             }
 
@@ -441,15 +448,7 @@ namespace ManualTracingTool {
 
             // Update tool context
 
-            if (context.currentLayer != null) {
-
-                this.setCurrentLayer(context.currentLayer);
-            }
-
-            if (this.currentViewKeyframe != before_CurrentKeyframe) {
-
-                //this.collectViewContext_CollectEditTargets();
-            }
+            this.updateContextCurrentRefferences();
         }
 
         protected unselectAllLayer() {
@@ -461,7 +460,7 @@ namespace ManualTracingTool {
             }
         }
 
-        public setLayerSelection(layer: Layer, isSelected: boolean) {
+        protected setLayerSelection(layer: Layer, isSelected: boolean) {
 
             layer.isSelected = isSelected;
         }
@@ -621,7 +620,7 @@ namespace ManualTracingTool {
 
         protected executeLayerCommand(layerCommand: Command_Layer_CommandBase) {
 
-            let currentLayerWindowItem = this.findCurrentLayerLayerWindowItem();
+            let currentLayerWindowItem = this.layerWindow_FindCurrentItem();
 
             if (currentLayerWindowItem == null) {
 
@@ -664,7 +663,7 @@ namespace ManualTracingTool {
 
         protected selectNextOrPreviousLayer(selectNext: boolean) {
 
-            let item = this.findCurrentLayerLayerWindowItem();
+            let item = this.layerWindow_FindCurrentItem();
 
             if (selectNext) {
 
