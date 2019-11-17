@@ -1173,6 +1173,24 @@ namespace ManualTracingTool {
 
         drawPathBufferStack = new List<CanvasWindow>();
 
+        private isLayerDrawTarget(layer: Layer, currentLayerOnly: boolean) {
+
+            if (currentLayerOnly) {
+
+                if (layer != this.selectCurrentLayerAnimationLayer) {
+                    return false;
+                }
+            }
+            else {
+
+                if (!Layer.isVisible(layer)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         protected drawDrawPaths(canvasWindow: CanvasWindow, drawPathSteps: List<DrawPathStep>, startIndex: int, endIndex: int, isExporting: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
 
             if (this.drawPathBufferStack.length > 0) {
@@ -1206,17 +1224,9 @@ namespace ManualTracingTool {
                             continue;
                         }
                     }
-                    else if (currentLayerOnly) {
+                    else if (this.isLayerDrawTarget(layer, currentLayerOnly)) {
 
-                        if (layer != this.selectCurrentLayerAnimationLayer) {
-                            continue;
-                        }
-                    }
-                    else {
-
-                        if (!Layer.isVisible(layer)) {
-                            continue;
-                        }
+                        continue;
                     }
 
                     if (layer.isMaskedByBelowLayer && !currentLayerOnly) {
@@ -1234,17 +1244,9 @@ namespace ManualTracingTool {
 
                     // Prepare buffer
 
-                    if (currentLayerOnly) {
+                    if (this.isLayerDrawTarget(layer, currentLayerOnly)) {
 
-                        if (layer != this.selectCurrentLayerAnimationLayer) {
-                            continue;
-                        }
-                    }
-                    else {
-
-                        if (!Layer.isVisible(layer)) {
-                            continue;
-                        }
+                        continue;
                     }
 
                     this.canvasRender.setContext(layer.bufferCanvasWindow);
@@ -1261,17 +1263,9 @@ namespace ManualTracingTool {
 
                     // Flush buffered image to upper buffer
 
-                    if (currentLayerOnly) {
+                    if (this.isLayerDrawTarget(layer, currentLayerOnly)) {
 
-                        if (layer != this.selectCurrentLayerAnimationLayer) {
-                            continue;
-                        }
-                    }
-                    else {
-
-                        if (!Layer.isVisible(layer)) {
-                            continue;
-                        }
+                        continue;
                     }
 
                     let before_BufferCanvasWindow = this.drawPathBufferStack.pop();
