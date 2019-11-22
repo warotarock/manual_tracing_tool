@@ -465,6 +465,8 @@ namespace ManualTracingTool {
                     }
 
                     this.getWheelInfo(drawCanvasWindew.toolMouseEvent, e);
+                    this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
+
                     mousewheel.call(this);
                     e.preventDefault();
                 });
@@ -644,6 +646,8 @@ namespace ManualTracingTool {
 
                 this.addViewScale(addScale);
             }
+
+            this.calculateTransfomredMouseParams(e, wnd);
         }
 
         protected layerWindow_mousedown() {
