@@ -267,16 +267,42 @@ namespace ManualTracingTool {
 
         layer: Layer = null;
         viewKeyframeLayer: ViewKeyframeLayer = null;
-        isSelected = false;
 
         operationType = DrawPathOperationTypeID.none;
+        operationTypeText = '';
+
+        setType(operationType: DrawPathOperationTypeID) {
+
+            this.operationType = operationType;
+            this.operationTypeText = DrawPathOperationTypeID[operationType];
+        }
     }
 
     export class DrawPathContext {
 
         steps = new List<DrawPathStep>();
+
         activeDrawPathStartIndex = -1;
         activeDrawPathEndIndex = -1;
+
+        lazyDraw_ProcessedIndex = 0;
+        lazyDraw_LimitTime = 100;
+        lazyDraw_MaxTime = 100000;
+
+        bufferStack = new List<CanvasWindow>();
+        startIndex = 0;
+        endIndex = 0;
+        isExporting = false;
+        isModalToolRunning = false;
+        currentLayerOnly = false;
+
+        clearBufferStack() {
+
+            if (this.bufferStack.length > 0) {
+
+                this.bufferStack = new List<CanvasWindow>();
+            }
+        }
     }
 
     export class ToolClipboard {

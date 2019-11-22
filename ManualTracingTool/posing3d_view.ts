@@ -60,7 +60,7 @@ namespace ManualTracingTool {
         // Rendering
         render: WebGLRender = null;
         webglWindow: CanvasWindow = null;
-        pickingWindow: PickingWindow = null;
+        //pickingWindow: PickingWindow = null;
         posingFigureShader = new PosingFigureShader();
         depthShader = new DepthShader();
 
@@ -109,13 +109,13 @@ namespace ManualTracingTool {
 
             this.render = render;
             this.webglWindow = webglWindow;
-            this.pickingWindow = pickingWindow;
+            //this.pickingWindow = pickingWindow;
 
             this.render.initializeShader(this.posingFigureShader);
             this.render.initializeShader(this.depthShader);
 
             this.render.setShader(this.depthShader);
-            this.depthShader.setMaxDepth(pickingWindow.maxDepth);
+            //this.depthShader.setMaxDepth(pickingWindow.maxDepth);
         }
 
         storeResources(modelFile: ModelFile, imageResurces: List<ImageResource>) {

@@ -7,7 +7,6 @@ namespace ManualTracingTool {
 
         mainWindow = new MainWindow();
         editorWindow = new CanvasWindow();
-        webglWindow = new CanvasWindow();
         layerWindow = new LayerWindow();
         subtoolWindow = new SubtoolWindow();
         timeLineWindow = new TimeLineWindow();
@@ -20,13 +19,18 @@ namespace ManualTracingTool {
 
         exportRenderWindow = new CanvasWindow();
 
-        pickingWindow = new PickingWindow();
-        posing3dView = new Posing3DView();
+        draw3DWindow = new CanvasWindow();
+
+        webglWindow = new CanvasWindow();
+        //pickingWindow = new PickingWindow();
 
         activeCanvasWindow: CanvasWindow = null;
 
         canvasRender = new CanvasRender();
+        draw3DRender = new WebGLRender();
         webGLRender = new WebGLRender();
+
+        posing3dView = new Posing3DView();
 
         ID = new HTMLElementID();
 
@@ -132,9 +136,14 @@ namespace ManualTracingTool {
                 throw ('３Ｄ機能を初期化できませんでした。');
             }
 
-            this.pickingWindow.initializeContext();
+            //this.pickingWindow.initializeContext();
 
-            this.posing3dView.initialize(this.webGLRender, this.webglWindow, this.pickingWindow);
+            this.posing3dView.initialize(this.webGLRender, this.webglWindow, null);
+
+            if (this.draw3DRender.initializeWebGL(this.draw3DWindow.canvas)) {
+
+                throw ('３Ｄ描画機能を初期化できませんでした。');
+            }
 
             this.layerWindow_Initialize();
             this.initializePalletSelectorWindow();
@@ -163,6 +172,7 @@ namespace ManualTracingTool {
             this.fitCanvas(this.foreLayerRenderWindow, this.mainWindow);
             this.fitCanvas(this.backLayerRenderWindow, this.mainWindow);
             this.fitCanvas(this.webglWindow, this.mainWindow);
+            this.fitCanvas(this.draw3DWindow, this.mainWindow);
 
             this.resizeCanvasToParent(this.layerWindow);
             this.resizeCanvasToParent(this.subtoolWindow);
