@@ -710,6 +710,20 @@ namespace ManualTracingTool {
             this.canvasRender.setLineDash(this.operatorCurosrLineDashNone);
         }
 
+        // Rendering
+
+        protected renderLayer(layer: Layer) {
+
+            let wnd = this.draw3DWindow;
+            let render = this.draw3DRender;
+
+            render.setViewport(0.0, 0.0, wnd.width, wnd.height);
+
+            render.setDepthTest(true)
+            render.setCulling(true);
+            render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
+        }
+
         // WebGL window
 
         protected drawWebGLWindow(webglWindow: CanvasWindow, layerWindowItems: List<LayerWindowItem>, mainWindow: CanvasWindow, pickingWindow: CanvasWindow) {
@@ -719,7 +733,7 @@ namespace ManualTracingTool {
             this.webGLRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
             this.posing3dView.clear(env);
 
-            mainWindow.copyTransformTo(pickingWindow);
+            //mainWindow.copyTransformTo(pickingWindow);
             mainWindow.copyTransformTo(webglWindow);
 
             if (env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)

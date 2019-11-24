@@ -286,8 +286,11 @@ namespace ManualTracingTool {
         activeDrawPathEndIndex = -1;
 
         lazyDraw_ProcessedIndex = 0;
+        lazyDraw_LastResetTime = 0;
         lazyDraw_LimitTime = 100;
         lazyDraw_MaxTime = 100000;
+        lazyDraw_WaitTime = 500;
+        lazyDraw_Buffer: CanvasWindow = null;
 
         bufferStack = new List<CanvasWindow>();
         startIndex = 0;
@@ -295,13 +298,43 @@ namespace ManualTracingTool {
         isExporting = false;
         isModalToolRunning = false;
         currentLayerOnly = false;
+        lastDrawPathIndex = -1;
 
-        clearBufferStack() {
+        clearDrawingStates() {
+
+            this.lastDrawPathIndex = -1;
 
             if (this.bufferStack.length > 0) {
 
                 this.bufferStack = new List<CanvasWindow>();
             }
+        }
+
+        resetLazyDrawProcess() {
+
+            this.lazyDraw_ProcessedIndex = -1;
+            this.lazyDraw_LastResetTime = Platform.getCurrentTime();
+        }
+
+        isLazyDrawBigining(): boolean {
+
+            return (this.lazyDraw_ProcessedIndex == -1);
+        }
+
+        isLazyDrawFinished(): boolean {
+
+            return (this.lazyDraw_ProcessedIndex >= this.steps.length - 1);
+        }
+
+        isLazyDrawWaiting(): boolean {
+
+            return (!this.isLazyDrawFinished()
+                && this.lazyDraw_LastResetTime + this.lazyDraw_WaitTime > Platform.getCurrentTime());
+        }
+
+        isLastDrawExist(): boolean {
+
+            return (this.lastDrawPathIndex != -1);
         }
     }
 

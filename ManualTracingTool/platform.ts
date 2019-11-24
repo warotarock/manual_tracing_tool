@@ -14,6 +14,11 @@ namespace Platform {
         }
     };
 
+    export function getCurrentTime(): int {
+
+        return performance.now();
+    }
+
     class Settings {
 
         data = {

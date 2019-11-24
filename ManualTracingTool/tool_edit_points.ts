@@ -17,7 +17,7 @@ namespace ManualTracingTool {
 
         protected afterHitTest() { // @override
 
-            this.selectionInfo.resetModifyStatus();
+            this.selectionInfo.resetModifyStates();
         }
     }
 

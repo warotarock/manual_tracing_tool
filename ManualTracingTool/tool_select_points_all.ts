@@ -52,7 +52,7 @@ namespace ManualTracingTool {
 
             this.executeCommand(selectionInfo, env);
 
-            selectionInfo.resetModifyStatus();
+            selectionInfo.resetModifyStates();
 
             env.setRedrawMainWindowEditorWindow();
         }

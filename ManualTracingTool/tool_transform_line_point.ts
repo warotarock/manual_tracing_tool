@@ -170,7 +170,7 @@ namespace ManualTracingTool {
                 }
             }
 
-            Logic_Edit_Line.resetModifyStatus(targetLines);
+            Logic_Edit_Line.resetModifyStates(targetLines);
 
             // Execute the command
             let command = new Command_TransformLattice_LinePoint();

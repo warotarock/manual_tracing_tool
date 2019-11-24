@@ -181,7 +181,7 @@ namespace ManualTracingTool {
             }
         }
 
-        resetModifyStatus() {
+        resetModifyStates() {
 
             for (let selPoint of this.selectedPoints) {
 
@@ -221,7 +221,7 @@ namespace ManualTracingTool {
 
             this.selectionInfo.updateLineSelectionState();
 
-            this.selectionInfo.resetModifyStatus();
+            this.selectionInfo.resetModifyStates();
         }
     }
 
@@ -249,7 +249,7 @@ namespace ManualTracingTool {
 
             this.selectionInfo.updateLineSelectionState();
 
-            this.selectionInfo.resetModifyStatus();
+            this.selectionInfo.resetModifyStates();
         }
     }
 
@@ -274,7 +274,7 @@ namespace ManualTracingTool {
 
             this.selectionInfo.updateLineSelectionState();
 
-            this.selectionInfo.resetModifyStatus();
+            this.selectionInfo.resetModifyStates();
         }
     }
 }

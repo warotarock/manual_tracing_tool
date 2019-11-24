@@ -486,7 +486,7 @@ namespace ManualTracingTool {
             }
         }
 
-        static resetModifyStatus(lines: List<VectorLine>) {
+        static resetModifyStates(lines: List<VectorLine>) {
 
             for (let line of lines) {
 
