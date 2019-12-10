@@ -3,6 +3,9 @@ var Platform;
     Platform.fs = (typeof (require) != 'undefined') ? require('fs') : {
         readFileSync(fileName) {
             return window.localStorage.getItem(fileName);
+        },
+        writeFile(fileName, text) {
+            window.localStorage.setItem(fileName, text);
         }
     };
     function supportsFileSystem() {

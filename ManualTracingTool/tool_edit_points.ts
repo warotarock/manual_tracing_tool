@@ -65,6 +65,8 @@ namespace ManualTracingTool {
                 selPoint.point.adjustingLineWidth = selPoint.point.lineWidth;
             }
 
+            // TODO: グループに変更フラグを設定する
+
             this.logic_Selector.endProcess();
 
             env.setRedrawMainWindowEditorWindow();

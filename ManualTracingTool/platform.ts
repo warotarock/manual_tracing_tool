@@ -7,6 +7,10 @@ namespace Platform {
 
         readFileSync(fileName): string {
             return window.localStorage.getItem(fileName);
+        },
+
+        writeFile(fileName, text) {
+            window.localStorage.setItem(fileName, text);
         }
     };
 
