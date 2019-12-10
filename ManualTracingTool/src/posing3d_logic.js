@@ -1,12 +1,12 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Posing3D_BodyLocateMode;
+    let Posing3D_BodyLocateMode;
     (function (Posing3D_BodyLocateMode) {
         Posing3D_BodyLocateMode[Posing3D_BodyLocateMode["keepFrontUp"] = 1] = "keepFrontUp";
         Posing3D_BodyLocateMode[Posing3D_BodyLocateMode["yawPitch"] = 2] = "yawPitch";
     })(Posing3D_BodyLocateMode = ManualTracingTool.Posing3D_BodyLocateMode || (ManualTracingTool.Posing3D_BodyLocateMode = {}));
-    var Posing3DLogic = /** @class */ (function () {
-        function Posing3DLogic() {
+    class Posing3DLogic {
+        constructor() {
             this.inputLocation = vec3.create();
             this.upVector = vec3.create();
             this.tmpMatrix = mat4.create();
@@ -31,7 +31,7 @@ var ManualTracingTool;
             this.tempResultLocation = vec3.create();
             this.tempInvMat = mat4.create();
         }
-        Posing3DLogic.prototype.processMouseInputLocation = function (result, location2D, targetData, posingData, posing3DView) {
+        processMouseInputLocation(result, location2D, targetData, posingData, posing3DView) {
             posing3DView.calculate3DLocationFrom2DLocation(this.tempTargetLocation, location2D, 2.0 // 2.0m
             , posingData.real3DViewHalfWidth);
             vec3.transformMat4(this.tempLocalLocation, this.tempTargetLocation, posing3DView.viewMatrix);
@@ -42,11 +42,11 @@ var ManualTracingTool;
             // r * r = x * x + y * y + z * z;
             // z * z = r * r - x * x - y * y;
             // z = sqrt(r * r - x * x - y * y);
-            var x = this.tempLocalLocation[0] - this.tempCenterLocation[0];
-            var y = this.tempLocalLocation[1] - this.tempCenterLocation[1];
-            var z = 0.0;
-            var r = targetData.hitTestSphereRadius;
-            var dist = r * r - x * x - y * y;
+            let x = this.tempLocalLocation[0] - this.tempCenterLocation[0];
+            let y = this.tempLocalLocation[1] - this.tempCenterLocation[1];
+            let z = 0.0;
+            let r = targetData.hitTestSphereRadius;
+            let dist = r * r - x * x - y * y;
             if (dist >= 0) {
                 z = Math.sqrt(dist);
             }
@@ -58,8 +58,8 @@ var ManualTracingTool;
             this.tempResultLocation[2] = this.tempCenterLocation[2] + z;
             vec3.transformMat4(result, this.tempResultLocation, posing3DView.cameraMatrix);
             return true;
-        };
-        Posing3DLogic.prototype.calculateBodyPartDirection = function (inputData, rootMatrix, mode, posingData, posing3DView) {
+        }
+        calculateBodyPartDirection(inputData, rootMatrix, mode, posingData, posing3DView) {
             if (!inputData.directionInputDone) {
                 mat4.copy(inputData.matrix, rootMatrix);
                 return;
@@ -112,12 +112,12 @@ var ManualTracingTool;
             else {
                 mat4.rotateZ(inputData.matrix, inputData.matrix, inputData.rollInputAngle);
             }
-        };
-        Posing3DLogic.prototype.translationOf = function (vec, mat) {
+        }
+        translationOf(vec, mat) {
             vec3.set(vec, mat[12], mat[13], mat[14]);
-        };
+        }
         // Caluculation methods for each part od body
-        Posing3DLogic.prototype.calculateAll = function (posingData, posingModel, posing3DView) {
+        calculateAll(posingData, posingModel, posing3DView) {
             mat4.identity(posingData.rootMatrix);
             if (posingData.headLocationInputData.inputDone) {
                 this.calculateHeadLocation(posingData, posingModel);
@@ -163,9 +163,9 @@ var ManualTracingTool;
             if (posingData.headTwistInputData.inputDone) {
                 this.calculateHeadTwist(posingData, posingModel, posing3DView);
             }
-        };
-        Posing3DLogic.prototype.calculateHeadLocation = function (posingData, posingModel) {
-            var headLocationInputData = posingData.headLocationInputData;
+        }
+        calculateHeadLocation(posingData, posingModel) {
+            let headLocationInputData = posingData.headLocationInputData;
             // Input matrix
             if (headLocationInputData.inputDone) {
                 mat4.identity(posingData.rootMatrix);
@@ -181,9 +181,9 @@ var ManualTracingTool;
             mat4.translate(posingData.neckSphereMatrix, posingData.headMatrix, posingModel.neckSphereLocation);
             // Sub locations
             this.calculateHeadSubLocations(posingData, posingModel);
-        };
-        Posing3DLogic.prototype.calculateHeadRotation = function (posingData, posingModel, posing3DView) {
-            var headRotationInputData = posingData.headRotationInputData;
+        }
+        calculateHeadRotation(posingData, posingModel, posing3DView) {
+            let headRotationInputData = posingData.headRotationInputData;
             // Input matrix
             if (headRotationInputData.inputDone) {
                 this.calculateBodyPartDirection(headRotationInputData, posingData.neckSphereMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
@@ -196,11 +196,11 @@ var ManualTracingTool;
             mat4.rotateX(posingData.headMatrix, posingData.headMatrix, Math.PI);
             // Sub locations
             this.calculateHeadSubLocations(posingData, posingModel);
-        };
-        Posing3DLogic.prototype.calculateHeadTwist = function (posingData, posingModel, posing3DView) {
-            var headTwistInputData = posingData.headTwistInputData;
-            var headLocationInputData = posingData.headLocationInputData;
-            var headRotationInputData = posingData.headRotationInputData;
+        }
+        calculateHeadTwist(posingData, posingModel, posing3DView) {
+            let headTwistInputData = posingData.headTwistInputData;
+            let headLocationInputData = posingData.headLocationInputData;
+            let headRotationInputData = posingData.headRotationInputData;
             // Main calculation
             if (headTwistInputData.inputDone) {
                 mat4.invert(this.invMatrix, posingData.neckSphereMatrix);
@@ -217,20 +217,20 @@ var ManualTracingTool;
             // Calclates sub locations
             //this.calculateHeadSubLocations(posingData, posingModel, headTwistInputData.matrix);
             mat4.copy(headLocationInputData.headMatrix, headTwistInputData.matrix);
-        };
-        Posing3DLogic.prototype.calculateHeadSubLocations = function (posingData, posingModel) {
+        }
+        calculateHeadSubLocations(posingData, posingModel) {
             mat4.translate(posingData.chestRootMatrix, posingData.headMatrix, posingModel.neckSphereLocation);
-        };
-        Posing3DLogic.prototype.calculateBodyLocation = function (posingData, posingModel, posing3DView) {
+        }
+        calculateBodyLocation(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.bodyLocationInputData, posingData.chestRootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Result location
             mat4.copy(posingData.chestMatrix, posingData.bodyLocationInputData.matrix);
             // Calclates sub locations
             this.calculateBodySubLocations(posingData, posingModel);
-        };
-        Posing3DLogic.prototype.calculateBodyRotation = function (posingData, posingModel, posing3DView) {
-            var bodyRotationInputData = posingData.bodyRotationInputData;
+        }
+        calculateBodyRotation(posingData, posingModel, posing3DView) {
+            let bodyRotationInputData = posingData.bodyRotationInputData;
             // Main calculation
             if (posingData.bodyRotationInputData.inputDone) {
                 vec3.copy(this.inputLocation, bodyRotationInputData.inputLocation);
@@ -249,16 +249,16 @@ var ManualTracingTool;
             }
             // Calclates sub locations
             this.calculateBodySubLocations(posingData, posingModel);
-        };
-        Posing3DLogic.prototype.calculateHipsLocation = function (posingData, posingModel, posing3DView) {
+        }
+        calculateHipsLocation(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.hipsLocationInputData, posingData.hipsRootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Result location
             mat4.copy(posingData.hipsMatrix, posingData.hipsLocationInputData.matrix);
             // Calclates sub locations
             this.calculateBodySubLocations(posingData, posingModel);
-        };
-        Posing3DLogic.prototype.calculateBodySubLocations = function (posingData, posingModel) {
+        }
+        calculateBodySubLocations(posingData, posingModel) {
             // Body rotation
             mat4.translate(posingData.bodyRotationCenterMatrix, posingData.bodyLocationInputData.matrix, posingModel.bodyRotationSphereLocation);
             // Shoulder
@@ -277,8 +277,8 @@ var ManualTracingTool;
             //    posingData.bodyLocationInputData.rightLeg1RootMatrix
             //    , posingData.bodyLocationInputData.rightLeg1RootMatrix
             //    , Math.PI / 2);
-        };
-        Posing3DLogic.prototype.calculateLeftShoulderDirection = function (posingData, posingModel, posing3DView) {
+        }
+        calculateLeftShoulderDirection(posingData, posingModel, posing3DView) {
             // Main calculation
             if (!posingData.leftShoulderLocationInputData.directionInputDone) {
                 mat4.translate(this.tmpMatrix, posingData.chestMatrix, posingModel.leftArm1Location);
@@ -289,8 +289,8 @@ var ManualTracingTool;
             // Result location
             vec3.set(this.tmpVec3, 0.0, 0.0, -vec3.length(posingModel.leftArm1Location));
             mat4.translate(posingData.leftArm1RootMatrix, posingData.leftShoulderLocationInputData.matrix, this.tmpVec3);
-        };
-        Posing3DLogic.prototype.calculateRightShoulderDirection = function (posingData, posingModel, posing3DView) {
+        }
+        calculateRightShoulderDirection(posingData, posingModel, posing3DView) {
             // Main calculation
             if (!posingData.rightShoulderLocationInputData.directionInputDone) {
                 mat4.translate(this.tmpMatrix, posingData.chestMatrix, posingModel.rightArm1Location);
@@ -301,26 +301,26 @@ var ManualTracingTool;
             // Result location
             vec3.set(this.tmpVec3, 0.0, 0.0, -vec3.length(posingModel.rightArm1Location));
             mat4.translate(posingData.rightArm1RootMatrix, posingData.rightShoulderLocationInputData.matrix, this.tmpVec3);
-        };
-        Posing3DLogic.prototype.calculateLeftArm1Direction = function (posingData, posingModel, posing3DView) {
+        }
+        calculateLeftArm1Direction(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.leftArm1LocationInputData, posingData.leftArm1RootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Calclates sub locations
             this.calculateArmLegSubLocations(posingData.leftArm1LocationInputData, posingModel.leftArm1HeadLocation);
-        };
-        Posing3DLogic.prototype.calculateRightArm1Direction = function (posingData, posingModel, posing3DView) {
+        }
+        calculateRightArm1Direction(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.rightArm1LocationInputData, posingData.rightArm1RootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Calclates sub locations
             this.calculateArmLegSubLocations(posingData.rightArm1LocationInputData, posingModel.rightArm1HeadLocation);
-        };
-        Posing3DLogic.prototype.calculateLeftLeg1Direction = function (posingData, posingModel, posing3DView) {
+        }
+        calculateLeftLeg1Direction(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.leftLeg1LocationInputData, posingData.leftLeg1RootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Calclates sub locations
             this.calculateArmLegSubLocations(posingData.leftLeg1LocationInputData, posingModel.leftLeg1HeadLocation);
             if (!posingData.leftLeg2LocationInputData.inputDone) {
-                var frontDirectionValue = posingData.leftLeg1LocationInputData.matrix[5];
+                let frontDirectionValue = posingData.leftLeg1LocationInputData.matrix[5];
                 if (frontDirectionValue > 0.0) {
                     posingData.leftLeg2LocationInputData.inputSideID = ManualTracingTool.InputSideID.back;
                 }
@@ -328,14 +328,14 @@ var ManualTracingTool;
                     posingData.leftLeg2LocationInputData.inputSideID = ManualTracingTool.InputSideID.front;
                 }
             }
-        };
-        Posing3DLogic.prototype.calculateRightLeg1Direction = function (posingData, posingModel, posing3DView) {
+        }
+        calculateRightLeg1Direction(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.rightLeg1LocationInputData, posingData.rightLeg1RootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Calclates sub locations
             this.calculateArmLegSubLocations(posingData.rightLeg1LocationInputData, posingModel.rightLeg1HeadLocation);
             if (!posingData.rightLeg2LocationInputData.inputDone) {
-                var frontDirectionValue = posingData.rightLeg1LocationInputData.matrix[5];
+                let frontDirectionValue = posingData.rightLeg1LocationInputData.matrix[5];
                 if (frontDirectionValue > 0.0) {
                     posingData.rightLeg2LocationInputData.inputSideID = ManualTracingTool.InputSideID.back;
                 }
@@ -343,35 +343,34 @@ var ManualTracingTool;
                     posingData.rightLeg2LocationInputData.inputSideID = ManualTracingTool.InputSideID.front;
                 }
             }
-        };
-        Posing3DLogic.prototype.calculateLeftArm2Direction = function (posingData, posingModel, posing3DView) {
+        }
+        calculateLeftArm2Direction(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.leftArm2LocationInputData, posingData.leftArm1LocationInputData.childJointRootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Calclates sub locations
             this.calculateArmLegSubLocations(posingData.leftArm2LocationInputData, posingModel.leftArm2HeadLocation);
-        };
-        Posing3DLogic.prototype.calculateRightArm2Direction = function (posingData, posingModel, posing3DView) {
+        }
+        calculateRightArm2Direction(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.rightArm2LocationInputData, posingData.rightArm1LocationInputData.childJointRootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Calclates sub locations
             this.calculateArmLegSubLocations(posingData.rightArm2LocationInputData, posingModel.rightArm2HeadLocation);
-        };
-        Posing3DLogic.prototype.calculateLeftLeg2Direction = function (posingData, posingModel, posing3DView) {
+        }
+        calculateLeftLeg2Direction(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.leftLeg2LocationInputData, posingData.leftLeg1LocationInputData.childJointRootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Calclates sub locations
             this.calculateArmLegSubLocations(posingData.leftLeg2LocationInputData, posingModel.leftLeg2HeadLocation);
-        };
-        Posing3DLogic.prototype.calculateRightLeg2Direction = function (posingData, posingModel, posing3DView) {
+        }
+        calculateRightLeg2Direction(posingData, posingModel, posing3DView) {
             // Main calculation
             this.calculateBodyPartDirection(posingData.rightLeg2LocationInputData, posingData.rightLeg1LocationInputData.childJointRootMatrix, Posing3D_BodyLocateMode.keepFrontUp, posingData, posing3DView);
             // Calclates sub locations
             this.calculateArmLegSubLocations(posingData.rightLeg2LocationInputData, posingModel.rightLeg2HeadLocation);
-        };
-        Posing3DLogic.prototype.calculateArmLegSubLocations = function (parent, childLocation) {
+        }
+        calculateArmLegSubLocations(parent, childLocation) {
             mat4.translate(parent.childJointRootMatrix, parent.matrix, childLocation);
-        };
-        return Posing3DLogic;
-    }());
+        }
+    }
     ManualTracingTool.Posing3DLogic = Posing3DLogic;
 })(ManualTracingTool || (ManualTracingTool = {}));

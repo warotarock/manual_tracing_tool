@@ -1,25 +1,24 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var CommandBase = /** @class */ (function () {
-        function CommandBase() {
+    class CommandBase {
+        constructor() {
             this.isContinued = false;
         }
-        CommandBase.prototype.execute = function (env) {
-        };
-        CommandBase.prototype.undo = function (env) {
-        };
-        CommandBase.prototype.redo = function (env) {
-        };
-        return CommandBase;
-    }());
+        execute(env) {
+        }
+        undo(env) {
+        }
+        redo(env) {
+        }
+    }
     ManualTracingTool.CommandBase = CommandBase;
-    var CommandHistory = /** @class */ (function () {
-        function CommandHistory() {
+    class CommandHistory {
+        constructor() {
             this.maxHistory = 300;
             this.historyList = new List();
             this.redoList = new List();
         }
-        CommandHistory.prototype.addCommand = function (command) {
+        addCommand(command) {
             this.historyList.push(command);
             if (this.historyList.length > this.maxHistory) {
                 ListRemoveAt(this.historyList, 0);
@@ -27,21 +26,21 @@ var ManualTracingTool;
             if (this.redoList.length > 0) {
                 this.redoList = new List();
             }
-        };
-        CommandHistory.prototype.getUndoCommand = function () {
+        }
+        getUndoCommand() {
             if (this.historyList.length == 0) {
                 return null;
             }
             return this.historyList[this.historyList.length - 1];
-        };
-        CommandHistory.prototype.getRedoCommand = function () {
+        }
+        getRedoCommand() {
             if (this.redoList.length == 0) {
                 return null;
             }
             return this.redoList[this.redoList.length - 1];
-        };
-        CommandHistory.prototype.undo = function (env) {
-            var command = null;
+        }
+        undo(env) {
+            let command = null;
             do {
                 command = this.getUndoCommand();
                 if (command == null) {
@@ -51,9 +50,9 @@ var ManualTracingTool;
                 this.redoList.push(command);
                 ListRemoveAt(this.historyList, this.historyList.length - 1);
             } while (command.isContinued);
-        };
-        CommandHistory.prototype.redo = function (env) {
-            var command = null;
+        }
+        redo(env) {
+            let command = null;
             do {
                 command = this.getRedoCommand();
                 if (command == null) {
@@ -64,8 +63,7 @@ var ManualTracingTool;
                 this.historyList.push(command);
                 command = this.getRedoCommand();
             } while (command != null && command.isContinued);
-        };
-        return CommandHistory;
-    }());
+        }
+    }
     ManualTracingTool.CommandHistory = CommandHistory;
 })(ManualTracingTool || (ManualTracingTool = {}));

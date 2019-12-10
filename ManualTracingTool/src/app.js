@@ -3,39 +3,52 @@ var ManualTracingTool;
     // これからやろうと思っていること (current tasks)
     // ・ファイル管理
     // 　・デフォルトの線の太さ設定の保存
-    // 　・デフォルトのズーム倍率の設定の保存
     // 　・デフォルトのエクスポート倍率設定の保存
     // 　・デフォルトの設定のプリセットを選択できるようにする
     // 　・指定フォルダ以下のファイルの列挙表示、読み込み
     // 　・ファイルを指定してのドキュメント読み込み
     // 　・ファイルを指定してのドキュメント保存
     // 　・ドキュメントフレームの表示設定
-    // 　・線の基本幅の倍率
     // ・ポージングツールの整備
     // 　・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
     // 　・親の向きに合わせて子も回転してしまう（していい部位もある）のでどうにかする
     // 　・モデルを切り替えられるようにする
-    // ・パレット１、２ボタンをレイヤーウィンドウに置く
     // ・Web向け仕様
     // 　・Webで保存をダウンロード、読み込みをブロブにする
     // ・編集ツールの整備
     // 　・選択ツールのアイコンの作成
     // 　・ポージングツールのアイコンの作成
     // ・ミラー表示にＵＩがきちんとついてくるようにする
-    // どこかでやる必要があること (nearest future tasks)
-    // ・点が一つしかない（あるいは同じ座標にある？）線が残ることがあるのを直したい
     // ・線スクラッチの線修正ツールを実用的な使いやすさにする
     // 　・影響範囲が感覚と合わないのでどうにかしたい
+    // ・バッファリングによる編集中の描画の高速化とレイヤー合成モードの実装
+    // 　・isVisibleの階層を考慮した反映
+    // 　・合成モード
+    // 　・描画計画の作成…バッファの持ち方…枝分かれしているところは全てバッファが必要
+    // 　　　…枝分かれしているところは全てバッファが必要
+    // 　　　…並列でも合成モードが変化しているところはバッファが必要
+    // 　　　…非表示だとしてもバッファは作っておく…あるいはもう全てのレイヤーごとにバッファを用意しておくか
+    // 　　　…そうすれば常に合成モードが実現可能…ひとまずそれでいいか
+    // 　　　…バッファのサイズが問題？…画面のサイズと同じでよく、ビューの変更時に全再描画する
+    // 　　　…あくまで作業の高速化であるならば、編集中のレイヤーの上下だけレイヤーであればよい
+    // ・グループレイヤーを選択したとき一定時間選択レイヤーだけを表示するときグループレイヤー以下のレイヤー全てを表示対象とする（今はグループレイヤーしか表示されない）
+    // ・グループレイヤーを選択したときそれ以下のレイヤーをまとめて編集できるようにする…ベクターレイヤーだけならできるだろうけど他の種類のレイヤーも一緒に編集するのは無理？
+    // どこかでやる必要があること (nearest future tasks)
     // ・モバイル対応
     // 　・タッチ操作をきちんとする
     // 　・画面サイズによってはダイアログがまともに表示されない問題の対応
     // ・collectEditTargetViewKeyframeLayersは何度も実行する必要はないのだが、選択状態が変わったりするたびに更新する必要があり辛いので現状リストを生成しているのでなんとかしたい
     // 既知のバグ (remaining bugs)
+    // ・グループレイヤー
+    // 　・グループレイヤー下のレイヤーがレイヤーウィンドウで一番下にあるとき下移動でグループを抜け出せない
+    // 　・グループレイヤー外のレイヤーを上移動でグループに入れるとき、グループの一番最後に挿入されるのでなく最初に挿入される
     // ・編集単位が辺のときでも線全体が選択色で表示される
     // ・レイヤーウィンドウでレイヤー移動時にグループの中に入れなくなっている
     // ・点の移動ツールなどで右クリックでキャンセルしたときに点の位置がモーダル中の位置で表示されつづけていた
     // ・線の連続塗りつぶしで後ろの線が削除されたときにフラグを解除していない
     // ・ドローツールで線の最後の点が重複しているときがある？（リサンプリングで最後と同じ位置に点が追加されている？）
+    // ・セグメント単位の選択ツールで選択されているセグメント単位に色が変わらず線単位で色が変わっている
+    // ・座標計算でzが0.0でなくなる場合があるらしい。どこでそうなっているのか未調査手掛かりなし。
     // いつかやるかも (anytime tasks)
     // ・アクティブ線、レイヤによる絞り込み処理と可視化
     // ・ミラー（上下反転）表示
@@ -63,11 +76,16 @@ var ManualTracingTool;
     // 　・直線上の点は削減する
     // 　・曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
     // 終わったもの (done)
+    // ・パレット１、２ボタンをレイヤーウィンドウに置く
+    // ・ファイル管理
+    // 　・デフォルトのズーム倍率の設定の保存
+    // 　・線の基本幅の倍率
     // ・ミラー（左右反転）表示
     // 　・キーフレームの編集がレイヤーごとにきちんと適用されているか確認
     // ・不具合
     // 　・ポージングツール以外のツールでパンしたとき３Ⅾが更新されない
     // 　・非表示時に入力スフィアをも非表示にする（不具合）
+    // 　・点が一つしかない（あるいは同じ座標にある？）線が残ることがあるのを直したい
     // ・PNG出力、jpeg出力
     // 　・出力倍率を指定できるようにする、ドキュメントに記録する
     // 　・出力ファイル名を指定するダイアログを実装する。ついでに出力範囲の値指定も同じダイアログでできるようにする
@@ -145,8 +163,9 @@ var ManualTracingTool;
     // ・リサンプリングツールで線の太さがビューのスケールに応じて変わってしまっている？→スムージング処理中の不具合だった
     // ・線スクラッチの点削減ツールの実現
     var _Main;
-    window.onload = function () {
-        _Main = new ManualTracingTool.Main_Event();
+    window.onload = () => {
+        Platform.settings.load();
+        _Main = new ManualTracingTool.App_Main();
         _Main.mainWindow.canvas = document.getElementById(_Main.ID.mainCanvas);
         _Main.editorWindow.canvas = document.getElementById(_Main.ID.editorCanvas);
         _Main.webglWindow.canvas = document.getElementById(_Main.ID.webglCanvas);
@@ -155,53 +174,62 @@ var ManualTracingTool;
         _Main.timeLineWindow.canvas = document.getElementById(_Main.ID.timeLineCanvas);
         _Main.palletSelectorWindow.canvas = document.getElementById(_Main.ID.palletSelectorCanvas);
         _Main.colorMixerWindow_colorCanvas.canvas = document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
-        _Main.pickingWindow.canvas = document.createElement('canvas');
-        _Main.renderingWindow.canvas = document.createElement('canvas');
+        _Main.drawGPUWindow.createCanvas();
+        ;
+        _Main.foreLayerRenderWindow.createCanvas();
+        _Main.backLayerRenderWindow.createCanvas();
+        //_Main.pickingWindow.createCanvas();
+        _Main.exportRenderWindow.createCanvas();
         _Main.palletColorModal_colorCanvas.canvas = document.getElementById(_Main.ID.palletColorModal_colorCanvas);
         var layerColorModal_colors = document.getElementById(_Main.ID.palletColorModal_colors);
-        for (var palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
-            var colorItemDiv = document.createElement('div');
+        for (let palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
+            let colorItemDiv = document.createElement('div');
             colorItemDiv.classList.add(_Main.ID.palletColorModal_colorItemStyle);
             layerColorModal_colors.appendChild(colorItemDiv);
-            var radioInput = document.createElement('input');
+            let radioInput = document.createElement('input');
             radioInput.type = 'radio';
             radioInput.id = _Main.ID.palletColorModal_colorIndex + palletColorIndex;
             radioInput.name = _Main.ID.palletColorModal_colorIndex;
             radioInput.value = palletColorIndex.toString();
             colorItemDiv.appendChild(radioInput);
-            var colorInput = document.createElement('input');
+            let colorInput = document.createElement('input');
             colorInput.type = 'color';
             colorInput.id = _Main.ID.palletColorModal_colorValue + palletColorIndex;
             colorInput.classList.add(_Main.ID.palletColorModal_colorItemStyle);
             colorItemDiv.appendChild(colorInput);
         }
-        _Main.onLoad();
+        _Main.onInitializeSystemDevices();
         setTimeout(run, 1000 / 30);
     };
     function run() {
-        if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.pause) {
+        try {
+            if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.pause) {
+                setTimeout(run, 1000);
+                return;
+            }
+            else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.running) {
+                _Main.run();
+                _Main.draw();
+            }
+            else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.systemResourceLoading) {
+                _Main.processLoadingSystemResources();
+            }
+            else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.documentJSONLoading) {
+                _Main.processLoadingDocumentJSON();
+            }
+            else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.documentResourceLoading) {
+                _Main.processLoadingDocumentResources();
+            }
+            if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
+                setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
+            }
+            else {
+                window.requestAnimationFrame(run);
+            }
+        }
+        catch (e) {
+            console.log(e);
             setTimeout(run, 1000);
-            return;
-        }
-        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.running) {
-            _Main.run();
-            _Main.draw();
-        }
-        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.systemResourceLoading) {
-            _Main.processLoadingSystemResources();
-        }
-        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.initialDocumentJSONLoading) {
-            _Main.processLoadingDocumentJSON();
-        }
-        else if (_Main.mainProcessState == ManualTracingTool.MainProcessStateID.documentResourceLoading
-            || _Main.mainProcessState == ManualTracingTool.MainProcessStateID.initialDocumentResourceLoading) {
-            _Main.processLoadingDocumentResources();
-        }
-        if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
-            setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
-        }
-        else {
-            setTimeout(run, 1000 / 60);
         }
     }
 })(ManualTracingTool || (ManualTracingTool = {}));

@@ -1,54 +1,42 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var SelectionEditMode;
+    let SelectionEditMode;
     (function (SelectionEditMode) {
         SelectionEditMode[SelectionEditMode["setSelected"] = 1] = "setSelected";
         SelectionEditMode[SelectionEditMode["setUnselected"] = 2] = "setUnselected";
         SelectionEditMode[SelectionEditMode["toggle"] = 3] = "toggle";
     })(SelectionEditMode = ManualTracingTool.SelectionEditMode || (ManualTracingTool.SelectionEditMode = {}));
-    var LineSelectionInfo = /** @class */ (function () {
-        function LineSelectionInfo() {
+    class LineSelectionInfo {
+        constructor() {
             this.line = null;
             this.selectStateAfter = false;
             this.selectStateBefore = false;
         }
-        return LineSelectionInfo;
-    }());
+    }
     ManualTracingTool.LineSelectionInfo = LineSelectionInfo;
-    var PointSelectionInfo = /** @class */ (function () {
-        function PointSelectionInfo() {
+    class PointSelectionInfo {
+        constructor() {
             this.point = null;
             this.selectStateAfter = false;
             this.selectStateBefore = false;
         }
-        return PointSelectionInfo;
-    }());
+    }
     ManualTracingTool.PointSelectionInfo = PointSelectionInfo;
-    var VectorLayerEditorSelectionInfo = /** @class */ (function () {
-        function VectorLayerEditorSelectionInfo() {
+    class VectorLayerEditorSelectionInfo {
+        constructor() {
             this.selectedLines = null;
             this.selectedPoints = null;
             this.clear();
         }
-        VectorLayerEditorSelectionInfo.prototype.clear = function () {
+        clear() {
             this.selectedLines = new List();
             this.selectedPoints = new List();
-        };
-        VectorLayerEditorSelectionInfo.prototype.selectPoint = function (line, point, editMode) {
+        }
+        selectPoint(line, point, editMode) {
             if (editMode == SelectionEditMode.setSelected
                 || editMode == SelectionEditMode.toggle) {
                 if (!point.isSelected && point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
-                    var selPoint = new PointSelectionInfo();
+                    let selPoint = new PointSelectionInfo();
                     selPoint.point = point;
                     selPoint.selectStateAfter = true;
                     selPoint.selectStateBefore = point.isSelected;
@@ -61,7 +49,7 @@ var ManualTracingTool;
             if (editMode == SelectionEditMode.setUnselected
                 || editMode == SelectionEditMode.toggle) {
                 if (point.isSelected && point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
-                    var selPoint = new PointSelectionInfo();
+                    let selPoint = new PointSelectionInfo();
                     selPoint.point = point;
                     selPoint.selectStateAfter = false;
                     selPoint.selectStateBefore = point.isSelected;
@@ -71,18 +59,17 @@ var ManualTracingTool;
                     this.selectLine(line, editMode);
                 }
             }
-        };
-        VectorLayerEditorSelectionInfo.prototype.selectLinePoints = function (line, editMode) {
-            for (var _i = 0, _a = line.points; _i < _a.length; _i++) {
-                var point = _a[_i];
+        }
+        selectLinePoints(line, editMode) {
+            for (let point of line.points) {
                 this.selectPoint(line, point, editMode);
             }
-        };
-        VectorLayerEditorSelectionInfo.prototype.selectLine = function (line, editMode) {
+        }
+        selectLine(line, editMode) {
             if (line.modifyFlag != ManualTracingTool.VectorLineModifyFlagID.none) {
                 return;
             }
-            var selLine = new LineSelectionInfo();
+            let selLine = new LineSelectionInfo();
             selLine.line = line;
             selLine.selectStateBefore = line.isSelected;
             if (editMode == SelectionEditMode.setSelected) {
@@ -106,38 +93,34 @@ var ManualTracingTool;
                 }
             }
             this.selectedLines.push(selLine);
-        };
-        VectorLayerEditorSelectionInfo.prototype.selectLinePointsForLines = function (editMode) {
-            for (var _i = 0, _a = this.selectedLines; _i < _a.length; _i++) {
-                var selLineInfo = _a[_i];
-                for (var _b = 0, _c = selLineInfo.line.points; _b < _c.length; _b++) {
-                    var point = _c[_b];
+        }
+        selectLinePointsForLines(editMode) {
+            for (let selLineInfo of this.selectedLines) {
+                for (let point of selLineInfo.line.points) {
                     this.selectPoint(selLineInfo.line, point, editMode);
                 }
             }
-        };
-        VectorLayerEditorSelectionInfo.prototype.editPoint = function (point) {
+        }
+        editPoint(point) {
             if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
-                var selPoint = new PointSelectionInfo();
+                let selPoint = new PointSelectionInfo();
                 selPoint.point = point;
                 this.selectedPoints.push(selPoint);
                 point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.edit;
             }
-        };
-        VectorLayerEditorSelectionInfo.prototype.deletePoint = function (point) {
+        }
+        deletePoint(point) {
             if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
-                var selPoint = new PointSelectionInfo();
+                let selPoint = new PointSelectionInfo();
                 selPoint.point = point;
                 this.selectedPoints.push(selPoint);
                 point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.delete;
             }
-        };
-        VectorLayerEditorSelectionInfo.prototype.updateLineSelectionState = function () {
-            for (var _i = 0, _a = this.selectedLines; _i < _a.length; _i++) {
-                var selLineInfo = _a[_i];
-                var existsSelectedPoint = false;
-                for (var _b = 0, _c = selLineInfo.line.points; _b < _c.length; _b++) {
-                    var point = _c[_b];
+        }
+        updateLineSelectionState() {
+            for (let selLineInfo of this.selectedLines) {
+                let existsSelectedPoint = false;
+                for (let point of selLineInfo.line.points) {
                     if (point.isSelected) {
                         existsSelectedPoint = true;
                         break;
@@ -146,84 +129,72 @@ var ManualTracingTool;
                 selLineInfo.selectStateAfter = existsSelectedPoint;
                 selLineInfo.line.isSelected = existsSelectedPoint;
             }
-        };
-        VectorLayerEditorSelectionInfo.prototype.resetModifyStatus = function () {
-            for (var _i = 0, _a = this.selectedPoints; _i < _a.length; _i++) {
-                var selPoint = _a[_i];
+        }
+        resetModifyStates() {
+            for (let selPoint of this.selectedPoints) {
                 selPoint.point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.none;
             }
-            for (var _b = 0, _c = this.selectedLines; _b < _c.length; _b++) {
-                var selLine = _c[_b];
+            for (let selLine of this.selectedLines) {
                 selLine.line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
             }
-        };
-        return VectorLayerEditorSelectionInfo;
-    }());
+        }
+    }
     ManualTracingTool.VectorLayerEditorSelectionInfo = VectorLayerEditorSelectionInfo;
-    var Selector_LinePoint_BrushSelect = /** @class */ (function (_super) {
-        __extends(Selector_LinePoint_BrushSelect, _super);
-        function Selector_LinePoint_BrushSelect() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.editMode = SelectionEditMode.setSelected; // @override
-            _this.selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
-            return _this;
+    class Selector_LinePoint_BrushSelect extends ManualTracingTool.HitTest_LinePoint_PointToPointByDistance {
+        constructor() {
+            super(...arguments);
+            this.editMode = SelectionEditMode.setSelected; // @override
+            this.selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
         }
-        Selector_LinePoint_BrushSelect.prototype.beforeHitTest = function () {
+        beforeHitTest() {
             this.selectionInfo.clear();
-        };
-        Selector_LinePoint_BrushSelect.prototype.onPointHited = function (group, line, point) {
+        }
+        onPointHited(group, line, point) {
             this.selectionInfo.selectPoint(line, point, this.editMode);
-        };
-        Selector_LinePoint_BrushSelect.prototype.afterHitTest = function () {
-            this.selectionInfo.updateLineSelectionState();
-            this.selectionInfo.resetModifyStatus();
-        };
-        return Selector_LinePoint_BrushSelect;
-    }(ManualTracingTool.HitTest_LinePoint_PointToPointByDistance));
-    ManualTracingTool.Selector_LinePoint_BrushSelect = Selector_LinePoint_BrushSelect;
-    var Selector_Line_BrushSelect = /** @class */ (function (_super) {
-        __extends(Selector_Line_BrushSelect, _super);
-        function Selector_Line_BrushSelect() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.editMode = SelectionEditMode.setSelected; // @override
-            _this.selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
-            return _this;
         }
-        Selector_Line_BrushSelect.prototype.beforeHitTest = function () {
+        afterHitTest() {
+            this.selectionInfo.updateLineSelectionState();
+            this.selectionInfo.resetModifyStates();
+        }
+    }
+    ManualTracingTool.Selector_LinePoint_BrushSelect = Selector_LinePoint_BrushSelect;
+    class Selector_Line_BrushSelect extends ManualTracingTool.HitTest_Line_PointToLineByDistance {
+        constructor() {
+            super(...arguments);
+            this.editMode = SelectionEditMode.setSelected; // @override
+            this.selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
+        }
+        beforeHitTest() {
             this.selectionInfo.clear();
-        };
-        Selector_Line_BrushSelect.prototype.onLineSegmentHited = function (line, point1, point2, location, minDistance, distanceSQ) {
+        }
+        onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ) {
             this.selectionInfo.selectLine(line, this.editMode);
             this.existsPointHitTest = true;
-        };
-        Selector_Line_BrushSelect.prototype.afterHitTest = function () {
+        }
+        afterHitTest() {
             this.selectionInfo.selectLinePointsForLines(this.editMode);
             this.selectionInfo.updateLineSelectionState();
-            this.selectionInfo.resetModifyStatus();
-        };
-        return Selector_Line_BrushSelect;
-    }(ManualTracingTool.HitTest_Line_PointToLineByDistance));
-    ManualTracingTool.Selector_Line_BrushSelect = Selector_Line_BrushSelect;
-    var Selector_LineSegment_BrushSelect = /** @class */ (function (_super) {
-        __extends(Selector_LineSegment_BrushSelect, _super);
-        function Selector_LineSegment_BrushSelect() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.editMode = SelectionEditMode.setSelected; // @override
-            _this.selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
-            return _this;
+            this.selectionInfo.resetModifyStates();
         }
-        Selector_LineSegment_BrushSelect.prototype.beforeHitTest = function () {
+    }
+    ManualTracingTool.Selector_Line_BrushSelect = Selector_Line_BrushSelect;
+    class Selector_LineSegment_BrushSelect extends ManualTracingTool.HitTest_Line_PointToLineByDistance {
+        constructor() {
+            super(...arguments);
+            this.editMode = SelectionEditMode.setSelected; // @override
+            this.selectionInfo = new VectorLayerEditorSelectionInfo(); // @override
+        }
+        beforeHitTest() {
             this.selectionInfo.clear();
-        };
-        Selector_LineSegment_BrushSelect.prototype.onLineSegmentHited = function (line, point1, point2, location, minDistance, distanceSQ) {
+        }
+        onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ) {
             this.selectionInfo.selectPoint(line, point1, this.editMode);
             this.selectionInfo.selectPoint(line, point2, this.editMode);
-        };
-        Selector_LineSegment_BrushSelect.prototype.afterHitTest = function () {
+        }
+        afterHitTest() {
             this.selectionInfo.updateLineSelectionState();
-            this.selectionInfo.resetModifyStatus();
-        };
-        return Selector_LineSegment_BrushSelect;
-    }(ManualTracingTool.HitTest_Line_PointToLineByDistance));
+            this.selectionInfo.resetModifyStates();
+        }
+    }
     ManualTracingTool.Selector_LineSegment_BrushSelect = Selector_LineSegment_BrushSelect;
 })(ManualTracingTool || (ManualTracingTool = {}));

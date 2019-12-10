@@ -1,27 +1,16 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Tool_ScratchLineWidth_EditPoint = /** @class */ (function () {
-        function Tool_ScratchLineWidth_EditPoint() {
+    class Tool_ScratchLineWidth_EditPoint {
+        constructor() {
             this.pair = null;
             this.newLineWidth = 0.0;
             this.oldLineWidth = 0.0;
             this.newLocation = vec3.create();
             this.oldLocation = vec3.create();
         }
-        return Tool_ScratchLineWidth_EditPoint;
-    }());
-    var SubjoinProcessingState = /** @class */ (function () {
-        function SubjoinProcessingState() {
+    }
+    class SubjoinProcessingState {
+        constructor() {
             this.isAvailable = true;
             this.nearestLine = null;
             this.nearestLine_SegmentIndex = ManualTracingTool.HitTest_Line.InvalidIndex;
@@ -32,49 +21,45 @@ var ManualTracingTool;
             this.newLine = null;
             this.deleteLines = new List();
         }
-        return SubjoinProcessingState;
-    }());
-    var LineOverlappingInfo = /** @class */ (function () {
-        function LineOverlappingInfo() {
+    }
+    class LineOverlappingInfo {
+        constructor() {
             this.isAvailable = true;
             this.overlap_FirstIndex = -1;
             this.overlap_LastIndex = -1;
         }
-        return LineOverlappingInfo;
-    }());
-    var Tool_ScratchLineDraw = /** @class */ (function (_super) {
-        __extends(Tool_ScratchLineDraw, _super);
-        function Tool_ScratchLineDraw() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.helpText = '線を描きます。既存の線の端点近くに線を描いた場合、線を結合します。';
-            _this.editLineVec = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.targetLineVec = vec3.fromValues(0.0, 0.0, 0.0);
-            return _this;
+    }
+    class Tool_ScratchLineDraw extends ManualTracingTool.Tool_ScratchLine {
+        constructor() {
+            super(...arguments);
+            this.helpText = '既存の線の端点近くに線を描いて線を結合します。';
+            this.editLineVec = vec3.fromValues(0.0, 0.0, 0.0);
+            this.targetLineVec = vec3.fromValues(0.0, 0.0, 0.0);
         }
-        Tool_ScratchLineDraw.prototype.getMinDistanceRange = function (env) {
+        getMinDistanceRange(env) {
             return env.getViewScaledLength(env.drawLineBaseWidth * 8.0);
-        };
-        Tool_ScratchLineDraw.prototype.onDrawEditor = function (env, drawEnv) {
-            var minDistanceRange = this.getMinDistanceRange(env);
+        }
+        onDrawEditor(env, drawEnv) {
+            let minDistanceRange = this.getMinDistanceRange(env);
             drawEnv.editorDrawer.drawMouseCursorCircle(minDistanceRange);
             if (this.editLine != null) {
                 drawEnv.editorDrawer.drawEditorEditLineStroke(this.editLine);
             }
-        };
-        Tool_ScratchLineDraw.prototype.mouseMove = function (e, env) {
+        }
+        mouseMove(e, env) {
             env.setRedrawEditorWindow();
             if (this.editLine == null) {
                 return;
             }
             if (this.isLeftButtonEdit && e.isLeftButtonPressing()) {
-                var point = new ManualTracingTool.LinePoint();
+                let point = new ManualTracingTool.LinePoint();
                 vec3.copy(point.location, e.location);
                 vec3.copy(point.adjustingLocation, e.location);
                 point.lineWidth = env.drawLineBaseWidth;
                 this.editLine.points.push(point);
             }
-        };
-        Tool_ScratchLineDraw.prototype.mouseUp = function (e, env) {
+        }
+        mouseUp(e, env) {
             if (this.isLeftButtonEdit) {
                 this.isLeftButtonEdit = false;
                 if (this.editLine == null
@@ -82,41 +67,41 @@ var ManualTracingTool;
                     return;
                 }
                 ManualTracingTool.Logic_Edit_Line.calculateParameters(this.editLine);
+                this.editLine = this.generateCutoutedResampledLine(this.editLine, env);
                 this.executeCommand(env);
-                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawCurrentLayer();
+                env.setRedrawEditorWindow();
                 return;
             }
-        };
-        Tool_ScratchLineDraw.prototype.keydown = function (e, env) {
+        }
+        keydown(e, env) {
             return false;
-        };
-        Tool_ScratchLineDraw.prototype.executeAddDrawLine = function (newLine, env) {
+        }
+        executeAddDrawLine(newLine, env) {
             ManualTracingTool.Logic_Edit_Line.smooth(newLine);
-            var resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
-            var divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(newLine.totalLength, resamplingUnitLength);
-            var resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(newLine, divisionCount);
-            var command = new ManualTracingTool.Command_AddLine();
+            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
+            let divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(newLine.totalLength, resamplingUnitLength);
+            let resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(newLine, divisionCount);
+            let command = new ManualTracingTool.Command_AddLine();
             command.group = env.currentVectorGroup;
             command.line = resampledLine;
             command.execute(env);
             env.commandHistory.addCommand(command);
             return resampledLine;
-        };
-        Tool_ScratchLineDraw.prototype.getNearestLine = function (state, targetPoint, geometry, minDistanceRange) {
-            var nearestLine = null;
-            var nearestLine_SegmentIndex = ManualTracingTool.HitTest_Line.InvalidIndex;
-            var minDistance = ManualTracingTool.HitTest_Line.MaxDistance;
-            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
-                var group = _a[_i];
-                for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
-                    var line = _c[_b];
+        }
+        getNearestLine(state, targetPoint, geometry, minDistanceRange) {
+            let nearestLine = null;
+            let nearestLine_SegmentIndex = ManualTracingTool.HitTest_Line.InvalidIndex;
+            let minDistance = ManualTracingTool.HitTest_Line.MaxDistance;
+            for (let group of geometry.groups) {
+                for (let line of group.lines) {
                     if (line.modifyFlag != ManualTracingTool.VectorLineModifyFlagID.none) {
                         continue;
                     }
                     if (ManualTracingTool.HitTest_Line.hitTestLocationToLineByRectangle(targetPoint.location, line, minDistanceRange)) {
-                        var nearestSegmentIndex = ManualTracingTool.HitTest_Line.getNearestSegmentIndex(line, targetPoint.location);
+                        let nearestSegmentIndex = ManualTracingTool.HitTest_Line.getNearestSegmentIndex(line, targetPoint.location);
                         if (nearestSegmentIndex != ManualTracingTool.HitTest_Line.InvalidIndex) {
-                            var distance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(line.points[nearestSegmentIndex].location, line.points[nearestSegmentIndex + 1].location, targetPoint.location);
+                            let distance = ManualTracingTool.Logic_Points.pointToLineSegment_SorroundingDistance(line.points[nearestSegmentIndex].location, line.points[nearestSegmentIndex + 1].location, targetPoint.location);
                             if (distance < minDistanceRange) {
                                 if (distance < minDistance) {
                                     minDistance = distance;
@@ -135,45 +120,45 @@ var ManualTracingTool;
             state.isAvailable = true;
             state.nearestLine = nearestLine;
             state.nearestLine_SegmentIndex = nearestLine_SegmentIndex;
-        };
-        Tool_ScratchLineDraw.prototype.getSearchDirectionForTargetLine = function (state, editLinePoint1, editLinePoint2) {
-            var nearestLine = state.nearestLine;
+        }
+        getSearchDirectionForTargetLine(state, editLinePoint1, editLinePoint2) {
+            let nearestLine = state.nearestLine;
             // Ditermine search-index direction
-            var point1 = nearestLine.points[state.nearestLine_SegmentIndex];
-            var point2 = nearestLine.points[state.nearestLine_SegmentIndex + 1];
-            var firstPoint_Position = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(point1.location, point2.location, editLinePoint1.location);
-            var secondPoint_Position = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(point1.location, point2.location, editLinePoint2.location);
+            let point1 = nearestLine.points[state.nearestLine_SegmentIndex];
+            let point2 = nearestLine.points[state.nearestLine_SegmentIndex + 1];
+            let firstPoint_Position = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(point1.location, point2.location, editLinePoint1.location);
+            let secondPoint_Position = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(point1.location, point2.location, editLinePoint2.location);
             if (secondPoint_Position == firstPoint_Position) {
                 state.isAvailable = false;
                 return;
             }
             state.targetLine_SearchForward = (secondPoint_Position >= firstPoint_Position);
-        };
-        Tool_ScratchLineDraw.prototype.getLineOverlappingInfo = function (sourcePoints, source_StartIndex, targetPoints, target_StartIndex, minDistanceRange) {
+        }
+        getLineOverlappingInfo(sourcePoints, source_StartIndex, targetPoints, target_StartIndex, minDistanceRange) {
             //重なる領域について
             //・元の線…①重なっている領域の一つ外の点、②重なっている領域の点
             //・対象の線…①重なっている領域の点、②重なっている領域の一つ外側の点
             //この領域を記録する値は、常に開始位置の値が終了位置の値以下とする（配列のインデクスそのまま）
             //その値に対応する点は重なっている領域の内側にあるとする（ぴったり境界の位置も含む）
-            var source_Index = source_StartIndex;
-            var target_Index = target_StartIndex;
-            var target_IndexNext = target_StartIndex + 1;
-            var isAvailable = true;
-            var overlap_FirstIndex = -1;
-            var overlap_LastIndex = -1;
+            let source_Index = source_StartIndex;
+            let target_Index = target_StartIndex;
+            let target_IndexNext = target_StartIndex + 1;
+            let isAvailable = true;
+            let overlap_FirstIndex = -1;
+            let overlap_LastIndex = -1;
             while (source_Index < sourcePoints.length
                 && target_IndexNext < targetPoints.length) {
-                var sourcePoint = sourcePoints[source_Index];
-                var targetPoint1 = targetPoints[target_Index];
-                var targetPoint2 = targetPoints[target_IndexNext];
+                let sourcePoint = sourcePoints[source_Index];
+                let targetPoint1 = targetPoints[target_Index];
+                let targetPoint2 = targetPoints[target_IndexNext];
                 // tests whether the edit-point is nearby the target-line
-                var distance = ManualTracingTool.Logic_Points.pointToLine_Distance(sourcePoint.location, targetPoint1.location, targetPoint2.location);
+                let distance = ManualTracingTool.Logic_Points.pointToLine_Distance(sourcePoint.location, targetPoint1.location, targetPoint2.location);
                 if (distance > minDistanceRange) {
                     isAvailable = false;
                     break;
                 }
                 // if the edit-point is nearby, increment any one of search-index
-                var localPosition = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(targetPoint1.location, targetPoint2.location, sourcePoint.location);
+                let localPosition = ManualTracingTool.Logic_Points.pointToLineSegment_NormalizedPosition(targetPoint1.location, targetPoint2.location, sourcePoint.location);
                 if (localPosition <= 1.0) {
                     if (localPosition >= 0.0) {
                         if (overlap_FirstIndex == -1) {
@@ -198,15 +183,15 @@ var ManualTracingTool;
                     }
                 }
             }
-            var info = new LineOverlappingInfo();
+            let info = new LineOverlappingInfo();
             info.isAvailable = isAvailable;
             info.overlap_FirstIndex = overlap_FirstIndex;
             info.overlap_LastIndex = overlap_LastIndex;
             return info;
-        };
-        Tool_ScratchLineDraw.prototype.createSubjoinedLine = function (topPoints, topPonts_OverlappingInfo, followingPoints, followingPoints_OverlappingInfo, resamplingUnitLength, subjoinToAfter) {
-            var newPoints = new List();
-            var subjoinedIndex;
+        }
+        createSubjoinedLine(topPoints, topPonts_OverlappingInfo, followingPoints, followingPoints_OverlappingInfo, resamplingUnitLength, subjoinToAfter) {
+            let newPoints = new List();
+            let subjoinedIndex;
             if (subjoinToAfter) {
                 ListAddRange(newPoints, topPoints);
                 subjoinedIndex = newPoints.length - 1;
@@ -222,20 +207,19 @@ var ManualTracingTool;
             }
             // resampling for neighbor points of subjoined part
             if (subjoinedIndex - 2 >= 0 && subjoinedIndex + 4 <= newPoints.length - 1) {
-                var resampledPoins = new List();
+                let resampledPoins = new List();
                 ListAddRange(resampledPoins, ListGetRange(newPoints, 0, (subjoinedIndex - 2) + 1));
                 ManualTracingTool.Logic_Edit_Points.resamplePoints(resampledPoins, newPoints, subjoinedIndex - 1, subjoinedIndex + 3, resamplingUnitLength);
                 ListAddRange(resampledPoins, ListGetRangeToLast(newPoints, subjoinedIndex + 4));
                 newPoints = resampledPoins;
             }
-            var newLine = new ManualTracingTool.VectorLine();
-            for (var _i = 0, newPoints_1 = newPoints; _i < newPoints_1.length; _i++) {
-                var point = newPoints_1[_i];
+            let newLine = new ManualTracingTool.VectorLine();
+            for (let point of newPoints) {
                 newLine.points.push(ManualTracingTool.LinePoint.clone(point));
             }
             return newLine;
-        };
-        Tool_ScratchLineDraw.prototype.executeProcessLine = function (state, subjoinLine, subjoinToAfter, env) {
+        }
+        executeProcessLine(state, subjoinLine, subjoinToAfter, env) {
             // get nearest line
             if (subjoinToAfter) {
                 state.subjoinLine_OrderedPoints = ListClone(subjoinLine.points);
@@ -243,14 +227,14 @@ var ManualTracingTool;
             else {
                 state.subjoinLine_OrderedPoints = ListReverse(subjoinLine.points);
             }
-            var editLineFirstPoint = state.subjoinLine_OrderedPoints[0];
-            var minDistanceRange = this.getMinDistanceRange(env);
+            let editLineFirstPoint = state.subjoinLine_OrderedPoints[0];
+            let minDistanceRange = this.getMinDistanceRange(env);
             this.getNearestLine(state, editLineFirstPoint, env.currentVectorGeometry, minDistanceRange);
             if (!state.isAvailable) {
                 return;
             }
             // get searching direction
-            var editLineSecondPoint = state.subjoinLine_OrderedPoints[1];
+            let editLineSecondPoint = state.subjoinLine_OrderedPoints[1];
             this.getSearchDirectionForTargetLine(state, editLineFirstPoint, editLineSecondPoint);
             if (!state.isAvailable) {
                 return;
@@ -264,14 +248,14 @@ var ManualTracingTool;
                 state.targetLine_OrderedPoints = ListReverse(state.nearestLine.points);
                 state.targetLine_SegmentIndex = (state.nearestLine.points.length - 1) - state.nearestLine_SegmentIndex - 1;
             }
-            var editLine_OverlappingInfo = this.getLineOverlappingInfo(state.subjoinLine_OrderedPoints, 0, state.targetLine_OrderedPoints, state.targetLine_SegmentIndex, minDistanceRange);
-            var nearestLine_OverlappingInfo = this.getLineOverlappingInfo(state.targetLine_OrderedPoints, state.targetLine_SegmentIndex, state.subjoinLine_OrderedPoints, 0, minDistanceRange);
+            let editLine_OverlappingInfo = this.getLineOverlappingInfo(state.subjoinLine_OrderedPoints, 0, state.targetLine_OrderedPoints, state.targetLine_SegmentIndex, minDistanceRange);
+            let nearestLine_OverlappingInfo = this.getLineOverlappingInfo(state.targetLine_OrderedPoints, state.targetLine_SegmentIndex, state.subjoinLine_OrderedPoints, 0, minDistanceRange);
             if (!editLine_OverlappingInfo.isAvailable || !nearestLine_OverlappingInfo.isAvailable) {
                 state.isAvailable = false;
                 return;
             }
             // join the two lines
-            var resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
+            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
             state.newLine = this.createSubjoinedLine(state.targetLine_OrderedPoints, nearestLine_OverlappingInfo, subjoinLine.points, editLine_OverlappingInfo, resamplingUnitLength, true);
             // delete the joined line
             state.nearestLine.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.deleteLine;
@@ -280,20 +264,22 @@ var ManualTracingTool;
                 state.newLine.points = ListReverse(state.newLine.points);
             }
             ManualTracingTool.Logic_Edit_Line.calculateParameters(state.newLine);
-        };
-        Tool_ScratchLineDraw.prototype.executeCommand = function (env) {
+        }
+        executeCommand(env) {
             if (this.editLine.points.length < 2) {
                 return;
             }
-            var processingState = new SubjoinProcessingState();
-            // correct subjoining porocessing-info
+            let processingState = new SubjoinProcessingState();
+            // process forward direction for edit line
             this.executeProcessLine(processingState, this.editLine, true, env);
+            // process backward direction for edit line if not processed
             if (!processingState.isAvailable) {
                 this.editLine.points = ListReverse(this.editLine.points);
                 ManualTracingTool.Logic_Edit_Line.calculateParameters(this.editLine);
                 processingState = new SubjoinProcessingState();
                 this.executeProcessLine(processingState, this.editLine, true, env);
             }
+            // process to connect to another line
             if (processingState.isAvailable) {
                 processingState.nearestLine = null;
                 processingState.nearestLine_SegmentIndex = -1;
@@ -303,14 +289,14 @@ var ManualTracingTool;
                 processingState.targetLine_SegmentIndex = -1;
                 this.executeProcessLine(processingState, processingState.newLine, false, env);
                 if (processingState.deleteLines.length > 0) {
-                    var command = new ManualTracingTool.Command_DeleteFlaggedPoints();
+                    let command = new ManualTracingTool.Command_DeleteFlaggedPoints();
                     if (command.prepareEditTargets(env.currentVectorLayer, env.currentVectorGeometry)) {
                         command.execute(env);
                         env.commandHistory.addCommand(command);
                     }
                 }
                 {
-                    var command = new ManualTracingTool.Command_AddLine();
+                    let command = new ManualTracingTool.Command_AddLine();
                     command.group = env.currentVectorGroup;
                     command.line = processingState.newLine;
                     command.isContinued = true;
@@ -319,12 +305,12 @@ var ManualTracingTool;
                 }
             }
             else {
-                this.executeAddDrawLine(this.editLine, env);
+                //this.executeAddDrawLine(this.editLine, env);
             }
             this.editLine = null;
-            env.setRedrawMainWindowEditorWindow();
-        };
-        return Tool_ScratchLineDraw;
-    }(ManualTracingTool.Tool_ScratchLine));
+            env.setRedrawCurrentLayer();
+            env.setRedrawEditorWindow();
+        }
+    }
     ManualTracingTool.Tool_ScratchLineDraw = Tool_ScratchLineDraw;
 })(ManualTracingTool || (ManualTracingTool = {}));

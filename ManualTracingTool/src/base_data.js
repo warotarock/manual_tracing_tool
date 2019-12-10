@@ -1,36 +1,25 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var ManualTracingTool;
 (function (ManualTracingTool) {
     // Setting
-    var LocalSetting = /** @class */ (function () {
-        function LocalSetting() {
+    class LocalSetting {
+        constructor() {
             this.exportPath = null;
             this.lastUsedFilePaths = new List();
+            this.maxLastUsedFilePaths = 5;
             this.referenceDirectoryPath = null;
             this.currentDirectoryPath = null;
         }
-        return LocalSetting;
-    }());
+    }
     ManualTracingTool.LocalSetting = LocalSetting;
     // Color
-    var PalletColor = /** @class */ (function () {
-        function PalletColor() {
+    class PalletColor {
+        constructor() {
             this.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
         }
-        return PalletColor;
-    }());
+    }
     ManualTracingTool.PalletColor = PalletColor;
     // Base layer class
-    var LayerTypeID;
+    let LayerTypeID;
     (function (LayerTypeID) {
         LayerTypeID[LayerTypeID["none"] = 0] = "none";
         LayerTypeID[LayerTypeID["rootLayer"] = 1] = "rootLayer";
@@ -40,30 +29,48 @@ var ManualTracingTool;
         LayerTypeID[LayerTypeID["posingLayer"] = 5] = "posingLayer";
         LayerTypeID[LayerTypeID["vectorLayerReferenceLayer"] = 6] = "vectorLayerReferenceLayer";
     })(LayerTypeID = ManualTracingTool.LayerTypeID || (ManualTracingTool.LayerTypeID = {}));
-    var Layer = /** @class */ (function () {
-        function Layer() {
+    class Layer {
+        constructor() {
             this.type = LayerTypeID.none;
             this.name = null;
             this.isVisible = true;
             this.isSelected = false;
             this.isRenderTarget = true;
+            this.isMaskedByBelowLayer = false;
             this.childLayers = new List();
             this.layerColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+            // runtime
+            this.isHierarchicalSelected = true;
+            this.isHierarchicalVisible = true;
+            this.bufferCanvasWindow = null;
         }
-        Layer.collectLayerRecursive = function (result, parentLayer) {
-            for (var _i = 0, _a = parentLayer.childLayers; _i < _a.length; _i++) {
-                var layer = _a[_i];
+        static collectLayerRecursive(result, parentLayer) {
+            for (let layer of parentLayer.childLayers) {
                 result.push(layer);
                 if (layer.childLayers.length > 0) {
                     Layer.collectLayerRecursive(result, layer);
                 }
             }
-        };
-        return Layer;
-    }());
+        }
+        static updateHierarchicalStatesRecursive(parentLayer) {
+            for (let layer of parentLayer.childLayers) {
+                layer.isHierarchicalSelected = layer.isSelected || Layer.isSelected(parentLayer);
+                layer.isHierarchicalVisible = layer.isVisible && Layer.isVisible(parentLayer);
+                if (layer.childLayers.length > 0) {
+                    Layer.updateHierarchicalStatesRecursive(layer);
+                }
+            }
+        }
+        static isSelected(layer) {
+            return (layer.isSelected || layer.isHierarchicalSelected);
+        }
+        static isVisible(layer) {
+            return (layer.isVisible && layer.isHierarchicalVisible);
+        }
+    }
     ManualTracingTool.Layer = Layer;
     // Vector layer
-    var LinePointModifyFlagID;
+    let LinePointModifyFlagID;
     (function (LinePointModifyFlagID) {
         LinePointModifyFlagID[LinePointModifyFlagID["none"] = 0] = "none";
         LinePointModifyFlagID[LinePointModifyFlagID["selectedToUnselected"] = 1] = "selectedToUnselected";
@@ -71,8 +78,8 @@ var ManualTracingTool;
         LinePointModifyFlagID[LinePointModifyFlagID["delete"] = 3] = "delete";
         LinePointModifyFlagID[LinePointModifyFlagID["edit"] = 4] = "edit";
     })(LinePointModifyFlagID = ManualTracingTool.LinePointModifyFlagID || (ManualTracingTool.LinePointModifyFlagID = {}));
-    var LinePoint = /** @class */ (function () {
-        function LinePoint() {
+    class LinePoint {
+        constructor() {
             this.location = vec3.fromValues(0.0, 0.0, 0.0);
             this.lineWidth = 1.0;
             this.isSelected = false;
@@ -86,18 +93,17 @@ var ManualTracingTool;
             this.totalLength = 0.0;
             this.curvature = 0.0;
         }
-        LinePoint.clone = function (srcPoint) {
-            var point = new LinePoint();
+        static clone(srcPoint) {
+            let point = new LinePoint();
             vec3.copy(point.location, srcPoint.location);
             point.lineWidth = srcPoint.lineWidth;
             vec3.copy(point.adjustingLocation, point.location);
             point.adjustingLineWidth = point.lineWidth;
             return point;
-        };
-        return LinePoint;
-    }());
+        }
+    }
     ManualTracingTool.LinePoint = LinePoint;
-    var VectorLineModifyFlagID;
+    let VectorLineModifyFlagID;
     (function (VectorLineModifyFlagID) {
         VectorLineModifyFlagID[VectorLineModifyFlagID["none"] = 0] = "none";
         VectorLineModifyFlagID[VectorLineModifyFlagID["selectedToUnselected"] = 1] = "selectedToUnselected";
@@ -109,25 +115,24 @@ var ManualTracingTool;
         VectorLineModifyFlagID[VectorLineModifyFlagID["transform"] = 7] = "transform";
         VectorLineModifyFlagID[VectorLineModifyFlagID["resampling"] = 8] = "resampling";
     })(VectorLineModifyFlagID = ManualTracingTool.VectorLineModifyFlagID || (ManualTracingTool.VectorLineModifyFlagID = {}));
-    var VectorLine = /** @class */ (function () {
-        function VectorLine() {
+    class VectorLine {
+        constructor() {
             this.points = new List();
             this.continuousFill = false;
             this.isSelected = false;
+            // runtime
+            this.modifyFlag = VectorLineModifyFlagID.none;
+            this.isCloseToMouse = false;
             this.left = 999999.0;
             this.top = 999999.0;
             this.right = -999999.0;
             this.bottom = -999999.0;
+            this.range = 0.0;
             this.totalLength = 0.0;
-            // runtime
-            this.modifyFlag = VectorLineModifyFlagID.none;
-            this.isCloseToMouse = false;
-            this.isEditTarget = false;
         }
-        return VectorLine;
-    }());
+    }
     ManualTracingTool.VectorLine = VectorLine;
-    var VectorGroupModifyFlagID;
+    let VectorGroupModifyFlagID;
     (function (VectorGroupModifyFlagID) {
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["none"] = 0] = "none";
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["modifyLines"] = 1] = "modifyLines";
@@ -135,69 +140,65 @@ var ManualTracingTool;
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["delete"] = 3] = "delete";
         VectorGroupModifyFlagID[VectorGroupModifyFlagID["edit"] = 4] = "edit";
     })(VectorGroupModifyFlagID = ManualTracingTool.VectorGroupModifyFlagID || (ManualTracingTool.VectorGroupModifyFlagID = {}));
-    var VectorGroup = /** @class */ (function () {
-        function VectorGroup() {
+    class VectorGroup {
+        constructor() {
             this.lines = new List();
             this.isSelected = false;
             // runtime
             this.modifyFlag = VectorGroupModifyFlagID.none;
             this.linePointModifyFlag = VectorGroupModifyFlagID.none;
+            this.buffer = new ManualTracingTool.GPUVertexBuffer();
         }
-        return VectorGroup;
-    }());
+    }
     ManualTracingTool.VectorGroup = VectorGroup;
-    var VectorLayerGeometry = /** @class */ (function () {
-        function VectorLayerGeometry() {
+    class VectorLayerGeometry {
+        constructor() {
             this.groups = new List();
         }
-        return VectorLayerGeometry;
-    }());
+    }
     ManualTracingTool.VectorLayerGeometry = VectorLayerGeometry;
-    var VectorLayerKeyframe = /** @class */ (function () {
-        function VectorLayerKeyframe() {
+    class VectorLayerKeyframe {
+        constructor() {
             this.frame = 0;
             this.geometry = null;
         }
-        return VectorLayerKeyframe;
-    }());
+    }
     ManualTracingTool.VectorLayerKeyframe = VectorLayerKeyframe;
-    var DrawLineTypeID;
+    let DrawLineTypeID;
     (function (DrawLineTypeID) {
         DrawLineTypeID[DrawLineTypeID["none"] = 1] = "none";
         DrawLineTypeID[DrawLineTypeID["layerColor"] = 2] = "layerColor";
         DrawLineTypeID[DrawLineTypeID["palletColor"] = 3] = "palletColor";
     })(DrawLineTypeID = ManualTracingTool.DrawLineTypeID || (ManualTracingTool.DrawLineTypeID = {}));
-    var FillAreaTypeID;
+    let FillAreaTypeID;
     (function (FillAreaTypeID) {
         FillAreaTypeID[FillAreaTypeID["none"] = 1] = "none";
         FillAreaTypeID[FillAreaTypeID["fillColor"] = 2] = "fillColor";
         FillAreaTypeID[FillAreaTypeID["palletColor"] = 3] = "palletColor";
     })(FillAreaTypeID = ManualTracingTool.FillAreaTypeID || (ManualTracingTool.FillAreaTypeID = {}));
-    var VectorLayer = /** @class */ (function (_super) {
-        __extends(VectorLayer, _super);
-        function VectorLayer() {
-            var _this = _super.call(this) || this;
-            _this.type = LayerTypeID.vectorLayer;
-            _this.keyframes = new List();
-            _this.drawLineType = DrawLineTypeID.palletColor;
-            _this.fillAreaType = FillAreaTypeID.none;
-            _this.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-            _this.line_PalletColorIndex = 0;
-            _this.fill_PalletColorIndex = 1;
-            var key = new VectorLayerKeyframe();
+    class VectorLayer extends Layer {
+        constructor() {
+            super();
+            this.type = LayerTypeID.vectorLayer;
+            this.keyframes = new List();
+            this.drawLineType = DrawLineTypeID.palletColor;
+            this.fillAreaType = FillAreaTypeID.none;
+            this.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            this.line_PalletColorIndex = 0;
+            this.fill_PalletColorIndex = 1;
+            let key = new VectorLayerKeyframe();
             key.frame = 0;
             key.geometry = new VectorLayerGeometry();
-            _this.keyframes.push(key);
-            return _this;
+            this.keyframes.push(key);
         }
-        VectorLayer.isVectorLayer = function (layer) {
+        static isVectorLayer(layer) {
             return (layer.type == LayerTypeID.vectorLayer
                 || layer.type == LayerTypeID.vectorLayerReferenceLayer);
-        };
-        VectorLayer.findLastKeyframeIndex = function (vectorLayer, targetFrame) {
-            var keyframeIndex = -1;
-            for (var index = 0; index < vectorLayer.keyframes.length; index++) {
-                var keyframe = vectorLayer.keyframes[index];
+        }
+        static findLastKeyframeIndex(vectorLayer, targetFrame) {
+            let keyframeIndex = -1;
+            for (let index = 0; index < vectorLayer.keyframes.length; index++) {
+                let keyframe = vectorLayer.keyframes[index];
                 if (keyframe.frame == targetFrame) {
                     keyframeIndex = index;
                     break;
@@ -208,56 +209,46 @@ var ManualTracingTool;
                 keyframeIndex = index;
             }
             return keyframeIndex;
-        };
-        return VectorLayer;
-    }(Layer));
-    ManualTracingTool.VectorLayer = VectorLayer;
-    var VectorLayerReferenceLayer = /** @class */ (function (_super) {
-        __extends(VectorLayerReferenceLayer, _super);
-        function VectorLayerReferenceLayer() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.type = LayerTypeID.vectorLayerReferenceLayer;
-            _this.referenceLayer = null;
-            return _this;
         }
-        return VectorLayerReferenceLayer;
-    }(VectorLayer));
+    }
+    ManualTracingTool.VectorLayer = VectorLayer;
+    class VectorLayerReferenceLayer extends VectorLayer {
+        constructor() {
+            super(...arguments);
+            this.type = LayerTypeID.vectorLayerReferenceLayer;
+            this.referenceLayer = null;
+        }
+    }
     ManualTracingTool.VectorLayerReferenceLayer = VectorLayerReferenceLayer;
     // Group layer
-    var GroupLayer = /** @class */ (function (_super) {
-        __extends(GroupLayer, _super);
-        function GroupLayer() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.type = LayerTypeID.groupLayer;
-            return _this;
+    class GroupLayer extends Layer {
+        constructor() {
+            super(...arguments);
+            this.type = LayerTypeID.groupLayer;
         }
-        return GroupLayer;
-    }(Layer));
+    }
     ManualTracingTool.GroupLayer = GroupLayer;
     // Image file reference layer
-    var ImageFileReferenceLayer = /** @class */ (function (_super) {
-        __extends(ImageFileReferenceLayer, _super);
-        function ImageFileReferenceLayer() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.type = LayerTypeID.imageFileReferenceLayer;
-            _this.imageFilePath = null;
-            _this.location = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.rotation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.scale = vec3.fromValues(1.0, 1.0, 1.0);
+    class ImageFileReferenceLayer extends Layer {
+        constructor() {
+            super(...arguments);
+            this.type = LayerTypeID.imageFileReferenceLayer;
+            this.imageFilePath = null;
+            this.location = vec3.fromValues(0.0, 0.0, 0.0);
+            this.rotation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.scale = vec3.fromValues(1.0, 1.0, 1.0);
             // runtime
-            _this.imageResource = null;
-            _this.imageLoading = false;
-            _this.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
-            return _this;
+            this.imageResource = null;
+            this.imageLoading = false;
+            this.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
         }
-        return ImageFileReferenceLayer;
-    }(Layer));
+    }
     ManualTracingTool.ImageFileReferenceLayer = ImageFileReferenceLayer;
     // Posing
-    var PosingModel = /** @class */ (function () {
-        function PosingModel() {
+    class PosingModel {
+        constructor() {
             // Head to body
             this.headSphereSize = 0.12; // 14cm
             this.headTwistSphereSize = 0.18; //
@@ -289,126 +280,102 @@ var ManualTracingTool;
             this.chestModelConvertMatrix = mat4.create();
             this.hipsModelConvertMatrix = mat4.create();
         }
-        return PosingModel;
-    }());
+    }
     ManualTracingTool.PosingModel = PosingModel;
-    var PosingModelBoneInputSetting = /** @class */ (function () {
-        function PosingModelBoneInputSetting() {
+    class PosingModelBoneInputSetting {
+        constructor() {
             this.inputName = '';
             this.inputType = ''; //  baseSize, direction
             this.modelName = '';
             this.dependentInputName = '';
         }
-        return PosingModelBoneInputSetting;
-    }());
+    }
     ManualTracingTool.PosingModelBoneInputSetting = PosingModelBoneInputSetting;
-    var InputSideID;
+    let InputSideID;
     (function (InputSideID) {
         InputSideID[InputSideID["none"] = 0] = "none";
         InputSideID[InputSideID["front"] = 1] = "front";
         InputSideID[InputSideID["back"] = 2] = "back";
     })(InputSideID = ManualTracingTool.InputSideID || (ManualTracingTool.InputSideID = {}));
-    var PosingInputData = /** @class */ (function () {
-        function PosingInputData() {
+    class PosingInputData {
+        constructor() {
             this.inputDone = false;
             // runtime
             this.parentMatrix = null;
             this.hitTestSphereRadius = 0.0;
         }
-        return PosingInputData;
-    }());
+    }
     ManualTracingTool.PosingInputData = PosingInputData;
-    var HeadLocationInputData = /** @class */ (function (_super) {
-        __extends(HeadLocationInputData, _super);
-        function HeadLocationInputData() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.center = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.radius = 0.0;
-            _this.editLine = null;
-            _this.matrix = mat4.create();
-            _this.headMatrix = mat4.create();
-            _this.bodyRootMatrix = mat4.create();
-            return _this;
+    class HeadLocationInputData extends PosingInputData {
+        constructor() {
+            super(...arguments);
+            this.center = vec3.fromValues(0.0, 0.0, 0.0);
+            this.radius = 0.0;
+            this.editLine = null;
+            this.matrix = mat4.create();
+            this.headMatrix = mat4.create();
+            this.bodyRootMatrix = mat4.create();
         }
-        return HeadLocationInputData;
-    }(PosingInputData));
+    }
     ManualTracingTool.HeadLocationInputData = HeadLocationInputData;
-    var DirectionInputData = /** @class */ (function (_super) {
-        __extends(DirectionInputData, _super);
-        function DirectionInputData() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.inputSideID = InputSideID.front;
-            _this.inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.inputLocation2D = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.directionInputDone = false;
-            _this.rollInputDone = false;
-            _this.rollInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.rollInputAngle = 0.0;
-            _this.matrix = mat4.create();
-            return _this;
+    class DirectionInputData extends PosingInputData {
+        constructor() {
+            super(...arguments);
+            this.inputSideID = InputSideID.front;
+            this.inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.inputLocation2D = vec3.fromValues(0.0, 0.0, 0.0);
+            this.directionInputDone = false;
+            this.rollInputDone = false;
+            this.rollInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.rollInputAngle = 0.0;
+            this.matrix = mat4.create();
         }
-        return DirectionInputData;
-    }(PosingInputData));
+    }
     ManualTracingTool.DirectionInputData = DirectionInputData;
-    var HeadRotationInputData = /** @class */ (function (_super) {
-        __extends(HeadRotationInputData, _super);
-        function HeadRotationInputData() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.neckSphereMatrix = mat4.create();
-            return _this;
+    class HeadRotationInputData extends DirectionInputData {
+        constructor() {
+            super(...arguments);
+            this.neckSphereMatrix = mat4.create();
         }
-        return HeadRotationInputData;
-    }(DirectionInputData));
+    }
     ManualTracingTool.HeadRotationInputData = HeadRotationInputData;
-    var HeadTwistInputData = /** @class */ (function (_super) {
-        __extends(HeadTwistInputData, _super);
-        function HeadTwistInputData() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.tempInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            return _this;
+    class HeadTwistInputData extends DirectionInputData {
+        constructor() {
+            super(...arguments);
+            this.tempInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
         }
-        return HeadTwistInputData;
-    }(DirectionInputData));
+    }
     ManualTracingTool.HeadTwistInputData = HeadTwistInputData;
-    var BodyLocationInputData = /** @class */ (function (_super) {
-        __extends(BodyLocationInputData, _super);
-        function BodyLocationInputData() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.bodyMatrix = mat4.create();
-            _this.rotationCenterMatrix = mat4.create();
-            _this.leftArm1RootMatrix = mat4.create();
-            _this.rightArm1RootMatrix = mat4.create();
-            _this.leftLeg1RootMatrix = mat4.create();
-            _this.rightLeg1RootMatrix = mat4.create();
-            return _this;
+    class BodyLocationInputData extends DirectionInputData {
+        constructor() {
+            super(...arguments);
+            this.bodyMatrix = mat4.create();
+            this.rotationCenterMatrix = mat4.create();
+            this.leftArm1RootMatrix = mat4.create();
+            this.rightArm1RootMatrix = mat4.create();
+            this.leftLeg1RootMatrix = mat4.create();
+            this.rightLeg1RootMatrix = mat4.create();
         }
-        return BodyLocationInputData;
-    }(DirectionInputData));
+    }
     ManualTracingTool.BodyLocationInputData = BodyLocationInputData;
-    var BodyRotationInputData = /** @class */ (function (_super) {
-        __extends(BodyRotationInputData, _super);
-        function BodyRotationInputData() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.inputSideID = InputSideID.front;
-            _this.inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-            _this.matrix = mat4.create();
-            return _this;
+    class BodyRotationInputData extends DirectionInputData {
+        constructor() {
+            super(...arguments);
+            this.inputSideID = InputSideID.front;
+            this.inputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+            this.matrix = mat4.create();
         }
-        return BodyRotationInputData;
-    }(DirectionInputData));
+    }
     ManualTracingTool.BodyRotationInputData = BodyRotationInputData;
-    var JointPartInputData = /** @class */ (function (_super) {
-        __extends(JointPartInputData, _super);
-        function JointPartInputData() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.childJointRootMatrix = mat4.create();
-            return _this;
+    class JointPartInputData extends DirectionInputData {
+        constructor() {
+            super(...arguments);
+            this.childJointRootMatrix = mat4.create();
         }
-        return JointPartInputData;
-    }(DirectionInputData));
+    }
     ManualTracingTool.JointPartInputData = JointPartInputData;
-    var PosingData = /** @class */ (function () {
-        function PosingData() {
+    class PosingData {
+        constructor() {
             this.real3DViewHalfWidth = 1.0;
             this.rootMatrix = mat4.create();
             this.headMatrix = mat4.create();
@@ -441,11 +408,10 @@ var ManualTracingTool;
             this.rightLeg1LocationInputData = new JointPartInputData();
             this.rightLeg2LocationInputData = new JointPartInputData();
         }
-        return PosingData;
-    }());
+    }
     ManualTracingTool.PosingData = PosingData;
-    var JointPartDrawingUnit = /** @class */ (function () {
-        function JointPartDrawingUnit() {
+    class JointPartDrawingUnit {
+        constructor() {
             this.name = "";
             this.targetData = null;
             this.dependentInputData = null;
@@ -455,26 +421,22 @@ var ManualTracingTool;
             this.visualModelAlpha = 1.0;
             this.hitTestSphereAlpha = 0.5;
         }
-        return JointPartDrawingUnit;
-    }());
+    }
     ManualTracingTool.JointPartDrawingUnit = JointPartDrawingUnit;
-    var PosingLayer = /** @class */ (function (_super) {
-        __extends(PosingLayer, _super);
-        function PosingLayer() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.type = LayerTypeID.posingLayer;
-            _this.posingModel = new PosingModel();
-            _this.posingData = new PosingData();
+    class PosingLayer extends Layer {
+        constructor() {
+            super(...arguments);
+            this.type = LayerTypeID.posingLayer;
+            this.posingModel = new PosingModel();
+            this.posingData = new PosingData();
             // runtime
-            _this.drawingUnits = null;
-            return _this;
+            this.drawingUnits = null;
         }
-        return PosingLayer;
-    }(Layer));
+    }
     ManualTracingTool.PosingLayer = PosingLayer;
     // Animation
-    var AnimationSettingData = /** @class */ (function () {
-        function AnimationSettingData() {
+    class AnimationSettingData {
+        constructor() {
             this.animationFrameParSecond = 24;
             this.loopStartFrame = 0;
             this.loopEndFrame = 24;
@@ -484,11 +446,10 @@ var ManualTracingTool;
             this.timeLineWindowScaleMax = 10.0;
             this.timeLineWindowViewLocationX = 0.0;
         }
-        return AnimationSettingData;
-    }());
+    }
     ManualTracingTool.AnimationSettingData = AnimationSettingData;
     // Document
-    var defaultColors = [
+    let defaultColors = [
         vec4.fromValues(0.0, 0.0, 0.0, 1.0),
         vec4.fromValues(1.0, 1.0, 1.0, 1.0),
         vec4.fromValues(0.5, 0.0, 0.0, 1.0),
@@ -502,56 +463,73 @@ var ManualTracingTool;
         vec4.fromValues(216 / 255.0, 177 / 255.0, 170 / 255.0, 1.0),
         vec4.fromValues(198 / 255.0, 155 / 255.0, 148 / 255.0, 1.0),
     ];
-    var DocumentData = /** @class */ (function () {
+    let DocumentFileType;
+    (function (DocumentFileType) {
+        DocumentFileType[DocumentFileType["none"] = 0] = "none";
+        DocumentFileType[DocumentFileType["json"] = 1] = "json";
+        DocumentFileType[DocumentFileType["ora"] = 2] = "ora";
+    })(DocumentFileType = ManualTracingTool.DocumentFileType || (ManualTracingTool.DocumentFileType = {}));
+    class DocumentData {
         // This class must be created by this function for JSON.parse
-        function DocumentData() {
+        constructor() {
             this.rootLayer = new Layer();
             this.documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
             this.defaultViewScale = 1.0;
             this.lineWidthBiasRate = 1.0;
+            this.exportBackGroundType = DocumentBackGroundTypeID.lastPalletColor;
             this.palletColors = new List();
             this.animationSettingData = new AnimationSettingData();
             this.loaded = false;
             this.hasErrorOnLoading = false;
             DocumentData.initializeDefaultPalletColors(this);
         }
-        DocumentData.initializeDefaultPalletColors = function (documentData) {
+        static initializeDefaultPalletColors(documentData) {
             documentData.palletColors = new List();
-            for (var _i = 0, defaultColors_1 = defaultColors; _i < defaultColors_1.length; _i++) {
-                var color = defaultColors_1[_i];
-                var palletColor = new PalletColor();
+            for (let color of defaultColors) {
+                let palletColor = new PalletColor();
                 vec4.copy(palletColor.color, color);
                 documentData.palletColors.push(palletColor);
             }
             while (documentData.palletColors.length < DocumentData.maxPalletColors) {
-                var palletColor = new PalletColor();
+                let palletColor = new PalletColor();
                 vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
                 documentData.palletColors.push(palletColor);
             }
-        };
-        DocumentData.maxPalletColors = 50;
-        return DocumentData;
-    }());
+        }
+        static getDocumentLayout(documentData) {
+            let frameLeft = Math.floor(documentData.documentFrame[0]);
+            let frameTop = Math.floor(documentData.documentFrame[1]);
+            let documentWidth = Math.floor(documentData.documentFrame[2]) - frameLeft + 1;
+            let documentHeight = Math.floor(documentData.documentFrame[3]) - frameTop + 1;
+            return { left: frameLeft, top: frameTop, width: documentWidth, height: documentHeight };
+        }
+    }
+    DocumentData.maxPalletColors = 50;
     ManualTracingTool.DocumentData = DocumentData;
-    var DocumentDataSaveInfo = /** @class */ (function () {
-        function DocumentDataSaveInfo() {
+    class DocumentDataSaveInfo {
+        constructor() {
             this.layers = new List();
             this.layerID = 0;
             this.layerDictionary = new Dictionary();
+            this.modelFile = null;
         }
-        DocumentDataSaveInfo.prototype.addLayer = function (layer) {
+        addLayer(layer) {
             layer.ID = this.layerID;
             this.layers.push(layer);
             this.layerID++;
-        };
-        DocumentDataSaveInfo.prototype.collectLayer = function (layer) {
+        }
+        collectLayer(layer) {
             if (layer.ID == undefined) {
                 return;
             }
             this.layerDictionary[layer.ID] = layer;
             delete layer.ID;
-        };
-        return DocumentDataSaveInfo;
-    }());
+        }
+    }
     ManualTracingTool.DocumentDataSaveInfo = DocumentDataSaveInfo;
+    let DocumentBackGroundTypeID;
+    (function (DocumentBackGroundTypeID) {
+        DocumentBackGroundTypeID[DocumentBackGroundTypeID["lastPalletColor"] = 1] = "lastPalletColor";
+        DocumentBackGroundTypeID[DocumentBackGroundTypeID["transparent"] = 2] = "transparent";
+    })(DocumentBackGroundTypeID = ManualTracingTool.DocumentBackGroundTypeID || (ManualTracingTool.DocumentBackGroundTypeID = {}));
 })(ManualTracingTool || (ManualTracingTool = {}));

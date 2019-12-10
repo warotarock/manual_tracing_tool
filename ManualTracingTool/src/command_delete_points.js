@@ -1,127 +1,103 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    var Command_DeletePoints_EditGroup = /** @class */ (function () {
-        function Command_DeletePoints_EditGroup() {
+    class Command_DeletePoints_EditGroup {
+        constructor() {
             this.group = null;
             this.oldLineList = null;
             this.newLineList = null;
         }
-        return Command_DeletePoints_EditGroup;
-    }());
-    var Command_DeletePoints_EditLine = /** @class */ (function () {
-        function Command_DeletePoints_EditLine() {
+    }
+    class Command_DeletePoints_EditLine {
+        constructor() {
             this.targetLine = null;
             this.oldPointList = null;
             this.newPointList = null;
         }
-        return Command_DeletePoints_EditLine;
-    }());
-    var Command_DeletePoints = /** @class */ (function (_super) {
-        __extends(Command_DeletePoints, _super);
-        function Command_DeletePoints() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.layer = null;
-            _this.editGroups = null;
-            _this.editLines = null;
-            _this.deletedLines = null;
-            _this.deletedPoints = null;
-            return _this;
+    }
+    class Command_DeletePoints extends ManualTracingTool.CommandBase {
+        constructor() {
+            super(...arguments);
+            this.layer = null;
+            this.editGroups = null;
+            this.editLines = null;
+            this.deletedLines = null;
+            this.deletedPoints = null;
         }
-        Command_DeletePoints.prototype.prepareEditTargets = function (layer, geometry) {
+        prepareEditTargets(layer, geometry) {
             if (this.errorCheck(layer)) {
                 return false;
             }
             // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
-            var existsChanges = this.setDeleteFlags(geometry);
+            let existsChanges = this.setFlagsToPoints(geometry);
             // If no change, cancel it
             if (!existsChanges) {
                 return false;
             }
-            this.setDeleteFlagsForGroups(layer, geometry);
+            this.setFlagsToGroups(layer, geometry);
             this.collectEditTargets(layer, geometry);
             return true;
-        };
-        Command_DeletePoints.prototype.execute = function (env) {
+        }
+        execute(env) {
             this.redo(env);
-        };
-        Command_DeletePoints.prototype.undo = function (env) {
-            for (var _i = 0, _a = this.editGroups; _i < _a.length; _i++) {
-                var editGroup = _a[_i];
+        }
+        undo(env) {
+            for (let editGroup of this.editGroups) {
                 editGroup.group.lines = editGroup.oldLineList;
+                ManualTracingTool.GPUVertexBuffer.setUpdated(editGroup.group.buffer);
             }
-            for (var _b = 0, _c = this.editLines; _b < _c.length; _b++) {
-                var editLine = _c[_b];
+            for (let editLine of this.editLines) {
                 editLine.targetLine.points = editLine.oldPointList;
                 ManualTracingTool.Logic_Edit_Line.calculateParameters(editLine.targetLine);
             }
-            for (var _d = 0, _e = this.deletedLines; _d < _e.length; _d++) {
-                var line = _e[_d];
+            for (let line of this.deletedLines) {
                 line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
             }
-            for (var _f = 0, _g = this.deletedPoints; _f < _g.length; _f++) {
-                var point = _g[_f];
+            for (let point of this.deletedPoints) {
                 point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.none;
             }
-        };
-        Command_DeletePoints.prototype.redo = function (env) {
-            for (var _i = 0, _a = this.editGroups; _i < _a.length; _i++) {
-                var editGroup = _a[_i];
+        }
+        redo(env) {
+            for (let editGroup of this.editGroups) {
                 editGroup.group.lines = editGroup.newLineList;
                 editGroup.group.modifyFlag = ManualTracingTool.VectorGroupModifyFlagID.none;
+                ManualTracingTool.GPUVertexBuffer.setUpdated(editGroup.group.buffer);
             }
-            for (var _b = 0, _c = this.editLines; _b < _c.length; _b++) {
-                var editLine = _c[_b];
+            for (let editLine of this.editLines) {
                 editLine.targetLine.points = editLine.newPointList;
                 editLine.targetLine.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
                 ManualTracingTool.Logic_Edit_Line.calculateParameters(editLine.targetLine);
             }
-            for (var _d = 0, _e = this.deletedLines; _d < _e.length; _d++) {
-                var line = _e[_d];
+            for (let line of this.deletedLines) {
                 line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.delete;
             }
-            for (var _f = 0, _g = this.deletedPoints; _f < _g.length; _f++) {
-                var point = _g[_f];
+            for (let point of this.deletedPoints) {
                 point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.delete;
             }
-        };
-        Command_DeletePoints.prototype.errorCheck = function (layer) {
+        }
+        errorCheck(layer) {
             if (layer == null) {
                 return true;
             }
             return false;
-        };
-        Command_DeletePoints.prototype.collectEditTargets = function (layer, geometry) {
+        }
+        collectEditTargets(layer, geometry) {
             // Collect informations for modified lines and deleted points
-            var editLines = new List();
-            var deletedPoints = new List();
-            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
-                var group = _a[_i];
+            let editLines = new List();
+            let deletedPoints = new List();
+            for (let group of geometry.groups) {
                 if (group.linePointModifyFlag == ManualTracingTool.VectorGroupModifyFlagID.none) {
                     continue;
                 }
-                for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
-                    var line = _c[_b];
+                for (let line of group.lines) {
                     if (line.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.delete) {
-                        for (var _d = 0, _e = line.points; _d < _e.length; _d++) {
-                            var point = _e[_d];
+                        for (let point of line.points) {
                             deletedPoints.push(point);
                         }
                     }
                     else if (line.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.deletePoints) {
                         // Delete points by creating new list
-                        var newPointList = new List();
-                        for (var _f = 0, _g = line.points; _f < _g.length; _f++) {
-                            var point = _g[_f];
+                        let newPointList = new List();
+                        for (let point of line.points) {
                             if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
                                 newPointList.push(point);
                             }
@@ -129,7 +105,7 @@ var ManualTracingTool;
                                 deletedPoints.push(point);
                             }
                         }
-                        var editLine = new Command_DeletePoints_EditLine();
+                        let editLine = new Command_DeletePoints_EditLine();
                         editLine.targetLine = line;
                         editLine.oldPointList = line.points;
                         editLine.newPointList = newPointList;
@@ -138,18 +114,16 @@ var ManualTracingTool;
                 }
             }
             // Collect informations for modified groups and deleted lines
-            var editGroups = new List();
-            var deletedLines = new List();
-            for (var _h = 0, _j = geometry.groups; _h < _j.length; _h++) {
-                var group = _j[_h];
+            let editGroups = new List();
+            let deletedLines = new List();
+            for (let group of geometry.groups) {
                 if (group.modifyFlag == ManualTracingTool.VectorGroupModifyFlagID.none) {
                     continue;
                 }
-                var newLineList = null;
+                let newLineList = null;
                 if (group.modifyFlag == ManualTracingTool.VectorGroupModifyFlagID.deleteLines) {
                     newLineList = new List();
-                    for (var _k = 0, _l = group.lines; _k < _l.length; _k++) {
-                        var line = _l[_k];
+                    for (let line of group.lines) {
                         if (line.modifyFlag != ManualTracingTool.VectorLineModifyFlagID.delete) {
                             newLineList.push(line);
                         }
@@ -161,7 +135,7 @@ var ManualTracingTool;
                 else {
                     newLineList = group.lines;
                 }
-                var editGroup = new Command_DeletePoints_EditGroup();
+                let editGroup = new Command_DeletePoints_EditGroup();
                 editGroup.group = group;
                 editGroup.oldLineList = group.lines;
                 editGroup.newLineList = newLineList;
@@ -173,27 +147,24 @@ var ManualTracingTool;
             this.deletedLines = deletedLines;
             this.deletedPoints = deletedPoints;
             this.layer = layer;
-        };
-        Command_DeletePoints.prototype.setDeleteFlagsForGroups = function (layer, geometry) {
-            var modifiedGroupCount = 0;
-            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
-                var group = _a[_i];
-                var deleteLineCount = 0;
-                var modifiedLineCount = 0;
-                for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
-                    var line = _c[_b];
-                    var deletePointCount = 0;
+        }
+        setFlagsToGroups(layer, geometry) {
+            let modifiedGroupCount = 0;
+            for (let group of geometry.groups) {
+                let deleteLineCount = 0;
+                let modifiedLineCount = 0;
+                for (let line of group.lines) {
+                    let deletePointCount = 0;
                     if (line.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.none) {
                         // Check deleting points
-                        for (var _d = 0, _e = line.points; _d < _e.length; _d++) {
-                            var point = _e[_d];
+                        for (let point of line.points) {
                             if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.delete) {
                                 deletePointCount++;
                             }
                         }
                         // Set flag to delete line
                         if (deletePointCount > 0) {
-                            if (line.points.length - deletePointCount <= 1) {
+                            if (line.points.length - deletePointCount < 2) {
                                 line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.delete;
                                 deleteLineCount++;
                             }
@@ -219,27 +190,19 @@ var ManualTracingTool;
                     modifiedGroupCount++;
                 }
             }
-        };
-        Command_DeletePoints.prototype.setDeleteFlags = function (geometry) {
-            return false;
-        };
-        return Command_DeletePoints;
-    }(ManualTracingTool.CommandBase));
-    ManualTracingTool.Command_DeletePoints = Command_DeletePoints;
-    var Command_DeleteSelectedPoints = /** @class */ (function (_super) {
-        __extends(Command_DeleteSelectedPoints, _super);
-        function Command_DeleteSelectedPoints() {
-            return _super !== null && _super.apply(this, arguments) || this;
         }
-        Command_DeleteSelectedPoints.prototype.setDeleteFlags = function (geometry) {
-            var deletePointCount = 0;
-            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
-                var group = _a[_i];
-                for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
-                    var line = _c[_b];
+        setFlagsToPoints(geometry) {
+            return false;
+        }
+    }
+    ManualTracingTool.Command_DeletePoints = Command_DeletePoints;
+    class Command_DeleteSelectedPoints extends Command_DeletePoints {
+        setFlagsToPoints(geometry) {
+            let deletePointCount = 0;
+            for (let group of geometry.groups) {
+                for (let line of group.lines) {
                     // Set flag to delete points
-                    for (var _d = 0, _e = line.points; _d < _e.length; _d++) {
-                        var point = _e[_d];
+                    for (let point of line.points) {
                         if (point.isSelected && point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
                             point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.delete;
                             deletePointCount++;
@@ -248,27 +211,19 @@ var ManualTracingTool;
                 }
             }
             return (deletePointCount > 0);
-        };
-        return Command_DeleteSelectedPoints;
-    }(Command_DeletePoints));
-    ManualTracingTool.Command_DeleteSelectedPoints = Command_DeleteSelectedPoints;
-    var Command_DeleteFlaggedPoints = /** @class */ (function (_super) {
-        __extends(Command_DeleteFlaggedPoints, _super);
-        function Command_DeleteFlaggedPoints() {
-            return _super !== null && _super.apply(this, arguments) || this;
         }
-        Command_DeleteFlaggedPoints.prototype.setDeleteFlags = function (geometry) {
-            var deletePointCount = 0;
-            for (var _i = 0, _a = geometry.groups; _i < _a.length; _i++) {
-                var group = _a[_i];
-                for (var _b = 0, _c = group.lines; _b < _c.length; _b++) {
-                    var line = _c[_b];
+    }
+    ManualTracingTool.Command_DeleteSelectedPoints = Command_DeleteSelectedPoints;
+    class Command_DeleteFlaggedPoints extends Command_DeletePoints {
+        setFlagsToPoints(geometry) {
+            let deletePointCount = 0;
+            for (let group of geometry.groups) {
+                for (let line of group.lines) {
                     if (line.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.deleteLine) {
                         deletePointCount++;
                     }
                     // Set flag to delete points
-                    for (var _d = 0, _e = line.points; _d < _e.length; _d++) {
-                        var point = _e[_d];
+                    for (let point of line.points) {
                         if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.delete) {
                             deletePointCount++;
                         }
@@ -276,8 +231,7 @@ var ManualTracingTool;
                 }
             }
             return (deletePointCount > 0);
-        };
-        return Command_DeleteFlaggedPoints;
-    }(Command_DeletePoints));
+        }
+    }
     ManualTracingTool.Command_DeleteFlaggedPoints = Command_DeleteFlaggedPoints;
 })(ManualTracingTool || (ManualTracingTool = {}));
