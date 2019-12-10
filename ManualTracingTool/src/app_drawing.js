@@ -44,18 +44,18 @@ var ManualTracingTool;
             this.canvasRender.setContext(this.layerWindow);
             this.canvasRender.setFontSize(18.0);
             if (this.posing3DViewRender.initializeWebGL(this.webglWindow.canvas)) {
-                alert('�R�c�|�[�W���O�@�\���������ł��܂���ł����B');
+                alert('３Ｄポージング機能を初期化できませんでした。');
             }
             //this.pickingWindow.initializeContext();
             this.posing3dView.initialize(this.posing3DViewRender, this.webglWindow, null);
             if (this.drawGPURender.initializeWebGL(this.drawGPUWindow.canvas)) {
-                alert('�R�c�`��@�\���������ł��܂���ł����B');
+                alert('３Ｄ描画機能を初期化できませんでした。');
             }
             try {
                 this.drawGPURender.initializeShader(this.polyLineShader);
             }
             catch (errorMessage) {
-                alert('�V�F�[�_�̏������Ɏ��s���܂����B' + errorMessage);
+                alert('シェーダの初期化に失敗しました。' + errorMessage);
             }
         }
         // Common drawing methods
@@ -575,7 +575,7 @@ var ManualTracingTool;
             vec3.set(this.eyeLocation, 0.0, 0.0, 1.0);
             mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
             let aspect = wnd.height / wnd.width;
-            let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: �v�Z���������i�Ȃ����c�������ɓ����l���|���Ȃ��ƍ���Ȃ��j�̂Ō�Ō�������
+            let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: 計算が怪しい（なぜか縦横両方に同じ値を掛けないと合わない）ので後で検討する
             mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, orthoWidth, -orthoWidth, 0.1, 1.0);
             wnd.caluclateGLViewMatrix(this.tmpMatrix);
             mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
@@ -596,7 +596,7 @@ var ManualTracingTool;
                     this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
                     this.logic_GPULine.calculateLinePointEdges(group.buffer);
                     let vertexUnitSize = this.polyLineShader.getVertexUnitSize();
-                    let vertexCount = this.polyLineShader.getVertexCount(group.buffer.pointCount); // �{���͕ӂ̐������ł悢�̂Ŏ኱���ʂ͐����邪�A�v�Z���ȒP�ɂ��邽�߂���ł悢���Ƃɂ���
+                    let vertexCount = this.polyLineShader.getVertexCount(group.buffer.pointCount); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
                     this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
                     this.logic_GPULine.calculateBufferData_PloyLine(group.buffer);
                     if (group.buffer.usedDataArraySize > 0) {
@@ -1046,12 +1046,12 @@ var ManualTracingTool;
             this.aAlpha = -1;
         }
         getVertexUnitSize() {
-            return (2 // ���_�̈ʒu vec2
-                + 1 // �s�����x float
+            return (2 // 頂点の位置 vec2
+                + 1 // 不透明度 float
             );
         }
         getVertexCount(pointCount) {
-            return (pointCount - 1) * (2 + 2) * 3; // �ӂ̐� * �����Q�|���S���{�E���Q�|���S�� * 3���_
+            return (pointCount - 1) * (2 + 2) * 3; // 辺の数 * 左側２ポリゴン＋右側２ポリゴン * 3頂点
         }
         getDrawArrayTryanglesCount(bufferSize) {
             return bufferSize / this.getVertexUnitSize();

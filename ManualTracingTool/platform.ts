@@ -5,11 +5,11 @@ namespace Platform {
 
     export let fs = (typeof (require) != 'undefined') ? require('fs') : {
 
-        readFile(fileName, text): string {
+        readFileSync(fileName): string {
             return window.localStorage.getItem(fileName);
         },
 
-        writeFile(fileName, text) {
+        writeFileSync(fileName, text) {
             window.localStorage.setItem(fileName, text);
         }
     };

@@ -1,10 +1,10 @@
 var Platform;
 (function (Platform) {
     Platform.fs = (typeof (require) != 'undefined') ? require('fs') : {
-        readFile(fileName, text) {
+        readFileSync(fileName) {
             return window.localStorage.getItem(fileName);
         },
-        writeFile(fileName, text) {
+        writeFileSync(fileName, text) {
             window.localStorage.setItem(fileName, text);
         }
     };

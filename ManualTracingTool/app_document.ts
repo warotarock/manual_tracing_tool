@@ -445,7 +445,7 @@ namespace ManualTracingTool {
 
         protected saveDocumentJsonFile(filePath: string, documentData: DocumentData, backGroundType: DocumentBackGroundTypeID) {
 
-            Platform.fs.writeFile(filePath, JSON.stringify(documentData), function (error) {
+            Platform.fs.writeFileSync(filePath, JSON.stringify(documentData), function (error) {
                 if (error != null) {
                     this.showMessageBox('error : ' + error);
                 }
@@ -474,7 +474,7 @@ namespace ManualTracingTool {
 
                     let base64Data = dataURL.substr(dataURL.indexOf(',') + 1);
 
-                    Platform.fs.writeFile(filePath, base64Data, 'base64', (error) => {
+                    Platform.fs.writeFileSync(filePath, base64Data, 'base64', (error) => {
                         if (error) {
                             this.showMessageBox(error);
                         }
@@ -551,7 +551,7 @@ namespace ManualTracingTool {
 
             let dataURL = canvas.toDataURL(imageTypeText, 0.9);
             let base64Data = dataURL.substr(dataURL.indexOf(',') + 1);
-            Platform.fs.writeFile(fileFullPath, base64Data, 'base64', (error) => {
+            Platform.fs.writeFileSync(fileFullPath, base64Data, 'base64', (error) => {
                 if (error) {
                     this.showMessageBox(error);
                 }
