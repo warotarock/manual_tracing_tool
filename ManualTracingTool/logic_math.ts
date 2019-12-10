@@ -3,6 +3,7 @@ namespace ManualTracingTool {
 
     export class Maths {
 
+        // GLSL like math functions
         static clamp(x: float, a: float, b: float): float {
 
             return (x < a ? a : (x > b ? b : x));
@@ -30,7 +31,17 @@ namespace ManualTracingTool {
             return t * t * (3 - 2 * t);
         }
 
-        // xが0.0～1.0の間でだいたい0.0～1.0の値をとるシグモイド関数（やんわりと何かを変化させる用途）
+        // Guassian
+        private static gaussian(x: float, eRange: float): float {
+
+            let d = eRange * eRange;
+            let timeScale = 0.5;
+            let r = 1 + 2 * x;
+
+            return Math.exp(-timeScale * r * r / d);
+        }
+
+        // Sigmoid almost input x=0.0～1.0, it returns almopst 0.0～1.0 value
         static sigmoid10(x: float): float {
 
             var a = 1.0 / (1.0 + Math.exp(-20 * (x - 0.5)));
@@ -38,7 +49,7 @@ namespace ManualTracingTool {
             return a;
         }
 
-        // シグモイド関数の0.5以降の部分
+        // Half of sigmoid10 (after x=0.5)
         static sigmoid10half(x: float): float {
 
             return (Maths.sigmoid10(0.5 + x * 0.5) - 0.5) * 2.0;
@@ -194,67 +205,6 @@ namespace ManualTracingTool {
             result[13] = locationFrom[1];
             result[14] = 0.0;
             result[15] = 1.0;
-        }
-
-        private static hsvToRGB_Element(h: float, s: float, v: float, baseElement: float): float {
-
-            return ((Maths.clamp(Math.abs(Maths.fract(h + baseElement / 3.0) * 6.0 - 3.0) - 1.0, 0.0, 1.0) - 1.0) * s + 1.0) * v;
-        }
-
-        static hsvToRGB(out: Vec4, h: float, s: float, v: float) {
-
-            out[0] = Maths.hsvToRGB_Element(h, s, v, 0.0);
-            out[1] = Maths.hsvToRGB_Element(h, s, v, 2.0);
-            out[2] = Maths.hsvToRGB_Element(h, s, v, 1.0);
-        }
-
-        private static rgbToHSV_K = vec4.fromValues(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-        private static rgbToHSV_Kxy = vec4.create();
-        private static rgbToHSV_bgKwz = vec4.create();
-        private static rgbToHSV_gbKxy = vec4.create();
-        private static rgbToHSV_p = vec4.create();
-        private static rgbToHSV_Pxywr = vec4.create();
-        private static rgbToHSV_rPyzx = vec4.create();
-        private static rgbToHSV_q = vec4.create();
-
-        static rgbToHSV(result: Vec4, r: float, g: float, b: float) {
-
-            // vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-            let Kx = 0.0;
-            let Ky = -1.0 / 3.0;
-            let Kz = 2.0 / 3.0;
-            let Kw = -1.0;
-
-            // vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-            vec4.set(this.rgbToHSV_bgKwz, b, g, Kw, Kz);
-            vec4.set(this.rgbToHSV_gbKxy, g, b, Kx, Ky);
-            vec4.lerp(this.rgbToHSV_p, this.rgbToHSV_bgKwz, this.rgbToHSV_gbKxy, this.step(b, g));
-
-            let px = this.rgbToHSV_p[0];
-            let py = this.rgbToHSV_p[1];
-            let pz = this.rgbToHSV_p[2];
-            let pw = this.rgbToHSV_p[3];
-
-            // vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-            vec4.set(this.rgbToHSV_Pxywr, px, py, pw, r);
-            vec4.set(this.rgbToHSV_rPyzx, r, py, pz, px);
-            vec4.lerp(this.rgbToHSV_q, this.rgbToHSV_Pxywr, this.rgbToHSV_rPyzx, this.step(px, r));
-
-            let qx = this.rgbToHSV_q[0];
-            let qy = this.rgbToHSV_q[1];
-            let qz = this.rgbToHSV_q[2];
-            let qw = this.rgbToHSV_q[3];
-
-            // float d = q.x - min(q.w, q.y);
-            let d = qx - Math.min(qw, qy);
-
-            // float e = 1.0e-10;
-            let e = 1.0e-10;
-
-            // return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-            result[0] = Math.abs(qz + (qw - qy) / (6.0 * d + e));
-            result[1] = d / (qx + e);
-            result[2] = qx;
         }
     }
 }

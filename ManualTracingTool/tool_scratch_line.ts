@@ -278,6 +278,8 @@ namespace ManualTracingTool {
 
                 this.deleteDuplications(env);
             }
+
+            this.clearFlags(env);
         }
 
         // Adjusting edit line
@@ -738,8 +740,6 @@ namespace ManualTracingTool {
 
                     lastPointIndex = i;
                 }
-
-                point.modifyFlag = LinePointModifyFlagID.none;
             }
 
             if (firstPointIndex > 0) {
@@ -874,6 +874,14 @@ namespace ManualTracingTool {
             }
 
             return nearPointCcount;
+        }
+
+        protected clearFlags(env: ToolEnvironment) {
+
+            if (env.currentVectorLine != null) {
+
+                Logic_Edit_VectorLayer.clearLineModifyFlags(env.currentVectorLine);
+            }
         }
     }
 

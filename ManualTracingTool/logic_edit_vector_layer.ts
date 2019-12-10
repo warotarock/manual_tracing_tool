@@ -1,85 +1,6 @@
 ﻿
 namespace ManualTracingTool {
 
-    export class Logic_VectorLayer {
-
-        static clearGeometryModifyFlags(geometry: VectorLayerGeometry) {
-
-            for (let group of geometry.groups) {
-
-                this.clearGroupModifyFlags(group);
-            }
-        }
-
-        static clearGroupModifyFlags(group: VectorGroup) {
-
-            group.modifyFlag = VectorGroupModifyFlagID.none;
-            group.linePointModifyFlag = VectorGroupModifyFlagID.none;
-
-            for (let line of group.lines) {
-
-                this.clearLineModifyFlags(line);
-            }
-        }
-
-        static clearLineModifyFlags(line: VectorLine) {
-
-            line.modifyFlag = VectorLineModifyFlagID.none;
-
-            for (let point of line.points) {
-
-                point.modifyFlag = LinePointModifyFlagID.none;
-            }
-        }
-
-        static fillGeometryDeleteFlags(geometry: VectorLayerGeometry, forceDelete: boolean) {
-
-            for (let group of geometry.groups) {
-
-                this.fillGroupDeleteFlags(group, forceDelete);
-            }
-        }
-
-        static fillGroupDeleteFlags(group: VectorGroup, forceDelete: boolean) {
-
-            if (forceDelete) {
-
-                group.modifyFlag = VectorGroupModifyFlagID.delete;
-            }
-
-            let setDelete = false;
-            if (group.modifyFlag == VectorGroupModifyFlagID.delete) {
-                setDelete = true;
-            }
-
-            for (let line of group.lines) {
-
-                this.fillLineDeleteFlags(line, setDelete);
-            }
-        }
-
-        static fillLineDeleteFlags(line: VectorLine, forceDelete: boolean) {
-
-            if (forceDelete) {
-
-                line.modifyFlag = VectorLineModifyFlagID.delete;
-            }
-
-            let setDelete = false;
-            if (line.modifyFlag == VectorLineModifyFlagID.delete) {
-                setDelete = true;
-            }
-
-            if (setDelete) {
-
-                for (let point of line.points) {
-
-                    point.modifyFlag = LinePointModifyFlagID.delete;
-                }
-            }
-        }
-    }
-
     export class Logic_Edit_Points_RectangleArea {
 
         top = 0.0;
@@ -468,15 +389,6 @@ namespace ManualTracingTool {
             vec3.set(result, px, py, 0.0);
         }
 
-        private static gaussian(x: float, eRange: float): float {
-
-            let d = eRange * eRange;
-            let timeScale = 0.5;
-            let r = 1 + 2 * x;
-
-            return Math.exp(-timeScale * r * r / d);
-        }
-
         static applyAdjustments(line: VectorLine) {
 
             for (let point of line.points) {
@@ -513,22 +425,82 @@ namespace ManualTracingTool {
 
             return result;
         }
+    }
 
-        static addPointsToList(destList: List<LinePoint>, sourceList: List<LinePoint>, startIndex: int, endIndex: int) {
+    export class Logic_Edit_VectorLayer {
 
-            let index = startIndex;
-            let addIndex = (startIndex < endIndex) ? 1 : -1;
+        static clearGeometryModifyFlags(geometry: VectorLayerGeometry) {
 
-            while (true) {
+            for (let group of geometry.groups) {
 
-                let point = sourceList[index];
+                this.clearGroupModifyFlags(group);
+            }
+        }
 
-                destList.push(point);
+        static clearGroupModifyFlags(group: VectorGroup) {
 
-                index += addIndex;
+            group.modifyFlag = VectorGroupModifyFlagID.none;
+            group.linePointModifyFlag = VectorGroupModifyFlagID.none;
 
-                if (index == endIndex) {
-                    break;
+            for (let line of group.lines) {
+
+                this.clearLineModifyFlags(line);
+            }
+        }
+
+        static clearLineModifyFlags(line: VectorLine) {
+
+            line.modifyFlag = VectorLineModifyFlagID.none;
+
+            for (let point of line.points) {
+
+                point.modifyFlag = LinePointModifyFlagID.none;
+            }
+        }
+
+        static fillGeometryDeleteFlags(geometry: VectorLayerGeometry, forceDelete: boolean) {
+
+            for (let group of geometry.groups) {
+
+                this.fillGroupDeleteFlags(group, forceDelete);
+            }
+        }
+
+        static fillGroupDeleteFlags(group: VectorGroup, forceDelete: boolean) {
+
+            if (forceDelete) {
+
+                group.modifyFlag = VectorGroupModifyFlagID.delete;
+            }
+
+            let setDelete = false;
+            if (group.modifyFlag == VectorGroupModifyFlagID.delete) {
+                setDelete = true;
+            }
+
+            for (let line of group.lines) {
+
+                this.fillLineDeleteFlags(line, setDelete);
+            }
+        }
+
+        static fillLineDeleteFlags(line: VectorLine, forceDelete: boolean) {
+
+            if (forceDelete) {
+
+                line.modifyFlag = VectorLineModifyFlagID.delete;
+            }
+
+            let setDelete = false;
+            if (line.modifyFlag == VectorLineModifyFlagID.delete) {
+                setDelete = true;
+            }
+
+            if (setDelete) {
+
+                for (let point of line.points) {
+
+                    point.modifyFlag = LinePointModifyFlagID.delete;
                 }
             }
         }

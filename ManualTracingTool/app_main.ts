@@ -104,6 +104,8 @@ namespace ManualTracingTool {
 
             this.initializeViewDevices();
 
+            this.initializeDrawingDevices();
+
             this.layerWindow_CaluculateLayout(this.layerWindow);
             this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
             this.palletSelector_CaluculateLayout();
@@ -272,6 +274,13 @@ namespace ManualTracingTool {
 
             // Loading finished
 
+            if (this.toolContext != null && this.toolContext.document != null) {
+
+                DocumentLogic.releaseDocumentResources(this.toolContext.document, this.drawGPURender.gl);
+
+                this.toolContext.document = null;
+            }
+
             this.finishLayerLoading_Recursive(this.loadingDocument.rootLayer);
 
             this.start(this.loadingDocument);
@@ -340,7 +349,7 @@ namespace ManualTracingTool {
             image.addEventListener('load',
                 () => {
                     if (imageResource.isGLTexture) {
-                        this.webGLRender.initializeImageTexture(imageResource.image);
+                        this.posing3DViewRender.initializeImageTexture(imageResource.image);
                     }
                     imageResource.loaded = true;
                     imageResource.image.width = image.width;
@@ -373,7 +382,7 @@ namespace ManualTracingTool {
                         let modelResource = new ModelResource();
                         modelResource.modelName = modelData.name;
 
-                        this.webGLRender.initializeModelBuffer(modelResource.model, modelData.vertices, modelData.indices, 4 * modelData.vertexStride); // 4 = size of float
+                        this.posing3DViewRender.initializeModelBuffer(modelResource.model, modelData.vertices, modelData.indices, 4 * modelData.vertexStride); // 4 = size of float
 
                         modelFile.modelResources.push(modelResource);
                         modelFile.modelResourceDictionary[modelData.name] = modelResource;
@@ -398,6 +407,9 @@ namespace ManualTracingTool {
             this.initializeContext(documentData);
             this.initializeTools();
             this.initializeViewState();
+
+            this.drawPalletColorMixer(this.colorMixerWindow_colorCanvas);
+            this.drawPalletColorMixer(this.palletColorModal_colorCanvas);
 
             this.updateLayerStructureInternal(true, true, false, false);
 
@@ -445,11 +457,6 @@ namespace ManualTracingTool {
             this.toolEnv = new ToolEnvironment(this.toolContext);
             this.toolDrawEnv = new ToolDrawingEnvironment();
             this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
-        }
-
-        private resetContext(documentData: DocumentData) {
-
-            this.initializeContext(documentData);
         }
 
         protected onWindowBlur() { // @override
@@ -585,6 +592,11 @@ namespace ManualTracingTool {
             this.setHeaderDocumentFileName(fileName);
         }
 
+        getPosingModelByName(name: string): PosingModel { // @implements MainEditor
+
+            return this.modelFile.posingModelDictionary[name];
+        }
+
         // Main drawing process
 
         activeLayerBufferDrawn = false;
@@ -622,8 +634,6 @@ namespace ManualTracingTool {
                 this.drawEditorWindow(this.editorWindow, this.mainWindow);
 
                 this.toolContext.redrawEditorWindow = false;
-
-                isDrawingExist = true;
             }
 
             if (this.toolContext.redrawLayerWindow) {
@@ -632,8 +642,6 @@ namespace ManualTracingTool {
                 this.drawLayerWindow(this.layerWindow);
 
                 this.toolContext.redrawLayerWindow = false;
-
-                isDrawingExist = true;
             }
 
             if (this.toolContext.redrawSubtoolWindow) {
@@ -642,8 +650,6 @@ namespace ManualTracingTool {
                 this.subtoolWindow_Draw(this.subtoolWindow);
 
                 this.toolContext.redrawSubtoolWindow = false;
-
-                isDrawingExist = true;
             }
 
             if (this.toolContext.redrawPalletSelectorWindow) {
@@ -652,8 +658,6 @@ namespace ManualTracingTool {
                 this.drawPalletSelectorWindow();
 
                 this.toolContext.redrawPalletSelectorWindow = false;
-
-                isDrawingExist = true;
             }
 
             if (this.toolContext.redrawColorMixerWindow) {
@@ -661,8 +665,6 @@ namespace ManualTracingTool {
                 this.drawColorMixerWindow();
 
                 this.toolContext.redrawColorMixerWindow = false;
-
-                isDrawingExist = true;
             }
 
             if (this.toolContext.redrawTimeLineWindow) {
@@ -677,7 +679,7 @@ namespace ManualTracingTool {
 
             if (this.toolContext.redrawWebGLWindow) {
 
-                this.drawWebGLWindow(this.webglWindow, this.layerWindow.layerWindowItems, this.mainWindow, null);
+                this.drawPosing3DView(this.webglWindow, this.layerWindow.layerWindowItems, this.mainWindow, null);
 
                 this.toolContext.redrawWebGLWindow = false;
 
@@ -689,8 +691,6 @@ namespace ManualTracingTool {
                 this.updateHeaderButtons();
 
                 this.toolContext.redrawHeaderWindow = false;
-
-                isDrawingExist = true;
             }
 
             if (this.toolContext.redrawFooterWindow) {
@@ -698,8 +698,6 @@ namespace ManualTracingTool {
                 this.updateFooterText();
 
                 this.toolContext.redrawFooterWindow = false;
-
-                isDrawingExist = true;
             }
 
             this.lazyDraw_Process(this.lazy_DrawPathContext, isDrawingExist);
@@ -808,33 +806,102 @@ namespace ManualTracingTool {
 
         protected collectDrawPasths_CollectPathRecursive(result: List<DrawPathStep>, vLayers: List<TempVirtualLayer>) {
 
+            let isGPUDrawContinuing = false;
+
             for (let i = vLayers.length - 1; i >= 0; i--) {
 
                 let vLayer = vLayers[i];
 
-                let drawPathStep = new DrawPathStep();
-                drawPathStep.layer = vLayer.layer;
-
-                result.push(drawPathStep);
-
                 if (vLayer.type == TempVirtualLayerTypeID.virtualGroup
                     || vLayer.layer.type == LayerTypeID.groupLayer) {
 
-                    // a step to begin buffering
-                    drawPathStep.setType(DrawPathOperationTypeID.prepareBuffer);
+                    // Insert a step to begin buffering
+                    {
+                        let drawPathStep = new DrawPathStep();
+                        drawPathStep.layer = vLayer.layer;
+                        drawPathStep.setType(DrawPathOperationTypeID.prepareBuffer);
+                        drawPathStep.compositeOperation = (vLayer.layer.isMaskedByBelowLayer ? 'source-atop' : 'source-over');
+                        result.push(drawPathStep);
+                    }
 
-                    // insert steps for group children
+                    // Insert steps for group children
                     this.collectDrawPasths_CollectPathRecursive(result, vLayer.children);
 
                     // insert a step to finish buffering
-                    let end_DrawPathStep = new DrawPathStep();
-                    end_DrawPathStep.layer = vLayer.layer;
-                    end_DrawPathStep.setType(DrawPathOperationTypeID.flushBuffer);
-                    result.push(end_DrawPathStep);
+                    {
+                        let drawPathStep = new DrawPathStep();
+                        drawPathStep.layer = vLayer.layer;
+                        drawPathStep.setType(DrawPathOperationTypeID.flushBuffer);
+                        result.push(drawPathStep);
+                    }
+                }
+                else if (VectorLayer.isVectorLayer(vLayer.layer)) {
+
+                    let vectorLayer = <VectorLayer>vLayer.layer;
+
+                    // Insert a step to draw line
+                    if (vectorLayer.drawLineType != DrawLineTypeID.none) {
+
+                        // Insert a step to clear gl buffer
+                        if (!isGPUDrawContinuing) {
+
+                            let drawPathStep = new DrawPathStep();
+                            drawPathStep.layer = vLayer.layer;
+                            drawPathStep.setType(DrawPathOperationTypeID.prepareRendering);
+                            result.push(drawPathStep);
+                        }
+
+                        // Insert a step to draw
+                        {
+                            let drawPathStep = new DrawPathStep();
+                            drawPathStep.layer = vLayer.layer;
+                            drawPathStep.setType(DrawPathOperationTypeID.drawForeground);
+                            drawPathStep.compositeOperation = (vLayer.layer.isMaskedByBelowLayer ? 'source-atop' : 'source-over');
+                            result.push(drawPathStep);
+                        }
+
+                        // Insert a step to flush gl buffer
+                        isGPUDrawContinuing = false;
+                        if (vectorLayer.fillAreaType == FillAreaTypeID.none && i > 0) {
+
+                            let next_layer = vLayers[i - 1].layer;
+
+                            if (VectorLayer.isVectorLayer(next_layer)) {
+
+                                let next_vectorLayer = <VectorLayer>next_layer;
+
+                                if (next_vectorLayer.drawLineType != DrawLineTypeID.none) {
+
+                                    isGPUDrawContinuing = true;
+                                }
+                            }
+                        }
+
+                        if (!isGPUDrawContinuing) {
+
+                            let drawPathStep = new DrawPathStep();
+                            drawPathStep.layer = vLayer.layer;
+                            drawPathStep.setType(DrawPathOperationTypeID.flushRendering);
+                            drawPathStep.compositeOperation = (vLayer.layer.isMaskedByBelowLayer ? 'source-atop' : 'source-over');
+                            result.push(drawPathStep);
+                        }
+                    }
+
+                    // Insert a step to draw fill
+                    if (vectorLayer.fillAreaType != FillAreaTypeID.none) {
+
+                        let drawPathStep = new DrawPathStep();
+                        drawPathStep.layer = vLayer.layer;
+                        drawPathStep.setType(DrawPathOperationTypeID.drawBackground);
+                        result.push(drawPathStep);
+                    }
                 }
                 else {
 
-                    drawPathStep.setType(DrawPathOperationTypeID.draw);
+                    let drawPathStep = new DrawPathStep();
+                    drawPathStep.layer = vLayer.layer;
+                    drawPathStep.setType(DrawPathOperationTypeID.drawForeground);
+                    result.push(drawPathStep);
                 }
             }
         }
@@ -904,6 +971,8 @@ namespace ManualTracingTool {
 
             drawPathContext.activeDrawPathStartIndex = firstSelectedIndex;
             drawPathContext.activeDrawPathEndIndex = lastSelectedIndex;
+
+            console.log('CollectSelectionInfo', firstSelectedIndex, lastSelectedIndex);
         }
 
         protected collectDrawPasths_CollectViewKeyframe(drawPathSteps: List<DrawPathStep>, viewKeyframeLayers: Array<ViewKeyframeLayer>) {
@@ -968,22 +1037,26 @@ namespace ManualTracingTool {
             }
 
             let env = this.toolEnv;
+            let drawPathContext = this.drawPathContext;
+
+            // TODO: 必要なときだけ実行する
+            this.collectDrawPasths_CollectSelectionInfo(drawPathContext);
+
             let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
             let isModalToolRunning = this.isModalToolRunning();
-            let isExporting = false;
+            let isFullRendering = false;
 
-            let drawPathContext = this.drawPathContext;
-            let maxLayerIndex = drawPathContext.steps.length - 1;
             let activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex;
             let activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex;
+            let maxStepIndex = drawPathContext.steps.length - 1;
 
+            drawPathContext.drawPathModeID = DrawPathModeID.editor;
             drawPathContext.isModalToolRunning = isModalToolRunning;
-            drawPathContext.isExporting = isExporting;
             drawPathContext.currentLayerOnly = currentLayerOnly;
 
-            this.clearWindow(canvasWindow);
-
             if (redrawActiveLayerOnly && activeRangeStartIndex != -1) {
+
+                this.clearWindow(canvasWindow);
 
                 // Draw back layers
                 if (activeRangeStartIndex > 0) {
@@ -1002,14 +1075,13 @@ namespace ManualTracingTool {
                 // Draw current layers
                 drawPathContext.startIndex = activeRangeStartIndex;
                 drawPathContext.endIndex = activeRangeEndIndex;
-
                 this.drawDrawPaths(canvasWindow, drawPathContext, true);
 
                 // Draw fore layers
-                if (activeRangeEndIndex < maxLayerIndex) {
+                if (activeRangeEndIndex < maxStepIndex) {
 
                     drawPathContext.startIndex = activeRangeEndIndex + 1;
-                    drawPathContext.endIndex = maxLayerIndex;
+                    drawPathContext.endIndex = maxStepIndex;
 
                     this.drawMainWindow_drawPathStepsToBuffer(
                         canvasWindow
@@ -1025,7 +1097,7 @@ namespace ManualTracingTool {
 
                 // Draw all layers
                 drawPathContext.startIndex = 0;
-                drawPathContext.endIndex = maxLayerIndex;
+                drawPathContext.endIndex = maxStepIndex;
 
                 this.drawDrawPaths(canvasWindow, drawPathContext, true);
 
@@ -1035,7 +1107,7 @@ namespace ManualTracingTool {
             // Draw edit mode ui
             if (env.isEditMode()) {
 
-                this.drawMainWindow_drawEditMode(canvasWindow, this.currentViewKeyframe, currentLayerOnly, isModalToolRunning);
+                this.drawMainWindow_drawEditMode(canvasWindow, this.currentViewKeyframe, isFullRendering, currentLayerOnly, isModalToolRunning);
             }
         }
 
@@ -1045,32 +1117,43 @@ namespace ManualTracingTool {
             , drawPathContext: DrawPathContext
             , activeLayerBufferDrawn: boolean
         ) {
-
             // Draw layers to buffer if requested
 
             if (!activeLayerBufferDrawn) {
 
-                this.mainWindow.copyTransformTo(bufferCanvasWindow);
-
                 this.clearWindow(bufferCanvasWindow);
 
+                canvasWindow.copyTransformTo(bufferCanvasWindow);
+
                 this.drawDrawPaths(bufferCanvasWindow, drawPathContext, true);
+
+                //console.log('drawPathStepsToBuffer', drawPathContext.startIndex, drawPathContext.endIndex);
             }
 
             // Draw layers from buffer
 
-            this.canvasRender.setContext(canvasWindow);
+            this.drawFullWindowImage(canvasWindow, bufferCanvasWindow);
 
-            this.canvasRender.resetTransform();
+            //this.canvasRender.setContext(bufferCanvasWindow);
+            //this.canvasRender.resetTransform();
+            //this.canvasRender.setFillColor(1.0, 0.0, 0.0, 0.5);
+            //this.canvasRender.fillRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
 
-            this.canvasRender.drawImage(bufferCanvasWindow.canvas
-                , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height
-                , 0, 0, canvasWindow.width, canvasWindow.height);
+            //this.canvasRender.setContext(canvasWindow);
+            //this.canvasRender.resetTransform();
+            //this.canvasRender.drawImage(bufferCanvasWindow.canvas
+            //    , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height
+            //    , 0, 0, canvasWindow.width, canvasWindow.height);
         }
 
-        protected drawMainWindow_drawEditMode(canvasWindow: CanvasWindow, viewKeyframe: ViewKeyframe, currentLayerOnly: boolean, isModalToolRunning: boolean) {
+        protected drawMainWindow_drawEditMode(canvasWindow: CanvasWindow, viewKeyframe: ViewKeyframe, isFullRendering: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
 
             this.canvasRender.setContext(canvasWindow);
+
+            let documentData = this.toolContext.document;
+
+            let drawStrokes = !isFullRendering;
+            let drawPoints = true;
 
             for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
 
@@ -1090,11 +1173,193 @@ namespace ManualTracingTool {
                     }
                 }
 
-                this.drawLayerForEditMode(viewKeyFrameLayer, currentLayerOnly, this.toolContext.document, isModalToolRunning)
+                if (VectorLayer.isVectorLayer(layer)) {
+
+                    let vectorLayer = <VectorLayer>layer;
+                    this.drawVectorLayerForEditMode(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData
+                        , drawStrokes, drawPoints, isModalToolRunning);
+                }
             }
         }
 
-        private isLayerDrawTarget(layer: Layer, currentLayerOnly: boolean) {
+        drawPath_logging = true;
+
+        protected drawDrawPaths(canvasWindow: CanvasWindow, drawPathContext: DrawPathContext, clearState: boolean) {
+
+            let bufferCanvasWindow = canvasWindow;
+            let startTime = Platform.getCurrentTime();
+
+            if (clearState) {
+
+                drawPathContext.clearDrawingStates();
+
+                drawPathContext.bufferStack.push(canvasWindow);
+
+                this.canvasRender.setContext(canvasWindow);
+            }
+            else {
+
+                bufferCanvasWindow = drawPathContext.bufferStack.pop();
+
+                this.canvasRender.setContext(bufferCanvasWindow);
+            }
+
+            if (this.drawPath_logging) {
+
+                console.log('[DrawPath] start clearState', clearState);
+            }
+
+            for (let i = drawPathContext.startIndex; i <= drawPathContext.endIndex; i++) {
+
+                let drawPathStep = drawPathContext.steps[i];
+
+                drawPathContext.lastDrawPathIndex = i;
+
+                let viewKeyFrameLayer = drawPathStep.viewKeyframeLayer;
+                let layer = viewKeyFrameLayer ? viewKeyFrameLayer.layer : null;
+
+                if (this.drawPath_logging) {
+
+                    console.log('[DrawPath]', i, drawPathStep._debugText, layer ? layer.name : '', 'stack:', drawPathContext.bufferStack.length);
+                }
+
+                if (drawPathStep.operationType == DrawPathOperationTypeID.beginDrawing) {
+
+                    this.clearWindow(canvasWindow);
+
+                    this.mainWindow.copyTransformTo(canvasWindow);
+                    this.canvasRender.setTransform(canvasWindow);
+                }
+                else if (drawPathStep.operationType == DrawPathOperationTypeID.drawForeground
+                    || drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
+
+                    if (drawPathContext.drawPathModeID == DrawPathModeID.export) {
+
+                        if (!Layer.isVisible(layer) || !layer.isRenderTarget) {
+                            continue;
+                        }
+                    }
+                    else if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
+
+                        continue;
+                    }
+
+                    // Draw layer to current buffer
+                    this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep);
+
+                    if (drawPathStep.operationType == DrawPathOperationTypeID.drawForeground) {
+
+                        if (drawPathContext.isFullRendering() && VectorLayer.isVectorLayer(layer)) {
+
+                            // GPU rendering
+                            this.renderForeground_VectorLayer(bufferCanvasWindow
+                                , viewKeyFrameLayer
+                                , this.toolContext.document
+                                , drawPathContext.isModalToolRunning);
+                        }
+                        else {
+
+                            // CPU drawing
+                            this.drawForeground(viewKeyFrameLayer, this.toolContext.document
+                                , drawPathContext.isFullRendering(), drawPathContext.isModalToolRunning);
+                        }
+                    }
+                    else if (drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
+
+                        this.drawBackground(viewKeyFrameLayer, this.toolContext.document
+                            , drawPathContext.isFullRendering(), drawPathContext.isModalToolRunning);
+                    }
+
+                    this.canvasRender.setCompositeOperation('source-over');
+                }
+                else if (drawPathStep.operationType == DrawPathOperationTypeID.prepareRendering) {
+
+                    if (drawPathContext.isFullRendering()) {
+
+                        this.renderClearBuffer();
+                    }
+                }
+                else if (drawPathStep.operationType == DrawPathOperationTypeID.flushRendering) {
+
+                    if (drawPathContext.isFullRendering()) {
+
+                        let renderCanvasWindow = this.drawGPUWindow;
+
+                        this.canvasRender.setContext(bufferCanvasWindow);
+
+                        this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep);
+
+                        this.drawFullWindowImage(bufferCanvasWindow, renderCanvasWindow);
+
+                        //this.canvasRender.resetTransform();
+                        //this.canvasRender.drawImage(renderCanvasWindow.canvas
+                        //    , 0, 0, renderCanvasWindow.width, renderCanvasWindow.height
+                        //    , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height);
+
+                        //this.canvasRender.setTransform(bufferCanvasWindow);
+
+                        this.canvasRender.setCompositeOperation('source-over');
+                    }
+                }
+                else if (drawPathStep.operationType == DrawPathOperationTypeID.prepareBuffer) {
+
+                    if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
+
+                        continue;
+                    }
+
+                    // Prepare buffer
+
+                    this.canvasRender.setContext(layer.bufferCanvasWindow);
+                    this.clearWindow(layer.bufferCanvasWindow);
+
+                    bufferCanvasWindow.copyTransformTo(layer.bufferCanvasWindow);
+                    this.canvasRender.setTransform(layer.bufferCanvasWindow);
+
+                    drawPathContext.bufferStack.push(bufferCanvasWindow);
+
+                    bufferCanvasWindow = layer.bufferCanvasWindow;
+                }
+                else if (drawPathStep.operationType == DrawPathOperationTypeID.flushBuffer) {
+
+                    if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
+
+                        continue;
+                    }
+
+                    // Flush buffered image to upper buffer
+
+                    let before_BufferCanvasWindow = drawPathContext.bufferStack.pop();
+
+                    this.canvasRender.setContext(before_BufferCanvasWindow);
+
+                    this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep);
+
+                    this.drawFullWindowImage(before_BufferCanvasWindow, bufferCanvasWindow);
+
+                    //this.canvasRender.setContext(before_BufferCanvasWindow);
+                    //this.canvasRender.resetTransform();
+                    //this.canvasRender.drawImage(bufferCanvasWindow.canvas
+                    //    , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height
+                    //    , 0, 0, before_BufferCanvasWindow.width, before_BufferCanvasWindow.height);
+
+                    //this.canvasRender.setTransform(before_BufferCanvasWindow);
+
+                    bufferCanvasWindow = before_BufferCanvasWindow;
+                }
+
+                let lastTime = Platform.getCurrentTime();
+
+                if (lastTime - startTime >= drawPathContext.lazyDraw_MaxTime
+                    || i == drawPathContext.endIndex) {
+
+                    drawPathContext.bufferStack.push(bufferCanvasWindow);
+                    break;
+                }
+            }
+        }
+
+        private drawDrawPaths_isLayerDrawTarget(layer: Layer, currentLayerOnly: boolean) {
 
             if (currentLayerOnly) {
 
@@ -1112,217 +1377,15 @@ namespace ManualTracingTool {
             return true;
         }
 
-        protected drawDrawPaths(canvasWindow: CanvasWindow, drawPathContext: DrawPathContext, clearState: boolean) {
+        private drawDrawPaths_setCompositeOperation(drawPathContext: DrawPathContext, drawPathStep: DrawPathStep) {
 
-            let bufferCanvasWindow = canvasWindow;
-            let startTime = Platform.getCurrentTime();
+            if (!drawPathContext.currentLayerOnly) {
 
-            if (clearState) {
-
-                drawPathContext.clearDrawingStates();
-            }
-
-            this.canvasRender.setContext(canvasWindow);
-
-            for (let i = drawPathContext.startIndex; i <= drawPathContext.endIndex; i++) {
-
-                let drawPathStep = drawPathContext.steps[i];
-
-                let viewKeyFrameLayer = drawPathStep.viewKeyframeLayer;
-
-                drawPathContext.lastDrawPathIndex = i;
-
-                if (viewKeyFrameLayer == null) {
-                    continue;
-                }
-
-                let layer = viewKeyFrameLayer.layer;
-
-                if (drawPathStep.operationType == DrawPathOperationTypeID.draw) {
-
-                    // Draw layer nomaly
-
-                    if (drawPathContext.isExporting) {
-
-                        if (!Layer.isVisible(layer) || !layer.isRenderTarget) {
-                            continue;
-                        }
-                    }
-                    else if (!this.isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
-
-                        continue;
-                    }
-
-                    if (layer.isMaskedByBelowLayer && !drawPathContext.currentLayerOnly) {
-
-                        this.canvasRender.setCompositeOperation('source-atop');
-                    }
-                    else {
-
-                        this.canvasRender.setCompositeOperation('source-over');
-                    }
-
-                    this.drawLayer(viewKeyFrameLayer, this.toolContext.document, drawPathContext.isExporting, drawPathContext.isModalToolRunning)
-
-                    this.canvasRender.setCompositeOperation('source-over');
-                }
-                else if (drawPathStep.operationType == DrawPathOperationTypeID.prepareBuffer) {
-
-                    // Prepare buffer
-
-                    if (!this.isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
-
-                        continue;
-                    }
-
-                    this.canvasRender.setContext(layer.bufferCanvasWindow);
-                    this.clearWindow(layer.bufferCanvasWindow);
-
-                    bufferCanvasWindow.copyTransformTo(layer.bufferCanvasWindow);
-                    this.canvasRender.setTransform(layer.bufferCanvasWindow);
-
-                    drawPathContext.bufferStack.push(bufferCanvasWindow);
-
-                    bufferCanvasWindow = layer.bufferCanvasWindow;
-                }
-                else if (drawPathStep.operationType == DrawPathOperationTypeID.flushBuffer) {
-
-                    // Flush buffered image to upper buffer
-
-                    if (!this.isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
-
-                        continue;
-                    }
-
-                    let before_BufferCanvasWindow = drawPathContext.bufferStack.pop();
-
-                    this.canvasRender.setContext(before_BufferCanvasWindow);
-                    this.canvasRender.resetTransform();
-                    this.canvasRender.drawImage(bufferCanvasWindow.canvas
-                        , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height
-                        , 0, 0, before_BufferCanvasWindow.width, before_BufferCanvasWindow.height);
-
-                    this.canvasRender.setTransform(before_BufferCanvasWindow);
-
-                    bufferCanvasWindow = before_BufferCanvasWindow;
-                }
-
-                let lastTime = Platform.getCurrentTime();
-
-                if (lastTime - startTime >= drawPathContext.lazyDraw_MaxTime
-                    || i == drawPathContext.endIndex) {
-
-                    break;
-                }
-            }
-        }
-
-        protected drawMainWindow_old(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean) { // @override
-
-            if (this.currentViewKeyframe == null) {
-                return;
-            }
-
-            let env = this.toolEnv;
-            let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
-            let isModalToolRunning = this.isModalToolRunning();
-
-            let maxLayerIndex = this.currentViewKeyframe.layers.length - 1;
-
-            // Searching edit target layers and not target layers
-            let editLayerStartIndex = -1;
-            let editLayerEndIndex = -1;
-            if (redrawActiveLayerOnly) {
-
-                for (let i = 0; i <= maxLayerIndex; i++) {
-
-                    let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
-
-                    if (Layer.isSelected(viewKeyFrameLayer.layer)) {
-
-                        if (editLayerEndIndex == -1) {
-
-                            editLayerEndIndex = i;
-                        }
-
-                        editLayerStartIndex = i;
-                    }
-                }
-
-                if (editLayerStartIndex == -1 && env.currentLayer != null) {
-
-                    for (let i = 0; i <= maxLayerIndex; i++) {
-
-                        let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
-
-                        if (viewKeyFrameLayer.layer == env.currentLayer) {
-
-                            editLayerStartIndex = i;
-                            editLayerEndIndex = i;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            this.clearWindow(canvasWindow);
-
-            if (redrawActiveLayerOnly && editLayerStartIndex != -1) {
-
-                if (editLayerStartIndex < maxLayerIndex) {
-
-                    // Draw back layers to buffer if requested
-                    if (!this.activeLayerBufferDrawn) {
-
-                        this.mainWindow.copyTransformTo(this.backLayerRenderWindow);
-                        this.clearWindow(this.backLayerRenderWindow);
-                        this.drawLayers(this.backLayerRenderWindow
-                            , maxLayerIndex, editLayerStartIndex + 1, false, currentLayerOnly, isModalToolRunning);
-                    }
-
-                    // Draw back layers from buffer
-                    this.canvasRender.setContext(canvasWindow);
-                    this.canvasRender.resetTransform();
-                    this.canvasRender.drawImage(this.backLayerRenderWindow.canvas
-                        , 0, 0, this.backLayerRenderWindow.width, this.backLayerRenderWindow.height
-                        , 0, 0, canvasWindow.width, canvasWindow.height);
-                }
-
-                // Draw current layer
-                this.drawLayers(canvasWindow, editLayerStartIndex, editLayerEndIndex, false, currentLayerOnly, isModalToolRunning);
-
-                if (editLayerEndIndex > 0) {
-
-                    // Draw fore layers if requested
-                    if (!this.activeLayerBufferDrawn) {
-
-                        this.mainWindow.copyTransformTo(this.foreLayerRenderWindow);
-                        this.clearWindow(this.foreLayerRenderWindow);
-                        this.drawLayers(this.foreLayerRenderWindow
-                            , editLayerEndIndex - 1, 0, false, currentLayerOnly, isModalToolRunning);
-                    }
-
-                    // Draw fore layers from buffer
-                    this.canvasRender.setContext(canvasWindow);
-                    this.canvasRender.resetTransform();
-                    this.canvasRender.drawImage(this.foreLayerRenderWindow.canvas
-                        , 0, 0, this.foreLayerRenderWindow.width, this.foreLayerRenderWindow.height
-                        , 0, 0, canvasWindow.width, canvasWindow.height);
-                }
-
-                this.activeLayerBufferDrawn = true;
+                this.canvasRender.setCompositeOperation(drawPathStep.compositeOperation);
             }
             else {
 
-                this.drawLayers(canvasWindow, maxLayerIndex, 0, false, currentLayerOnly, isModalToolRunning);
-
-                this.activeLayerBufferDrawn = false;
-            }
-
-
-            if (env.isEditMode()) {
-
-                this.drawMainWindow_drawEditMode(canvasWindow, this.currentViewKeyframe, currentLayerOnly, isModalToolRunning);
+                this.canvasRender.setCompositeOperation('source-over');
             }
         }
 
@@ -1354,13 +1417,15 @@ namespace ManualTracingTool {
                     }
                 }
 
-                this.drawLayer(viewKeyFrameLayer, this.toolContext.document, isExporting, isModalToolRunning)
+                this.drawLayerByCanvas(viewKeyFrameLayer, this.toolContext.document
+                    , isExporting, isModalToolRunning)
             }
         }
 
         protected lazyDraw_Process(drawPathContext: DrawPathContext, isMainDrawingExist: boolean) {
 
             let canvasWindow = drawPathContext.lazyDraw_Buffer;
+            let env = this.toolEnv;
 
             // Rest or skip process
             if (isMainDrawingExist) {
@@ -1377,27 +1442,18 @@ namespace ManualTracingTool {
                 return;
             }
 
-            console.log('lazyDraw', drawPathContext.lazyDraw_ProcessedIndex);
+            let clearState = drawPathContext.isLazyDrawBigining();
+
+            console.log(`lazyDraw from ${drawPathContext.lazyDraw_ProcessedIndex} clear: ${clearState} stack: ${drawPathContext.bufferStack.length}`);
 
             // Draw steps
-            this.clearWindow(canvasWindow);
-
-            this.canvasRender.setContext(canvasWindow);
-            this.canvasRender.resetTransform();
-            this.canvasRender.setFillColor(1.0, 1.0, 0.0, 0.2);
-            this.canvasRender.fillRect(0, 0, canvasWindow.width, canvasWindow.height);
-
-            this.mainWindow.copyTransformTo(canvasWindow);
-
+            drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
             drawPathContext.startIndex = drawPathContext.lazyDraw_ProcessedIndex + 1;
             drawPathContext.endIndex = drawPathContext.steps.length - 1;
-            drawPathContext.isModalToolRunning = false;
-            drawPathContext.isExporting = false;
+            drawPathContext.isModalToolRunning = env.isModalToolRunning();
             drawPathContext.currentLayerOnly = false;
 
-            drawPathContext.lazyDraw_MaxTime = 0; // TODO: 適当な値を設定する
-
-            let clearState = drawPathContext.isLazyDrawBigining();
+            drawPathContext.lazyDraw_MaxTime = 10; // TODO: 適当な値を設定する
 
             this.drawDrawPaths(canvasWindow, drawPathContext, clearState);
 
@@ -1410,11 +1466,20 @@ namespace ManualTracingTool {
 
                     console.log('lazyDraw finished', drawPathContext.lazyDraw_ProcessedIndex);
 
-                    this.canvasRender.setContext(this.mainWindow);
+                    this.clearWindow(this.mainWindow);
+
+                    //this.drawFullWindowImage(this.mainWindow, canvasWindow);
+
                     this.canvasRender.resetTransform();
+
                     this.canvasRender.drawImage(canvasWindow.canvas
                         , 0, 0, this.mainWindow.width, this.mainWindow.height
                         , 0, 0, this.mainWindow.width, this.mainWindow.height);
+
+                    if (env.isEditMode()) {
+
+                        this.drawMainWindow_drawEditMode(this.mainWindow, this.currentViewKeyframe, true, false, false);
+                    }
                 }
             }
             else {

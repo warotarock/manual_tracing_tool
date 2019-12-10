@@ -3,7 +3,9 @@ namespace ManualTracingTool {
 
     export class App_View {
 
-        // UI elements
+        // HTML elements
+
+        ID = new HTMLElementID();
 
         mainWindow = new MainWindow();
         editorWindow = new CanvasWindow();
@@ -14,27 +16,18 @@ namespace ManualTracingTool {
         colorMixerWindow_colorCanvas = new ColorCanvasWindow();
         palletColorModal_colorCanvas = new ColorCanvasWindow();
 
+        // Drawing variables
+
         foreLayerRenderWindow = new CanvasWindow();
         backLayerRenderWindow = new CanvasWindow();
-
         exportRenderWindow = new CanvasWindow();
-
-        draw3DWindow = new CanvasWindow();
-
+        drawGPUWindow = new CanvasWindow();
         webglWindow = new CanvasWindow();
         //pickingWindow = new PickingWindow();
 
         activeCanvasWindow: CanvasWindow = null;
 
-        canvasRender = new CanvasRender();
-        draw3DRender = new WebGLRender();
-        webGLRender = new WebGLRender();
-
-        posing3dView = new Posing3DView();
-
-        ID = new HTMLElementID();
-
-        layerTypeNameDictionary: List<string> = [
+        layerTypeNameList: List<string> = [
             'none',
             'root',
             'ベクター レイヤー',
@@ -128,28 +121,11 @@ namespace ManualTracingTool {
             this.exportRenderWindow.initializeContext();
             this.palletColorModal_colorCanvas.initializeContext();
 
-            this.canvasRender.setContext(this.layerWindow);
-            this.canvasRender.setFontSize(18.0);
-
-            if (this.webGLRender.initializeWebGL(this.webglWindow.canvas)) {
-
-                throw ('３Ｄ機能を初期化できませんでした。');
-            }
-
-            //this.pickingWindow.initializeContext();
-
-            this.posing3dView.initialize(this.webGLRender, this.webglWindow, null);
-
-            if (this.draw3DRender.initializeWebGL(this.draw3DWindow.canvas)) {
-
-                throw ('３Ｄ描画機能を初期化できませんでした。');
-            }
-
             this.layerWindow_Initialize();
             this.initializePalletSelectorWindow();
         }
 
-        // Starting ups after loading resources
+        // Initializing after loading resources
 
         protected initializeViewState() {
 
@@ -157,10 +133,8 @@ namespace ManualTracingTool {
             this.mainWindow.centerLocationRate[1] = 0.5;
 
             this.setCanvasSizeFromStyle(this.colorMixerWindow_colorCanvas);
-            this.drawPalletColorMixer(this.colorMixerWindow_colorCanvas);
 
             this.setCanvasSizeFromStyle(this.palletColorModal_colorCanvas);
-            this.drawPalletColorMixer(this.palletColorModal_colorCanvas);
         }
 
         // View management
@@ -172,7 +146,7 @@ namespace ManualTracingTool {
             this.fitCanvas(this.foreLayerRenderWindow, this.mainWindow);
             this.fitCanvas(this.backLayerRenderWindow, this.mainWindow);
             this.fitCanvas(this.webglWindow, this.mainWindow);
-            this.fitCanvas(this.draw3DWindow, this.mainWindow);
+            this.fitCanvas(this.drawGPUWindow, this.mainWindow);
 
             this.resizeCanvasToParent(this.layerWindow);
             this.resizeCanvasToParent(this.subtoolWindow);
@@ -797,7 +771,7 @@ namespace ManualTracingTool {
 
             // common layer properties
 
-            let layerTypeName = this.layerTypeNameDictionary[<int>layer.type];
+            let layerTypeName = this.layerTypeNameList[<int>layer.type];
             this.setElementText(this.ID.layerPropertyModal_layerTypeName, layerTypeName);
 
             this.setInputElementText(this.ID.layerPropertyModal_layerName, layer.name);
@@ -932,102 +906,6 @@ namespace ManualTracingTool {
 
             let id = this.ID.palletColorModal_colorValue + palletColorIndex;
             this.setInputElementColor(id, color);
-        }
-
-        protected onPalletColorModal_ColorIndexChanged() {
-
-            if (this.palletColorWindow_EditLayer == null) {
-                return;
-            }
-
-            let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = this.palletColorWindow_EditLayer;
-
-            let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);;
-
-            if (this.palletColorWindow_Mode == OpenPalletColorModalMode.LineColor) {
-
-                vectorLayer.line_PalletColorIndex = palletColorIndex;
-            }
-            else {
-
-                vectorLayer.fill_PalletColorIndex = palletColorIndex;
-            }
-
-            //let palletColor = documentData.palletColos[palletColorIndex];
-            //this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
-            //this.setInputElementRangeValue(this.ID.palletColorModal_currentAlpha, palletColor.color[3], 0.0, 1.0);
-
-            this.displayPalletColorModalColors(documentData, vectorLayer);
-
-            this.toolEnv.setRedrawMainWindow();
-        }
-
-        protected onPalletColorModal_CurrentColorChanged() {
-
-            if (this.palletColorWindow_EditLayer == null) {
-                return;
-            }
-
-            let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = this.palletColorWindow_EditLayer;
-            let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
-            let palletColor = documentData.palletColors[palletColorIndex];
-
-            this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
-            palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
-
-            this.displayPalletColorModalColors(documentData, vectorLayer);
-
-            this.toolEnv.setRedrawMainWindow();
-        }
-
-        protected onPalletColorModal_ColorChanged(palletColorIndex: int) {
-
-            if (this.palletColorWindow_EditLayer == null) {
-
-                return;
-            }
-
-            let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = this.palletColorWindow_EditLayer;
-            let palletColor = documentData.palletColors[palletColorIndex];
-
-            this.getInputElementColor(this.ID.palletColorModal_colorValue + palletColorIndex, palletColor.color);
-
-            this.displayPalletColorModalColors(documentData, vectorLayer);
-
-            this.toolEnv.setRedrawMainWindow();
-        }
-
-        protected onPalletColorModal_ColorCanvas_mousedown() {
-
-            if (this.palletColorWindow_EditLayer == null) {
-                return;
-            }
-
-            let context = this.toolContext;
-            let wnd = this.palletColorModal_colorCanvas;
-            let e = wnd.toolMouseEvent;
-            let env = this.toolEnv;
-
-            this.canvasRender.setContext(wnd);
-            this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
-
-            let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = this.palletColorWindow_EditLayer;
-            let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);
-            let palletColor = documentData.palletColors[palletColorIndex];
-
-            palletColor.color[0] = this.tempColor4[0];
-            palletColor.color[1] = this.tempColor4[1];
-            palletColor.color[2] = this.tempColor4[2];
-
-            this.setColorPalletElementValue(palletColorIndex, palletColor.color);
-
-            this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
-
-            this.toolEnv.setRedrawMainWindow();
         }
 
         protected onClosedPalletColorModal() {
@@ -1289,82 +1167,6 @@ namespace ManualTracingTool {
             else if (targetID == OpenFileDialogTargetID.saveDocument) {
 
             }
-        }
-
-        // Pallet modal drawing
-
-        colorW = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-        colorB = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-
-        private drawPalletColorMixer(wnd: CanvasWindow) {
-
-            let width = wnd.width;
-            let height = wnd.height;
-            let left = 0.0;
-            let top = 0.0;
-            let right = width - 1.0;
-            let bottom = height - 1.0;
-            //let minRadius = 10.0;
-            //let maxRadius = width * 1.0;
-
-            this.canvasRender.setContext(wnd);
-            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-            this.canvasRender.setFillColorV(this.colorW);
-            this.canvasRender.fillRect(0.0, 0.0, width, height);
-
-            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.add);
-            //this.canvasRender.setFillRadialGradient(left, top, minRadius, maxRadius, this.color11, this.color12);
-            //this.canvasRender.fillRect(0.0, 0.0, width, height);
-            //this.canvasRender.setFillRadialGradient(right, top, minRadius, maxRadius, this.color21, this.color22);
-            //this.canvasRender.fillRect(0.0, 0.0, width, height);
-            //this.canvasRender.setFillRadialGradient(right, bottom, minRadius, maxRadius, this.color31, this.color32);
-            //this.canvasRender.fillRect(0.0, 0.0, width, height);
-            //this.canvasRender.setFillRadialGradient(left, bottom, minRadius, maxRadius, this.color41, this.color42);
-            //this.canvasRender.fillRect(0.0, 0.0, width, height);
-            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-
-            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-            //this.canvasRender.setFillLinearGradient(left, top, left, bottom, this.colorW, this.colorB);
-            //this.canvasRender.fillRect(0.0, 0.0, width, height);
-
-            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-            let divisionW = 40.0;
-            let divisionH = 25.0;
-            let unitWidth = Math.floor(width / divisionW);
-            let unitHeight = Math.floor(height / divisionH);
-
-            let drawX = 0.0;
-
-            for (let x = 0; x <= divisionW; x++) {
-
-                let drawY = 0.0;
-
-                for (let y = 1; y <= divisionH; y++) {
-
-                    let h = x / divisionW;
-                    let s = 0.0;
-                    let v = 0.0;
-                    let iy = y / divisionH;
-                    if (iy <= 0.5) {
-                        s = iy * 2.0;
-                        v = 1.0;
-                    }
-                    else {
-                        s = 1.0;
-                        v = 1.0 - (iy - 0.5) * 2.0;
-                    }
-
-                    Maths.hsvToRGB(this.tempColor4, h, s, v);
-                    this.tempColor4[3] = 1.0;
-                    this.canvasRender.setFillColorV(this.tempColor4);
-                    this.canvasRender.fillRect(drawX, drawY, unitWidth, unitHeight);
-
-                    drawY += unitHeight;
-                }
-
-                drawX += unitWidth;
-            }
-            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
         }
 
         // Header window

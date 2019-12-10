@@ -269,7 +269,7 @@ namespace ManualTracingTool {
 
             for (let editGroup of this.editGroups) {
 
-                Logic_VectorLayer.clearGroupModifyFlags(editGroup.group);
+                Logic_Edit_VectorLayer.clearGroupModifyFlags(editGroup.group);
             }
 
             for (let editLine of this.editLines) {

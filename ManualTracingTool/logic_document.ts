@@ -123,6 +123,8 @@ namespace ManualTracingTool {
 
                     for (let group of keyframe.geometry.groups) {
 
+                        group.buffer = new GPUVertexBuffer();
+
                         for (let line of group.lines) {
 
                             line.modifyFlag = VectorLineModifyFlagID.none;
@@ -275,6 +277,8 @@ namespace ManualTracingTool {
 
                     for (let group of keyframe.geometry.groups) {
 
+                        delete group.buffer;
+
                         for (let line of group.lines) {
 
                             delete line.modifyFlag;
@@ -333,6 +337,38 @@ namespace ManualTracingTool {
             for (let childLayer of layer.childLayers) {
 
                 this.fixSaveDocumentData_FixLayer_Recursive(childLayer, info);
+            }
+        }
+
+        static releaseDocumentResources(document: DocumentData, gl: WebGLRenderingContext) {
+
+            this.releaseDocumentResources_Recursive(document.rootLayer, gl);
+        }
+
+        static releaseDocumentResources_Recursive(layer: Layer, gl: WebGLRenderingContext) {
+
+            if (layer.type == LayerTypeID.vectorLayer) {
+
+                let vectorLayer = <VectorLayer>layer;
+
+                vectorLayer.fillColor = DocumentLogic.vec4ToArray(vectorLayer.fillColor);
+
+                for (let keyframe of vectorLayer.keyframes) {
+
+                    for (let group of keyframe.geometry.groups) {
+
+                        if (group.buffer.buffer != null) {
+
+                            gl.deleteBuffer(group.buffer.buffer);
+                            group.buffer.buffer = null;
+                        }
+                    }
+                }
+            }
+
+            for (let childLayer of layer.childLayers) {
+
+                this.releaseDocumentResources_Recursive(childLayer, gl);
             }
         }
     }

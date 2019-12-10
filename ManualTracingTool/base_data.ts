@@ -182,6 +182,7 @@ namespace ManualTracingTool {
         // runtime
         modifyFlag = VectorGroupModifyFlagID.none;
         linePointModifyFlag = VectorGroupModifyFlagID.none;
+        buffer = new GPUVertexBuffer();
     }
 
     export class VectorLayerGeometry {

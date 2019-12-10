@@ -237,11 +237,15 @@ namespace ManualTracingTool {
         undo(env: ToolEnvironment) { // @override
 
             this.editData.targetGroup.lines = this.editData.oldLines;
+
+            GPUVertexBuffer.setUpdated(this.editData.targetGroup.buffer);
         }
 
         redo(env: ToolEnvironment) { // @override
 
             this.editData.targetGroup.lines = this.editData.newLines;
+
+            GPUVertexBuffer.setUpdated(this.editData.targetGroup.buffer);
         }
     }
 }

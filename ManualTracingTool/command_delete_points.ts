@@ -32,14 +32,14 @@ namespace ManualTracingTool {
             }
 
             // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
-            let existsChanges = this.setDeleteFlags(geometry);
+            let existsChanges = this.setFlagsToPoints(geometry);
 
             // If no change, cancel it
             if (!existsChanges) {
                 return false;
             }
 
-            this.setDeleteFlagsForGroups(layer, geometry);
+            this.setFlagsToGroups(layer, geometry);
 
             this.collectEditTargets(layer, geometry);
 
@@ -56,6 +56,8 @@ namespace ManualTracingTool {
             for (let editGroup of this.editGroups) {
 
                 editGroup.group.lines = editGroup.oldLineList;
+
+                GPUVertexBuffer.setUpdated(editGroup.group.buffer);
             }
 
             for (let editLine of this.editLines) {
@@ -82,6 +84,8 @@ namespace ManualTracingTool {
 
                 editGroup.group.lines = editGroup.newLineList;
                 editGroup.group.modifyFlag = VectorGroupModifyFlagID.none;
+
+                GPUVertexBuffer.setUpdated(editGroup.group.buffer);
             }
 
             for (let editLine of this.editLines) {
@@ -210,7 +214,7 @@ namespace ManualTracingTool {
             this.layer = layer;
         }
 
-        private setDeleteFlagsForGroups(layer: VectorLayer, geometry: VectorLayerGeometry) {
+        private setFlagsToGroups(layer: VectorLayer, geometry: VectorLayerGeometry) {
 
             let modifiedGroupCount = 0;
 
@@ -237,7 +241,7 @@ namespace ManualTracingTool {
                         // Set flag to delete line
                         if (deletePointCount > 0) {
 
-                            if (line.points.length - deletePointCount <= 1) {
+                            if (line.points.length - deletePointCount < 2) {
 
                                 line.modifyFlag = VectorLineModifyFlagID.delete;
                                 deleteLineCount++;
@@ -275,7 +279,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected setDeleteFlags(geometry: VectorLayerGeometry): boolean { // @virtual
+        protected setFlagsToPoints(geometry: VectorLayerGeometry): boolean { // @virtual
 
             return false;
         }
@@ -283,7 +287,7 @@ namespace ManualTracingTool {
 
     export class Command_DeleteSelectedPoints extends Command_DeletePoints {
 
-        protected setDeleteFlags(geometry: VectorLayerGeometry): boolean { // @override
+        protected setFlagsToPoints(geometry: VectorLayerGeometry): boolean { // @override
 
             let deletePointCount = 0;
 
@@ -309,7 +313,7 @@ namespace ManualTracingTool {
 
     export class Command_DeleteFlaggedPoints extends Command_DeletePoints {
 
-        protected setDeleteFlags(geometry: VectorLayerGeometry): boolean { // @override
+        protected setFlagsToPoints(geometry: VectorLayerGeometry): boolean { // @override
 
             let deletePointCount = 0;
 

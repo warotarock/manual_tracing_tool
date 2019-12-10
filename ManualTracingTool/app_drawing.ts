@@ -3,6 +3,16 @@ namespace ManualTracingTool {
 
     export class App_Drawing extends App_View implements MainEditorDrawer {
 
+        canvasRender = new CanvasRender();
+
+        drawGPURender = new WebGLRender();
+        polyLineShader = new PolyLineShader();
+
+        posing3DViewRender = new WebGLRender();
+        posing3dView = new Posing3DView();
+
+        logic_GPULine = new Logic_GPULine();
+
         // Resources
 
         drawStyle = new ToolDrawingStyle();
@@ -23,13 +33,74 @@ namespace ManualTracingTool {
 
         layerPickingPositions = [[0.0, 0.0], [0.0, -2.0], [2.0, 0.0], [0.0, 2.0], [-2.0, 0.0]];
 
+        scale = vec3.create();
+        eyeLocation = vec3.create();
+        lookatLocation = vec3.create();
+        upVector = vec3.create();
+        modelLocation = vec3.create();
+        modelMatrix = mat4.create();
+        viewMatrix = mat4.create();
+        modelViewMatrix = mat4.create();
+        projectionMatrix = mat4.create();
+        tmpMatrix = mat4.create();
+
+        operatorCurosrLineDash = [2.0, 2.0];
+        operatorCurosrLineDashScaled = [0.0, 0.0];
+        operatorCurosrLineDashNone = [];
+
+        protected initializeDrawingDevices() {
+
+            this.canvasRender.setContext(this.layerWindow);
+            this.canvasRender.setFontSize(18.0);
+
+            if (this.posing3DViewRender.initializeWebGL(this.webglWindow.canvas)) {
+
+                alert('ÇRÇcÉ|Å[ÉWÉìÉOã@î\Çèâä˙âªÇ≈Ç´Ç‹ÇπÇÒÇ≈ÇµÇΩÅB');
+            }
+
+            //this.pickingWindow.initializeContext();
+
+            this.posing3dView.initialize(this.posing3DViewRender, this.webglWindow, null);
+
+            if (this.drawGPURender.initializeWebGL(this.drawGPUWindow.canvas)) {
+
+                alert('ÇRÇcï`âÊã@î\Çèâä˙âªÇ≈Ç´Ç‹ÇπÇÒÇ≈ÇµÇΩÅB');
+            }
+
+            try {
+
+                this.drawGPURender.initializeShader(this.polyLineShader);
+            }
+            catch(errorMessage) {
+
+                alert('ÉVÉFÅ[É_ÇÃèâä˙âªÇ…é∏îsÇµÇ‹ÇµÇΩÅB' + errorMessage);
+            }
+        }
+
         // Common drawing methods
 
         protected clearWindow(canvasWindow: CanvasWindow) {
 
             this.canvasRender.setContext(canvasWindow);
 
+            this.canvasRender.resetTransform();
+
             this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
+
+            this.canvasRender.setTransform(canvasWindow);
+        }
+
+        protected drawFullWindowImage(dstWindow: CanvasWindow, srcWindow: CanvasWindow) {
+
+            this.canvasRender.setContext(dstWindow);
+
+            this.canvasRender.resetTransform();
+
+            this.canvasRender.drawImage(srcWindow.canvas
+                , 0, 0, srcWindow.width, srcWindow.height
+                , 0, 0, dstWindow.width, dstWindow.height);
+
+            this.canvasRender.setTransform(dstWindow);
         }
 
         private drawButtonBackground(layoutArea: RectangleLayoutArea, isSelected: boolean) {
@@ -137,7 +208,123 @@ namespace ManualTracingTool {
         protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean) { // @virtual
         }
 
-        protected drawLayer(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+        protected drawForeground(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+
+            let layer = viewKeyFrameLayer.layer;
+
+            if (VectorLayer.isVectorLayer(layer)) {
+
+                let vectorLayer = <VectorLayer>layer;
+                let geometry = viewKeyFrameLayer.vectorLayerKeyframe.geometry;
+
+                this.drawForeground_VectorLayer(vectorLayer, geometry, documentData, isExporting, isModalToolRunning);
+            }
+            else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+
+                let ifrLayer = <ImageFileReferenceLayer>layer;
+
+                this.drawForeground_ImageFileReferenceLayer(ifrLayer, isModalToolRunning);
+            }
+        }
+
+        private drawForeground_VectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+
+            let env = this.toolEnv;
+            let useAdjustingLocation = isModalToolRunning;
+
+            let widthRate = documentData.lineWidthBiasRate;
+            let lineColor = this.getLineColor(layer, documentData);
+
+            if (env.isEditMode()) {
+
+                vec4.copy(this.editOtherLayerLineColor, lineColor);
+                this.editOtherLayerLineColor[3] *= 0.3;
+
+                lineColor = this.editOtherLayerLineColor;
+            }
+
+            for (let group of geometry.groups) {
+
+                if (layer.drawLineType != DrawLineTypeID.none) {
+
+                    for (let line of group.lines) {
+
+                        this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
+                    }
+                }
+            }
+        }
+
+        private drawForeground_ImageFileReferenceLayer(layer: ImageFileReferenceLayer, isModalToolRunning: boolean) {
+
+            if (layer.imageResource == null
+                || layer.imageResource.image == null
+                || layer.imageResource.image.imageData == null) {
+
+                return;
+            }
+
+            let image = layer.imageResource.image.imageData;
+
+            let location = (isModalToolRunning ? layer.adjustingLocation : layer.location);
+            let rotation = (isModalToolRunning ? layer.adjustingRotation[0] : layer.rotation[0]);
+            let scale = (isModalToolRunning ? layer.adjustingScale : layer.scale);
+
+            mat4.identity(this.tempMat4);
+            mat4.translate(this.tempMat4, this.tempMat4, location);
+            mat4.rotateZ(this.tempMat4, this.tempMat4, rotation);
+            mat4.scale(this.tempMat4, this.tempMat4, scale);
+
+            this.canvasRender.setLocalTransForm(this.tempMat4);
+
+            this.canvasRender.setGlobalAlpha(layer.layerColor[3]);
+
+            this.canvasRender.drawImage(image
+                , 0.0, 0.0
+                , image.width, image.height
+                , 0.0, 0.0
+                , image.width, image.height
+            );
+
+            this.canvasRender.cancelLocalTransForm();
+            this.canvasRender.setGlobalAlpha(1.0);
+        }
+
+        protected drawBackground(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+
+            let layer = viewKeyFrameLayer.layer;
+
+            if (VectorLayer.isVectorLayer(layer)) {
+
+                let vectorLayer = <VectorLayer>layer;
+                let geometry = viewKeyFrameLayer.vectorLayerKeyframe.geometry;
+
+                this.drawBackground_VectorLayer(vectorLayer, geometry, documentData, isExporting, isModalToolRunning);
+            }
+        }
+
+        private drawBackground_VectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+
+            let useAdjustingLocation = isModalToolRunning;
+
+            let fillColor = this.getFillColor(layer, documentData);
+
+            for (let group of geometry.groups) {
+
+                let continuousFill = false;
+                for (let line of group.lines) {
+
+                    if (layer.fillAreaType != FillAreaTypeID.none) {
+
+                        this.drawVectorLineFill(line, fillColor, useAdjustingLocation, continuousFill);
+
+                        continuousFill = line.continuousFill;
+                    }
+                }
+            }
+        }
+
+        protected drawLayerByCanvas(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
 
             let layer = viewKeyFrameLayer.layer;
 
@@ -146,29 +333,14 @@ namespace ManualTracingTool {
                 let vectorLayer = <VectorLayer>layer;
                 this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData, isExporting, isModalToolRunning);
             }
-            else if (layer.type == LayerTypeID.groupLayer) {
-
-                // No drawing
-            }
-            else if (layer.type == LayerTypeID.posingLayer) {
-
-                // No drawing
-            }
             else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
 
                 let ifrLayer = <ImageFileReferenceLayer>layer;
-                this.drawImageFileReferenceLayer(ifrLayer, isModalToolRunning);
+                this.drawForeground_ImageFileReferenceLayer(ifrLayer, isModalToolRunning);
             }
-        }
+            else {
 
-        protected drawLayerForEditMode(viewKeyFrameLayer: ViewKeyframeLayer, currentLayerOnly: boolean, documentData: DocumentData, isModalToolRunning: boolean) {
-
-            let layer = viewKeyFrameLayer.layer;
-
-            if (VectorLayer.isVectorLayer(layer)) {
-
-                let vectorLayer = <VectorLayer>layer;
-                this.drawVectorLayerForEditMode(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData, isModalToolRunning);
+                // No drawing
             }
         }
 
@@ -211,6 +383,9 @@ namespace ManualTracingTool {
                         continuousFill = line.continuousFill;
                     }
                 }
+            }
+
+            for (let group of geometry.groups) {
 
                 if (layer.drawLineType != DrawLineTypeID.none) {
 
@@ -222,7 +397,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isModalToolRunning: boolean) {
+        protected drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, drawStrokes: boolean, drawPoints: boolean, isModalToolRunning: boolean) {
 
             let context = this.toolContext;
 
@@ -232,7 +407,6 @@ namespace ManualTracingTool {
             let widthRate = context.document.lineWidthBiasRate;
 
             let lineColor = this.getLineColor(layer, documentData);
-            let fillColor = this.getFillColor(layer, documentData);
 
             // drawing geometry lines
 
@@ -252,27 +426,36 @@ namespace ManualTracingTool {
 
                         if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
 
-                            this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, false);
+                            if (drawStrokes) {
 
-                            this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
+                                this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, false);
+                            }
+
+                            if (drawPoints) {
+
+                                this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
+                            }
                         }
                         else if (this.toolContext.operationUnitID == OperationUnitID.line
                             || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
 
-                            let color: Vec3;
-                            if ((line.isSelected && line.modifyFlag != VectorLineModifyFlagID.selectedToUnselected)
-                                || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
+                            if (drawStrokes) {
 
-                                color = this.drawStyle.selectedVectorLineColor;
+                                let color: Vec3;
+                                if ((line.isSelected && line.modifyFlag != VectorLineModifyFlagID.selectedToUnselected)
+                                    || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
+
+                                    color = this.drawStyle.selectedVectorLineColor;
+                                }
+                                else {
+
+                                    color = lineColor;
+                                }
+
+                                let lineWidthBolding = (line.isCloseToMouse ? 2.0 : 0.0);
+
+                                this.drawVectorLineStroke(line, color, widthRate, lineWidthBolding, useAdjustingLocation, false);
                             }
-                            else {
-
-                                color = lineColor;
-                            }
-
-                            let lineWidthBolding = (line.isCloseToMouse ? 2.0 : 0.0);
-
-                            this.drawVectorLineStroke(line, color, widthRate, lineWidthBolding, useAdjustingLocation, false);
                         }
                     }
                 }
@@ -306,7 +489,7 @@ namespace ManualTracingTool {
             this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
 
             // make color darker or lighter than original to visible on line color
-            ColorLogic.rgbToHSV(this.tempEditorLinePointColor1, color);
+            ColorLogic.rgbToHSVv(this.tempEditorLinePointColor1, color);
             if (this.tempEditorLinePointColor1[2] > 0.5) {
 
                 this.tempEditorLinePointColor1[2] -= this.drawStyle.linePointVisualBrightnessAdjustRate;
@@ -315,7 +498,7 @@ namespace ManualTracingTool {
 
                 this.tempEditorLinePointColor1[2] += this.drawStyle.linePointVisualBrightnessAdjustRate;
             }
-            ColorLogic.hsvToRGB(this.tempEditorLinePointColor2, this.tempEditorLinePointColor1);
+            ColorLogic.hsvToRGBv(this.tempEditorLinePointColor2, this.tempEditorLinePointColor1);
 
             for (let point of line.points) {
 
@@ -602,41 +785,6 @@ namespace ManualTracingTool {
             return width / this.canvasRender.getViewScale();
         }
 
-        protected drawImageFileReferenceLayer(layer: ImageFileReferenceLayer, isModalToolRunning: boolean) {
-
-            if (layer.imageResource == null
-                || layer.imageResource.image == null
-                || layer.imageResource.image.imageData == null) {
-
-                return;
-            }
-
-            let image = layer.imageResource.image.imageData;
-
-            let location = (isModalToolRunning ? layer.adjustingLocation : layer.location);
-            let rotation = (isModalToolRunning ? layer.adjustingRotation[0] : layer.rotation[0]);
-            let scale = (isModalToolRunning ? layer.adjustingScale : layer.scale);
-
-            mat4.identity(this.tempMat4);
-            mat4.translate(this.tempMat4, this.tempMat4, location);
-            mat4.rotateZ(this.tempMat4, this.tempMat4, rotation);
-            mat4.scale(this.tempMat4, this.tempMat4, scale);
-
-            this.canvasRender.setLocalTransForm(this.tempMat4);
-
-            this.canvasRender.setGlobalAlpha(layer.layerColor[3]);
-
-            this.canvasRender.drawImage(image
-                , 0.0, 0.0
-                , image.width, image.height
-                , 0.0, 0.0
-                , image.width, image.height
-            );
-
-            this.canvasRender.cancelLocalTransForm();
-            this.canvasRender.setGlobalAlpha(1.0);
-        }
-
         protected pickLayer(canvasWindow: CanvasWindow, viewKeyframe: ViewKeyframe, pickLocationX: float, pickLocationY: float): Layer {
 
             let documentData = this.toolContext.document;
@@ -671,10 +819,6 @@ namespace ManualTracingTool {
 
             return pickedLayer;
         }
-
-        private operatorCurosrLineDash = [2.0, 2.0];
-        private operatorCurosrLineDashScaled = [0.0, 0.0];
-        private operatorCurosrLineDashNone = [];
 
         protected drawOperatorCursor() {
 
@@ -712,37 +856,125 @@ namespace ManualTracingTool {
 
         // Rendering
 
-        protected renderLayer(layer: Layer) {
+        protected renderClearBuffer() {
 
-            let wnd = this.draw3DWindow;
-            let render = this.draw3DRender;
+            let wnd = this.drawGPUWindow;
+            let render = this.drawGPURender;
 
             render.setViewport(0.0, 0.0, wnd.width, wnd.height);
 
             render.setDepthTest(true)
             render.setCulling(true);
+
             render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
+        }
+
+        protected renderForeground_VectorLayer(canvasWindow: CanvasWindow, viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, useAdjustingLocation: boolean) {
+
+            let render = this.drawGPURender;
+            let wnd = canvasWindow;
+
+            let keyframe = viewKeyFrameLayer.vectorLayerKeyframe;
+
+            render.setViewport(0.0, 0.0, wnd.width, wnd.height);
+
+            // Calculate camera matrix
+            vec3.set(this.lookatLocation, 0.0, 0.0, 0.0);
+            vec3.set(this.upVector, 0.0, 1.0, 0.0);
+            vec3.set(this.eyeLocation, 0.0, 0.0, 1.0);
+
+            mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
+
+            let aspect = wnd.height / wnd.width;
+            let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: åvéZÇ™âˆÇµÇ¢ÅiÇ»Ç∫Ç©ècâ°óºï˚Ç…ìØÇ∂ílÇä|ÇØÇ»Ç¢Ç∆çáÇÌÇ»Ç¢ÅjÇÃÇ≈å„Ç≈åüì¢Ç∑ÇÈ
+            mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, orthoWidth, -orthoWidth, 0.1, 1.0);
+
+            wnd.caluclateGLViewMatrix(this.tmpMatrix);
+            mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
+
+            render.setDepthTest(false)
+            render.setCulling(false);
+
+            render.setShader(this.polyLineShader);
+
+            // Set shader parameters
+            vec3.set(this.modelLocation, 0.0, 0.0, 0.0);
+
+            mat4.identity(this.modelMatrix);
+            mat4.translate(this.modelMatrix, this.modelMatrix, this.modelLocation);
+
+            mat4.multiply(this.modelViewMatrix, this.viewMatrix, this.modelMatrix);
+
+            this.polyLineShader.setModelViewMatrix(this.modelViewMatrix);
+            this.polyLineShader.setProjectionMatrix(this.projectionMatrix);
+
+            for (let group of keyframe.geometry.groups) {
+
+                // Calculate line point buffer data
+
+                group.buffer.isStored = false;
+                if (!group.buffer.isStored) {
+
+                    this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
+
+                    this.logic_GPULine.calculateLinePointEdges(group.buffer);
+
+                    let vertexUnitSize = this.polyLineShader.getVertexUnitSize();
+                    let vertexCount = this.polyLineShader.getVertexCount(group.buffer.pointCount); // ñ{ìñÇÕï”ÇÃêîÇæÇØÇ≈ÇÊÇ¢ÇÃÇ≈é·ä±ñ≥ë ÇÕê∂Ç∂ÇÈÇ™ÅAåvéZÇä»íPÇ…Ç∑ÇÈÇΩÇﬂÇ±ÇÍÇ≈ÇÊÇ¢Ç±Ç∆Ç…Ç∑ÇÈ
+
+                    this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
+
+                    this.logic_GPULine.calculateBufferData_PloyLine(group.buffer);
+
+                    if (group.buffer.usedDataArraySize > 0) {
+
+                        this.logic_GPULine.bufferData(group.buffer, render.gl);
+                    }
+                }
+
+                // Draw lines
+
+                if (group.buffer.isStored) {
+
+                    this.polyLineShader.setBuffers(group.buffer.buffer);
+
+                    let drawCount = this.polyLineShader.getDrawArrayTryanglesCount(group.buffer.usedDataArraySize);
+
+                    render.drawArrayTryangles(drawCount);
+                }
+            }
         }
 
         // WebGL window
 
-        protected drawWebGLWindow(webglWindow: CanvasWindow, layerWindowItems: List<LayerWindowItem>, mainWindow: CanvasWindow, pickingWindow: CanvasWindow) {
+        protected drawPosing3DView(webglWindow: CanvasWindow, layerWindowItems: List<LayerWindowItem>, mainWindow: CanvasWindow, pickingWindow: CanvasWindow) {
 
             let env = this.toolEnv;
 
-            this.webGLRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
+            this.posing3DViewRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
             this.posing3dView.clear(env);
 
             //mainWindow.copyTransformTo(pickingWindow);
             mainWindow.copyTransformTo(webglWindow);
 
+            for (let item of layerWindowItems) {
+
+                if (item.layer.type != LayerTypeID.posingLayer) {
+                    continue;
+                }
+
+                let posingLayer = <PosingLayer>item.layer;
+
+                this.posing3dView.prepareDrawingStructures(posingLayer);
+            }
+
             if (env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
                 && this.toolContext.mainToolID == MainToolID.posing
             ) {
-
                 let posingLayer = env.currentPosingLayer;
 
-                this.posing3dView.prepareDrawingStructures(posingLayer);
+                // this.posing3dView.prepareDrawingStructures(posingLayer);
+
                 //this.posing3dView.drawPickingImage(posingLayer, env);
                 //pickingWindow.context.clearRect(0, 0, pickingWindow.width, pickingWindow.height);
                 //pickingWindow.context.drawImage(webglWindow.canvas, 0, 0, webglWindow.width, webglWindow.height);
@@ -761,7 +993,8 @@ namespace ManualTracingTool {
 
                 let posingLayer = <PosingLayer>item.layer;
 
-                this.posing3dView.prepareDrawingStructures(posingLayer);
+                //this.posing3dView.prepareDrawingStructures(posingLayer);
+
                 this.posing3dView.drawPosingModel(posingLayer, env);
             }
         }
@@ -1236,7 +1469,7 @@ namespace ManualTracingTool {
                 this.setColorMixerValue(this.ID.colorMixer_blue, color[2]);
                 this.setColorMixerValue(this.ID.colorMixer_alpha, color[3]);
 
-                Maths.rgbToHSV(this.hsv, color[0], color[1], color[2])
+                ColorLogic.rgbToHSVv(this.hsv, color)
 
                 this.setColorMixerValue(this.ID.colorMixer_hue, this.hsv[0]);
                 this.setColorMixerValue(this.ID.colorMixer_sat, this.hsv[1]);
@@ -1254,5 +1487,176 @@ namespace ManualTracingTool {
                 this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
             }
         }
+
+        // Pallet modal drawing
+
+        colorW = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+        colorB = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+
+        protected drawPalletColorMixer(wnd: CanvasWindow) {
+
+            let width = wnd.width;
+            let height = wnd.height;
+            let left = 0.0;
+            let top = 0.0;
+            let right = width - 1.0;
+            let bottom = height - 1.0;
+            //let minRadius = 10.0;
+            //let maxRadius = width * 1.0;
+
+            this.canvasRender.setContext(wnd);
+            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+            this.canvasRender.setFillColorV(this.colorW);
+            this.canvasRender.fillRect(0.0, 0.0, width, height);
+
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.add);
+            //this.canvasRender.setFillRadialGradient(left, top, minRadius, maxRadius, this.color11, this.color12);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(right, top, minRadius, maxRadius, this.color21, this.color22);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(right, bottom, minRadius, maxRadius, this.color31, this.color32);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setFillRadialGradient(left, bottom, minRadius, maxRadius, this.color41, this.color42);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+
+            //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+            //this.canvasRender.setFillLinearGradient(left, top, left, bottom, this.colorW, this.colorB);
+            //this.canvasRender.fillRect(0.0, 0.0, width, height);
+
+            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+            let divisionW = 40.0;
+            let divisionH = 25.0;
+            let unitWidth = Math.floor(width / divisionW);
+            let unitHeight = Math.floor(height / divisionH);
+
+            let drawX = 0.0;
+
+            for (let x = 0; x <= divisionW; x++) {
+
+                let drawY = 0.0;
+
+                for (let y = 1; y <= divisionH; y++) {
+
+                    let h = x / divisionW;
+                    let s = 0.0;
+                    let v = 0.0;
+                    let iy = y / divisionH;
+                    if (iy <= 0.5) {
+                        s = iy * 2.0;
+                        v = 1.0;
+                    }
+                    else {
+                        s = 1.0;
+                        v = 1.0 - (iy - 0.5) * 2.0;
+                    }
+
+                    ColorLogic.hsvToRGB(this.tempColor4, h, s, v);
+                    this.tempColor4[3] = 1.0;
+                    this.canvasRender.setFillColorV(this.tempColor4);
+                    this.canvasRender.fillRect(drawX, drawY, unitWidth, unitHeight);
+
+                    drawY += unitHeight;
+                }
+
+                drawX += unitWidth;
+            }
+            this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+        }
     }
+
+    export class PolyLineShader extends RenderShader {
+
+        private aPosition = -1;
+        private aAlpha = -1;
+
+        getVertexUnitSize(): int {
+
+            return (
+                2 // í∏ì_ÇÃà íu vec2
+                + 1 // ïsìßñæìx float
+            );
+        }
+
+        getVertexCount(pointCount: int): int {
+
+            return (pointCount - 1) * (2 + 2) * 3; // ï”ÇÃêî * ç∂ë§ÇQÉ|ÉäÉSÉìÅ{âEë§ÇQÉ|ÉäÉSÉì * 3í∏ì_
+
+        }
+
+        getDrawArrayTryanglesCount(bufferSize: int): int {
+
+            return bufferSize / this.getVertexUnitSize();
+        }
+
+        initializeVertexSourceCode() {
+
+            this.vertexShaderSourceCode = `
+
+${this.floatPrecisionDefinitionCode}
+
+attribute vec2 aPosition;
+attribute float aAlpha;
+
+uniform mat4 uPMatrix;
+uniform mat4 uMVMatrix;
+
+varying float vAlpha;
+
+void main(void) {
+
+	   gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 0.5, 1.0);
+	   vAlpha = aAlpha;
+}
+`;
+        }
+
+        initializeFragmentSourceCode() {
+
+            this.fragmentShaderSourceCode = `
+
+${this.floatPrecisionDefinitionCode}
+
+varying float vAlpha;
+
+void main(void) {
+
+    gl_FragColor = vec4(0.0, 0.0, 0.0, vAlpha);
+}
+`;
+        }
+
+        initializeAttributes() {
+
+            this.initializeAttributes_RenderShader();
+            this.initializeAttributes_PosingFigureShader();
+        }
+
+        initializeAttributes_PosingFigureShader() {
+
+            let gl = this.gl;
+
+            this.uPMatrix = this.getUniformLocation('uPMatrix');
+            this.uMVMatrix = this.getUniformLocation('uMVMatrix');
+
+            this.aPosition = this.getAttribLocation('aPosition');
+            this.aAlpha = this.getAttribLocation('aAlpha');
+        }
+
+        setBuffers(vertexBuffer: WebGLBuffer) {
+
+            let gl = this.gl;
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+            this.enableVertexAttributes();
+            this.resetVertexAttribPointerOffset();
+
+            let vertexDataStride = 4 * this.getVertexUnitSize();
+
+            this.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aAlpha, 1, gl.FLOAT, vertexDataStride);
+        }
+    }
+
 }

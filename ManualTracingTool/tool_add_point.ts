@@ -67,6 +67,8 @@ namespace ManualTracingTool {
             }
 
             this.line.points.push(this.point);
+
+            GPUVertexBuffer.setUpdated(this.group.buffer);
         }
 
         undo(env: ToolEnvironment) { // @override
@@ -77,6 +79,8 @@ namespace ManualTracingTool {
 
                 ListRemoveAt(this.group.lines, this.group.lines.length - 1);
             }
+
+            GPUVertexBuffer.setUpdated(this.group.buffer);
         }
 
         redo(env: ToolEnvironment) { // @override

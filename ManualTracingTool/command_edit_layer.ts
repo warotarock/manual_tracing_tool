@@ -385,6 +385,8 @@ namespace ManualTracingTool {
             this.newLayer = new PosingLayer();
             this.newLayer.name = 'new posing';
 
+            this.newLayer.posingModel = env.getPosingModelByName('dummy_skin');
+
             this.executeLayerInsertToCurrent(this.newLayer, env);
         }
     }

@@ -303,7 +303,7 @@ class WebGLRender {
         shader.initializeSourceCode(this.floatPrecisionText);
 
         let program = gl.createProgram();
-        let vertexShader = this.createShader(shader.vertexShaderSourceCode, true, gl);
+        let vertexShader = this.createShader(String(shader.vertexShaderSourceCode), true, gl);
         let fragmentShader = this.createShader(shader.fragmentShaderSourceCode, false, gl);
 
         gl.attachShader(program, vertexShader);
@@ -317,12 +317,10 @@ class WebGLRender {
             shader.fragmentShader = fragmentShader;
 
             shader.initializeAttributes();
-
-            return program;
         }
         else {
 
-            alert(gl.getProgramInfoLog(program));
+            throw(gl.getProgramInfoLog(program));
         }
     }
 
@@ -515,5 +513,10 @@ class WebGLRender {
     drawElements(model: RenderModel) {
 
         this.gl.drawElements(this.gl.TRIANGLES, model.indexCount, this.gl.UNSIGNED_SHORT, 0);
+    }
+
+    drawArrayTryangles(tryangleCount: int) {
+
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, tryangleCount);
     }
 }

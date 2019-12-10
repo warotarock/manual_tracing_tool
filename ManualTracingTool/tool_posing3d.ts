@@ -134,10 +134,10 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.executeCommand(this.tempTargetLocation, e, env);
+            this.executeCommand(this.tempTargetLocation, e.location, e, env);
         }
 
-        protected executeCommand(inputLocation: Vec3, e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
+        protected executeCommand(inputLocation: Vec3, inputLocation2D: Vec3, e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
 
             throw ('Tool_Posing3d_ToolBase: not implemented!');
         }
@@ -364,10 +364,10 @@ namespace ManualTracingTool {
                 return;
             }
 
-            this.executeCommand(this.inputLocation, e, env);
+            this.executeCommand(this.inputLocation, this.location2D, e, env);
         }
 
-        protected executeCommand(inputLocation: Vec3, e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        protected executeCommand(inputLocation: Vec3, inputLocation2D: Vec3, e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
             let inputData = this.getInputData(env);
 
@@ -375,7 +375,7 @@ namespace ManualTracingTool {
             if (this.jointPartInputMode == JointPartInputMode.directionInput) {
 
                 vec3.copy(inputData.inputLocation, inputLocation);
-                vec3.copy(inputData.inputLocation2D, e.location);
+                vec3.copy(inputData.inputLocation2D, inputLocation2D);
                 inputData.inputDone = true;
                 inputData.directionInputDone = true;
             }

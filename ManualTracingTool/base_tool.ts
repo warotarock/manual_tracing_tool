@@ -98,6 +98,8 @@ namespace ManualTracingTool {
         endModalTool();
         cancelModalTool();
         isModalToolRunning(): boolean;
+
+        getPosingModelByName(name: string): PosingModel;
     }
 
     export interface MainEditorDrawer {
@@ -256,26 +258,39 @@ namespace ManualTracingTool {
     export enum DrawPathOperationTypeID {
 
         none = 0,
-        beginDrawing = 1,
-        endDrawing = 2,
-        draw = 3,
-        prepareBuffer = 4,
-        flushBuffer = 5
+        beginDrawing,
+        endDrawing,
+        drawForeground,
+        drawBackground,
+        prepareRendering,
+        flushRendering,
+        prepareBuffer,
+        flushBuffer
     }
 
     export class DrawPathStep {
+
+        _debugText = '';
 
         layer: Layer = null;
         viewKeyframeLayer: ViewKeyframeLayer = null;
 
         operationType = DrawPathOperationTypeID.none;
-        operationTypeText = '';
+        compositeOperation: 'source-over' | 'source-atop' = 'source-over';
 
         setType(operationType: DrawPathOperationTypeID) {
 
             this.operationType = operationType;
-            this.operationTypeText = DrawPathOperationTypeID[operationType];
+            this._debugText = DrawPathOperationTypeID[operationType];
         }
+    }
+
+    export enum DrawPathModeID {
+
+        none = 0,
+        editor = 1,
+        editorPreview = 2,
+        export = 3
     }
 
     export class DrawPathContext {
@@ -292,13 +307,13 @@ namespace ManualTracingTool {
         lazyDraw_WaitTime = 500;
         lazyDraw_Buffer: CanvasWindow = null;
 
-        bufferStack = new List<CanvasWindow>();
-        startIndex = 0;
-        endIndex = 0;
-        isExporting = false;
+        drawPathModeID = DrawPathModeID.none;
         isModalToolRunning = false;
         currentLayerOnly = false;
+        startIndex = 0;
+        endIndex = 0;
         lastDrawPathIndex = -1;
+        bufferStack = new List<CanvasWindow>();
 
         clearDrawingStates() {
 
@@ -314,6 +329,22 @@ namespace ManualTracingTool {
 
             this.lazyDraw_ProcessedIndex = -1;
             this.lazyDraw_LastResetTime = Platform.getCurrentTime();
+        }
+
+        getCurrentBuffer(): CanvasWindow {
+
+            if (this.bufferStack.length == 0) {
+
+                throw ('バッファスタックがありません。');
+            }
+
+            return this.bufferStack[this.bufferStack.length - 1];
+        }
+
+        isFullRendering(): boolean {
+
+            return (this.drawPathModeID == DrawPathModeID.editorPreview
+                || this.drawPathModeID == DrawPathModeID.export);
         }
 
         isLazyDrawBigining(): boolean {
@@ -765,6 +796,11 @@ namespace ManualTracingTool {
         collectEditTargetViewKeyframeLayers(): List<ViewKeyframeLayer> {
 
             return this.toolContext.mainEditor.collectEditTargetViewKeyframeLayers();
+        }
+
+        getPosingModelByName(name: string): PosingModel {
+
+            return this.toolContext.mainEditor.getPosingModelByName(name);
         }
     }
 

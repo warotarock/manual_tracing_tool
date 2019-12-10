@@ -58,6 +58,8 @@ namespace ManualTracingTool {
 
                 env.commandHistory.addCommand(command);
             }
+
+            this.clearFlags(env);
         }
 
         protected processPoint(editPoint: Tool_ScratchLineWidth_EditPoint, env: ToolEnvironment) { // @virtual

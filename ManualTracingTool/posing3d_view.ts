@@ -729,7 +729,7 @@ namespace ManualTracingTool {
             this.render.drawElements(model);
         }
 
-        caluculateCameraMatrix(real3DViewHalfWidth: float) {
+        private caluculateCameraMatrix(real3DViewHalfWidth: float) {
 
             let wnd = this.webglWindow;
 
@@ -743,31 +743,31 @@ namespace ManualTracingTool {
 
             // 2D scale
             let viewScale = wnd.viewScale;
-            let real2DViewHalfWidth = wnd.width / 2 / viewScale;
-            let real2DViewHalfHeight = wnd.height / 2 / viewScale;
+            //let real2DViewHalfWidth = wnd.width / 2 / viewScale;
+            //let real2DViewHalfHeight = wnd.height / 2 / viewScale;
 
             // Projection
-            let aspect = wnd.height / wnd.width;
+            //let aspect = wnd.height / wnd.width;
             let orthoWidth = real3DViewHalfWidth / viewScale;
             mat4.ortho(this.real3DProjectionMatrix, -real3DViewHalfWidth, real3DViewHalfWidth, -real3DViewHalfWidth, real3DViewHalfWidth, 0.1, 10.0);
             mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, -orthoWidth, orthoWidth, 0.1, 10.0);
 
             // 2D rendering
-            mat4.identity(this.tmpMatrix);
-            {
-                let viewOffsetX = -(wnd.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
-                let viewOffsetY = (wnd.viewLocation[1]) / real2DViewHalfHeight;
-                mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, aspect, 1.0, 1.0));
-                if (wnd.mirrorX) {
-                    mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
-                }
-                if (wnd.mirrorY) {
-                    mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
-                }
-                mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -wnd.viewRotation * Math.PI / 180.0);
-                mat4.translate(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, viewOffsetX / aspect, viewOffsetY, 0.0));
-            }
-
+            //mat4.identity(this.tmpMatrix);
+            //{
+            //    let viewOffsetX = -(wnd.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
+            //    let viewOffsetY = (wnd.viewLocation[1]) / real2DViewHalfHeight;
+            //    mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, aspect, 1.0, 1.0));
+            //    if (wnd.mirrorX) {
+            //        mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
+            //    }
+            //    if (wnd.mirrorY) {
+            //        mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
+            //    }
+            //    mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -wnd.viewRotation * Math.PI / 180.0);
+            //    mat4.translate(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, viewOffsetX / aspect, viewOffsetY, 0.0));
+            //}
+            wnd.caluclateGLViewMatrix(this.tmpMatrix);
             mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
 
             mat4.invert(this.projectionInvMatrix, this.projectionMatrix);
@@ -852,57 +852,61 @@ namespace ManualTracingTool {
 
         initializeVertexSourceCode() {
 
-            this.vertexShaderSourceCode = ''
-                + this.floatPrecisionDefinitionCode
+            this.vertexShaderSourceCode = `
 
-                + 'attribute vec3 aPosition;'
-                + 'attribute vec3 aNormal;'
-                + 'attribute vec2 aTexCoord;'
+${this.floatPrecisionDefinitionCode}
+                
+attribute vec3 aPosition;
+attribute vec3 aNormal;
+attribute vec2 aTexCoord;
 
-                + 'uniform mat4 uPMatrix;'
-                + 'uniform mat4 uMVMatrix;'
-                + 'uniform mat4 uNormalMatrix;'
+uniform mat4 uPMatrix;
+uniform mat4 uMVMatrix;
+uniform mat4 uNormalMatrix;
 
-                + 'varying vec3 vPosition;'
-                + 'varying vec3 vNormal;'
-                + 'varying vec2 vTexCoord;'
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vTexCoord;
 
-                + 'void main(void) {'
+void main(void) {
 
-                + '	   gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);'
+gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
 
-                + '	   vPosition = (uMVMatrix * vec4(aPosition, 1.0)).xyz;'
-                + '    vNormal = (uNormalMatrix * vec4(aNormal, 1.0)).xyz;'
-                + '    vTexCoord = aTexCoord;'
-                + '}';
+    vPosition = (uMVMatrix * vec4(aPosition, 1.0)).xyz;
+    vNormal = (uNormalMatrix * vec4(aNormal, 1.0)).xyz;
+    vTexCoord = aTexCoord;
+}
+`;
         }
 
         initializeFragmentSourceCode() {
 
-            this.fragmentShaderSourceCode = ''
-                + this.floatPrecisionDefinitionCode
+            this.fragmentShaderSourceCode = `
 
-                + 'varying vec3 vPosition;'
-                + 'varying vec3 vNormal;'
-                + 'varying vec2 vTexCoord;'
+${this.floatPrecisionDefinitionCode}
 
-                + 'uniform sampler2D uTexture0;'
-                + 'uniform float uAlpha;'
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vTexCoord;
 
-                + 'void main(void) {'
+uniform sampler2D uTexture0;
+uniform float uAlpha;
 
-                + "    vec3  directionalLight = normalize(vec3(0.0, 1.0, 1.0));"
+void main(void) {
 
-                + "    vec3  nnormal = normalize(vNormal);"
-                + "    float directional = clamp(dot(nnormal, directionalLight), 0.0, 1.0);"
+    vec3  directionalLight = normalize(vec3(0.0, 1.0, 1.0));
 
-                + "    vec3  viewVec = normalize(vPosition);"
-                + "    float specular = pow(max(dot(nnormal, normalize(directionalLight - viewVec)), 0.0), 5.0);"
+    vec3  nnormal = normalize(vNormal);
+    float directional = clamp(dot(nnormal, directionalLight), 0.0, 1.0);
 
-                + "    vec4 texColor = texture2D(uTexture0, vTexCoord);"
-                + '    gl_FragColor = vec4(texColor.rgb * 0.2 + texColor.rgb * directional * 0.8, texColor.a * uAlpha);'
+    vec3  viewVec = normalize(vPosition);
+    float specular = pow(max(dot(nnormal, normalize(directionalLight - viewVec)), 0.0), 5.0);
 
-                + '}';
+    vec4 texColor = texture2D(uTexture0, vTexCoord);
+    gl_FragColor = vec4(texColor.rgb * 0.2 + texColor.rgb * directional * 0.8, texColor.a * uAlpha);
+
+}
+`;
         }
 
         initializeAttributes() {
@@ -962,31 +966,33 @@ namespace ManualTracingTool {
 
         initializeFragmentSourceCode() {
 
-            this.fragmentShaderSourceCode = ''
-                + this.floatPrecisionDefinitionCode
+            this.fragmentShaderSourceCode = `
 
-                + 'varying vec3 vPosition;'
-                + 'varying vec3 vNormal;'
-                + 'varying vec2 vTexCoord;'
+${this.floatPrecisionDefinitionCode}
 
-                + 'uniform sampler2D uTexture0;'
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vTexCoord;
 
-                + 'uniform float uMaxDepth;'
-                + 'uniform float uAlpha;'
+uniform sampler2D uTexture0;
 
-                + 'void main(void) {'
+uniform float uMaxDepth;
+uniform float uAlpha;
 
-                + '    float z1 = (-vPosition.z) / uMaxDepth * 255.0;'
-                + '    float z2 = fract(z1) * 255.0;'
-                + '    float z3 = fract(z2) * 255.0;'
+void main(void) {
 
-                + '    float r = floor(z1) / 255.0;'
-                + '    float g = floor(z2) / 255.0;'
-                + '    float b = floor(z3) / 255.0;'
+    float z1 = (-vPosition.z) / uMaxDepth * 255.0;
+    float z2 = fract(z1) * 255.0;
+    float z3 = fract(z2) * 255.0;
 
-                + '    gl_FragColor = vec4(r, g, b , 1.0);'
+    float r = floor(z1) / 255.0;
+    float g = floor(z2) / 255.0;
+    float b = floor(z3) / 255.0;
 
-                + '}';
+    gl_FragColor = vec4(r, g, b , 1.0);
+
+}
+`;
         }
 
         initializeAttributes() {

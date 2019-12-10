@@ -74,17 +74,62 @@ namespace ManualTracingTool {
 
         private executeCommand(env: ToolEnvironment) {
 
-            Logic_Edit_Line.smooth(this.editLine);
+            let targetGroup = env.currentVectorGroup;
+            let editLine = this.editLine;
+
+            // Crete new line
+            Logic_Edit_Line.smooth(editLine);
 
             let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
-            let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
+            let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(editLine.totalLength, resamplingUnitLength);
 
-            let resampledLine = Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
+            let resampledLine = Logic_Edit_Line.createResampledLine(editLine, divisionCount);
+
+            if (resampledLine.points.length < 2) {
+
+                return;
+            }
+
+            // Collect continuous filling info
+            let previousConnectedLine: VectorLine = null;
+            let previousConnectedLine_continuousFill = false;
+
+            if (this.continuousFill && targetGroup.lines.length >= 1) {
+
+                let connectLine = targetGroup.lines[targetGroup.lines.length - 1];
+
+                if (connectLine.points.length >= 2) {
+
+                    let lastPoint = connectLine.points[connectLine.points.length - 1];
+
+                    let point1 = resampledLine.points[0];
+                    let point2 = resampledLine.points[resampledLine.points.length - 1];
+
+                    let distance1 = vec3.squaredDistance(lastPoint.location, point1.location);
+                    let distance2 = vec3.squaredDistance(lastPoint.location, point2.location);
+
+                    if (distance2 < distance1) {
+
+                        let revercedList = new List<LinePoint>();
+                        for (let i = resampledLine.points.length - 1; i >= 0; i--) {
+
+                            revercedList.push(resampledLine.points[i]);
+                        }
+
+                        resampledLine.points = revercedList;
+                    }
+
+                    previousConnectedLine = targetGroup.lines[targetGroup.lines.length - 1];
+                    previousConnectedLine_continuousFill = previousConnectedLine.continuousFill;
+                }
+            }
 
             let command = new Command_AddLine();
             command.group = env.currentVectorGroup;
             command.line = resampledLine;
             command.continuousFill = this.continuousFill;
+            command.previousConnectedLine = previousConnectedLine;
+            command.previousConnectedLine_continuousFill = previousConnectedLine_continuousFill;
 
             command.execute(env);
 
@@ -106,35 +151,6 @@ namespace ManualTracingTool {
         execute(env: ToolEnvironment) { // @override
 
             this.errorCheck();
-
-            if (this.continuousFill && this.group.lines.length >= 1 && this.line.points.length >= 2) {
-
-                let connectLine = this.group.lines[this.group.lines.length - 1];
-
-                if (connectLine.points.length >= 2) {
-
-                    let lastPoint = connectLine.points[connectLine.points.length - 1];
-                    let point1 = this.line.points[0];
-                    let point2 = this.line.points[this.line.points.length - 1];
-
-                    let distance1 = vec3.squaredDistance(lastPoint.location, point1.location);
-                    let distance2 = vec3.squaredDistance(lastPoint.location, point2.location);
-
-                    if (distance2 < distance1) {
-
-                        let revercedList = new List<LinePoint>();
-                        for (let i = this.line.points.length - 1; i >= 0; i--) {
-
-                            revercedList.push(this.line.points[i]);
-                        }
-
-                        this.line.points = revercedList;
-                    }
-
-                    this.previousConnectedLine = this.group.lines[this.group.lines.length - 1];
-                    this.previousConnectedLine_continuousFill = this.previousConnectedLine.continuousFill;
-                }
-            }
 
             this.redo(env);
         }

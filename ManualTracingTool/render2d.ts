@@ -23,6 +23,7 @@ namespace ManualTracingTool {
         transformMatrix = mat4.create();
 
         private tempVec3 = vec3.create();
+        private tmpMatrix = mat4.create();
 
         createCanvas() {
 
@@ -88,17 +89,50 @@ namespace ManualTracingTool {
             mat4.identity(result);
 
             mat4.translate(result, result, vec3.set(this.tempVec3, this.width * this.centerLocationRate[0], this.height * this.centerLocationRate[0], 0.0));
+
             mat4.scale(result, result, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0));
+
             if (this.mirrorX) {
                 mat4.scale(result, result, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
             }
+
             if (this.mirrorY) {
                 mat4.scale(result, result, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
             }
+
             mat4.rotateZ(result, result, this.viewRotation * Math.PI / 180.0);
-            //mat4.translate(mat, mat, vec3.set(this.tempVec3, -this.width / 2, -this.height / 2, 0.0));
 
             mat4.translate(result, result, vec3.set(this.tempVec3, -this.viewLocation[0], -this.viewLocation[1], 0.0));
+        }
+
+        caluclateGLViewMatrix(result: Mat4) {
+
+            let wnd = this;
+
+            let viewScale = wnd.viewScale;
+            let aspect = wnd.height / wnd.width;
+
+            let real2DViewHalfWidth = wnd.width / 2 / viewScale;
+            let real2DViewHalfHeight = wnd.height / 2 / viewScale;
+
+            let viewOffsetX = -(wnd.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
+            let viewOffsetY = (wnd.viewLocation[1]) / real2DViewHalfHeight;
+
+            mat4.identity(this.tmpMatrix);
+
+            mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, aspect, 1.0, 1.0));
+
+            if (wnd.mirrorX) {
+                mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
+            }
+
+            if (wnd.mirrorY) {
+                mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
+            }
+
+            mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -wnd.viewRotation * Math.PI / 180.0);
+
+            mat4.translate(result, this.tmpMatrix, vec3.set(this.tempVec3, viewOffsetX / aspect, viewOffsetY, 0.0));
         }
 
         calculateViewUnitMatrix(result: Mat4) {

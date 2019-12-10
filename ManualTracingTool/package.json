@@ -1,0 +1,5 @@
+{
+  "name"    : "Manual Tracing Tool",
+  "version" : "0.1.0",
+  "main"    : "package_main.js"
+}

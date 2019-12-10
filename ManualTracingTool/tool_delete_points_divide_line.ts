@@ -176,6 +176,7 @@ namespace ManualTracingTool {
 
             for (let viewKeyframeLayer of this.editableKeyframeLayers) {
 
+                // Set flag to groups which contains flagged line
                 for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
                     for (let line of group.lines) {
@@ -188,6 +189,7 @@ namespace ManualTracingTool {
                     }
                 }
 
+                // Collect edit data
                 for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
                     if (group.modifyFlag == VectorGroupModifyFlagID.none) {
@@ -213,7 +215,7 @@ namespace ManualTracingTool {
                         let newLine: VectorLine = null;
 
                         let strokeStarted = false;
-                        let drawingRemainging = false;
+                        let drawingRemaining = false;
 
                         for (let pointIndex = 0; pointIndex < line.points.length - 1; pointIndex++) {
 
@@ -238,7 +240,7 @@ namespace ManualTracingTool {
 
                                 newLine.points.push(toPoint);
                                 strokeStarted = true;
-                                drawingRemainging = true;
+                                drawingRemaining = true;
                             }
                             else {
 
@@ -266,13 +268,13 @@ namespace ManualTracingTool {
                                     editGroup.newLines.push(newLine);
 
                                     strokeStarted = false;
-                                    drawingRemainging = false;
+                                    drawingRemaining = false;
                                 }
 
                                 // draw segment's to-side part
                                 if (lengthTo > 0.0 && lengthTo < 1.0) {
 
-                                    if (drawingRemainging) {
+                                    if (drawingRemaining) {
 
                                         editGroup.newLines.push(newLine);
                                     }
@@ -294,12 +296,12 @@ namespace ManualTracingTool {
                                     newLine.points.push(toPoint);
 
                                     strokeStarted = true;
-                                    drawingRemainging = true;
+                                    drawingRemaining = true;
                                 }
                             }
                         }
 
-                        if (drawingRemainging) {
+                        if (drawingRemaining) {
 
                             editGroup.newLines.push(newLine);
                         }
@@ -336,6 +338,8 @@ namespace ManualTracingTool {
             for (let editGroup of this.editGroups) {
 
                 editGroup.targetGroup.lines = editGroup.oldLines;
+
+                GPUVertexBuffer.setUpdated(editGroup.targetGroup.buffer);
             }
         }
 
@@ -344,6 +348,8 @@ namespace ManualTracingTool {
             for (let editGroup of this.editGroups) {
 
                 editGroup.targetGroup.lines = editGroup.newLines;
+
+                GPUVertexBuffer.setUpdated(editGroup.targetGroup.buffer);
             }
         }
     }
