@@ -3,20 +3,30 @@ var Platform;
     Platform.fs = (typeof (require) != 'undefined') ? require('fs') : {
         readFileSync(fileName) {
             return window.localStorage.getItem(fileName);
-        },
-        writeFileSync(fileName, data, format) {
-            if (format == 'base64') {
-                let base64Data = data.substr(data.indexOf(',') + 1);
-                let link = document.createElement("a");
-                link.download = fileName;
-                link.href = base64Data;
-                link.click();
-            }
-            else {
-                window.localStorage.setItem(fileName, data);
-            }
         }
     };
+    function supportsFileSystem() {
+        return (typeof (require) != 'undefined');
+    }
+    Platform.supportsFileSystem = supportsFileSystem;
+    function writeFileSync(fileName, data, format, callback) {
+        if (format == 'base64') {
+            if (supportsFileSystem()) {
+                let base64Data = data.substr(data.indexOf(',') + 1);
+                Platform.fs.writeFileSync(fileName, base64Data, format, callback);
+            }
+            else {
+                let link = document.createElement("a");
+                link.download = fileName;
+                link.href = data;
+                link.click();
+            }
+        }
+        else {
+            window.localStorage.setItem(fileName, data);
+        }
+    }
+    Platform.writeFileSync = writeFileSync;
     function getCurrentTime() {
         return performance.now();
     }

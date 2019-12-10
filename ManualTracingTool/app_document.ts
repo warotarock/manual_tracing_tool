@@ -445,7 +445,7 @@ namespace ManualTracingTool {
 
         protected saveDocumentJsonFile(filePath: string, documentData: DocumentData, backGroundType: DocumentBackGroundTypeID) {
 
-            Platform.fs.writeFileSync(filePath, JSON.stringify(documentData), function (error) {
+            Platform.writeFileSync(filePath, JSON.stringify(documentData), 'text', function (error) {
                 if (error != null) {
                     this.showMessageBox('error : ' + error);
                 }
@@ -463,8 +463,6 @@ namespace ManualTracingTool {
             let layer = oraFile.addLayer('marged', 0);
             layer.image = canvas;
 
-            let localSetting = this.getLocalSetting();
-
             let save_DocumentData = this.createSaveDocumentData(documentData);
 
             oraFile.save(
@@ -472,9 +470,7 @@ namespace ManualTracingTool {
                 , JSON.stringify(save_DocumentData)
                 , (dataURL: string) => {
 
-                    let base64Data = dataURL.substr(dataURL.indexOf(',') + 1);
-
-                    Platform.fs.writeFileSync(filePath, base64Data, 'base64', (error) => {
+                    Platform.writeFileSync(filePath, dataURL, 'base64', (error) => {
                         if (error) {
                             this.showMessageBox(error);
                         }
@@ -550,8 +546,8 @@ namespace ManualTracingTool {
             }
 
             let dataURL = canvas.toDataURL(imageTypeText, 0.9);
-            let base64Data = dataURL.substr(dataURL.indexOf(',') + 1);
-            Platform.fs.writeFileSync(fileFullPath, base64Data, 'base64', (error) => {
+
+            Platform.writeFileSync(fileFullPath, dataURL, 'base64', (error) => {
                 if (error) {
                     this.showMessageBox(error);
                 }

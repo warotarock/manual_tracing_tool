@@ -7,12 +7,37 @@ namespace Platform {
 
         readFileSync(fileName): string {
             return window.localStorage.getItem(fileName);
-        },
-
-        writeFileSync(fileName, text) {
-            window.localStorage.setItem(fileName, text);
         }
     };
+
+    export function supportsFileSystem(): boolean {
+
+        return (typeof (require) != 'undefined');
+    }
+
+    export function writeFileSync(fileName, data, format, callback) {
+
+        if (format == 'base64') {
+
+            if (supportsFileSystem()) {
+
+                let base64Data = data.substr(data.indexOf(',') + 1);
+
+                fs.writeFileSync(fileName, base64Data, format, callback);
+            }
+            else {
+
+                let link = document.createElement("a");
+                link.download = fileName;
+                link.href = data;
+                link.click();
+            }
+        }
+        else {
+
+            window.localStorage.setItem(fileName, data);
+        }
+    }
 
     export function getCurrentTime(): int {
 
