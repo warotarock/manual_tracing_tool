@@ -309,7 +309,6 @@ var ManualTracingTool;
             let oraFile = new ora.Ora(canvas.width, canvas.height);
             let layer = oraFile.addLayer('marged', 0);
             layer.image = canvas;
-            let localSetting = this.getLocalSetting();
             let save_DocumentData = this.createSaveDocumentData(documentData);
             oraFile.save(this.oraVectorFileName, JSON.stringify(save_DocumentData), (dataURL) => {
                 let base64Data = dataURL.substr(dataURL.indexOf(',') + 1);

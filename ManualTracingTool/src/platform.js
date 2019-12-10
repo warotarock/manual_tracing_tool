@@ -4,8 +4,17 @@ var Platform;
         readFileSync(fileName) {
             return window.localStorage.getItem(fileName);
         },
-        writeFileSync(fileName, text) {
-            window.localStorage.setItem(fileName, text);
+        writeFileSync(fileName, data, format) {
+            if (format == 'base64') {
+                let base64Data = data.substr(data.indexOf(',') + 1);
+                let link = document.createElement("a");
+                link.download = fileName;
+                link.href = base64Data;
+                link.click();
+            }
+            else {
+                window.localStorage.setItem(fileName, data);
+            }
         }
     };
     function getCurrentTime() {
