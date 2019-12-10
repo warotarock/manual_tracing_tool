@@ -4,11 +4,12 @@ var ManualTracingTool;
     class LocalSetting {
         constructor() {
             this.exportPath = null;
-            this.lastUsedFilePaths = new List();
+            this.lastUsedFilePaths = ['./test/test01.json'];
             this.maxLastUsedFilePaths = 5;
             this.referenceDirectoryPath = null;
             this.currentDirectoryPath = null;
         }
+        ;
     }
     ManualTracingTool.LocalSetting = LocalSetting;
     // Color

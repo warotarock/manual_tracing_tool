@@ -26,7 +26,7 @@ var Platform;
             }
         }
         else {
-            window.localStorage.setItem(fileName, data);
+            Platform.fs.writeFileSync(fileName, data, format, callback);
         }
     }
     Platform.writeFileSync = writeFileSync;
@@ -49,11 +49,11 @@ var Platform;
         }
         load() {
             let text = Platform.fs.readFileSync('settings.json');
-            let json = JSON.parse(text);
-            if (json) {
-                this.data = json;
-            }
-            else {
+            if (text) {
+                let json = JSON.parse(text);
+                if (json) {
+                    this.data = json;
+                }
             }
         }
         setItem(key, value) {

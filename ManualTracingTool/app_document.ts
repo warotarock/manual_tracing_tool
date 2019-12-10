@@ -445,7 +445,7 @@ namespace ManualTracingTool {
 
         protected saveDocumentJsonFile(filePath: string, documentData: DocumentData, backGroundType: DocumentBackGroundTypeID) {
 
-            Platform.writeFileSync(filePath, JSON.stringify(documentData), 'text', function (error) {
+            Platform.writeFileSync(filePath, JSON.stringify(documentData), 'utf8', function (error) {
                 if (error != null) {
                     this.showMessageBox('error : ' + error);
                 }

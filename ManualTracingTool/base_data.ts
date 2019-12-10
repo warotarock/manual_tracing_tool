@@ -6,7 +6,7 @@ namespace ManualTracingTool {
     export class LocalSetting {
 
         exportPath: string = null;
-        lastUsedFilePaths: List<string> = new List<string>();
+        lastUsedFilePaths: List<string> = ['./test/test01.json'];;
         maxLastUsedFilePaths = 5;
         referenceDirectoryPath: string = null;
         currentDirectoryPath: string = null;

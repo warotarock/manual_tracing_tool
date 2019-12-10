@@ -39,7 +39,7 @@ namespace Platform {
         }
         else {
 
-            window.localStorage.setItem(fileName, data);
+            fs.writeFileSync(fileName, data, format, callback);
         }
     }
 
@@ -64,14 +64,15 @@ namespace Platform {
         load() {
 
             let text = fs.readFileSync('settings.json');
-            let json = JSON.parse(text);
 
-            if (json) {
+            if (text) {
 
-                this.data = json;
-            }
-            else {
+                let json = JSON.parse(text);
 
+                if (json) {
+
+                    this.data = json;
+                }
             }
         }
 
