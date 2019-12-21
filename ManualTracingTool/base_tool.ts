@@ -426,7 +426,7 @@ namespace ManualTracingTool {
         redrawWebGLWindow = false;
         redrawHeaderWindow = false;
         redrawFooterWindow = false;
-        redrawPalletSelectorWindow = false;
+        redrawPaletteSelectorWindow = false;
         redrawColorMixerWindow = false;
 
         mouseCursorRadius = 12.0;
@@ -587,7 +587,7 @@ namespace ManualTracingTool {
         setRedrawLayerWindow() {
 
             this.toolContext.redrawLayerWindow = true;
-            this.toolContext.redrawPalletSelectorWindow = true;
+            this.toolContext.redrawPaletteSelectorWindow = true;
             this.toolContext.redrawColorMixerWindow = true;
         }
 
@@ -610,7 +610,7 @@ namespace ManualTracingTool {
 
         setRedrawColorSelectorWindow() {
 
-            this.toolContext.redrawPalletSelectorWindow = true;
+            this.toolContext.redrawPaletteSelectorWindow = true;
         }
 
         setRedrawColorMixerWindow() {
@@ -710,9 +710,9 @@ namespace ManualTracingTool {
 
             if (this.currentVectorLayer != null) {
 
-                if (this.currentVectorLayer.drawLineType == DrawLineTypeID.palletColor) {
+                if (this.currentVectorLayer.drawLineType == DrawLineTypeID.paletteColor) {
 
-                    color = this.toolContext.document.palletColors[this.currentVectorLayer.line_PalletColorIndex].color;
+                    color = this.toolContext.document.paletteColors[this.currentVectorLayer.line_PaletteColorIndex].color;
                 }
                 else {
 
@@ -729,9 +729,9 @@ namespace ManualTracingTool {
 
             if (this.currentVectorLayer != null) {
 
-                if (this.currentVectorLayer.fillAreaType == FillAreaTypeID.palletColor) {
+                if (this.currentVectorLayer.fillAreaType == FillAreaTypeID.paletteColor) {
 
-                    color = this.toolContext.document.palletColors[this.currentVectorLayer.fill_PalletColorIndex].color;
+                    color = this.toolContext.document.paletteColors[this.currentVectorLayer.fill_PaletteColorIndex].color;
                 }
                 else {
 
@@ -829,7 +829,7 @@ namespace ManualTracingTool {
         layerWindowItemActiveLayerColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
         layerWindowItemSelectedColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
 
-        palletSelectorItemEdgeColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        paletteSelectorItemEdgeColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 
         timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
         timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);

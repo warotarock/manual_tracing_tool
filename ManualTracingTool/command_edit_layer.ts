@@ -255,7 +255,7 @@ namespace ManualTracingTool {
 
                 this.newLayer.name = 'new fill layer';
                 this.newLayer.drawLineType = DrawLineTypeID.none;
-                this.newLayer.fillAreaType = FillAreaTypeID.palletColor;
+                this.newLayer.fillAreaType = FillAreaTypeID.paletteColor;
             }
 
             let keyFrame = new VectorLayerKeyframe();

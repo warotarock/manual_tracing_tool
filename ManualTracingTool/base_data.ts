@@ -14,7 +14,7 @@ namespace ManualTracingTool {
 
     // Color
 
-    export class PalletColor {
+    export class PaletteColor {
 
         color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     }
@@ -218,14 +218,14 @@ namespace ManualTracingTool {
 
         none = 1,
         layerColor = 2,
-        palletColor = 3,
+        paletteColor = 3,
     }
 
     export enum FillAreaTypeID {
 
         none = 1,
         fillColor = 2,
-        palletColor = 3,
+        paletteColor = 3,
     }
 
     export class VectorLayer extends Layer {
@@ -234,13 +234,13 @@ namespace ManualTracingTool {
 
         keyframes = new List<VectorLayerKeyframe>();
 
-        drawLineType = DrawLineTypeID.palletColor;
+        drawLineType = DrawLineTypeID.paletteColor;
 
         fillAreaType = FillAreaTypeID.none;
         fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 
-        line_PalletColorIndex = 0;
-        fill_PalletColorIndex = 1;
+        line_PaletteColorIndex = 0;
+        fill_PaletteColorIndex = 1;
 
         static isVectorLayer(layer: Layer): boolean {
 
@@ -587,14 +587,14 @@ namespace ManualTracingTool {
 
     export class DocumentData {
 
-        static maxPalletColors = 50;
+        static maxPaletteColors = 50;
 
         rootLayer = new Layer();
         documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
         defaultViewScale = 1.0;
         lineWidthBiasRate = 1.0;
-        exportBackGroundType = DocumentBackGroundTypeID.lastPalletColor;
-        palletColors = new List<PalletColor>();
+        exportBackGroundType = DocumentBackGroundTypeID.lastPaletteColor;
+        paletteColors = new List<PaletteColor>();
         animationSettingData = new AnimationSettingData();
 
         loaded = false;
@@ -603,25 +603,25 @@ namespace ManualTracingTool {
         // This class must be created by this function for JSON.parse
         constructor() {
 
-            DocumentData.initializeDefaultPalletColors(this);
+            DocumentData.initializeDefaultPaletteColors(this);
         }
 
-        static initializeDefaultPalletColors(documentData: DocumentData) {
+        static initializeDefaultPaletteColors(documentData: DocumentData) {
 
-            documentData.palletColors = new List<PalletColor>();
+            documentData.paletteColors = new List<PaletteColor>();
 
             for (let color of defaultColors) {
 
-                let palletColor = new PalletColor();
-                vec4.copy(palletColor.color, color);
-                documentData.palletColors.push(palletColor);
+                let paletteColor = new PaletteColor();
+                vec4.copy(paletteColor.color, color);
+                documentData.paletteColors.push(paletteColor);
             }
 
-            while (documentData.palletColors.length < DocumentData.maxPalletColors) {
+            while (documentData.paletteColors.length < DocumentData.maxPaletteColors) {
 
-                let palletColor = new PalletColor();
-                vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
-                documentData.palletColors.push(palletColor);
+                let paletteColor = new PaletteColor();
+                vec4.set(paletteColor.color, 1.0, 1.0, 1.0, 1.0);
+                documentData.paletteColors.push(paletteColor);
             }
         }
 
@@ -669,7 +669,7 @@ namespace ManualTracingTool {
 
     export enum DocumentBackGroundTypeID {
 
-        lastPalletColor = 1,
+        lastPaletteColor = 1,
         transparent = 2,
     }
 }

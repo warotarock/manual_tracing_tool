@@ -179,12 +179,12 @@ namespace ManualTracingTool {
             documentData.rootLayer = loadedData.rootLayer;
             documentData.documentFrame = loadedData.documentFrame;
 
-            if (loadedData['palletColos']) {
-                documentData.palletColors = loadedData['palletColos'];
+            if (loadedData['paletteColos']) {
+                documentData.paletteColors = loadedData['paletteColos'];
             }
             else {
 
-                documentData.palletColors = loadedData.palletColors;
+                documentData.paletteColors = loadedData.paletteColors;
             }
 
             documentData.defaultViewScale = loadedData.defaultViewScale;
@@ -506,9 +506,9 @@ namespace ManualTracingTool {
 
             this.clearWindow(this.exportRenderWindow);
 
-            if (backGroundType == DocumentBackGroundTypeID.lastPalletColor) {
+            if (backGroundType == DocumentBackGroundTypeID.lastPaletteColor) {
 
-                this.canvasRender.setFillColorV(documentData.palletColors[documentData.palletColors.length - 1].color);
+                this.canvasRender.setFillColorV(documentData.paletteColors[documentData.paletteColors.length - 1].color);
                 this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
             }
 

@@ -20,13 +20,21 @@ namespace ManualTracingTool {
 
         static fixLoadedDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
 
-            if (document.palletColors == undefined) {
-                DocumentData.initializeDefaultPalletColors(document);
+            if (document.paletteColors == undefined) {
+
+                if ('palletColors' in document) {
+
+                    document['paletteColors'] = document['palletColors'];
+                }
+                else {
+
+                    DocumentData.initializeDefaultPaletteColors(document);
+                }
             }
 
-            while (document.palletColors.length < DocumentData.maxPalletColors) {
+            while (document.paletteColors.length < DocumentData.maxPaletteColors) {
 
-                document.palletColors.push(new PalletColor());
+                document.paletteColors.push(new PaletteColor());
             }
 
             if (document.animationSettingData == undefined) {
@@ -42,7 +50,7 @@ namespace ManualTracingTool {
             }
 
             if (document.exportBackGroundType == undefined) {
-                document.exportBackGroundType = DocumentBackGroundTypeID.lastPalletColor;
+                document.exportBackGroundType = DocumentBackGroundTypeID.lastPaletteColor;
             }
 
             this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
@@ -94,12 +102,12 @@ namespace ManualTracingTool {
                     vectorLayer.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
                 }
 
-                if (vectorLayer.line_PalletColorIndex == undefined) {
-                    vectorLayer.line_PalletColorIndex = 0;
+                if (vectorLayer.line_PaletteColorIndex == undefined) {
+                    vectorLayer.line_PaletteColorIndex = 0;
                 }
 
-                if (vectorLayer.fill_PalletColorIndex == undefined) {
-                    vectorLayer.fill_PalletColorIndex = 1;
+                if (vectorLayer.fill_PaletteColorIndex == undefined) {
+                    vectorLayer.fill_PaletteColorIndex = 1;
                 }
 
                 if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {
@@ -228,11 +236,11 @@ namespace ManualTracingTool {
 
             this.fixSaveDocumentData_FixLayer_Recursive(document.rootLayer, info);
 
-            for (let i = 0; i < document.palletColors.length; i++) {
+            for (let i = 0; i < document.paletteColors.length; i++) {
 
-                let palletColor = document.palletColors[i];
+                let paletteColor = document.paletteColors[i];
 
-                palletColor.color = DocumentLogic.vec4ToArray(palletColor.color);
+                paletteColor.color = DocumentLogic.vec4ToArray(paletteColor.color);
             }
         }
 

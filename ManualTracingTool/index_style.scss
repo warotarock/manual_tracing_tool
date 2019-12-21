@@ -195,7 +195,7 @@ input[type=number] {
     border-width: 1px;
 }
 
-#palletSelectorCanvas {
+#paletteSelectorCanvas {
     border: none;
 }
 
@@ -321,7 +321,7 @@ input[type=number] {
     }
 }
 
-.palletColorModal {
+.paletteColorModal {
     width: 660px;
     height: 280px;
     position: absolute;
@@ -332,7 +332,7 @@ input[type=number] {
         margin-top: 15px;
     }
 
-    #palletColorModal_colors {
+    #paletteColorModal_colors {
         margin-top: 10px;
         width: 460px;
         float: left;
@@ -361,7 +361,7 @@ input[type=number] {
         }
     }
 
-    #palletColorModal_colorMixer {
+    #paletteColorModal_colorMixer {
         margin-top: 10px;
         width: 200px;
         height: 200px;

@@ -12,9 +12,9 @@ namespace ManualTracingTool {
         layerWindow = new LayerWindow();
         subtoolWindow = new SubtoolWindow();
         timeLineWindow = new TimeLineWindow();
-        palletSelectorWindow = new PalletSelectorWindow();
+        paletteSelectorWindow = new PaletteSelectorWindow();
         colorMixerWindow_colorCanvas = new ColorCanvasWindow();
-        palletColorModal_colorCanvas = new ColorCanvasWindow();
+        paletteColorModal_colorCanvas = new ColorCanvasWindow();
 
         // Drawing variables
 
@@ -113,16 +113,16 @@ namespace ManualTracingTool {
             this.layerWindow.initializeContext();
             this.subtoolWindow.initializeContext();
 
-            this.palletSelectorWindow.initializeContext();
+            this.paletteSelectorWindow.initializeContext();
             this.colorMixerWindow_colorCanvas.initializeContext();
 
             this.timeLineWindow.initializeContext();
 
             this.exportRenderWindow.initializeContext();
-            this.palletColorModal_colorCanvas.initializeContext();
+            this.paletteColorModal_colorCanvas.initializeContext();
 
             this.layerWindow_Initialize();
-            this.initializePalletSelectorWindow();
+            this.initializePaletteSelectorWindow();
         }
 
         // Initializing after loading resources
@@ -134,7 +134,7 @@ namespace ManualTracingTool {
 
             this.setCanvasSizeFromStyle(this.colorMixerWindow_colorCanvas);
 
-            this.setCanvasSizeFromStyle(this.palletColorModal_colorCanvas);
+            this.setCanvasSizeFromStyle(this.paletteColorModal_colorCanvas);
         }
 
         // View management
@@ -150,7 +150,7 @@ namespace ManualTracingTool {
 
             this.resizeCanvasToParent(this.layerWindow);
             this.resizeCanvasToParent(this.subtoolWindow);
-            this.resizeCanvasToParent(this.palletSelectorWindow);
+            this.resizeCanvasToParent(this.paletteSelectorWindow);
             this.resizeCanvasToParent(this.timeLineWindow);
         }
 
@@ -595,14 +595,14 @@ namespace ManualTracingTool {
             }
         }
 
-        // Pallet selector window
+        // Palette selector window
 
-        protected initializePalletSelectorWindow() {
+        protected initializePaletteSelectorWindow() {
 
-            this.palletSelectorWindow.commandButtonAreas = new List<RectangleLayoutArea>();
+            this.paletteSelectorWindow.commandButtonAreas = new List<RectangleLayoutArea>();
 
-            this.palletSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PalletSelectorWindowButtonID.lineColor).setIcon(5));
-            this.palletSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PalletSelectorWindowButtonID.fillColor).setIcon(6));
+            this.paletteSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PaletteSelectorWindowButtonID.lineColor).setIcon(5));
+            this.paletteSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PaletteSelectorWindowButtonID.fillColor).setIcon(6));
         }
 
         // Subtool window
@@ -658,12 +658,12 @@ namespace ManualTracingTool {
 
         // Color mixer window
 
-        protected getPalletSelectorWindow_SelectedColor(): Vec4 {
+        protected getPaletteSelectorWindow_SelectedColor(): Vec4 {
 
-            let wnd = this.palletSelectorWindow;
+            let wnd = this.paletteSelectorWindow;
             let env = this.toolEnv;
 
-            if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+            if (wnd.currentTargetID == PaletteSelectorWindowButtonID.lineColor) {
 
                 return env.currentVectorLayer.layerColor;
             }
@@ -673,12 +673,12 @@ namespace ManualTracingTool {
             }
         }
 
-        protected getPalletSelectorWindow_CurrentColor(): Vec4 {
+        protected getPaletteSelectorWindow_CurrentColor(): Vec4 {
 
-            let wnd = this.palletSelectorWindow;
+            let wnd = this.paletteSelectorWindow;
             let env = this.toolEnv;
 
-            if (wnd.currentTargetID == PalletSelectorWindowButtonID.lineColor) {
+            if (wnd.currentTargetID == PaletteSelectorWindowButtonID.lineColor) {
 
                 return env.getCurrentLayerLineColor();
             }
@@ -701,8 +701,8 @@ namespace ManualTracingTool {
         currentModalDialogResult: string = null;
         currentModalDialog_DocumentData: DocumentData = null;
         layerPropertyWindow_EditLayer: Layer = null;
-        palletColorWindow_EditLayer: VectorLayer = null;
-        palletColorWindow_Mode = OpenPalletColorModalMode.LineColor;
+        paletteColorWindow_EditLayer: VectorLayer = null;
+        paletteColorWindow_Mode = OpenPaletteColorModalMode.LineColor;
         openFileDialogTargetID = OpenFileDialogTargetID.none;
         modalOverlayOption = {
             speedIn: 0,
@@ -839,7 +839,7 @@ namespace ManualTracingTool {
             this.onLayerPropertyModalClosed();
         }
 
-        protected openPalletColorModal(mode: OpenPalletColorModalMode, documentData: DocumentData, layer: Layer) {
+        protected openPaletteColorModal(mode: OpenPaletteColorModalMode, documentData: DocumentData, layer: Layer) {
 
             if (this.isModalShown()) {
                 return;
@@ -852,98 +852,98 @@ namespace ManualTracingTool {
             let vectorLayer = <VectorLayer>layer;
 
             let targetName: string;
-            let palletColorIndex: int;
-            if (mode == OpenPalletColorModalMode.LineColor) {
+            let paletteColorIndex: int;
+            if (mode == OpenPaletteColorModalMode.LineColor) {
 
                 targetName = '線色';
-                palletColorIndex = vectorLayer.line_PalletColorIndex;
+                paletteColorIndex = vectorLayer.line_PaletteColorIndex;
             }
             else {
 
                 targetName = '塗りつぶし色';
-                palletColorIndex = vectorLayer.fill_PalletColorIndex;
+                paletteColorIndex = vectorLayer.fill_PaletteColorIndex;
             }
 
-            this.setElementText(this.ID.palletColorModal_targetName, targetName);
-            this.setRadioElementIntValue(this.ID.palletColorModal_colorIndex, palletColorIndex);
+            this.setElementText(this.ID.paletteColorModal_targetName, targetName);
+            this.setRadioElementIntValue(this.ID.paletteColorModal_colorIndex, paletteColorIndex);
 
-            this.palletColorWindow_Mode = mode;
+            this.paletteColorWindow_Mode = mode;
             this.currentModalDialog_DocumentData = documentData;
-            this.palletColorWindow_EditLayer = vectorLayer;
+            this.paletteColorWindow_EditLayer = vectorLayer;
 
-            this.displayPalletColorModalColors(documentData, vectorLayer);
+            this.displayPaletteColorModalColors(documentData, vectorLayer);
 
-            this.openModal(this.ID.palletColorModal, null);
+            this.openModal(this.ID.paletteColorModal, null);
         }
 
-        protected displayPalletColorModalColors(documentData: DocumentData, vectorLayer: VectorLayer) {
+        protected displayPaletteColorModalColors(documentData: DocumentData, vectorLayer: VectorLayer) {
 
             {
-                let palletColorIndex: int;
-                if (this.palletColorWindow_Mode == OpenPalletColorModalMode.LineColor) {
+                let paletteColorIndex: int;
+                if (this.paletteColorWindow_Mode == OpenPaletteColorModalMode.LineColor) {
 
-                    palletColorIndex = vectorLayer.line_PalletColorIndex;
+                    paletteColorIndex = vectorLayer.line_PaletteColorIndex;
                 }
                 else {
 
-                    palletColorIndex = vectorLayer.fill_PalletColorIndex;
+                    paletteColorIndex = vectorLayer.fill_PaletteColorIndex;
                 }
 
-                let palletColor = documentData.palletColors[palletColorIndex];
-                this.setInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
-                this.setInputElementRangeValue(this.ID.palletColorModal_currentAlpha, palletColor.color[3], 0.0, 1.0);
+                let paletteColor = documentData.paletteColors[paletteColorIndex];
+                this.setInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
+                this.setInputElementRangeValue(this.ID.paletteColorModal_currentAlpha, paletteColor.color[3], 0.0, 1.0);
             }
 
-            for (let palletColorIndex = 0; palletColorIndex < documentData.palletColors.length; palletColorIndex++) {
+            for (let paletteColorIndex = 0; paletteColorIndex < documentData.paletteColors.length; paletteColorIndex++) {
 
-                let palletColor = documentData.palletColors[palletColorIndex];
+                let paletteColor = documentData.paletteColors[paletteColorIndex];
 
-                this.setColorPalletElementValue(palletColorIndex, palletColor.color);
+                this.setColorPaletteElementValue(paletteColorIndex, paletteColor.color);
             }
         }
 
-        protected setColorPalletElementValue(palletColorIndex: int, color: Vec4) {
+        protected setColorPaletteElementValue(paletteColorIndex: int, color: Vec4) {
 
-            let id = this.ID.palletColorModal_colorValue + palletColorIndex;
+            let id = this.ID.paletteColorModal_colorValue + paletteColorIndex;
             this.setInputElementColor(id, color);
         }
 
-        protected onClosedPalletColorModal() {
+        protected onClosedPaletteColorModal() {
 
             let documentData = this.currentModalDialog_DocumentData;
-            let vectorLayer = this.palletColorWindow_EditLayer;
+            let vectorLayer = this.paletteColorWindow_EditLayer;
 
-            let palletColorIndex = this.getRadioElementIntValue(this.ID.palletColorModal_colorIndex, 0);;
+            let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);;
 
-            if (this.palletColorWindow_Mode == OpenPalletColorModalMode.LineColor) {
+            if (this.paletteColorWindow_Mode == OpenPaletteColorModalMode.LineColor) {
 
-                vectorLayer.line_PalletColorIndex = palletColorIndex;
+                vectorLayer.line_PaletteColorIndex = paletteColorIndex;
             }
             else {
 
-                vectorLayer.fill_PalletColorIndex = palletColorIndex;
+                vectorLayer.fill_PaletteColorIndex = paletteColorIndex;
             }
 
             let updateOnClose = false;
             if (updateOnClose) {
 
                 {
-                    let palletColor = documentData.palletColors[palletColorIndex];
-                    this.getInputElementColor(this.ID.palletColorModal_currentColor, palletColor.color);
-                    palletColor.color[3] = this.getInputElementRangeValue(this.ID.palletColorModal_currentAlpha, 0.0, 1.0);
+                    let paletteColor = documentData.paletteColors[paletteColorIndex];
+                    this.getInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
+                    paletteColor.color[3] = this.getInputElementRangeValue(this.ID.paletteColorModal_currentAlpha, 0.0, 1.0);
                 }
 
-                for (let i = 0; i < documentData.palletColors.length; i++) {
+                for (let i = 0; i < documentData.paletteColors.length; i++) {
 
-                    let palletColor = documentData.palletColors[i];
+                    let paletteColor = documentData.paletteColors[i];
 
-                    let id = this.ID.palletColorModal_colorValue + i;
-                    this.getInputElementColor(id, palletColor.color);
+                    let id = this.ID.paletteColorModal_colorValue + i;
+                    this.getInputElementColor(id, paletteColor.color);
                 }
             }
 
             this.currentModalDialog_DocumentData = null;
-            this.palletColorWindow_EditLayer = null;
+            this.paletteColorWindow_EditLayer = null;
         }
 
         protected openOperationOptionModal() {
@@ -1583,14 +1583,14 @@ namespace ManualTracingTool {
         }
     }
 
-    export enum PalletSelectorWindowButtonID {
+    export enum PaletteSelectorWindowButtonID {
 
         none = 0,
         lineColor = 1,
         fillColor = 2,
     }
 
-    export class PalletSelectorWindow extends ToolBaseWindow {
+    export class PaletteSelectorWindow extends ToolBaseWindow {
 
         leftMargin = 4.0;
         topMargin = 5.0;
@@ -1614,7 +1614,7 @@ namespace ManualTracingTool {
 
         itemAreas = new List<RectangleLayoutArea>();
 
-        currentTargetID = PalletSelectorWindowButtonID.lineColor;
+        currentTargetID = PaletteSelectorWindowButtonID.lineColor;
     }
 
     export enum LayerWindowButtonID {
@@ -1649,10 +1649,9 @@ namespace ManualTracingTool {
     }
 
     export class SubToolViewItemOptionButton extends RectangleLayoutArea {
-
     }
 
-    export enum OpenPalletColorModalMode {
+    export enum OpenPaletteColorModalMode {
 
         LineColor = 1,
         FillColor = 2
@@ -1684,7 +1683,7 @@ namespace ManualTracingTool {
         layerCanvas = 'layerCanvas';
         subtoolCanvas = 'subtoolCanvas';
         timeLineCanvas = 'timeLineCanvas';
-        palletSelectorCanvas = 'palletSelectorCanvas';
+        paletteSelectorCanvas = 'paletteSelectorCanvas';
         colorMixerWindow_colorCanvas = 'colorMixer_colorCanvas';
 
         menu_btnDrawTool = 'menu_btnDrawTool';
@@ -1732,15 +1731,15 @@ namespace ManualTracingTool {
         layerPropertyModal_isRenderTarget = 'layerPropertyModal_isRenderTarget';
         layerPropertyModal_isMaskedBelowLayer = 'layerPropertyModal_isMaskedBelowLayer';
 
-        palletColorModal = '#palletColorModal';
-        palletColorModal_targetName = 'palletColorModal_targetName';
-        palletColorModal_currentColor = 'palletColorModal_currentColor';
-        palletColorModal_currentAlpha = 'palletColorModal_currentAlpha';
-        palletColorModal_colors = 'palletColorModal_colors';
-        palletColorModal_colorItemStyle = 'colorItem';
-        palletColorModal_colorIndex = 'palletColorModal_colorIndex';
-        palletColorModal_colorValue = 'palletColorModal_colorValue';
-        palletColorModal_colorCanvas = 'palletColorModal_colorCanvas';
+        paletteColorModal = '#paletteColorModal';
+        paletteColorModal_targetName = 'paletteColorModal_targetName';
+        paletteColorModal_currentColor = 'paletteColorModal_currentColor';
+        paletteColorModal_currentAlpha = 'paletteColorModal_currentAlpha';
+        paletteColorModal_colors = 'paletteColorModal_colors';
+        paletteColorModal_colorItemStyle = 'colorItem';
+        paletteColorModal_colorIndex = 'paletteColorModal_colorIndex';
+        paletteColorModal_colorValue = 'paletteColorModal_colorValue';
+        paletteColorModal_colorCanvas = 'paletteColorModal_colorCanvas';
 
         operationOptionModal = '#operationOptionModal';
         operationOptionModal_LineWidth = 'operationOptionModal_LineWidth'

@@ -108,7 +108,7 @@ namespace ManualTracingTool {
 
             this.layerWindow_CaluculateLayout(this.layerWindow);
             this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
-            this.palletSelector_CaluculateLayout();
+            this.paletteSelector_CaluculateLayout();
 
             this.startLoadingSystemResources();
         }
@@ -408,8 +408,8 @@ namespace ManualTracingTool {
             this.initializeTools();
             this.initializeViewState();
 
-            this.drawPalletColorMixer(this.colorMixerWindow_colorCanvas);
-            this.drawPalletColorMixer(this.palletColorModal_colorCanvas);
+            this.drawPaletteColorMixer(this.colorMixerWindow_colorCanvas);
+            this.drawPaletteColorMixer(this.paletteColorModal_colorCanvas);
 
             this.updateLayerStructureInternal(true, true, false, false);
 
@@ -651,12 +651,12 @@ namespace ManualTracingTool {
                 this.toolContext.redrawSubtoolWindow = false;
             }
 
-            if (this.toolContext.redrawPalletSelectorWindow) {
+            if (this.toolContext.redrawPaletteSelectorWindow) {
 
-                this.clearWindow(this.palletSelectorWindow);
-                this.drawPalletSelectorWindow();
+                this.clearWindow(this.paletteSelectorWindow);
+                this.drawPaletteSelectorWindow();
 
-                this.toolContext.redrawPalletSelectorWindow = false;
+                this.toolContext.redrawPaletteSelectorWindow = false;
             }
 
             if (this.toolContext.redrawColorMixerWindow) {
@@ -1558,13 +1558,13 @@ namespace ManualTracingTool {
             );
         }
 
-        protected drawPalletSelectorWindow() {
+        protected drawPaletteSelectorWindow() {
 
-            this.drawPalletSelectorWindow_CommandButtons(
-                this.palletSelectorWindow);
+            this.drawPaletteSelectorWindow_CommandButtons(
+                this.paletteSelectorWindow);
 
-            this.drawPalletSelectorWindow_PalletItems(
-                this.palletSelectorWindow,
+            this.drawPaletteSelectorWindow_PaletteItems(
+                this.paletteSelectorWindow,
                 this.toolContext.document,
                 this.toolEnv.currentVectorLayer);
         }
@@ -1678,9 +1678,9 @@ namespace ManualTracingTool {
 
                 this.updateLayerStructureInternal(false, false, true, true);
             }
-            else if (this.currentModalDialogID == this.ID.palletColorModal) {
+            else if (this.currentModalDialogID == this.ID.paletteColorModal) {
 
-                this.onClosedPalletColorModal();
+                this.onClosedPaletteColorModal();
             }
             else if (this.currentModalDialogID == this.ID.operationOptionModal) {
 

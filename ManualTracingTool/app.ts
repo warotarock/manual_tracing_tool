@@ -183,33 +183,33 @@ namespace ManualTracingTool {
         _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
         _Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
         _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
-        _Main.palletSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.palletSelectorCanvas);
+        _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
         _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
         _Main.drawGPUWindow.createCanvas();;
         _Main.foreLayerRenderWindow.createCanvas();
         _Main.backLayerRenderWindow.createCanvas();
         //_Main.pickingWindow.createCanvas();
         _Main.exportRenderWindow.createCanvas();
-        _Main.palletColorModal_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.palletColorModal_colorCanvas);
+        _Main.paletteColorModal_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteColorModal_colorCanvas);
 
-        var layerColorModal_colors = document.getElementById(_Main.ID.palletColorModal_colors);
-        for (let palletColorIndex = 0; palletColorIndex < DocumentData.maxPalletColors; palletColorIndex++) {
+        var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
+        for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
 
             let colorItemDiv = document.createElement('div');
-            colorItemDiv.classList.add(_Main.ID.palletColorModal_colorItemStyle);
+            colorItemDiv.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
             layerColorModal_colors.appendChild(colorItemDiv);
 
             let radioInput = document.createElement('input');
             radioInput.type = 'radio';
-            radioInput.id = _Main.ID.palletColorModal_colorIndex + palletColorIndex;
-            radioInput.name = _Main.ID.palletColorModal_colorIndex;
-            radioInput.value = palletColorIndex.toString();
+            radioInput.id = _Main.ID.paletteColorModal_colorIndex + paletteColorIndex;
+            radioInput.name = _Main.ID.paletteColorModal_colorIndex;
+            radioInput.value = paletteColorIndex.toString();
             colorItemDiv.appendChild(radioInput);
 
             let colorInput = document.createElement('input');
             colorInput.type = 'color';
-            colorInput.id = _Main.ID.palletColorModal_colorValue + palletColorIndex;
-            colorInput.classList.add(_Main.ID.palletColorModal_colorItemStyle);
+            colorInput.id = _Main.ID.paletteColorModal_colorValue + paletteColorIndex;
+            colorInput.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
             colorItemDiv.appendChild(colorInput);
         }
 

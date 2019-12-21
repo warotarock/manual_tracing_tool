@@ -167,7 +167,7 @@ input[type=number] {
   border: solid;
   border-width: 1px; }
 
-#palletSelectorCanvas {
+#paletteSelectorCanvas {
   border: none; }
 
 #sideWindow4 {
@@ -260,41 +260,41 @@ input[type=number] {
     margin-top: 5px;
     width: 100%; }
 
-.palletColorModal {
+.paletteColorModal {
   width: 660px;
   height: 280px;
   position: absolute;
   bottom: 100px; }
-  .palletColorModal input {
+  .paletteColorModal input {
     margin-left: 15px;
     margin-top: 15px; }
-  .palletColorModal #palletColorModal_colors {
+  .paletteColorModal #paletteColorModal_colors {
     margin-top: 10px;
     width: 460px;
     float: left; }
-    .palletColorModal #palletColorModal_colors div.colorItem {
+    .paletteColorModal #paletteColorModal_colors div.colorItem {
       width: 80px;
       height: 30px;
       margin-left: 10px;
       margin-top: 10px;
       float: left;
       /*border-style: solid;*/ }
-    .palletColorModal #palletColorModal_colors div.colorItem input[type="radio"] {
+    .paletteColorModal #paletteColorModal_colors div.colorItem input[type="radio"] {
       margin-left: 0px;
       margin-top: 0px;
       width: 30px;
       height: 20px; }
-    .palletColorModal #palletColorModal_colors div.colorItem input[type="color"] {
+    .paletteColorModal #paletteColorModal_colors div.colorItem input[type="color"] {
       margin-left: 0px;
       margin-top: 0px;
       width: 30px;
       height: 30px; }
-  .palletColorModal #palletColorModal_colorMixer {
+  .paletteColorModal #paletteColorModal_colorMixer {
     margin-top: 10px;
     width: 200px;
     height: 200px;
     float: left; }
-    .palletColorModal #palletColorModal_colorMixer canvas {
+    .paletteColorModal #paletteColorModal_colorMixer canvas {
       margin-top: 10px;
       width: 200px;
       height: 200px; }
