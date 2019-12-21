@@ -33,51 +33,24 @@ namespace ManualTracingTool {
         private normalVec = vec3.create();
         private localLocation = vec3.create();
 
-        edited = false;
+        protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
-        protected beforeHitTest() { // @override
-
-            this.selectionInfo.clear();
-
-            this.edited = false;
+            this.createEditPoint(group, line, point1, point2, location, minDistanceSQ);
         }
 
-        protected beforeHitTestToGroup(geometry: VectorLayerGeometry, group: VectorGroup) { // @override
-        }
-
-        protected beforeHitTestToLine(group: VectorGroup, line: VectorLine) { // @override
-        }
-
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
-
-            this.createEditPoint(line, point1, point2, location, minDistanceSQ);
-        }
-
-        protected afterHitTestToLine(group: VectorGroup, line: VectorLine) { // @override
-        }
-
-        protected afterHitTestToGroup(geometry: VectorLayerGeometry, group: VectorGroup) { // @override
-        }
-
-        private createEditPoint(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float) {
+        private createEditPoint(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float) {
 
             let edited = false;
-            let done = false;
 
             let segmentLength = vec3.distance(point1.location, point2.location);
 
             if (segmentLength <= 0.0) {
 
                 edited = true;
-                point1.adjustingLengthFrom = 0.0; // セグメント全体が削除
+                point1.adjustingLengthFrom = 0.0; // fromを0.0、toを1.0とすることでセグメント全体の削除とする。これによりこのセグメントは描画時にスキップされる。
                 point1.adjustingLengthTo = 1.0;
-
-                done = true;
             }
-
-            let dy: float;
-
-            if (!done) {
+            else {
 
                 Maths.mat4SegmentMat(this.segmentMat4, this.normalVec, point1.location, point2.location);
                 mat4.invert(this.invMat4, this.segmentMat4);
@@ -85,15 +58,12 @@ namespace ManualTracingTool {
                 vec3.set(this.localLocation, location[0], location[1], 0.0);
                 vec3.transformMat4(this.localLocation, this.localLocation, this.invMat4);
 
-                dy = 0 - this.localLocation[1];
+                let dy = 0 - this.localLocation[1];
 
                 if (minDistanceSQ - dy * dy < 0) {
 
                     dy = 0.01;
                 }
-            }
-
-            if (!done) {
 
                 let dx = Math.sqrt(minDistanceSQ - dy * dy);
                 let x1 = this.localLocation[0] - dx;
@@ -147,9 +117,14 @@ namespace ManualTracingTool {
 
             if (edited) {
 
-                line.modifyFlag = VectorLineModifyFlagID.edit;
-                this.edited = true;
+                this.selectionInfo.editLine(line);
+                this.selectionInfo.editGroup(group);
             }
+        }
+
+        protected afterHitTest() { // @override
+
+            // doesn't clear flagas
         }
     }
 
@@ -158,167 +133,24 @@ namespace ManualTracingTool {
         helpText = 'ブラシ選択で点を削除します。';
         isEditTool = false; // @override
 
-        logic_Selector: ISelector_BrushSelect = new Selector_DeleteLinePoint_DivideLine(); // @override
-
-        toLocation = vec3.create();
-        fromLocation = vec3.create();
+        selector = new Selector_DeleteLinePoint_DivideLine();
+        logic_Selector: ISelector_BrushSelect = this.selector; // @override
 
         protected existsResults(): boolean { // @override
 
-            let selector = <Selector_DeleteLinePoint_DivideLine>this.logic_Selector;
-
-            return selector.edited;
+            return (this.selector.selectionInfo.selectedGroups.length > 0);
         }
 
         protected executeCommand(env: ToolEnvironment) { // @override
 
-            let editGroups = new List<DivideLine_EditGroup>();
+            let command = new Command_DeletePoints_DivideLine();
+            if (command.prepareEditTargets(this.selector.selectionInfo)) {
 
-            for (let viewKeyframeLayer of this.editableKeyframeLayers) {
-
-                // Set flag to groups which contains flagged line
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-
-                    for (let line of group.lines) {
-
-                        if (line.modifyFlag == VectorLineModifyFlagID.edit) {
-
-                            group.modifyFlag = VectorGroupModifyFlagID.edit;
-                            break;
-                        }
-                    }
-                }
-
-                // Collect edit data
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-
-                    if (group.modifyFlag == VectorGroupModifyFlagID.none) {
-                        continue;
-                    }
-
-                    group.modifyFlag = VectorGroupModifyFlagID.none;
-
-                    let editGroup = new DivideLine_EditGroup();
-                    editGroup.targetGroup = group;
-                    editGroup.oldLines = group.lines;
-
-                    for (let line of group.lines) {
-
-                        if (line.modifyFlag == VectorLineModifyFlagID.none) {
-
-                            editGroup.newLines.push(line);
-                            continue;
-                        }
-
-                        line.modifyFlag = VectorLineModifyFlagID.none;
-
-                        let newLine: VectorLine = null;
-
-                        let strokeStarted = false;
-                        let drawingRemaining = false;
-
-                        for (let pointIndex = 0; pointIndex < line.points.length - 1; pointIndex++) {
-
-                            let fromPoint = line.points[pointIndex];
-                            let fromLocation = fromPoint.location;
-                            let toPoint = line.points[pointIndex + 1];
-                            let toLocation = toPoint.location;
-
-                            let lengthFrom = fromPoint.adjustingLengthFrom;
-                            let lengthTo = fromPoint.adjustingLengthTo;
-
-                            fromPoint.adjustingLengthFrom = 1.0;
-                            fromPoint.adjustingLengthTo = 0.0;
-
-                            if (lengthFrom == 1.0) {
-
-                                if (!strokeStarted) {
-
-                                    newLine = new VectorLine();
-                                    newLine.points.push(fromPoint);
-                                }
-
-                                newLine.points.push(toPoint);
-                                strokeStarted = true;
-                                drawingRemaining = true;
-                            }
-                            else {
-
-                                // draw segment's from-side part
-                                if (lengthFrom > 0.0) {
-
-                                    if (!strokeStarted) {
-
-                                        newLine = new VectorLine();
-                                        newLine.points.push(fromPoint);
-                                    }
-
-                                    vec3.lerp(this.toLocation, fromLocation, toLocation, lengthFrom);
-
-                                    let newPoint = new LinePoint();
-
-                                    vec3.copy(newPoint.location, this.toLocation);
-                                    vec3.copy(newPoint.adjustingLocation, newPoint.location);
-
-                                    newPoint.lineWidth = Maths.lerp(lengthFrom, fromPoint.lineWidth, toPoint.lineWidth);
-                                    newPoint.adjustingLineWidth = newPoint.lineWidth;
-
-                                    newLine.points.push(newPoint);
-
-                                    editGroup.newLines.push(newLine);
-
-                                    strokeStarted = false;
-                                    drawingRemaining = false;
-                                }
-
-                                // draw segment's to-side part
-                                if (lengthTo > 0.0 && lengthTo < 1.0) {
-
-                                    if (drawingRemaining) {
-
-                                        editGroup.newLines.push(newLine);
-                                    }
-
-                                    vec3.lerp(this.fromLocation, fromLocation, toLocation, lengthTo);
-
-                                    newLine = new VectorLine();
-
-                                    let newPoint = new LinePoint();
-
-                                    vec3.copy(newPoint.location, this.fromLocation);
-                                    vec3.copy(newPoint.adjustingLocation, newPoint.location);
-
-                                    newPoint.lineWidth = Maths.lerp(lengthFrom, fromPoint.lineWidth, toPoint.lineWidth);
-                                    newPoint.adjustingLineWidth = newPoint.lineWidth;
-
-                                    newLine.points.push(newPoint);
-
-                                    newLine.points.push(toPoint);
-
-                                    strokeStarted = true;
-                                    drawingRemaining = true;
-                                }
-                            }
-                        }
-
-                        if (drawingRemaining) {
-
-                            editGroup.newLines.push(newLine);
-                        }
-                    }
-
-                    Logic_Edit_Line.calculateParametersV(editGroup.newLines);
-
-                    editGroups.push(editGroup);
-                }
+                command.executeCommand(env);
+                env.commandHistory.addCommand(command);
             }
 
-            let command = new Command_DeletePoints_DivideLine();
-            command.editGroups = editGroups;
-
-            command.execute(env);
-
-            env.commandHistory.addCommand(command);
+            this.selector.resetModifyStates();
 
             env.setRedrawCurrentLayer();
         }
@@ -328,7 +160,148 @@ namespace ManualTracingTool {
 
         editGroups: List<DivideLine_EditGroup> = null;
 
-        execute(env: ToolEnvironment) { // @override
+        toLocation = vec3.create();
+        fromLocation = vec3.create();
+
+        prepareEditTargets(selectionInfo: VectorLayerEditorSelectionInfo): boolean {
+
+            this.useGroups();
+
+            let editGroups = new List<DivideLine_EditGroup>();
+
+            // Collect edit data from adjusting state, it should be same with drawing algorism
+            for (let selGroup of selectionInfo.selectedGroups) {
+
+                let group = selGroup.group;
+
+                let editGroup = new DivideLine_EditGroup();
+                editGroup.targetGroup = group;
+                editGroup.oldLines = group.lines;
+
+                for (let line of group.lines) {
+
+                    if (line.modifyFlag == VectorLineModifyFlagID.none) {
+
+                        editGroup.newLines.push(line);
+                        continue;
+                    }
+
+                    line.modifyFlag = VectorLineModifyFlagID.none;
+
+                    let newLine: VectorLine = null;
+
+                    let strokeStarted = false;
+                    let drawingRemaining = false;
+
+                    for (let pointIndex = 0; pointIndex < line.points.length - 1; pointIndex++) {
+
+                        let fromPoint = line.points[pointIndex];
+                        let fromLocation = fromPoint.location;
+                        let toPoint = line.points[pointIndex + 1];
+                        let toLocation = toPoint.location;
+
+                        let lengthFrom = fromPoint.adjustingLengthFrom;
+                        let lengthTo = fromPoint.adjustingLengthTo;
+
+                        fromPoint.adjustingLengthFrom = 1.0;
+                        fromPoint.adjustingLengthTo = 0.0;
+
+                        if (lengthFrom == 1.0) {
+
+                            if (!strokeStarted) {
+
+                                newLine = new VectorLine();
+                                newLine.points.push(fromPoint);
+                            }
+
+                            newLine.points.push(toPoint);
+                            strokeStarted = true;
+                            drawingRemaining = true;
+                        }
+                        else {
+
+                            // draw segment's from-side part
+                            if (lengthFrom > 0.0) {
+
+                                if (!strokeStarted) {
+
+                                    newLine = new VectorLine();
+                                    newLine.points.push(fromPoint);
+                                }
+
+                                vec3.lerp(this.toLocation, fromLocation, toLocation, lengthFrom);
+
+                                let newPoint = new LinePoint();
+
+                                vec3.copy(newPoint.location, this.toLocation);
+                                vec3.copy(newPoint.adjustingLocation, newPoint.location);
+
+                                newPoint.lineWidth = Maths.lerp(lengthFrom, fromPoint.lineWidth, toPoint.lineWidth);
+                                newPoint.adjustingLineWidth = newPoint.lineWidth;
+
+                                newLine.points.push(newPoint);
+
+                                editGroup.newLines.push(newLine);
+
+                                strokeStarted = false;
+                                drawingRemaining = false;
+                            }
+
+                            // draw segment's to-side part
+                            if (lengthTo > 0.0 && lengthTo < 1.0) {
+
+                                if (drawingRemaining) {
+
+                                    editGroup.newLines.push(newLine);
+                                }
+
+                                vec3.lerp(this.fromLocation, fromLocation, toLocation, lengthTo);
+
+                                newLine = new VectorLine();
+
+                                let newPoint = new LinePoint();
+
+                                vec3.copy(newPoint.location, this.fromLocation);
+                                vec3.copy(newPoint.adjustingLocation, newPoint.location);
+
+                                newPoint.lineWidth = Maths.lerp(lengthFrom, fromPoint.lineWidth, toPoint.lineWidth);
+                                newPoint.adjustingLineWidth = newPoint.lineWidth;
+
+                                newLine.points.push(newPoint);
+
+                                newLine.points.push(toPoint);
+
+                                strokeStarted = true;
+                                drawingRemaining = true;
+                            }
+                        }
+                    }
+
+                    if (drawingRemaining) {
+
+                        editGroup.newLines.push(newLine);
+                    }
+                }
+
+                Logic_Edit_Line.calculateParametersV(editGroup.newLines);
+
+                editGroups.push(editGroup);
+
+                this.useGroup(group);
+            }
+
+            if (editGroups.length > 0) {
+
+                this.editGroups = editGroups;
+                return true;
+            }
+            else {
+
+                return false;
+            }
+        }
+
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -338,8 +311,6 @@ namespace ManualTracingTool {
             for (let editGroup of this.editGroups) {
 
                 editGroup.targetGroup.lines = editGroup.oldLines;
-
-                GPUVertexBuffer.setUpdated(editGroup.targetGroup.buffer);
             }
         }
 
@@ -348,8 +319,6 @@ namespace ManualTracingTool {
             for (let editGroup of this.editGroups) {
 
                 editGroup.targetGroup.lines = editGroup.newLines;
-
-                GPUVertexBuffer.setUpdated(editGroup.targetGroup.buffer);
             }
         }
     }

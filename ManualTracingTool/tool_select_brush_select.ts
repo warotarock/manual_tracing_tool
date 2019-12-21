@@ -14,7 +14,7 @@ namespace ManualTracingTool {
 
             return (
                 env.currentVectorLayer != null
-                && Layer.isVisible(env.currentVectorLayer)
+                && Layer.isEditTarget(env.currentVectorLayer)
             );
         }
 
@@ -177,7 +177,7 @@ namespace ManualTracingTool {
             let command = new Command_Select();
             command.selectionInfo = this.logic_Selector.selectionInfo;
 
-            command.execute(env);
+            command.executeCommand(env);
 
             env.commandHistory.addCommand(command);
         }
@@ -212,9 +212,7 @@ namespace ManualTracingTool {
         private selectedLines: List<LineSelectionInfo> = null;
         private selectedPoints: List<PointSelectionInfo> = null;
 
-        execute(env: ToolEnvironment) { // @override
-
-            this.errorCheck();
+        protected execute(env: ToolEnvironment) { // @override
 
             // Selection process has done while inputting
             // so not required execute this.redo(env);
@@ -252,27 +250,6 @@ namespace ManualTracingTool {
             for (let selLine of this.selectedLines) {
 
                 selLine.line.isSelected = selLine.selectStateAfter;
-            }
-        }
-
-        errorCheck() {
-
-            if (this.selectionInfo == null) {
-                throw ('Com_Select: selectedLines is null!');
-            }
-
-            if (this.selectionInfo.selectedLines == null) {
-                throw ('Com_Select: selectedLines is null!');
-            }
-
-            if (this.selectionInfo.selectedPoints == null) {
-                throw ('Com_Select: selectedPoints is null!');
-            }
-
-            if (this.selectionInfo.selectedLines.length == 0
-                && this.selectionInfo.selectedPoints.length == 0) {
-
-                throw ('Com_Select: no points is selected!');
             }
         }
     }

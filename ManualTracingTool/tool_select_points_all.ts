@@ -141,7 +141,7 @@ namespace ManualTracingTool {
             let command = new Command_Select();
             command.selectionInfo = selectionInfo;
 
-            command.execute(env);
+            command.executeCommand(env);
 
             env.commandHistory.addCommand(command);
         }

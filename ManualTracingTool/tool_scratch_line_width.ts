@@ -21,6 +21,7 @@ namespace ManualTracingTool {
 
             let baseRadius = env.mouseCursorViewRadius;
             let targetLine = env.currentVectorLine;
+            let targetGroup = env.currentVectorGroup;
 
             // Resampling editor line
             this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
@@ -54,7 +55,9 @@ namespace ManualTracingTool {
                     command.editPoints.push(editPoint);
                 }
 
-                command.execute(env);
+                command.useGroup(targetGroup);
+
+                command.executeCommand(env);
 
                 env.commandHistory.addCommand(command);
             }
@@ -195,9 +198,7 @@ namespace ManualTracingTool {
         targetLine: VectorLine = null;
         editPoints = new List<Tool_ScratchLineWidth_EditPoint>();
 
-        execute(env: ToolEnvironment) { // @override
-
-            this.errorCheck();
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -230,13 +231,6 @@ namespace ManualTracingTool {
             }
 
             Logic_Edit_Line.calculateParameters(this.targetLine);
-        }
-
-        errorCheck() {
-
-            if (this.targetLine == null) {
-                throw ('Command_ScratchLine: line is null!');
-            }
         }
     }
 }

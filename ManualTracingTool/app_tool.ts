@@ -631,7 +631,7 @@ namespace ManualTracingTool {
 
             if (layerCommand.isAvailable(this.toolEnv)) {
 
-                layerCommand.execute(this.toolEnv);
+                layerCommand.executeCommand(this.toolEnv);
 
                 this.toolContext.commandHistory.addCommand(layerCommand);
             }

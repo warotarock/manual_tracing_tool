@@ -13,14 +13,18 @@ namespace ManualTracingTool {
 
     export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
 
-        private lerpLocation1 = vec3.create();
-        private lerpLocation2 = vec3.create();
-        private lerpLocation3 = vec3.create();
+        lerpLocation1 = vec3.create();
+        lerpLocation2 = vec3.create();
+        lerpLocation3 = vec3.create();
 
-        protected editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
+        targetGroups: List<VectorGroup> = null;
+        targetLines: List<VectorLine> = null;
+        editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
         protected clearEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
+            this.targetGroups = null;
+            this.targetLines = null;
             this.editPoints = null;
         }
 
@@ -62,11 +66,8 @@ namespace ManualTracingTool {
 
         protected prepareEditData(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            for (let latticePoint of this.latticePoints) {
-
-                latticePoint.latticePointEditType = LatticePointEditTypeID.allDirection;
-            }
-
+            let targetGroups = new List<VectorGroup>();
+            let targetLines = new List<VectorLine>();
             let editPoints = new List<Tool_Transform_Lattice_EditPoint>();
 
             let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
@@ -75,7 +76,15 @@ namespace ManualTracingTool {
 
                 for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
+                    if (!Layer.isEditTarget(viewKeyframeLayer.layer)) {
+                        continue;
+                    }
+
+                    let existsInGroup = false;
+
                     for (let line of group.lines) {
+
+                        let existsInLine = false;
 
                         for (let point of line.points) {
 
@@ -97,12 +106,33 @@ namespace ManualTracingTool {
                             vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
 
                             editPoints.push(editPoint);
+
+                            existsInLine = true;
                         }
+
+                        if (existsInLine) {
+
+                            targetLines.push(line);
+
+                            existsInGroup = true;
+                        }
+                    }
+
+                    if (existsInGroup) {
+
+                        targetGroups.push(group);
                     }
                 }
             }
 
+            this.targetGroups = targetGroups;
+            this.targetLines = targetLines;
             this.editPoints = editPoints;
+        }
+
+        protected existsEditData(): boolean { // @override
+
+            return (this.editPoints.length > 0);
         }
 
         cancelModal(env: ToolEnvironment) { // @override
@@ -153,31 +183,22 @@ namespace ManualTracingTool {
 
         protected executeCommand(env: ToolEnvironment) { // @override
 
-            let targetLines = new List<VectorLine>();
+            if (this.editPoints.length == 0) {
+                return;
+            }
 
             for (let editPoint of this.editPoints) {
 
                 vec3.copy(editPoint.newLocation, editPoint.targetPoint.adjustingLocation);
             }
 
-            // Get target line
-            for (let editPoint of this.editPoints) {
-
-                if (editPoint.targetLine.modifyFlag == VectorLineModifyFlagID.none) {
-
-                    targetLines.push(editPoint.targetLine);
-                    editPoint.targetLine.modifyFlag = VectorLineModifyFlagID.transform;
-                }
-            }
-
-            Logic_Edit_Line.resetModifyStates(targetLines);
-
             // Execute the command
             let command = new Command_TransformLattice_LinePoint();
             command.editPoints = this.editPoints;
-            command.targetLines = targetLines;
+            command.targetLines = this.targetLines;
+            command.useGroups(this.targetGroups);
 
-            command.execute(env);
+            command.executeCommand(env);
 
             env.commandHistory.addCommand(command);
 
@@ -190,7 +211,7 @@ namespace ManualTracingTool {
         targetLines: List<VectorLine> = null;
         editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.errorCheck();
 
@@ -205,7 +226,7 @@ namespace ManualTracingTool {
                 vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.oldLocation);
             }
 
-            this.calculateLineParameters();
+            this.updateRelatedObjects();
         }
 
         redo(env: ToolEnvironment) { // @override
@@ -216,7 +237,7 @@ namespace ManualTracingTool {
                 vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.newLocation);
             }
 
-            this.calculateLineParameters();
+            this.updateRelatedObjects();
         }
 
         errorCheck() {
@@ -230,7 +251,7 @@ namespace ManualTracingTool {
             }
         }
 
-        private calculateLineParameters() {
+        private updateRelatedObjects() {
 
             Logic_Edit_Line.calculateParametersV(this.targetLines);
         }

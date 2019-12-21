@@ -875,6 +875,7 @@ namespace ManualTracingTool {
             let wnd = canvasWindow;
 
             let keyframe = viewKeyFrameLayer.vectorLayerKeyframe;
+            let layer = <VectorLayer>viewKeyFrameLayer.layer;
 
             render.setViewport(0.0, 0.0, wnd.width, wnd.height);
 
@@ -908,12 +909,15 @@ namespace ManualTracingTool {
             this.polyLineShader.setModelViewMatrix(this.modelViewMatrix);
             this.polyLineShader.setProjectionMatrix(this.projectionMatrix);
 
+            let lineColor = this.getLineColor(layer, documentData);
+
             for (let group of keyframe.geometry.groups) {
 
                 // Calculate line point buffer data
 
-                group.buffer.isStored = false;
                 if (!group.buffer.isStored) {
+
+                    console.log(`Calculate line point buffer data`);
 
                     this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
 
@@ -924,7 +928,7 @@ namespace ManualTracingTool {
 
                     this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
 
-                    this.logic_GPULine.calculateBufferData_PloyLine(group.buffer);
+                    this.logic_GPULine.calculateBufferData_PloyLine(group.buffer, lineColor);
 
                     if (group.buffer.usedDataArraySize > 0) {
 
@@ -1568,13 +1572,13 @@ namespace ManualTracingTool {
     export class PolyLineShader extends RenderShader {
 
         private aPosition = -1;
-        private aAlpha = -1;
+        private aColor = -1;
 
         getVertexUnitSize(): int {
 
             return (
                 2 // 頂点の位置 vec2
-                + 1 // 不透明度 float
+                + 4 // RGBA vec4
             );
         }
 
@@ -1596,17 +1600,17 @@ namespace ManualTracingTool {
 ${this.floatPrecisionDefinitionCode}
 
 attribute vec2 aPosition;
-attribute float aAlpha;
+attribute vec4 aColor;
 
 uniform mat4 uPMatrix;
 uniform mat4 uMVMatrix;
 
-varying float vAlpha;
+varying vec4 vColor;
 
 void main(void) {
 
 	   gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 0.5, 1.0);
-	   vAlpha = aAlpha;
+	   vColor = aColor;
 }
 `;
         }
@@ -1617,11 +1621,11 @@ void main(void) {
 
 ${this.floatPrecisionDefinitionCode}
 
-varying float vAlpha;
+varying vec4 vColor;
 
 void main(void) {
 
-    gl_FragColor = vec4(0.0, 0.0, 0.0, vAlpha);
+    gl_FragColor = vColor;
 }
 `;
         }
@@ -1640,7 +1644,7 @@ void main(void) {
             this.uMVMatrix = this.getUniformLocation('uMVMatrix');
 
             this.aPosition = this.getAttribLocation('aPosition');
-            this.aAlpha = this.getAttribLocation('aAlpha');
+            this.aColor = this.getAttribLocation('aColor');
         }
 
         setBuffers(vertexBuffer: WebGLBuffer) {
@@ -1655,7 +1659,7 @@ void main(void) {
             let vertexDataStride = 4 * this.getVertexUnitSize();
 
             this.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, vertexDataStride);
-            this.vertexAttribPointer(this.aAlpha, 1, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aColor, 4, gl.FLOAT, vertexDataStride);
         }
     }
 

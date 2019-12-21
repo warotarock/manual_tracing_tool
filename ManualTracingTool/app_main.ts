@@ -450,9 +450,10 @@ namespace ManualTracingTool {
             this.toolContext.document = documentData;
 
             this.toolContext.mainWindow = this.mainWindow;
-            //this.toolContext.pickingWindow = this.pickingWindow;
             this.toolContext.posing3DView = this.posing3dView;
             this.toolContext.posing3DLogic = this.posing3DLogic;
+
+            this.toolContext.lazy_DrawPathContext = this.lazy_DrawPathContext;
 
             this.toolEnv = new ToolEnvironment(this.toolContext);
             this.toolDrawEnv = new ToolDrawingEnvironment();
@@ -461,23 +462,23 @@ namespace ManualTracingTool {
 
         protected onWindowBlur() { // @override
 
-            console.log('Window blur');
+            // console.log('Window blur');
 
             if (this.mainProcessState == MainProcessStateID.running) {
 
                 this.mainProcessState = MainProcessStateID.pause;
-                console.log('  mainProcessState -> pause');
+                // console.log('  mainProcessState -> pause');
             }
         }
 
-        protected onWindowFocus() { // @virtual
+        protected onWindowFocus() { // @override
 
-            console.log('Window focus');
+            // console.log('Window focus');
 
             if (this.mainProcessState == MainProcessStateID.pause) {
 
                 this.mainProcessState = MainProcessStateID.running;
-                console.log('  mainProcessState -> running');
+                // console.log('  mainProcessState -> running');
             }
         }
 
@@ -603,8 +604,6 @@ namespace ManualTracingTool {
 
         drawPathContext = new DrawPathContext();
         lazy_DrawPathContext = new DrawPathContext();
-
-        lazyDraw_ProcessedIndex = 0;
 
         draw() {
 
@@ -972,7 +971,7 @@ namespace ManualTracingTool {
             drawPathContext.activeDrawPathStartIndex = firstSelectedIndex;
             drawPathContext.activeDrawPathEndIndex = lastSelectedIndex;
 
-            console.log('CollectSelectionInfo', firstSelectedIndex, lastSelectedIndex);
+            //console.log('CollectSelectionInfo', firstSelectedIndex, lastSelectedIndex);
         }
 
         protected collectDrawPasths_CollectViewKeyframe(drawPathSteps: List<DrawPathStep>, viewKeyframeLayers: Array<ViewKeyframeLayer>) {
@@ -1045,12 +1044,22 @@ namespace ManualTracingTool {
             let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
             let isModalToolRunning = this.isModalToolRunning();
             let isFullRendering = false;
+            let isLazyDrawFinished = this.lazy_DrawPathContext.isLazyDrawFinished();
 
             let activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex;
             let activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex;
             let maxStepIndex = drawPathContext.steps.length - 1;
 
-            drawPathContext.drawPathModeID = DrawPathModeID.editor;
+            if (isLazyDrawFinished && !isModalToolRunning) {
+
+                drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
+            }
+            else {
+
+                drawPathContext.drawPathModeID = DrawPathModeID.editor;
+            }
+            // drawPathContext.drawPathModeID = DrawPathModeID.editor;
+
             drawPathContext.isModalToolRunning = isModalToolRunning;
             drawPathContext.currentLayerOnly = currentLayerOnly;
 
@@ -1182,7 +1191,7 @@ namespace ManualTracingTool {
             }
         }
 
-        drawPath_logging = true;
+        drawPath_logging = false;
 
         protected drawDrawPaths(canvasWindow: CanvasWindow, drawPathContext: DrawPathContext, clearState: boolean) {
 
@@ -1206,7 +1215,7 @@ namespace ManualTracingTool {
 
             if (this.drawPath_logging) {
 
-                console.log('[DrawPath] start clearState', clearState);
+                console.log('  DrawPath start clearState', clearState);
             }
 
             for (let i = drawPathContext.startIndex; i <= drawPathContext.endIndex; i++) {
@@ -1220,7 +1229,7 @@ namespace ManualTracingTool {
 
                 if (this.drawPath_logging) {
 
-                    console.log('[DrawPath]', i, drawPathStep._debugText, layer ? layer.name : '', 'stack:', drawPathContext.bufferStack.length);
+                    console.log('  DrawPath', i, drawPathStep._debugText, layer ? layer.name : '', 'stack:', drawPathContext.bufferStack.length);
                 }
 
                 if (drawPathStep.operationType == DrawPathOperationTypeID.beginDrawing) {
@@ -1428,9 +1437,12 @@ namespace ManualTracingTool {
             let env = this.toolEnv;
 
             // Rest or skip process
-            if (isMainDrawingExist) {
+            if (drawPathContext.needsLazyRedraw) {
 
                 drawPathContext.resetLazyDrawProcess();
+
+                drawPathContext.needsLazyRedraw = false;
+
                 return;
             }
 
@@ -1444,7 +1456,7 @@ namespace ManualTracingTool {
 
             let clearState = drawPathContext.isLazyDrawBigining();
 
-            console.log(`lazyDraw from ${drawPathContext.lazyDraw_ProcessedIndex} clear: ${clearState} stack: ${drawPathContext.bufferStack.length}`);
+            console.log(`LazyDraw from ${drawPathContext.lazyDraw_ProcessedIndex} clear: ${clearState} stack: ${drawPathContext.bufferStack.length}`);
 
             // Draw steps
             drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
@@ -1464,11 +1476,9 @@ namespace ManualTracingTool {
 
                 if (drawPathContext.isLazyDrawFinished()) {
 
-                    console.log('lazyDraw finished', drawPathContext.lazyDraw_ProcessedIndex);
+                    console.log('  --> lazyDraw finished', drawPathContext.lazyDraw_ProcessedIndex);
 
                     this.clearWindow(this.mainWindow);
-
-                    //this.drawFullWindowImage(this.mainWindow, canvasWindow);
 
                     this.canvasRender.resetTransform();
 

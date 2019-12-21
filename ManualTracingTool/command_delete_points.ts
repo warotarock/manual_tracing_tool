@@ -27,10 +27,6 @@ namespace ManualTracingTool {
 
         prepareEditTargets(layer: VectorLayer, geometry: VectorLayerGeometry): boolean {
 
-            if (this.errorCheck(layer)) {
-                return false;
-            }
-
             // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
             let existsChanges = this.setFlagsToPoints(geometry);
 
@@ -39,14 +35,14 @@ namespace ManualTracingTool {
                 return false;
             }
 
-            this.setFlagsToGroups(layer, geometry);
+            this.setFlagsToGroups(geometry);
 
             this.collectEditTargets(layer, geometry);
 
             return true;
         }
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -56,8 +52,6 @@ namespace ManualTracingTool {
             for (let editGroup of this.editGroups) {
 
                 editGroup.group.lines = editGroup.oldLineList;
-
-                GPUVertexBuffer.setUpdated(editGroup.group.buffer);
             }
 
             for (let editLine of this.editLines) {
@@ -84,8 +78,6 @@ namespace ManualTracingTool {
 
                 editGroup.group.lines = editGroup.newLineList;
                 editGroup.group.modifyFlag = VectorGroupModifyFlagID.none;
-
-                GPUVertexBuffer.setUpdated(editGroup.group.buffer);
             }
 
             for (let editLine of this.editLines) {
@@ -107,16 +99,9 @@ namespace ManualTracingTool {
             }
         }
 
-        errorCheck(layer: VectorLayer): boolean {
-
-            if (layer == null) {
-                return true;
-            }
-
-            return false;
-        }
-
         private collectEditTargets(layer: VectorLayer, geometry: VectorLayerGeometry) {
+
+            this.useGroups();
 
             // Collect informations for modified lines and deleted points
             let editLines = new List<Command_DeletePoints_EditLine>();
@@ -203,6 +188,8 @@ namespace ManualTracingTool {
                 editGroup.newLineList = newLineList;
 
                 editGroups.push(editGroup);
+
+                this.targetGroups.push(group);
             }
 
             // Set command arguments
@@ -214,7 +201,7 @@ namespace ManualTracingTool {
             this.layer = layer;
         }
 
-        private setFlagsToGroups(layer: VectorLayer, geometry: VectorLayerGeometry) {
+        private setFlagsToGroups(geometry: VectorLayerGeometry): int {
 
             let modifiedGroupCount = 0;
 
@@ -277,6 +264,8 @@ namespace ManualTracingTool {
                     modifiedGroupCount++;
                 }
             }
+
+            return modifiedGroupCount;
         }
 
         protected setFlagsToPoints(geometry: VectorLayerGeometry): boolean { // @virtual

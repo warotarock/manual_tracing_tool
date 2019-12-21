@@ -41,7 +41,7 @@ namespace ManualTracingTool {
 
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @virtual
+        protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @virtual
 
         }
 
@@ -181,7 +181,7 @@ namespace ManualTracingTool {
 
                 if (distanceSQ < minDistanceSQ) {
 
-                    this.onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ);
+                    this.onLineSegmentHited(group, line, point1, point2, location, minDistanceSQ, distanceSQ);
                     lineHited = true;
                 }
                 else {
@@ -207,7 +207,7 @@ namespace ManualTracingTool {
             this.hitedLine = null;
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
             this.hitedLine = line;
 
@@ -224,7 +224,7 @@ namespace ManualTracingTool {
             this.isChanged = false;
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
             // to stop hit test early
             this.existsPointHitTest = true;

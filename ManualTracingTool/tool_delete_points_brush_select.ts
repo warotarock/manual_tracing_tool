@@ -26,7 +26,7 @@ namespace ManualTracingTool {
             let command = new Command_DeleteFlaggedPoints();
             if (command.prepareEditTargets(env.currentVectorLayer, env.currentVectorGeometry)) {
 
-                command.execute(env);
+                command.executeCommand(env);
                 env.commandHistory.addCommand(command);
             }
 

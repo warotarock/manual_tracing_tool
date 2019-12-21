@@ -1,28 +1,53 @@
 ﻿
 namespace ManualTracingTool {
 
-    export interface IEditCommand {
-
-        isContinued: boolean;
-        execute(env: ToolEnvironment);
-        undo(env: ToolEnvironment);
-        redo(env: ToolEnvironment);
-    }
-
-    export class CommandBase implements IEditCommand {
+    export class CommandBase {
 
         isContinued = false;
 
-        execute(env: ToolEnvironment) { // @override method
+        executeCommand(env: ToolEnvironment) {
+
+            this.execute(env);
+
+            if (this.targetGroups != null) {
+
+                VectorGroup.setGroupsUpdated(this.targetGroups);
+
+                env.setLazyRedraw();
+            }
+        }
+
+        protected execute(env: ToolEnvironment) { // @virtual
 
         }
 
-        undo(env: ToolEnvironment) { // @override method
+        undo(env: ToolEnvironment) { // @virtual
 
         }
 
-        redo(env: ToolEnvironment) { // @override method
+        redo(env: ToolEnvironment) { // @virtual
 
+        }
+
+        targetGroups: List<VectorGroup> = null;
+
+        useGroup(group: VectorGroup) {
+
+            this.useGroups();
+
+            this.targetGroups.push(group);
+        }
+
+        useGroups(targetGroups?: List<VectorGroup>) {
+
+            if (targetGroups) {
+
+                this.targetGroups = targetGroups;
+            }
+            else {
+
+                this.targetGroups = new List<VectorGroup>();
+            }
         }
     }
 
@@ -30,10 +55,10 @@ namespace ManualTracingTool {
 
         maxHistory = 300;
 
-        historyList = new List<IEditCommand>();
-        redoList = new List<IEditCommand>();
+        historyList = new List<CommandBase>();
+        redoList = new List<CommandBase>();
 
-        addCommand(command: IEditCommand) {
+        addCommand(command: CommandBase) {
 
             this.historyList.push(command);
 
@@ -43,11 +68,11 @@ namespace ManualTracingTool {
             }
 
             if (this.redoList.length > 0) {
-                this.redoList = new List<IEditCommand>();
+                this.redoList = new List<CommandBase>();
             }
         }
 
-        private getUndoCommand(): IEditCommand {
+        private getUndoCommand(): CommandBase {
 
             if (this.historyList.length == 0) {
                 return null;
@@ -56,7 +81,7 @@ namespace ManualTracingTool {
             return this.historyList[this.historyList.length - 1];
         }
 
-        private getRedoCommand(): IEditCommand {
+        private getRedoCommand(): CommandBase {
 
             if (this.redoList.length == 0) {
                 return null;
@@ -67,7 +92,7 @@ namespace ManualTracingTool {
 
         undo(env: ToolEnvironment) {
 
-            let command: IEditCommand = null;
+            let command: CommandBase = null;
 
             do {
 
@@ -79,6 +104,13 @@ namespace ManualTracingTool {
 
                 command.undo(env);
 
+                if (command.targetGroups != null) {
+
+                    VectorGroup.setGroupsUpdated(command.targetGroups);
+
+                    env.setLazyRedraw();
+                }
+
                 this.redoList.push(command);
                 ListRemoveAt(this.historyList, this.historyList.length - 1);
             }
@@ -87,7 +119,7 @@ namespace ManualTracingTool {
 
         redo(env: ToolEnvironment) {
 
-            let command: IEditCommand = null;
+            let command: CommandBase = null;
 
             do {
 
@@ -98,6 +130,13 @@ namespace ManualTracingTool {
                 }
 
                 command.redo(env);
+
+                if (command.targetGroups != null) {
+
+                    VectorGroup.setGroupsUpdated(command.targetGroups);
+
+                    env.setLazyRedraw();
+                }
 
                 ListRemoveAt(this.redoList, this.redoList.length - 1);
                 this.historyList.push(command);

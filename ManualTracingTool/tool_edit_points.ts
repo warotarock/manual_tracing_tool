@@ -11,13 +11,10 @@ namespace ManualTracingTool {
 
                 point.adjustingLineWidth = this.lineWidth;
 
+                this.selectionInfo.editGroup(group);
+                this.selectionInfo.editLine(line);
                 this.selectionInfo.editPoint(point);
             }
-        }
-
-        protected afterHitTest() { // @override
-
-            this.selectionInfo.resetModifyStates();
         }
     }
 
@@ -26,32 +23,31 @@ namespace ManualTracingTool {
         helpText = '線の太さに最大の太さに設定します。<br />Shiftキーで最小の太さに設定します。Ctrlキーで線をの太さを０にします。';
         isEditTool = false; // @override
 
-        logic_Selector: ISelector_BrushSelect = new Selector_HideLinePoint_BrushSelect(); // @override
+        selector = new Selector_HideLinePoint_BrushSelect();
+        logic_Selector: ISelector_BrushSelect = this.selector; // @override
 
         protected onStartSelection(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            let logic_Selector = (<Selector_HideLinePoint_BrushSelect>this.logic_Selector);
-
             if (env.isShiftKeyPressing()) {
 
-                logic_Selector.lineWidth = env.drawLineMinWidth;
+                this.selector.lineWidth = env.drawLineMinWidth;
             }
             else if (env.isCtrlKeyPressing()) {
 
-                logic_Selector.lineWidth = 0.0;
+                this.selector.lineWidth = 0.0;
             }
             else {
 
-                logic_Selector.lineWidth = env.drawLineBaseWidth;
+                this.selector.lineWidth = env.drawLineBaseWidth;
             }
         }
 
         protected executeCommand(env: ToolEnvironment) { // @override
 
             let command = new Command_EditLinePointLineWidth();
-            if (command.prepareEditTargets(this.logic_Selector.selectionInfo)) {
+            if (command.prepareEditTargets(this.selector.selectionInfo)) {
 
-                command.execute(env);
+                command.executeCommand(env);
                 env.commandHistory.addCommand(command);
             }
 
@@ -64,8 +60,6 @@ namespace ManualTracingTool {
 
                 selPoint.point.adjustingLineWidth = selPoint.point.lineWidth;
             }
-
-            // TODO: グループに変更フラグを設定する
 
             this.logic_Selector.endProcess();
 
@@ -102,12 +96,20 @@ namespace ManualTracingTool {
                 editPointCount++;
             }
 
+            if (editPointCount > 0) {
+
+                this.useGroups();
+
+                for (let selGroup of selectionInfo.selectedGroups) {
+
+                    this.targetGroups.push(selGroup.group);
+                }
+            }
+
             return (editPointCount > 0);
         }
 
-        execute(env: ToolEnvironment) { // @override
-
-            this.errorCheck();
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -130,10 +132,6 @@ namespace ManualTracingTool {
                 targetPoint.lineWidth = editPoint.newLineWidth;
                 targetPoint.adjustingLineWidth = targetPoint.lineWidth;
             }
-        }
-
-        errorCheck() {
-
         }
     }
 }

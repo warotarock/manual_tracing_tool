@@ -62,7 +62,7 @@ namespace ManualTracingTool {
 
             return (
                 env.currentVectorLayer != null
-                && Layer.isVisible(env.currentVectorLayer)
+                && Layer.isEditTarget(env.currentVectorLayer)
             );
         }
 
@@ -362,6 +362,7 @@ namespace ManualTracingTool {
         protected executeExtrudeLine(resampledLine: VectorLine, env: ToolEnvironment): boolean {
 
             let targetLine = env.currentVectorLine;
+            let targetGroup = env.currentVectorGroup;
 
             // Create extrude points
 
@@ -397,7 +398,9 @@ namespace ManualTracingTool {
                 command.forwardExtrude = forwardExtrude;
                 command.extrudeLine = extrudeLine;
 
-                command.execute(env);
+                command.useGroup(targetGroup);
+
+                command.executeCommand(env);
 
                 env.commandHistory.addCommand(command);
 
@@ -510,6 +513,7 @@ namespace ManualTracingTool {
         protected executeScratchingLine(resampledLine: VectorLine, isExtrudeDone: boolean, env: ToolEnvironment): boolean {
 
             let targetLine = env.currentVectorLine;
+            let targetGroup = env.currentVectorGroup;
 
             // Get scratching candidate points
 
@@ -547,7 +551,9 @@ namespace ManualTracingTool {
                     command.editPoints.push(editPoint);
                 }
 
-                command.execute(env);
+                command.useGroup(targetGroup);
+
+                command.executeCommand(env);
 
                 env.commandHistory.addCommand(command);
 
@@ -721,6 +727,7 @@ namespace ManualTracingTool {
         protected deleteDuplications(env: ToolEnvironment) {
 
             let targetLine = env.currentVectorLine;
+            let targetGroup = env.currentVectorGroup;
 
             // Search edited index range of points
 
@@ -783,7 +790,9 @@ namespace ManualTracingTool {
             command.oldPoints = targetLine.points;
             command.newPoints = newPoints;
 
-            command.execute(env);
+            command.useGroup(targetGroup);
+
+            command.executeCommand(env);
 
             env.commandHistory.addCommand(command);
         }
@@ -893,24 +902,18 @@ namespace ManualTracingTool {
         enableExtrude = true;
     }
 
-    class CommandEditVectorLine {
-
-        line: VectorLine = null;
-        oldPointList: List<LinePoint> = null;
-        newPointList: List<LinePoint> = null;
-    }
-
     export class Command_ExtrudeLine extends CommandBase {
 
+        targetGroups: List<VectorGroup> = null;
         targetLine: VectorLine = null;
+
         forwardExtrude = false;
         extrudeLine: VectorLine = null;
 
-        editLine: CommandEditVectorLine = null;
+        oldPointList: List<LinePoint> = null;
+        newPointList: List<LinePoint> = null;
 
-        execute(env: ToolEnvironment) { // @override
-
-            this.errorCheck();
+        protected execute(env: ToolEnvironment) { // @override
 
             this.prepareEditPoints();
 
@@ -919,36 +922,34 @@ namespace ManualTracingTool {
 
         private prepareEditPoints() {
 
-            this.editLine = new CommandEditVectorLine();
-            this.editLine.line = this.targetLine;
-            this.editLine.oldPointList = this.targetLine.points;
+            this.oldPointList = this.targetLine.points;
 
             if (this.forwardExtrude) {
 
-                this.editLine.newPointList = ListClone(this.targetLine.points);
-                ListAddRange(this.editLine.newPointList, this.extrudeLine.points);
+                this.newPointList = ListClone(this.targetLine.points);
+                ListAddRange(this.newPointList, this.extrudeLine.points);
             }
             else {
 
-                this.editLine.newPointList = List<LinePoint>();
+                this.newPointList = List<LinePoint>();
+
                 for (let i = this.extrudeLine.points.length - 1; i >= 0; i--) {
-                    this.editLine.newPointList.push(this.extrudeLine.points[i]);
+
+                    this.newPointList.push(this.extrudeLine.points[i]);
                 }
-                ListAddRange(this.editLine.newPointList, this.targetLine.points);
+
+                ListAddRange(this.newPointList, this.targetLine.points);
             }
         }
 
         undo(env: ToolEnvironment) { // @override
 
-            this.targetLine.points = this.editLine.oldPointList;
+            this.targetLine.points = this.oldPointList;
         }
 
         redo(env: ToolEnvironment) { // @override
 
-            this.targetLine.points = this.editLine.newPointList;
-        }
-
-        errorCheck() {
+            this.targetLine.points = this.newPointList;
         }
     }
 
@@ -957,9 +958,7 @@ namespace ManualTracingTool {
         targetLine: VectorLine = null;
         editPoints = new List<Tool_ScratchLine_EditPoint>();
 
-        execute(env: ToolEnvironment) { // @override
-
-            this.errorCheck();
+        protected execute(env: ToolEnvironment) { // @override
 
             this.prepareEditPoints();
 
@@ -989,6 +988,7 @@ namespace ManualTracingTool {
         undo(env: ToolEnvironment) { // @override
 
             for (let editPoint of this.editPoints) {
+
                 let targetPoint = editPoint.pair.targetPoint;
 
                 vec3.copy(targetPoint.location, editPoint.oldLocation);
@@ -1001,6 +1001,7 @@ namespace ManualTracingTool {
         redo(env: ToolEnvironment) { // @override
 
             for (let editPoint of this.editPoints) {
+
                 let targetPoint = editPoint.pair.targetPoint;
 
                 vec3.copy(targetPoint.location, editPoint.newLocation);
@@ -1008,13 +1009,6 @@ namespace ManualTracingTool {
             }
 
             Logic_Edit_Line.calculateParameters(this.targetLine);
-        }
-
-        errorCheck() {
-
-            if (this.targetLine == null) {
-                throw ('Command_ScratchLine: line is null!');
-            }
         }
     }
 
@@ -1025,9 +1019,7 @@ namespace ManualTracingTool {
         oldPoints: List<LinePoint> = null;
         newPoints: List<LinePoint> = null;
 
-        execute(env: ToolEnvironment) { // @override
-
-            this.errorCheck();
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -1044,13 +1036,6 @@ namespace ManualTracingTool {
             this.targetLine.points = this.newPoints;
 
             Logic_Edit_Line.calculateParameters(this.targetLine);
-        }
-
-        errorCheck() {
-
-            if (this.targetLine == null) {
-                throw ('Command_ScratchLine: line is null!');
-            }
         }
     }
 }

@@ -889,20 +889,15 @@ namespace ManualTracingTool {
 
     export class Command_Posing3d_LocateHead extends CommandBase {
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
-            this.errorCheck();
+            this.redo(env);
         }
 
         undo(env: ToolEnvironment) { // @override
         }
 
         redo(env: ToolEnvironment) { // @override
-
-            this.execute(env);
-        }
-
-        errorCheck() {
         }
     }
 }

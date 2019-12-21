@@ -637,11 +637,11 @@ namespace ManualTracingTool {
                                 let command = new Command_CopyGeometry();
                                 if (command.prepareEditData(env)) {
 
-                                    command.execute(env);
+                                    command.executeCommand(env);
                                 }
                             }
 
-                            command.execute(env);
+                            command.executeCommand(env);
                             this.toolContext.commandHistory.addCommand(command);
 
                             env.setRedrawMainWindow();
@@ -661,7 +661,7 @@ namespace ManualTracingTool {
                         let command = new Command_CopyGeometry();
                         if (command.prepareEditData(env)) {
 
-                            command.execute(env);
+                            command.executeCommand(env);
                         }
                     }
                 }
@@ -678,7 +678,7 @@ namespace ManualTracingTool {
 
                         this.tool_SelectAllPoints.executeClearSelectAll(env);
 
-                        command.execute(env);
+                        command.executeCommand(env);
                         this.toolContext.commandHistory.addCommand(command);
                     }
 
@@ -1717,12 +1717,9 @@ namespace ManualTracingTool {
 
         protected setColorMixerRGBElementEvent(id: string, elementID: int) {
 
-            let numberID = id + this.ID.colorMixer_id_number;
-            let rangeID = id + this.ID.colorMixer_id_range;
-
             this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', (e: Event) => {
 
-                let numberValue = this.getInputElementNumber(numberID, 0.0);
+                let numberValue = this.getInputElementNumber(id + this.ID.colorMixer_id_number, 0.0);
 
                 let color = this.getPalletSelectorWindow_CurrentColor();
 
@@ -1738,7 +1735,7 @@ namespace ManualTracingTool {
 
             this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', (e: Event) => {
 
-                let rangeValue = this.getInputElementRangeValue(rangeID, 0.0, 1.0);
+                let rangeValue = this.getInputElementRangeValue(id + this.ID.colorMixer_id_range, 0.0, 1.0);
 
                 let color = this.getPalletSelectorWindow_CurrentColor();
 
@@ -1754,9 +1751,6 @@ namespace ManualTracingTool {
         }
 
         protected setColorMixerHSVElementEvent(id: string) {
-
-            let numberID = id + this.ID.colorMixer_id_number;
-            let rangeID = id + this.ID.colorMixer_id_range;
 
             this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', (e: Event) => {
 

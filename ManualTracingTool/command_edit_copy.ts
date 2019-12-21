@@ -21,6 +21,8 @@ namespace ManualTracingTool {
 
         prepareEditData(env: ToolEnvironment): boolean {
 
+            this.useGroups();
+
             let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
             let editDatas = new List<Command_EditGeometry_EditData>();
@@ -62,6 +64,8 @@ namespace ManualTracingTool {
                         editData.oldLines = group.lines;
 
                         editDatas.push(editData);
+
+                        this.targetGroups.push(group);
                     }
                 }
             }
@@ -82,7 +86,7 @@ namespace ManualTracingTool {
             return (this.editDatas != null);
         }
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -161,7 +165,7 @@ namespace ManualTracingTool {
             return (this.copy_VectorGroup != null);
         }
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             // env.clipboard.copy_VectorGroup = this.copy_VectorGroup;
 
@@ -229,7 +233,7 @@ namespace ManualTracingTool {
             return true;
         }
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -237,15 +241,11 @@ namespace ManualTracingTool {
         undo(env: ToolEnvironment) { // @override
 
             this.editData.targetGroup.lines = this.editData.oldLines;
-
-            GPUVertexBuffer.setUpdated(this.editData.targetGroup.buffer);
         }
 
         redo(env: ToolEnvironment) { // @override
 
             this.editData.targetGroup.lines = this.editData.newLines;
-
-            GPUVertexBuffer.setUpdated(this.editData.targetGroup.buffer);
         }
     }
 }

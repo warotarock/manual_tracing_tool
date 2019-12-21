@@ -72,7 +72,7 @@ namespace ManualTracingTool {
 
             return (
                 env.currentVectorLayer != null
-                && Layer.isVisible(env.currentVectorLayer)
+                && Layer.isEditTarget(env.currentVectorLayer)
             );
         }
 
@@ -134,7 +134,7 @@ namespace ManualTracingTool {
 
             this.prepareModalExt(e, env);
 
-            return true;
+            return this.existsEditData();
         }
 
         protected createLatticePoints() {
@@ -216,6 +216,11 @@ namespace ManualTracingTool {
         }
 
         protected prepareModalExt(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        }
+
+        protected existsEditData(): boolean { // @virtual
+
+            return Logic_Edit_Points.existsRectangleArea(this.baseRectangleArea);
         }
 
         // Operation functions

@@ -211,7 +211,7 @@ namespace ManualTracingTool {
             env.setRedrawMainWindowEditorWindow();
         }
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.executeCommand(env);
 

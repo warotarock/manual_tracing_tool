@@ -3,7 +3,17 @@ declare var require: any;
 
 namespace Platform {
 
-    export let fs = (typeof (require) != 'undefined') ? require('fs') : {
+    function supportsNative(): boolean {
+
+        return (typeof (require) != 'undefined');
+    }
+
+    export function getCurrentTime(): int {
+
+        return performance.now();
+    }
+
+    export let fs = supportsNative() ? require('fs') : {
 
         readFileSync(fileName): string {
             return window.localStorage.getItem(fileName);
@@ -14,16 +24,11 @@ namespace Platform {
         }
     };
 
-    export function supportsFileSystem(): boolean {
-
-        return (typeof (require) != 'undefined');
-    }
-
     export function writeFileSync(fileName, data, format, callback) {
 
         if (format == 'base64') {
 
-            if (supportsFileSystem()) {
+            if (supportsNative()) {
 
                 let base64Data = data.substr(data.indexOf(',') + 1);
 
@@ -41,11 +46,6 @@ namespace Platform {
 
             fs.writeFileSync(fileName, data, format, callback);
         }
-    }
-
-    export function getCurrentTime(): int {
-
-        return performance.now();
     }
 
     class Settings {
@@ -91,7 +91,7 @@ namespace Platform {
 
     export let settings = new Settings();
 
-    export let clipboard: Clipboard = (typeof (require) != 'undefined') ? require('electron').clipboard : {
+    export let clipboard: Clipboard = supportsNative() ? require('electron').clipboard : {
 
         writeText(text: string, type: string) {
             window.localStorage.setItem('clipboard', text);

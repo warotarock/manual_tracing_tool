@@ -8,6 +8,11 @@ namespace ManualTracingTool {
         toggle = 3,
     }
 
+    export class GroupSelectionInfo {
+
+        group: VectorGroup = null;
+    }
+
     export class LineSelectionInfo {
 
         line: VectorLine = null;
@@ -24,6 +29,7 @@ namespace ManualTracingTool {
 
     export class VectorLayerEditorSelectionInfo {
 
+        selectedGroups: List<GroupSelectionInfo> = null;
         selectedLines: List<LineSelectionInfo> = null;
         selectedPoints: List<PointSelectionInfo> = null;
 
@@ -34,16 +40,36 @@ namespace ManualTracingTool {
 
         clear() {
 
+            this.selectedGroups = new List<GroupSelectionInfo>();
             this.selectedLines = new List<LineSelectionInfo>();
             this.selectedPoints = new List<PointSelectionInfo>();
         }
 
+        isGroupDone(group: VectorGroup) {
+
+            return (group.modifyFlag != VectorGroupModifyFlagID.none);
+        }
+
+        isLineDone(line: VectorLine) {
+
+            return (line.modifyFlag != VectorLineModifyFlagID.none);
+        }
+
+        isPointDone(point: LinePoint) {
+
+            return (point.modifyFlag != LinePointModifyFlagID.none);
+        }
+
         selectPoint(line: VectorLine, point: LinePoint, editMode: SelectionEditMode) {
+
+            if (this.isPointDone(point)) {
+                return;
+            }
 
             if (editMode == SelectionEditMode.setSelected
                 || editMode == SelectionEditMode.toggle) {
 
-                if (!point.isSelected && point.modifyFlag == LinePointModifyFlagID.none) {
+                if (!point.isSelected) {
 
                     let selPoint = new PointSelectionInfo();
                     selPoint.point = point;
@@ -62,7 +88,7 @@ namespace ManualTracingTool {
             if (editMode == SelectionEditMode.setUnselected
                 || editMode == SelectionEditMode.toggle) {
 
-                if (point.isSelected && point.modifyFlag == LinePointModifyFlagID.none) {
+                if (point.isSelected) {
 
                     let selPoint = new PointSelectionInfo();
                     selPoint.point = point;
@@ -89,42 +115,41 @@ namespace ManualTracingTool {
 
         selectLine(line: VectorLine, editMode: SelectionEditMode) {
 
-            if (line.modifyFlag != VectorLineModifyFlagID.none) {
-
+            if (this.isLineDone(line)) {
                 return;
             }
 
-            let selLine = new LineSelectionInfo();
-            selLine.line = line;
-            selLine.selectStateBefore = line.isSelected;
+            let selInfo = new LineSelectionInfo();
+            selInfo.line = line;
+            selInfo.selectStateBefore = line.isSelected;
 
             if (editMode == SelectionEditMode.setSelected) {
 
-                selLine.selectStateAfter = true;
+                selInfo.selectStateAfter = true;
                 line.isSelected = true;
                 line.modifyFlag = VectorLineModifyFlagID.unselectedToSelected;
             }
             else if (editMode == SelectionEditMode.setUnselected) {
 
-                selLine.selectStateAfter = false;
+                selInfo.selectStateAfter = false;
                 line.modifyFlag = VectorLineModifyFlagID.selectedToUnselected;
             }
             else if (editMode == SelectionEditMode.toggle) {
 
                 if (line.isSelected) {
 
-                    selLine.selectStateAfter = false;
+                    selInfo.selectStateAfter = false;
                     line.modifyFlag = VectorLineModifyFlagID.selectedToUnselected;
                 }
                 else {
 
-                    selLine.selectStateAfter = true;
+                    selInfo.selectStateAfter = true;
                     line.isSelected = true;
                     line.modifyFlag = VectorLineModifyFlagID.unselectedToSelected;
                 }
             }
 
-            this.selectedLines.push(selLine);
+            this.selectedLines.push(selInfo);
         }
 
         selectLinePointsForLines(editMode: SelectionEditMode) {
@@ -138,28 +163,56 @@ namespace ManualTracingTool {
             }
         }
 
+        editGroup(group: VectorGroup) {
+
+            if (this.isGroupDone(group)) {
+                return;
+            }
+
+            let selInfo = new GroupSelectionInfo();
+            selInfo.group = group;
+            this.selectedGroups.push(selInfo);
+
+            group.modifyFlag = VectorGroupModifyFlagID.edit;
+        }
+
+        editLine(line: VectorLine) {
+
+            if (this.isLineDone(line)) {
+                return;
+            }
+
+            let selInfo = new LineSelectionInfo();
+            selInfo.line = line;
+            this.selectedLines.push(selInfo);
+
+            line.modifyFlag = VectorLineModifyFlagID.edit;
+        }
+
         editPoint(point: LinePoint) {
 
-            if (point.modifyFlag == LinePointModifyFlagID.none) {
-
-                let selPoint = new PointSelectionInfo();
-                selPoint.point = point;
-                this.selectedPoints.push(selPoint);
-
-                point.modifyFlag = LinePointModifyFlagID.edit;
+            if (this.isPointDone(point)) {
+                return;
             }
+
+            let selInfo = new PointSelectionInfo();
+            selInfo.point = point;
+            this.selectedPoints.push(selInfo);
+
+            point.modifyFlag = LinePointModifyFlagID.edit;
         }
 
         deletePoint(point: LinePoint) {
 
-            if (point.modifyFlag == LinePointModifyFlagID.none) {
-
-                let selPoint = new PointSelectionInfo();
-                selPoint.point = point;
-                this.selectedPoints.push(selPoint);
-
-                point.modifyFlag = LinePointModifyFlagID.delete;
+            if (this.isPointDone(point)) {
+                return;
             }
+
+            let selInfo = new PointSelectionInfo();
+            selInfo.point = point;
+            this.selectedPoints.push(selInfo);
+
+            point.modifyFlag = LinePointModifyFlagID.delete;
         }
 
         updateLineSelectionState() {
@@ -182,6 +235,11 @@ namespace ManualTracingTool {
         }
 
         resetModifyStates() {
+
+            for (let selGroup of this.selectedGroups) {
+
+                selGroup.group.modifyFlag = VectorGroupModifyFlagID.none;
+            }
 
             for (let selPoint of this.selectedPoints) {
 
@@ -221,6 +279,11 @@ namespace ManualTracingTool {
 
             this.selectionInfo.updateLineSelectionState();
 
+            this.resetModifyStates();
+        }
+
+        resetModifyStates() {
+
             this.selectionInfo.resetModifyStates();
         }
     }
@@ -236,7 +299,7 @@ namespace ManualTracingTool {
             this.selectionInfo.clear();
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
             this.selectionInfo.selectLine(line, this.editMode);
 
@@ -264,7 +327,7 @@ namespace ManualTracingTool {
             this.selectionInfo.clear();
         }
 
-        protected onLineSegmentHited(line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
+        protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
             this.selectionInfo.selectPoint(line, point1, this.editMode);
             this.selectionInfo.selectPoint(line, point2, this.editMode);
@@ -273,6 +336,11 @@ namespace ManualTracingTool {
         protected afterHitTest() { // @override
 
             this.selectionInfo.updateLineSelectionState();
+
+            this.selectionInfo.resetModifyStates();
+        }
+
+        resetModifyStates() {
 
             this.selectionInfo.resetModifyStates();
         }

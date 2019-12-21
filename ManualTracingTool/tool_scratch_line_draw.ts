@@ -117,9 +117,9 @@ namespace ManualTracingTool {
             let resampledLine = Logic_Edit_Line.createResampledLine(newLine, divisionCount);
 
             let command = new Command_AddLine();
-            command.group = env.currentVectorGroup;
-            command.line = resampledLine;
-            command.execute(env);
+            command.prepareEditTargets(env.currentVectorGroup, resampledLine);
+            command.executeCommand(env);
+
             env.commandHistory.addCommand(command);
 
             return resampledLine;
@@ -475,17 +475,16 @@ namespace ManualTracingTool {
                     let command = new Command_DeleteFlaggedPoints();
                     if (command.prepareEditTargets(env.currentVectorLayer, env.currentVectorGeometry)) {
 
-                        command.execute(env);
+                        command.executeCommand(env);
                         env.commandHistory.addCommand(command);
                     }
                 }
 
                 {
                     let command = new Command_AddLine();
-                    command.group = env.currentVectorGroup;
-                    command.line = processingState.newLine;
+                    command.prepareEditTargets(env.currentVectorGroup, processingState.newLine);
                     command.isContinued = true;
-                    command.execute(env);
+                    command.executeCommand(env);
                     env.commandHistory.addCommand(command);
                 }
             }

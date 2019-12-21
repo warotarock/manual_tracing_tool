@@ -71,7 +71,7 @@ namespace ManualTracingTool {
             return false;
         }
 
-        protected executeCommand(env: ToolEnvironment) {
+        protected executeCommand(env: ToolEnvironment) { // @override
 
             let command = new Command_EditDocumentFrame();
             command.targetDocument = env.document;
@@ -79,7 +79,7 @@ namespace ManualTracingTool {
             command.newDocumentFrame[1] = Math.floor(this.latticePoints[0].location[1]);
             command.newDocumentFrame[2] = Math.floor(this.latticePoints[2].location[0]);
             command.newDocumentFrame[3] = Math.floor(this.latticePoints[2].location[1]);
-            command.execute(env);
+            command.executeCommand(env);
 
             env.commandHistory.addCommand(command);
         }
@@ -93,7 +93,7 @@ namespace ManualTracingTool {
 
         oldDocumentFrame = vec4.create();
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.errorCheck();
 

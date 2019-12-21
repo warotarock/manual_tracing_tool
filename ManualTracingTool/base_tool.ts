@@ -300,7 +300,7 @@ namespace ManualTracingTool {
         activeDrawPathStartIndex = -1;
         activeDrawPathEndIndex = -1;
 
-        lazyDraw_ProcessedIndex = 0;
+        lazyDraw_ProcessedIndex = -1;
         lazyDraw_LastResetTime = 0;
         lazyDraw_LimitTime = 100;
         lazyDraw_MaxTime = 100000;
@@ -314,6 +314,8 @@ namespace ManualTracingTool {
         endIndex = 0;
         lastDrawPathIndex = -1;
         bufferStack = new List<CanvasWindow>();
+
+        needsLazyRedraw = false;
 
         clearDrawingStates() {
 
@@ -354,7 +356,7 @@ namespace ManualTracingTool {
 
         isLazyDrawFinished(): boolean {
 
-            return (this.lazyDraw_ProcessedIndex >= this.steps.length - 1);
+            return (this.lazyDraw_ProcessedIndex >= this.steps.length - 1) && !this.needsLazyRedraw;
         }
 
         isLazyDrawWaiting(): boolean {
@@ -388,6 +390,8 @@ namespace ManualTracingTool {
         posing3DView: Posing3DView = null;
         posing3DLogic: Posing3DLogic = null;
 
+        lazy_DrawPathContext: DrawPathContext = null;
+
         mainToolID = MainToolID.none;
         subToolIndex = 0;
         editMode = EditModeID.drawMode;
@@ -401,7 +405,6 @@ namespace ManualTracingTool {
         drawLineMinWidth = 0.1;
 
         currentLayer: Layer = null;
-        //editableKeyframeLayers: List<ViewKeyframeLayer> = null;
 
         currentVectorLayer: VectorLayer = null;
         currentVectorGeometry: VectorLayerGeometry = null;
@@ -431,8 +434,6 @@ namespace ManualTracingTool {
         resamplingUnitLength = 8.0
 
         operatorCursor = new OperatorCursor();
-        //latticePoints = new List<LatticePoint>();
-        //rectangleArea = new Logic_Edit_Points_RectangleArea();
 
         shiftKey: boolean = false;
         altKey: boolean = false;
@@ -440,12 +441,6 @@ namespace ManualTracingTool {
 
         animationPlaying = false;
         animationPlayingFPS = 24;
-
-        //constructor() {
-        //    while (this.latticePoints.length < 4) {
-        //        this.latticePoints.push(new LatticePoint());
-        //    }
-        //}
     }
 
     export class ToolEnvironment {
@@ -636,6 +631,11 @@ namespace ManualTracingTool {
             this.setRedrawTimeLineWindow();
             this.setRedrawColorSelectorWindow();
             this.setRedrawWebGLWindow();
+        }
+
+        setLazyRedraw() {
+
+            this.toolContext.lazy_DrawPathContext.needsLazyRedraw = true;
         }
 
         isAnyModifierKeyPressing(): boolean {

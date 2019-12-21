@@ -8,7 +8,7 @@ namespace ManualTracingTool {
         exportPath: string = null;
         lastUsedFilePaths: List<string> = ['./test/test01.json'];;
         maxLastUsedFilePaths = 5;
-        referenceDirectoryPath: string = null;
+        referenceDirectoryPath: string = './test';
         currentDirectoryPath: string = null;
     }
 
@@ -78,6 +78,11 @@ namespace ManualTracingTool {
                     Layer.updateHierarchicalStatesRecursive(layer);
                 }
             }
+        }
+
+        static isEditTarget(layer: Layer): boolean {
+
+            return (Layer.isSelected(layer) && Layer.isVisible(layer));
         }
 
         static isSelected(layer: Layer): boolean {
@@ -183,6 +188,19 @@ namespace ManualTracingTool {
         modifyFlag = VectorGroupModifyFlagID.none;
         linePointModifyFlag = VectorGroupModifyFlagID.none;
         buffer = new GPUVertexBuffer();
+
+        static setUpdated(group: VectorGroup) {
+
+            group.buffer.isStored = false;
+        }
+
+        static setGroupsUpdated(groups: List<VectorGroup>) {
+
+            for (let group of groups) {
+
+                VectorGroup.setUpdated(group);
+            }
+        }
     }
 
     export class VectorLayerGeometry {
@@ -300,6 +318,11 @@ namespace ManualTracingTool {
         adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
         adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
         adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
+
+        static isLoaded(layer: ImageFileReferenceLayer): boolean {
+
+            return (layer.imageResource != null && layer.imageResource.loaded);
+        }
     }
 
     // Posing

@@ -66,10 +66,5 @@ namespace ManualTracingTool {
         bufferSize = 0;
         buffer: WebGLBuffer = null;
         isStored = false;
-
-        static setUpdated(buffer: GPUVertexBuffer) {
-
-            buffer.isStored = false;
-        }
     }
 }

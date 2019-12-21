@@ -78,7 +78,7 @@ namespace ManualTracingTool {
             return (this.editDatas.length > 0);
         }
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }
@@ -157,7 +157,7 @@ namespace ManualTracingTool {
             return (this.editDatas.length > 0);
         }
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.redo(env);
         }

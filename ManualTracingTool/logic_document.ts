@@ -351,8 +351,6 @@ namespace ManualTracingTool {
 
                 let vectorLayer = <VectorLayer>layer;
 
-                vectorLayer.fillColor = DocumentLogic.vec4ToArray(vectorLayer.fillColor);
-
                 for (let keyframe of vectorLayer.keyframes) {
 
                     for (let group of keyframe.geometry.groups) {

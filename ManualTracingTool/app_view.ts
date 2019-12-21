@@ -1104,7 +1104,7 @@ namespace ManualTracingTool {
 
                 if (command.isAvailable(env)) {
 
-                    command.execute(env);
+                    command.executeCommand(env);
                     env.commandHistory.addCommand(command);
                 }
             }
@@ -1133,7 +1133,7 @@ namespace ManualTracingTool {
 
                 if (command.isAvailable(env)) {
 
-                    command.execute(env);
+                    command.executeCommand(env);
                     env.commandHistory.addCommand(command);
                 }
             }

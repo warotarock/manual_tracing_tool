@@ -44,7 +44,9 @@ namespace ManualTracingTool {
             command.addLine = addLine;
             vec3.set(command.point.location, x, y, 0.0);
 
-            command.execute(env);
+            command.useGroup(command.group);
+
+            command.executeCommand(env);
 
             env.commandHistory.addCommand(command);
         }
@@ -57,18 +59,9 @@ namespace ManualTracingTool {
         point: LinePoint = null;
         addLine = false;
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
-            this.errorCheck();
-
-            if (this.addLine) {
-
-                this.group.lines.push(this.line);
-            }
-
-            this.line.points.push(this.point);
-
-            GPUVertexBuffer.setUpdated(this.group.buffer);
+            this.redo(env);
         }
 
         undo(env: ToolEnvironment) { // @override
@@ -79,28 +72,16 @@ namespace ManualTracingTool {
 
                 ListRemoveAt(this.group.lines, this.group.lines.length - 1);
             }
-
-            GPUVertexBuffer.setUpdated(this.group.buffer);
         }
 
         redo(env: ToolEnvironment) { // @override
 
-            this.execute(env);
-        }
+            if (this.addLine) {
 
-        errorCheck() {
-
-            if (this.group == null) {
-                throw ('Com_AddLine: group is null!');
+                this.group.lines.push(this.line);
             }
 
-            if (this.line == null) {
-                throw ('Com_AddPoint: line is null!');
-            }
-
-            if (this.point == null) {
-                throw ('Com_AddPoint: point is null!');
-            }
+            this.line.points.push(this.point);
         }
     }
 }

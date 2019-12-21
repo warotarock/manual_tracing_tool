@@ -49,7 +49,7 @@ namespace ManualTracingTool {
             let command = new Command_LoadReferenceImageToLayer();
             command.targetLayer = env.currentImageFileReferenceLayer;
             command.newFilePath = filePath;
-            command.execute(env);
+            command.executeCommand(env);
 
             env.commandHistory.addCommand(command);
         }
@@ -61,7 +61,7 @@ namespace ManualTracingTool {
         oldFilePath: string = null;
         newFilePath: string = null;
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.errorCheck();
 
@@ -121,15 +121,14 @@ namespace ManualTracingTool {
 
         protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
-            if (env.currentImageFileReferenceLayer == null) {
-
-                return false;
-            }
-
-            return true;
+            return env.isCurrentLayerImageFileReferenceLayer();
         }
 
         protected prepareLatticePoints(env: ToolEnvironment): boolean { // @override
+
+            if (!ImageFileReferenceLayer.isLoaded(env.currentImageFileReferenceLayer)) {
+                return false;
+            }
             
             this.calculateImageLatticePoints(
                 env.currentImageFileReferenceLayer.imageResource.image,
@@ -184,6 +183,11 @@ namespace ManualTracingTool {
 
                 latticePoint.latticePointEditType = LatticePointEditTypeID.allDirection;
             }
+        }
+
+        protected existsEditData(): boolean { // @override
+
+            return true;
         }
 
         protected processTransform(env: ToolEnvironment) { // @override
@@ -253,7 +257,7 @@ namespace ManualTracingTool {
             vec3.copy(command.newRotation, command.targetLayer.adjustingRotation);
             vec3.copy(command.newScale, command.targetLayer.adjustingScale);
 
-            command.execute(env);
+            command.executeCommand(env);
 
             env.commandHistory.addCommand(command);
         }
@@ -265,8 +269,9 @@ namespace ManualTracingTool {
             vec3.copy(ifrLayer.adjustingLocation, ifrLayer.location);
             vec3.copy(ifrLayer.adjustingRotation, ifrLayer.rotation);
             vec3.copy(ifrLayer.adjustingScale, ifrLayer.scale);
-        }
 
+            env.setRedrawMainWindowEditorWindow();
+        }
     }
 
     class Command_Transform_ReferenceImage extends CommandBase {
@@ -281,7 +286,7 @@ namespace ManualTracingTool {
         oldRotation = vec3.fromValues(0.0, 0.0, 0.0);
         oldScale = vec3.fromValues(1.0, 1.0, 1.0);
 
-        execute(env: ToolEnvironment) { // @override
+        protected execute(env: ToolEnvironment) { // @override
 
             this.errorCheck();
 
