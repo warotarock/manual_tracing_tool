@@ -47,12 +47,12 @@ class RenderShader {
         this.initializeFragmentSourceCode();
     }
 
-    protected initializeVertexSourceCode() {
+    protected initializeVertexSourceCode() { // @virtual
 
         // Override method
     }
 
-    protected initializeFragmentSourceCode() {
+    protected initializeFragmentSourceCode() { // @virtual
 
         // Override method
     }
@@ -81,11 +81,6 @@ class RenderShader {
         return this.gl.getUniformLocation(this.program, name);
     }
 
-    setBuffers(model: RenderModel, images: List<RenderImage>) {
-
-        // Override method
-    }
-
     enableVertexAttributes() {
 
         for (let attribLocation of this.attribLocationList) {
@@ -103,6 +98,7 @@ class RenderShader {
     }
 
     resetVertexAttribPointerOffset() {
+
         this.vertexAttribPointerOffset = 0;
     }
 

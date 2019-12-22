@@ -18,42 +18,42 @@ namespace ManualTracingTool {
             return localSetting.currentDirectoryPath + '\\' + fileName + '.json';
         }
 
-        static fixLoadedDocumentData(document: DocumentData, info: DocumentDataSaveInfo) {
+        static fixLoadedDocumentData(documentData: DocumentData, info: DocumentDataSaveInfo) {
 
-            if (document.paletteColors == undefined) {
+            if (documentData.paletteColors == undefined) {
 
-                if ('palletColors' in document) {
+                if ('palletColors' in documentData) {
 
-                    document['paletteColors'] = document['palletColors'];
+                    documentData['paletteColors'] = documentData['palletColors'];
                 }
                 else {
 
-                    DocumentData.initializeDefaultPaletteColors(document);
+                    DocumentData.initializeDefaultPaletteColors(documentData);
                 }
             }
 
-            while (document.paletteColors.length < DocumentData.maxPaletteColors) {
+            while (documentData.paletteColors.length < DocumentData.maxPaletteColors) {
 
-                document.paletteColors.push(new PaletteColor());
+                documentData.paletteColors.push(new PaletteColor());
             }
 
-            if (document.animationSettingData == undefined) {
-                document.animationSettingData = new AnimationSettingData();
+            if (documentData.animationSettingData == undefined) {
+                documentData.animationSettingData = new AnimationSettingData();
             }
 
-            if (document.defaultViewScale == undefined) {
-                document.defaultViewScale = 1.0;
+            if (documentData.defaultViewScale == undefined) {
+                documentData.defaultViewScale = 1.0;
             }
 
-            if (document.lineWidthBiasRate == undefined) {
-                document.lineWidthBiasRate = 1.0;
+            if (documentData.lineWidthBiasRate == undefined) {
+                documentData.lineWidthBiasRate = 1.0;
             }
 
-            if (document.exportBackGroundType == undefined) {
-                document.exportBackGroundType = DocumentBackGroundTypeID.lastPaletteColor;
+            if (documentData.exportBackGroundType == undefined) {
+                documentData.exportBackGroundType = DocumentBackGroundTypeID.lastPaletteColor;
             }
 
-            this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
+            this.fixLoadedDocumentData_FixLayer_Recursive(documentData.rootLayer, info);
         }
 
         static fixLoadedDocumentData_CollectLayers_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
@@ -103,11 +103,13 @@ namespace ManualTracingTool {
                 }
 
                 if (vectorLayer.line_PaletteColorIndex == undefined) {
-                    vectorLayer.line_PaletteColorIndex = 0;
+
+                    vectorLayer['line_PaletteColorIndex'] = vectorLayer['line_PalletColorIndex'] || 0;
                 }
 
                 if (vectorLayer.fill_PaletteColorIndex == undefined) {
-                    vectorLayer.fill_PaletteColorIndex = 1;
+
+                    vectorLayer['fill_PaletteColorIndex'] = vectorLayer['fill_PalletColorIndex'] || 0;
                 }
 
                 if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {

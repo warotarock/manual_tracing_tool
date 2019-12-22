@@ -411,7 +411,7 @@ namespace ManualTracingTool {
             }
         }
 
-        calculateBufferData_PloyLine(vertexBuffer: GPUVertexBuffer, lineColor: Vec4) {
+        calculateBufferData_PloyLine(vertexBuffer: GPUVertexBuffer) {
 
             let data = vertexBuffer.dataArray;
 
@@ -447,10 +447,6 @@ namespace ManualTracingTool {
 
                         data[offset++] = vec[0];
                         data[offset++] = vec[1];
-                        data[offset++] = lineColor[0];
-                        data[offset++] = lineColor[1];
-                        data[offset++] = lineColor[2];
-                        data[offset++] = lineColor[3];
                     }
                 }
             }

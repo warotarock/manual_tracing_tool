@@ -928,7 +928,7 @@ namespace ManualTracingTool {
 
                     this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
 
-                    this.logic_GPULine.calculateBufferData_PloyLine(group.buffer, lineColor);
+                    this.logic_GPULine.calculateBufferData_PloyLine(group.buffer);
 
                     if (group.buffer.usedDataArraySize > 0) {
 
@@ -940,7 +940,7 @@ namespace ManualTracingTool {
 
                 if (group.buffer.isStored) {
 
-                    this.polyLineShader.setBuffers(group.buffer.buffer);
+                    this.polyLineShader.setBuffers(group.buffer.buffer, lineColor);
 
                     let drawCount = this.polyLineShader.getDrawArrayTryanglesCount(group.buffer.usedDataArraySize);
 
@@ -1572,13 +1572,12 @@ namespace ManualTracingTool {
     export class PolyLineShader extends RenderShader {
 
         private aPosition = -1;
-        private aColor = -1;
+        private uColor: WebGLUniformLocation = null;
 
         getVertexUnitSize(): int {
 
             return (
                 2 // ’¸“_‚ÌˆÊ’u vec2
-                + 4 // RGBA vec4
             );
         }
 
@@ -1600,17 +1599,13 @@ namespace ManualTracingTool {
 ${this.floatPrecisionDefinitionCode}
 
 attribute vec2 aPosition;
-attribute vec4 aColor;
 
 uniform mat4 uPMatrix;
 uniform mat4 uMVMatrix;
 
-varying vec4 vColor;
-
 void main(void) {
 
 	   gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 0.5, 1.0);
-	   vColor = aColor;
 }
 `;
         }
@@ -1621,11 +1616,11 @@ void main(void) {
 
 ${this.floatPrecisionDefinitionCode}
 
-varying vec4 vColor;
+uniform vec4 uColor;
 
 void main(void) {
 
-    gl_FragColor = vColor;
+    gl_FragColor = uColor;
 }
 `;
         }
@@ -1642,12 +1637,12 @@ void main(void) {
 
             this.uPMatrix = this.getUniformLocation('uPMatrix');
             this.uMVMatrix = this.getUniformLocation('uMVMatrix');
+            this.uColor = this.getUniformLocation('uColor');
 
             this.aPosition = this.getAttribLocation('aPosition');
-            this.aColor = this.getAttribLocation('aColor');
         }
 
-        setBuffers(vertexBuffer: WebGLBuffer) {
+        setBuffers(vertexBuffer: WebGLBuffer, color: Vec4) {
 
             let gl = this.gl;
 
@@ -1656,10 +1651,11 @@ void main(void) {
             this.enableVertexAttributes();
             this.resetVertexAttribPointerOffset();
 
+            gl.uniform4fv(this.uColor, color);
+
             let vertexDataStride = 4 * this.getVertexUnitSize();
 
             this.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, vertexDataStride);
-            this.vertexAttribPointer(this.aColor, 4, gl.FLOAT, vertexDataStride);
         }
     }
 
