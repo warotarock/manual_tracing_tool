@@ -155,13 +155,9 @@ namespace ManualTracingTool {
 
             for (let group of geometry.groups) {
 
-                if (group.modifyFlag == VectorGroupModifyFlagID.none) {
-                    continue;
-                }
-
-                let newLineList: List<VectorLine> = null;
-
                 if (group.modifyFlag == VectorGroupModifyFlagID.deleteLines) {
+
+                    let newLineList: List<VectorLine> = null;
 
                     newLineList = new List<VectorLine>();
 
@@ -176,20 +172,23 @@ namespace ManualTracingTool {
                             deletedLines.push(line);
                         }
                     }
+
+                    let editGroup = new Command_DeletePoints_EditGroup();
+                    editGroup.group = group;
+                    editGroup.oldLineList = group.lines;
+                    editGroup.newLineList = newLineList;
+
+                    editGroups.push(editGroup);
+
+                    this.targetGroups.push(group);
+
+                    this.useGroup(group);
                 }
-                else {
 
-                    newLineList = group.lines;
+                else if (group.linePointModifyFlag != VectorGroupModifyFlagID.none) {
+
+                    this.useGroup(group);
                 }
-
-                let editGroup = new Command_DeletePoints_EditGroup();
-                editGroup.group = group;
-                editGroup.oldLineList = group.lines;
-                editGroup.newLineList = newLineList;
-
-                editGroups.push(editGroup);
-
-                this.targetGroups.push(group);
             }
 
             // Set command arguments
