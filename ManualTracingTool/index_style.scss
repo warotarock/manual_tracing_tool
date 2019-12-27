@@ -1,42 +1,267 @@
 ﻿
+$hoverBackground: #ddf;
+$buttonCornerRadius: 3px;
+
 html {
     margin: 0;
+    padding: 0;
     left: 100%;
     height: 100%;
 }
 
 body {
+    display: flex;
+    flex-direction: column;
     margin: 0;
-    width: 100%;
+    padding: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 100%;
+
+    canvas#debug {
+        width: 500px;
+        height: 500px;
+    }
 }
 
 header {
-    position: absolute;
-    left: 2%;
-    right: 2%;
-    top: 0;
+    display: flex;
     height: 40px;
     background-color: #fff;
-    text-align: center;
-    padding-top: 12px;
+    padding: 5px 20px 0 20px;
+
+    .fileCommandButton {
+        width: 33px;
+        height: 33px;
+        border: none;
+        margin-left: 5px;
+        cursor: default;
+        text-align: center;
+        border-radius: $buttonCornerRadius;
+
+        &:hover {
+            background-color: $hoverBackground;
+        }
+    }
+
+    .fileNameText {
+        flex: 1;
+        border: none;
+        border-width: 1px;
+        padding-top: 6px;
+        padding-left: 5px;
+        text-align: left;
+        margin-left: 10px;
+        margin-right: 10px;
+
+        input {
+            width: 100%;
+            height: 18px;
+            border: none;
+            padding-left: 5px;
+            border-bottom: 1px solid;
+        }
+    }
+
+    .mainToolButton {
+        width: 120px;
+        height: 26px;
+        border: solid;
+        border-width: 1px;
+        margin-left: 5px;
+        text-align: center;
+        padding-top: 5px;
+        cursor: default;
+
+        &.selectedMainButton {
+            color: #fff;
+            background: #333;
+        }
+
+        &.unselectedMainButton {
+            color: #333;
+            background: #fff;
+
+            &:hover {
+                background-color: $hoverBackground;
+            }
+        }
+    }
+
+    .mainMenuButton {
+        width: 33px;
+        height: 33px;
+        border: none;
+        margin-left: 5px;
+        cursor: default;
+        text-align: center;
+        border-radius: $buttonCornerRadius;
+
+        &:hover {
+            background-color: $hoverBackground;
+        }
+    }
+
+    img {
+        margin-top: 4px;
+        width: 27px;
+        height: 27px;
+    }
 }
 
 main {
-    position: absolute;
-    left: 2%;
-    right: 2%;
-    top: 48px;
-    bottom: 68px;
+    flex: 1;
+    padding: 0 20px 0 20px;
+
+    .middle-section {
+        display: flex;
+        height: 100%;
+
+        .side-panel1 {
+            display: flex;
+            flex-direction: column;
+            width: 200px;
+
+            .layer-window {
+                overflow: hidden;
+                flex: 1;
+                margin-bottom: 5px;
+                border: 1px solid;
+
+                canvas {
+                    border: none;
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+
+            .subtool-window {
+                overflow: hidden;
+                flex: 1;
+                border: 1px solid;
+
+                canvas {
+                    border: none;
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+        }
+
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 0 5px 0 5px;
+
+            .main-canvas-window {
+                flex: 1;
+                position: relative;
+                border: 1px solid;
+                margin-bottom: 5px;
+
+                .main-canvas {
+                    position: absolute;
+                    border: none;
+                    z-index: 2;
+                }
+
+                .editor-canvas {
+                    position: absolute;
+                    border: none;
+                    z-index: 3;
+                }
+
+                .webgl-canvas {
+                    position: absolute;
+                    border: none;
+                    z-index: 1;
+                }
+            }
+
+            .time-line-window {
+                overflow: hidden;
+                height: 46px;
+                border: 1px solid;
+
+                canvas {
+                    border: none;
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+        }
+
+        .side-panel2 {
+            display: flex;
+            flex-direction: column;
+            width: 202px;
+
+            .palette-window {
+                overflow: hidden;
+                height: 238px;
+                margin-bottom: 5px;
+                border: 1px solid;
+
+                canvas {
+                    border: none;
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+
+            .color-mixer-window {
+                flex-direction: column;
+                border: 1px solid;
+                padding: 0px 0 8px 0;
+
+                #colorMixer_colorCanvas {
+                    border: none;
+                    width: 100%;
+                    height: 50px;
+                }
+
+                .colorMixerValueSlide {
+                    display: flex;
+                    height: 22px;
+                    padding: 2px 10px 0 4px;
+
+                    div.label {
+                        width: 20px;
+                        font-size: 14px;
+                        text-align: center;
+                    }
+
+                    input[type=number] {
+                        width: 50px;
+                        height: 16px;
+                        font-size: 14px;
+                        border: none;
+                        background-color: #f8f8f8;
+                        margin-top: 2px;
+                        margin-left: 4px;
+                    }
+
+                    div.range {
+                        flex: 1;
+
+                        input[type=range] {
+                            width: 100%;
+                            height: 14px;
+                            margin-left: 4px;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 footer {
-    position: absolute;
     width: 100%;
     height: 60px;
-    bottom: 0;
     text-align: center;
-    background-color: #fff;
 }
 
 input[type=number] {
@@ -54,210 +279,9 @@ input[type=number] {
     padding-left: 5px;
 }
 
-.fileNameText {
-    width: 350px;
-    height: 27px;
-    float: left;
-    border: none;
-    border-width: 1px;
-    cursor: default;
-    padding-top: 3px;
-    padding-left: 5px;
-    text-align: left;
-    margin-left: 10px;
-
-    input[type=text] {
-        width: 100%;
-        height: 18px;
-        border: none;
-        padding-left: 5px;
-    }
-}
-
-.fileCommandButton {
-    width: 33px;
-    height: 33px;
-    float: left;
-    border: none;
-    margin-left: 5px;
-    cursor: default;
-    text-align: center;
-}
-
-.mainToolButton {
-    width: 120px;
-    height: 26px;
-    float: left;
-    border: solid;
-    border-width: 1px;
-    margin-left: 5px;
-    text-align: center;
-    padding-top: 5px;
-    cursor: default;
-    float: right;
-}
-
-.mainMenuButton {
-    width: 33px;
-    height: 33px;
-    float: left;
-    border: none;
-    margin-left: 5px;
-    cursor: default;
-    text-align: center;
-    float: right;
-}
-
-.mainMenuButtonImage {
-    margin-top: 4px;
-    width: 27px;
-    height: 27px;
-}
-
-.selectedMainButton {
-    color: #fff;
-    background: #333;
-}
-
-.unselectedMainButton {
-    color: #333;
-    background: #fff;
-}
-
-#mainCanvasWindow {
-    position: absolute;
-    left: 210px;
-    right: 210px;
-    top: 0px;
-    bottom: 50px;
-    border: solid;
-    border-width: 1px;
-}
-
-#mainCanvas {
-    position: absolute;
-    border: none;
-    z-index: 2;
-}
-
-#editorCanvas {
-    position: absolute;
-    border: none;
-    z-index: 3;
-}
-
-#webglCanvas {
-    position: absolute;
-    border: none;
-    z-index: 1;
-}
-
 #renderTargetCanvas {
     position: absolute;
     display: none;
-}
-
-#sideWindow1 {
-    width: 200px;
-    position: absolute;
-    left: 0px;
-    top: 0px;
-    bottom: 50%;
-    border: solid;
-    border-width: 1px;
-}
-
-#layerCanvas {
-    border: none;
-}
-
-#sideWindow2 {
-    width: 200px;
-    position: absolute;
-    left: 0px;
-    top: 50.5%;
-    bottom: 0px;
-    border: solid;
-    border-width: 1px;
-}
-
-#subtoolCanvas {
-    border: none;
-}
-
-#sideWindow3 {
-    width: 200px;
-    height: 238px;
-    position: absolute;
-    right: 0px;
-    top: 0px;
-    border: solid;
-    border-width: 1px;
-}
-
-#paletteSelectorCanvas {
-    border: none;
-}
-
-#sideWindow4 {
-    width: 200px;
-    height: 233px;
-    position: absolute;
-    right: 0px;
-    top: 245px;
-    border: solid;
-    border-width: 1px;
-}
-
-#colorMixer_colorCanvas {
-    border: none;
-    width: 200px;
-    height: 50px;
-}
-
-.colorMixerValueSlide {
-    height: 22px;
-    padding-top: 2px;
-
-    label {
-        position: absolute;
-        left: 7px;
-        font-size: 14px;
-    }
-
-    input[type=number] {
-        position: absolute;
-        left: 20px;
-        width: 65px;
-        height: 16px;
-        font-size: 14px;
-        border: none;
-        background-color: #f8f8f8;
-        margin-top: 2px;
-    }
-
-    input[type=range] {
-        position: absolute;
-        width: 100px;
-        right: 5px;
-        height: 14px;
-    }
-}
-
-#timeLineWindow {
-    position: absolute;
-    left: 210px;
-    right: 210px;
-    height: 46px;
-    bottom: 0px;
-    border: solid;
-    border-width: 1px;
-}
-
-#timeLineCanvas {
-    border: none;
-    width: 100%;
-    height: 100%;
 }
 
 .modalDialogWindow {

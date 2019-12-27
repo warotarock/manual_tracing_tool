@@ -17,27 +17,27 @@ namespace ManualTracingTool {
 
     export class Command_DeletePoints extends CommandBase {
 
-        layer: VectorLayer = null;
-
         editGroups: List<Command_DeletePoints_EditGroup> = null;
         editLines: List<Command_DeletePoints_EditLine> = null;
 
         deletedLines: List<VectorLine> = null;
         deletedPoints: List<LinePoint> = null;
 
-        prepareEditTargets(layer: VectorLayer, geometry: VectorLayerGeometry): boolean {
+        prepareEditTargets(env: ToolEnvironment): boolean {
+
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
             // Set modify flags to groups, lines and points. If a line has no points in result, set delete flag to the line. A group remains even if there is no lines.
-            let existsChanges = this.setFlagsToPoints(geometry);
+            let existsChanges = this.setFlagsToPoints(viewKeyframeLayers);
 
             // If no change, cancel it
             if (!existsChanges) {
                 return false;
             }
 
-            this.setFlagsToGroups(geometry);
+            this.setFlagsToGroups(viewKeyframeLayers);
 
-            this.collectEditTargets(layer, geometry);
+            this.collectEditTargets(viewKeyframeLayers);
 
             return true;
         }
@@ -99,112 +99,11 @@ namespace ManualTracingTool {
             }
         }
 
-        private collectEditTargets(layer: VectorLayer, geometry: VectorLayerGeometry) {
-
-            this.useGroups();
-
-            // Collect informations for modified lines and deleted points
-            let editLines = new List<Command_DeletePoints_EditLine>();
-            let deletedPoints = new List<LinePoint>();
-
-            for (let group of geometry.groups) {
-
-                if (group.linePointModifyFlag == VectorGroupModifyFlagID.none) {
-                    continue;
-                }
-
-                for (let line of group.lines) {
-
-                    if (line.modifyFlag == VectorLineModifyFlagID.delete) {
-
-                        for (let point of line.points) {
-
-                            deletedPoints.push(point);
-                        }
-                    }
-                    else if (line.modifyFlag == VectorLineModifyFlagID.deletePoints) {
-
-                        // Delete points by creating new list
-                        let newPointList = new List<LinePoint>();
-
-                        for (let point of line.points) {
-
-                            if (point.modifyFlag == LinePointModifyFlagID.none) {
-
-                                newPointList.push(point);
-                            }
-                            else {
-
-                                deletedPoints.push(point);
-                            }
-                        }
-
-                        let editLine = new Command_DeletePoints_EditLine();
-                        editLine.targetLine = line;
-                        editLine.oldPointList = line.points;
-                        editLine.newPointList = newPointList;
-
-                        editLines.push(editLine);
-                    }
-                }
-            }
-
-            // Collect informations for modified groups and deleted lines
-            let editGroups = new List<Command_DeletePoints_EditGroup>();
-            let deletedLines = new List<VectorLine>();
-
-            for (let group of geometry.groups) {
-
-                if (group.modifyFlag == VectorGroupModifyFlagID.deleteLines) {
-
-                    let newLineList: List<VectorLine> = null;
-
-                    newLineList = new List<VectorLine>();
-
-                    for (let line of group.lines) {
-
-                        if (line.modifyFlag != VectorLineModifyFlagID.delete) {
-
-                            newLineList.push(line);
-                        }
-                        else {
-
-                            deletedLines.push(line);
-                        }
-                    }
-
-                    let editGroup = new Command_DeletePoints_EditGroup();
-                    editGroup.group = group;
-                    editGroup.oldLineList = group.lines;
-                    editGroup.newLineList = newLineList;
-
-                    editGroups.push(editGroup);
-
-                    this.targetGroups.push(group);
-
-                    this.useGroup(group);
-                }
-
-                else if (group.linePointModifyFlag != VectorGroupModifyFlagID.none) {
-
-                    this.useGroup(group);
-                }
-            }
-
-            // Set command arguments
-            this.editGroups = editGroups;
-            this.editLines = editLines;
-            this.deletedLines = deletedLines;
-            this.deletedPoints = deletedPoints;
-
-            this.layer = layer;
-        }
-
-        private setFlagsToGroups(geometry: VectorLayerGeometry): int {
+        private setFlagsToGroups(viewKeyframeLayers: List<ViewKeyframeLayer>): int {
 
             let modifiedGroupCount = 0;
 
-            for (let group of geometry.groups) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
                 let deleteLineCount = 0;
                 let modifiedLineCount = 0;
@@ -244,6 +143,7 @@ namespace ManualTracingTool {
 
                         line.modifyFlag = VectorLineModifyFlagID.delete;
                         deleteLineCount++;
+                        modifiedLineCount++;
                     }
                 }
 
@@ -262,24 +162,124 @@ namespace ManualTracingTool {
 
                     modifiedGroupCount++;
                 }
-            }
+            });
 
             return modifiedGroupCount;
         }
 
-        protected setFlagsToPoints(geometry: VectorLayerGeometry): boolean { // @virtual
+        protected setFlagsToPoints(viewKeyframeLayers: List<ViewKeyframeLayer>): boolean { // @virtual
 
             return false;
+        }
+
+        private collectEditTargets(viewKeyframeLayers: List<ViewKeyframeLayer>) {
+
+            this.useGroups();
+
+            // Collect informations for modified lines and deleted points
+            let editLines = new List<Command_DeletePoints_EditLine>();
+            let deletedPoints = new List<LinePoint>();
+
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+
+                if (group.linePointModifyFlag == VectorGroupModifyFlagID.none) {
+                    return;
+                }
+
+                for (let line of group.lines) {
+
+                    if (line.modifyFlag == VectorLineModifyFlagID.delete) {
+
+                        for (let point of line.points) {
+
+                            deletedPoints.push(point);
+                        }
+                    }
+                    else if (line.modifyFlag == VectorLineModifyFlagID.deletePoints) {
+
+                        // Delete points by creating new list
+                        let newPointList = new List<LinePoint>();
+
+                        for (let point of line.points) {
+
+                            if (point.modifyFlag == LinePointModifyFlagID.none) {
+
+                                newPointList.push(point);
+                            }
+                            else {
+
+                                deletedPoints.push(point);
+                            }
+                        }
+
+                        let editLine = new Command_DeletePoints_EditLine();
+                        editLine.targetLine = line;
+                        editLine.oldPointList = line.points;
+                        editLine.newPointList = newPointList;
+
+                        editLines.push(editLine);
+                    }
+                }
+            });
+
+            // Collect informations for modified groups and deleted lines
+            let editGroups = new List<Command_DeletePoints_EditGroup>();
+            let deletedLines = new List<VectorLine>();
+
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+
+                if (group.linePointModifyFlag == VectorGroupModifyFlagID.none) {
+                    return;
+                }
+
+                if (group.modifyFlag == VectorGroupModifyFlagID.deleteLines) {
+
+                    let newLineList: List<VectorLine> = null;
+
+                    newLineList = new List<VectorLine>();
+
+                    for (let line of group.lines) {
+
+                        if (line.modifyFlag != VectorLineModifyFlagID.delete) {
+
+                            newLineList.push(line);
+                        }
+                        else {
+
+                            deletedLines.push(line);
+                        }
+                    }
+
+                    let editGroup = new Command_DeletePoints_EditGroup();
+                    editGroup.group = group;
+                    editGroup.oldLineList = group.lines;
+                    editGroup.newLineList = newLineList;
+
+                    editGroups.push(editGroup);
+
+                    this.targetGroups.push(group);
+                }
+
+                group.linePointModifyFlag = VectorGroupModifyFlagID.none;
+
+                this.useGroup(group);
+            });
+
+            // Set command arguments
+            this.editGroups = editGroups;
+            this.editLines = editLines;
+            this.deletedLines = deletedLines;
+            this.deletedPoints = deletedPoints;
         }
     }
 
     export class Command_DeleteSelectedPoints extends Command_DeletePoints {
 
-        protected setFlagsToPoints(geometry: VectorLayerGeometry): boolean { // @override
+        protected setFlagsToPoints(viewKeyframeLayers: List<ViewKeyframeLayer>): boolean { // @override
 
             let deletePointCount = 0;
 
-            for (let group of geometry.groups) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
                 for (let line of group.lines) {
 
@@ -293,7 +293,7 @@ namespace ManualTracingTool {
                         }
                     }
                 }
-            }
+            });
 
             return (deletePointCount > 0);
         }
@@ -301,11 +301,11 @@ namespace ManualTracingTool {
 
     export class Command_DeleteFlaggedPoints extends Command_DeletePoints {
 
-        protected setFlagsToPoints(geometry: VectorLayerGeometry): boolean { // @override
+        protected setFlagsToPoints(viewKeyframeLayers: List<ViewKeyframeLayer>): boolean { // @override
 
             let deletePointCount = 0;
 
-            for (let group of geometry.groups) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
                 for (let line of group.lines) {
 
@@ -323,7 +323,7 @@ namespace ManualTracingTool {
                         }
                     }
                 }
-            }
+            });
 
             return (deletePointCount > 0);
         }

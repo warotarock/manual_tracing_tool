@@ -21,6 +21,8 @@ namespace ManualTracingTool {
 
         mainProcessState = MainProcessStateID.startup;
         isDeferredWindowResizeWaiting = false;
+        deferredWindowResizeWaitingDuration = 250;
+        deferredWindowResizeWaitingEndTime = 0;
         lastTime: long = 0;
         elapsedTime: long = 0;
 
@@ -38,6 +40,7 @@ namespace ManualTracingTool {
         protected setDefferedWindowResize() { // @override
 
             this.isDeferredWindowResizeWaiting = true;
+            this.deferredWindowResizeWaitingEndTime = Platform.getCurrentTime() + this.deferredWindowResizeWaitingDuration;
         }
 
         protected isEventDisabled(): boolean { // @override
@@ -458,6 +461,8 @@ namespace ManualTracingTool {
             this.toolEnv = new ToolEnvironment(this.toolContext);
             this.toolDrawEnv = new ToolDrawingEnvironment();
             this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
+
+            this.lazy_DrawPathContext.resetLazyDrawProcess();
         }
 
         protected onWindowBlur() { // @override
@@ -489,7 +494,8 @@ namespace ManualTracingTool {
             let context = this.toolContext;
             let env = this.toolEnv;
 
-            if (this.isDeferredWindowResizeWaiting) {
+            if (this.isDeferredWindowResizeWaiting
+                && Platform.getCurrentTime() > this.deferredWindowResizeWaitingEndTime) {
 
                 this.isDeferredWindowResizeWaiting = false;
 
@@ -1036,14 +1042,28 @@ namespace ManualTracingTool {
             }
 
             let env = this.toolEnv;
+            let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
+            let isModalToolRunning = this.isModalToolRunning();
+            let isFullRendering = false;
+
+            // Draw edit mode ui
+            if (env.isDrawMode()) {
+
+                this.drawMainWindow_drawDrawMode(canvasWindow, redrawActiveLayerOnly, currentLayerOnly, isModalToolRunning);
+            }
+            else if (env.isEditMode()) {
+
+                this.drawMainWindow_drawEditMode(canvasWindow, this.currentViewKeyframe, isFullRendering, currentLayerOnly, isModalToolRunning);
+            }
+        }
+
+        protected drawMainWindow_drawDrawMode(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
+
             let drawPathContext = this.drawPathContext;
 
             // TODO: 必要なときだけ実行する
             this.collectDrawPasths_CollectSelectionInfo(drawPathContext);
 
-            let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
-            let isModalToolRunning = this.isModalToolRunning();
-            let isFullRendering = false;
             let isLazyDrawFinished = this.lazy_DrawPathContext.isLazyDrawFinished();
 
             let activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex;
@@ -1112,12 +1132,6 @@ namespace ManualTracingTool {
 
                 this.activeLayerBufferDrawn = false;
             }
-
-            // Draw edit mode ui
-            if (env.isEditMode()) {
-
-                this.drawMainWindow_drawEditMode(canvasWindow, this.currentViewKeyframe, isFullRendering, currentLayerOnly, isModalToolRunning);
-            }
         }
 
         protected drawMainWindow_drawPathStepsToBuffer(
@@ -1159,9 +1173,11 @@ namespace ManualTracingTool {
 
             this.canvasRender.setContext(canvasWindow);
 
+            this.clearWindow(canvasWindow);
+
             let documentData = this.toolContext.document;
 
-            let drawStrokes = !isFullRendering;
+            let drawStrokes = true;//!isFullRendering;
             let drawPoints = true;
 
             for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
@@ -1185,8 +1201,14 @@ namespace ManualTracingTool {
                 if (VectorLayer.isVectorLayer(layer)) {
 
                     let vectorLayer = <VectorLayer>layer;
-                    this.drawVectorLayerForEditMode(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData
-                        , drawStrokes, drawPoints, isModalToolRunning);
+
+                    this.drawVectorLayerForEditMode(
+                        vectorLayer
+                        , viewKeyFrameLayer.vectorLayerKeyframe.geometry
+                        , documentData
+                        , drawStrokes
+                        , drawPoints
+                        , isModalToolRunning);
                 }
             }
         }
@@ -1261,7 +1283,10 @@ namespace ManualTracingTool {
                         if (drawPathContext.isFullRendering() && VectorLayer.isVectorLayer(layer)) {
 
                             // GPU rendering
-                            this.renderForeground_VectorLayer(bufferCanvasWindow
+                            this.mainWindow.copyTransformTo(this.drawGPUWindow);
+                            this.drawGPUWindow.viewScale *= (this.drawGPUWindow.width / this.mainWindow.width);
+
+                            this.renderForeground_VectorLayer(this.drawGPUWindow
                                 , viewKeyFrameLayer
                                 , this.toolContext.document
                                 , drawPathContext.isModalToolRunning);
@@ -1285,7 +1310,7 @@ namespace ManualTracingTool {
 
                     if (drawPathContext.isFullRendering()) {
 
-                        this.renderClearBuffer();
+                        this.renderClearBuffer(this.drawGPUWindow);
                     }
                 }
                 else if (drawPathStep.operationType == DrawPathOperationTypeID.flushRendering) {

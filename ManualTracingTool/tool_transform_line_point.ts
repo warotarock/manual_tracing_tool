@@ -46,18 +46,15 @@ namespace ManualTracingTool {
 
             let selectedOnly = true;
 
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                for (let line of group.lines) {
 
-                    for (let line of group.lines) {
-
-                        Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
-                    }
+                    Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
                 }
-            }
+            });
 
             let available = Logic_Edit_Points.existsRectangleArea(rect);
 
@@ -70,60 +67,57 @@ namespace ManualTracingTool {
             let targetLines = new List<VectorLine>();
             let editPoints = new List<Tool_Transform_Lattice_EditPoint>();
 
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
+            ViewKeyframeLayer.forEachLayerAndGroup(viewKeyframeLayers, (layer: VectorLayer, group: VectorGroup) => {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                if (!Layer.isEditTarget(layer)) {
+                    return;
+                }
 
-                    if (!Layer.isEditTarget(viewKeyframeLayer.layer)) {
-                        continue;
-                    }
+                let existsInGroup = false;
 
-                    let existsInGroup = false;
+                for (let line of group.lines) {
 
-                    for (let line of group.lines) {
+                    let existsInLine = false;
 
-                        let existsInLine = false;
+                    for (let point of line.points) {
 
-                        for (let point of line.points) {
+                        if ((env.operationUnitID != OperationUnitID.line && !point.isSelected)
+                            || !line.isSelected) {
 
-                            if ((env.operationUnitID != OperationUnitID.line && !point.isSelected)
-                                || !line.isSelected) {
-
-                                continue;
-                            }
-
-                            let editPoint = new Tool_Transform_Lattice_EditPoint();
-                            editPoint.targetPoint = point;
-                            editPoint.targetLine = line;
-
-                            vec3.copy(editPoint.oldLocation, point.location);
-                            vec3.copy(editPoint.newLocation, point.location);
-
-                            let xPosition = this.rectangleArea.getHorizontalPositionInRate(point.location[0]);
-                            let yPosition = this.rectangleArea.getVerticalPositionInRate(point.location[1]);
-                            vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
-
-                            editPoints.push(editPoint);
-
-                            existsInLine = true;
+                            continue;
                         }
 
-                        if (existsInLine) {
+                        let editPoint = new Tool_Transform_Lattice_EditPoint();
+                        editPoint.targetPoint = point;
+                        editPoint.targetLine = line;
 
-                            targetLines.push(line);
+                        vec3.copy(editPoint.oldLocation, point.location);
+                        vec3.copy(editPoint.newLocation, point.location);
 
-                            existsInGroup = true;
-                        }
+                        let xPosition = this.rectangleArea.getHorizontalPositionInRate(point.location[0]);
+                        let yPosition = this.rectangleArea.getVerticalPositionInRate(point.location[1]);
+                        vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
+
+                        editPoints.push(editPoint);
+
+                        existsInLine = true;
                     }
 
-                    if (existsInGroup) {
+                    if (existsInLine) {
 
-                        targetGroups.push(group);
+                        targetLines.push(line);
+
+                        existsInGroup = true;
                     }
                 }
-            }
+
+                if (existsInGroup) {
+
+                    targetGroups.push(group);
+                }
+            });
 
             this.targetGroups = targetGroups;
             this.targetLines = targetLines;

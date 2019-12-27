@@ -6,6 +6,7 @@ namespace ManualTracingTool {
         location: Vec3 = vec3.fromValues(0.0, 0.0, 0.0);
         width = 1.0;
         alpha = 1.0;
+        isEndPoint = false;
 
         direction = vec3.fromValues(0.0, 0.0, 0.0);
         controlPointCF = vec3.fromValues(0.0, 0.0, 0.0); // 正方向への制御点の位置
@@ -27,8 +28,6 @@ namespace ManualTracingTool {
         pointMat = mat4.create();
         invMat = mat4.create();
 
-        isEndPoint = false;
-
         copyFrom(linePoint: LinePoint, lineWidthBiasRate: float, useAdjustingLocation: boolean) {
 
             if (useAdjustingLocation) {
@@ -45,6 +44,8 @@ namespace ManualTracingTool {
                 this.width = linePoint.lineWidth * lineWidthBiasRate;
                 this.alpha = 1.0;
             }
+
+            this.isEndPoint = false;
         }
     }
 
@@ -56,7 +57,7 @@ namespace ManualTracingTool {
     export class GPUVertexBuffer {
 
         pointCount = 0;
-        points = new List<GPULinePoint>();
+        recyclePoints = new List<GPULinePoint>();
 
         lines = new List<GPULine>();
 

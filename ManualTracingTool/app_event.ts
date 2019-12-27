@@ -630,7 +630,7 @@ namespace ManualTracingTool {
                         let withCut = (key == 'x' && env.isCtrlKeyPressing());
 
                         let command = new Command_DeleteSelectedPoints();
-                        if (command.prepareEditTargets(this.toolContext.currentVectorLayer, this.toolContext.currentVectorGeometry)) {
+                        if (command.prepareEditTargets(env)) {
 
                             if (withCut) {
 

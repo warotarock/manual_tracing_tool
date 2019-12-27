@@ -162,6 +162,28 @@ namespace ManualTracingTool {
 
             return (this.vectorLayerKeyframe != null);
         }
+
+        static forEachGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (group: VectorGroup) => void) {
+
+            for (let viewKeyframeLayer of viewKeyframeLayers) {
+
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+
+                    loopBodyFunction(group);
+                }
+            }
+        }
+
+        static forEachLayerAndGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (layer: VectorLayer, group: VectorGroup) => void) {
+
+            for (let viewKeyframeLayer of viewKeyframeLayers) {
+
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+
+                    loopBodyFunction(<VectorLayer>viewKeyframeLayer.layer, group);
+                }
+            }
+        }
     }
 
     export class ViewKeyframe {

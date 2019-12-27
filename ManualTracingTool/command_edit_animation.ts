@@ -46,9 +46,11 @@ namespace ManualTracingTool {
                 let newKeyframe = new VectorLayerKeyframe();
                 newKeyframe.frame = targetFrame;
                 if (last_KeyFrame != null) {
+
                     newKeyframe.geometry = JSON.parse(JSON.stringify(last_KeyFrame.geometry));
                 }
                 else {
+
                     newKeyframe.geometry = new VectorLayerGeometry();
                 }
 

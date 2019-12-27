@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <!--<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self';" />-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
 
     <title>Manual tracing tool</title>
 
@@ -39,6 +39,7 @@
     <script src="./src/command_edit_layer.js"></script>
     <script src="./src/command_edit_animation.js"></script>
     <script src="./src/command_edit_copy.js"></script>
+    <script src="./src/command_edit_palette.js"></script>
     <script src="./src/tool_draw_line.js"></script>
     <script src="./src/tool_add_point.js"></script>
     <script src="./src/tool_scratch_line.js"></script>
@@ -85,63 +86,88 @@
         -->
     </header>
     <main>
-        <div id="mainCanvasWindow">
-            <canvas id="webglCanvas"></canvas>
-            <canvas id="mainCanvas"></canvas>
-            <canvas id="editorCanvas"></canvas>
-        </div>
-        <div id="timeLineWindow">
-            <canvas id="timeLineCanvas"></canvas>
-        </div>
-        <div id="sideWindow1">
-            <canvas id="layerCanvas"></canvas>
-        </div>
-        <div id="sideWindow2">
-            <canvas id="subtoolCanvas"></canvas>
-        </div>
-        <div id="sideWindow3" class="paletteSelector">
-            <canvas id="paletteSelectorCanvas"></canvas>
-        </div>
-        <div id="sideWindow4" class="colorMixer">
-            <canvas id="colorMixer_colorCanvas"></canvas>
-            <div class="colorMixerValueSlide">
-                <label>A</label>
-                <input type="number" id="colorMixer_alpha_number" step="0.01" min="0.0" max="1.0" />
-                <input type="range" id="colorMixer_alpha_range" min="0" max="255">
+        <div class="middle-section">
+            <div class="side-panel1">
+                <div id="sideWindow1" class="layer-window">
+                    <canvas id="layerCanvas"></canvas>
+                </div>
+                <div id="sideWindow2" class="subtool-window">
+                    <canvas id="subtoolCanvas"></canvas>
+                </div>
             </div>
-            <div class="colorMixerValueSlide">
-                <label>R</label>
-                <input type="number" id="colorMixer_red_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0a0" />
-                <input type="range" id="colorMixer_red_range" min="0" max="255">
+
+            <div class="center-panel">
+                <div class="main-canvas-window">
+                    <canvas id="webglCanvas" class="webgl-canvas"></canvas>
+                    <canvas id="mainCanvas" class="main-canvas"></canvas>
+                    <canvas id="editorCanvas" class="editor-canvas"></canvas>
+                </div>
+                <div class="time-line-window">
+                    <canvas id="timeLineCanvas"></canvas>
+                </div>
             </div>
-            <div class="colorMixerValueSlide">
-                <label>G</label>
-                <input type="number" id="colorMixer_green_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffa0" />
-                <input type="range" id="colorMixer_green_range" min="0" max="255">
-            </div>
-            <div class="colorMixerValueSlide">
-                <label>B</label>
-                <input type="number" id="colorMixer_blue_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0a0ff" />
-                <input type="range" id="colorMixer_blue_range" min="0" max="255">
-            </div>
-            <div class="colorMixerValueSlide">
-                <label>H</label>
-                <input type="number" id="colorMixer_hue_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffffa0" />
-                <input type="range" id="colorMixer_hue_range" min="0" max="255">
-            </div>
-            <div class="colorMixerValueSlide">
-                <label>S</label>
-                <input type="number" id="colorMixer_sat_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffff" />
-                <input type="range" id="colorMixer_sat_range" min="0" max="255">
-            </div>
-            <div class="colorMixerValueSlide">
-                <label>V</label>
-                <input type="number" id="colorMixer_val_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0ff" />
-                <input type="range" id="colorMixer_val_range" min="0" max="255">
+
+            <div class="side-panel2">
+                <div class="palette-window">
+                    <canvas id="paletteSelectorCanvas"></canvas>
+                </div>
+                <div class="color-mixer-window">
+                    <canvas id="colorMixer_colorCanvas"></canvas>
+                    <div class="colorMixerValueSlide">
+                        <div class="label">A</div>
+                        <input type="number" id="colorMixer_alpha_number" step="0.01" min="0.0" max="1.0" />
+                        <div class="range">
+                            <input type="range" id="colorMixer_alpha_range" min="0" max="255">
+                        </div>
+                    </div>
+                    <div class="colorMixerValueSlide">
+                        <div class="label">R</div>
+                        <input type="number" id="colorMixer_red_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0a0" />
+                        <div class="range">
+                            <input type="range" id="colorMixer_red_range" min="0" max="255">
+                        </div>
+                    </div>
+                    <div class="colorMixerValueSlide">
+                        <div class="label">G</div>
+                        <input type="number" id="colorMixer_green_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffa0" />
+                        <div class="range">
+                            <input type="range" id="colorMixer_green_range" min="0" max="255">
+                        </div>
+                    </div>
+                    <div class="colorMixerValueSlide">
+                        <div class="label">B</div>
+                        <input type="number" id="colorMixer_blue_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0a0ff" />
+                        <div class="range">
+                            <input type="range" id="colorMixer_blue_range" min="0" max="255">
+                        </div>
+                    </div>
+                    <div class="colorMixerValueSlide">
+                        <div class="label">H</div>
+                        <input type="number" id="colorMixer_hue_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffffa0" />
+                        <div class="range">
+                            <input type="range" id="colorMixer_hue_range" min="0" max="255">
+                        </div>
+                    </div>
+                    <div class="colorMixerValueSlide">
+                        <div class="label">S</div>
+                        <input type="number" id="colorMixer_sat_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffff" />
+                        <div class="range">
+                            <input type="range" id="colorMixer_sat_range" min="0" max="255">
+                        </div>
+                    </div>
+                    <div class="colorMixerValueSlide">
+                        <div class="label">V</div>
+                        <input type="number" id="colorMixer_val_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0ff" />
+                        <div class="range">
+                            <input type="range" id="colorMixer_val_range" min="0" max="255">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
-    <footer id="footer"></footer>
+    <footer id="footer">
+    </footer>
 
     <div id="messageDialogModal" class="modalDialogWindow messageDialogModal">
         <div id="messageDialogModal_message">

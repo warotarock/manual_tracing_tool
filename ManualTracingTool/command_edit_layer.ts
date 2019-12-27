@@ -69,16 +69,6 @@ namespace ManualTracingTool {
                 || layer.type == LayerTypeID.groupLayer);
         }
 
-        errorCheck(layer: VectorLayer): boolean {
-
-            if (this.currentLayerIndex == -1) {
-
-                throw ('Command_Layer_AddVectorLayerToPrevious: invalid current layer!');
-            }
-
-            return false;
-        }
-
         protected executeLayerSwap(parentLayer: Layer, swapIndex1: int, swapIndex2: int, env: ToolEnvironment) {
 
             this.insertTo_ParentLayer = parentLayer;
@@ -165,6 +155,13 @@ namespace ManualTracingTool {
             }
         }
 
+        protected execute(env: ToolEnvironment) { // @override
+
+            this.executeCommand(env);
+
+            env.setRedrawMainWindowEditorWindow();
+        }
+
         undo(env: ToolEnvironment) { // @override
 
             if (this.insertTo_ParentLayer != null) {
@@ -209,16 +206,6 @@ namespace ManualTracingTool {
             }
 
             env.setRedrawMainWindowEditorWindow();
-        }
-
-        protected execute(env: ToolEnvironment) { // @override
-
-            this.executeCommand(env);
-
-            env.setRedrawMainWindowEditorWindow();
-        }
-
-        executeCommand(env: ToolEnvironment) { // @virtual
         }
     }
 

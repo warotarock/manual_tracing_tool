@@ -57,7 +57,7 @@ class RenderShader {
         // Override method
     }
 
-    initializeAttributes() {
+    initializeAttributes() { // @virtual
 
         this.initializeAttributes_RenderShader();
     }
@@ -132,6 +132,9 @@ class RenderShader {
 
         this.gl.uniformMatrix4fv(this.uMVMatrix, false, matrix);
     }
+
+    //setBuffers(model: RenderModel, images: List<RenderImage>) { // @virtual
+    //}
 }
 
 enum WebGLRenderBlendType {
@@ -147,11 +150,11 @@ class WebGLRender {
 
     currentShader: RenderShader = null;
 
-    initializeWebGL(canvas: HTMLCanvasElement): boolean {
+    initializeWebGL(canvas: HTMLCanvasElement, antialias: boolean): boolean {
 
         try {
 
-            let option = { preserveDrawingBuffer: true, antialias: true };
+            let option = { preserveDrawingBuffer: true, antialias: antialias };
 
             let gl = <WebGLRenderingContext>(
                 canvas.getContext('webgl', option)
@@ -381,10 +384,9 @@ class WebGLRender {
         }
     }
 
-    setBuffers(model: RenderModel, images: List<RenderImage>) {
-
-        this.currentShader.setBuffers(model, images);
-    }
+    //setBuffers(model: RenderModel, images: List<RenderImage>) {
+    //    this.currentShader.setBuffers(model, images);
+    //}
 
     clearColorBufferDepthBuffer(r: float, g: float, b: float, a: float) {
 

@@ -8,7 +8,7 @@ namespace ManualTracingTool {
 
         logic_Selector: ISelector_BrushSelect = null; // @virtual
 
-        editableKeyframeLayers: List<ViewKeyframeLayer> = null;
+        viewKeyframeLayers: List<ViewKeyframeLayer> = null;
 
         isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -92,7 +92,7 @@ namespace ManualTracingTool {
                 this.logic_Selector.editMode = SelectionEditMode.setSelected;
             }
 
-            this.editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            this.viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
             this.onStartSelection(e, env);
 
@@ -107,12 +107,12 @@ namespace ManualTracingTool {
 
         private processSelection(e: ToolMouseEvent, env: ToolEnvironment) {
 
-            if (this.editableKeyframeLayers == null) {
+            if (this.viewKeyframeLayers == null) {
 
                 return null;
             }
 
-            for (let viewKeyframeLayer of this.editableKeyframeLayers) {
+            for (let viewKeyframeLayer of this.viewKeyframeLayers) {
 
                 this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location, env.mouseCursorViewRadius);
             }
@@ -131,7 +131,7 @@ namespace ManualTracingTool {
 
             this.executeCommand(env);
 
-            this.editableKeyframeLayers = null;
+            this.viewKeyframeLayers = null;
         }
 
         protected existsResults(): boolean { // @virtual

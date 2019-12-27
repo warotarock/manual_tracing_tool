@@ -23,52 +23,49 @@ namespace ManualTracingTool {
 
             this.useGroups();
 
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
             let editDatas = new List<Command_EditGeometry_EditData>();
 
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                let newLines = List<VectorLine>();
 
-                    let newLines = List<VectorLine>();
+                for (let line of group.lines) {
 
-                    for (let line of group.lines) {
+                    if (!line.isSelected) {
+                        continue;
+                    }
 
-                        if (!line.isSelected) {
+                    let newLine = new VectorLine();
+
+                    for (let point of line.points) {
+
+                        if (!point.isSelected) {
                             continue;
                         }
 
-                        let newLine = new VectorLine();
-
-                        for (let point of line.points) {
-
-                            if (!point.isSelected) {
-                                continue;
-                            }
-
-                            newLine.points.push(LinePoint.clone(point));
-                        }
-
-                        if (newLine.points.length > 0) {
-
-                            newLines.push(newLine);
-                        }
+                        newLine.points.push(LinePoint.clone(point));
                     }
 
-                    if (newLines.length > 0) {
+                    if (newLine.points.length > 0) {
 
-                        let editData = new Command_EditGeometry_EditData();
-                        editData.targetGroup = group;
-                        editData.newLines = newLines;
-                        editData.oldLines = group.lines;
-
-                        editDatas.push(editData);
-
-                        this.targetGroups.push(group);
+                        newLines.push(newLine);
                     }
                 }
-            }
+
+                if (newLines.length > 0) {
+
+                    let editData = new Command_EditGeometry_EditData();
+                    editData.targetGroup = group;
+                    editData.newLines = newLines;
+                    editData.oldLines = group.lines;
+
+                    editDatas.push(editData);
+
+                    this.targetGroups.push(group);
+                }
+            });
 
             if (editDatas.length > 0) {
 
@@ -114,40 +111,37 @@ namespace ManualTracingTool {
 
         prepareEditData(env: ToolEnvironment): boolean {
 
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
             let copy_GroupData = new VectorGroup();
 
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                for (let line of group.lines) {
 
-                    for (let line of group.lines) {
+                    if (!line.isSelected) {
+                        continue;
+                    }
 
-                        if (!line.isSelected) {
+                    let newLine = new VectorLine();
+
+                    for (let point of line.points) {
+
+                        if (!point.isSelected) {
                             continue;
                         }
 
-                        let newLine = new VectorLine();
+                        newLine.points.push(LinePoint.clone(point));
+                    }
 
-                        for (let point of line.points) {
+                    if (newLine.points.length > 0) {
 
-                            if (!point.isSelected) {
-                                continue;
-                            }
+                        Logic_Edit_Line.calculateParameters(newLine);
 
-                            newLine.points.push(LinePoint.clone(point));
-                        }
-
-                        if (newLine.points.length > 0) {
-
-                            Logic_Edit_Line.calculateParameters(newLine);
-
-                            copy_GroupData.lines.push(newLine);
-                        }
+                        copy_GroupData.lines.push(newLine);
                     }
                 }
-            }
+            });
 
             if (copy_GroupData.lines.length > 0) {
 

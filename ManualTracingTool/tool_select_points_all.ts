@@ -10,25 +10,25 @@ namespace ManualTracingTool {
                 return;
             }
 
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-            let existsSelectedPoints = this.isSelectedAnyPoint(editableKeyframeLayers, env);
+            let existsSelectedPoints = this.isSelectedAnyPoint(viewKeyframeLayers, env);
 
-            this.executeModifySelection(editableKeyframeLayers, existsSelectedPoints, env);
+            this.executeModifySelection(viewKeyframeLayers, existsSelectedPoints, env);
         }
 
         executeSelectAll(env: ToolEnvironment) {
 
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-            this.executeModifySelection(editableKeyframeLayers, false, env);
+            this.executeModifySelection(viewKeyframeLayers, false, env);
         }
 
         executeClearSelectAll(env: ToolEnvironment) {
 
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-            this.executeModifySelection(editableKeyframeLayers, true, env);
+            this.executeModifySelection(viewKeyframeLayers, true, env);
         }
 
         private executeModifySelection(editableKeyframeLayers: List<ViewKeyframeLayer>, clearSelection: boolean, env: ToolEnvironment) {
@@ -57,81 +57,72 @@ namespace ManualTracingTool {
             env.setRedrawMainWindowEditorWindow();
         }
 
-        private isSelectedAnyPoint(editableKeyframeLayers: List<ViewKeyframeLayer>, env: ToolEnvironment): boolean {
+        private isSelectedAnyPoint(viewKeyframeLayers: List<ViewKeyframeLayer>, env: ToolEnvironment): boolean {
 
             let isSelected = false;
 
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                for (let line of group.lines) {
 
-                    for (let line of group.lines) {
+                    if (line.isSelected) {
 
-                        if (line.isSelected) {
+                        isSelected = true;
+                        break;
+                    }
+
+                    for (let point of line.points) {
+
+                        if (point.isSelected) {
 
                             isSelected = true;
                             break;
                         }
-
-                        for (let point of line.points) {
-
-                            if (point.isSelected) {
-
-                                isSelected = true;
-                                break;
-                            }
-                        }
                     }
                 }
-            }
+            });
 
             return isSelected;
         }
 
-        private createSelectionInfo_SelectAll(editableKeyframeLayers: List<ViewKeyframeLayer>, env: ToolEnvironment): VectorLayerEditorSelectionInfo {
+        private createSelectionInfo_SelectAll(viewKeyframeLayers: List<ViewKeyframeLayer>, env: ToolEnvironment): VectorLayerEditorSelectionInfo {
 
             let selectionInfo = new VectorLayerEditorSelectionInfo();
 
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                for (let line of group.lines) {
 
-                    for (let line of group.lines) {
+                    for (let point of line.points) {
 
-                        for (let point of line.points) {
+                        if (!point.isSelected) {
 
-                            if (!point.isSelected) {
-
-                                selectionInfo.selectPoint(line, point, SelectionEditMode.setSelected);
-                            }
+                            selectionInfo.selectPoint(line, point, SelectionEditMode.setSelected);
                         }
                     }
                 }
-            }
+            });
 
             return selectionInfo;
         }
 
-        private createSelectionInfo_ClearAllSelection(editableKeyframeLayers: List<ViewKeyframeLayer>, env: ToolEnvironment): VectorLayerEditorSelectionInfo {
+        private createSelectionInfo_ClearAllSelection(viewKeyframeLayers: List<ViewKeyframeLayer>, env: ToolEnvironment): VectorLayerEditorSelectionInfo {
 
             let selectionInfo = new VectorLayerEditorSelectionInfo();
 
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                for (let line of group.lines) {
 
-                    for (let line of group.lines) {
+                    for (let point of line.points) {
 
-                        for (let point of line.points) {
+                        if (point.isSelected) {
 
-                            if (point.isSelected) {
-
-                                selectionInfo.selectPoint(line, point, SelectionEditMode.setUnselected);
-                            }
+                            selectionInfo.selectPoint(line, point, SelectionEditMode.setUnselected);
                         }
                     }
                 }
-            }
+            });
 
             return selectionInfo;
         }

@@ -142,31 +142,42 @@ namespace ManualTracingTool {
         protected resizeWindows() {
 
             this.resizeCanvasToParent(this.mainWindow);
-            this.fitCanvas(this.editorWindow, this.mainWindow);
-            this.fitCanvas(this.foreLayerRenderWindow, this.mainWindow);
-            this.fitCanvas(this.backLayerRenderWindow, this.mainWindow);
-            this.fitCanvas(this.webglWindow, this.mainWindow);
-            this.fitCanvas(this.drawGPUWindow, this.mainWindow);
+            this.fitCanvas(this.editorWindow, this.mainWindow, 1);
+            this.fitCanvas(this.foreLayerRenderWindow, this.mainWindow, 1);
+            this.fitCanvas(this.backLayerRenderWindow, this.mainWindow, 1);
+            this.fitCanvas(this.webglWindow, this.mainWindow, 1);
+            this.fitCanvas(this.drawGPUWindow, this.mainWindow, 2.0);
 
-            this.resizeCanvasToParent(this.layerWindow);
-            this.resizeCanvasToParent(this.subtoolWindow);
-            this.resizeCanvasToParent(this.paletteSelectorWindow);
-            this.resizeCanvasToParent(this.timeLineWindow);
+            this.resizeCanvasToCurrent(this.layerWindow);
+            this.resizeCanvasToCurrent(this.subtoolWindow);
+            this.resizeCanvasToCurrent(this.paletteSelectorWindow);
+            this.resizeCanvasToCurrent(this.timeLineWindow);
         }
 
         private resizeCanvasToParent(canvasWindow: CanvasWindow) {
 
-            canvasWindow.width = canvasWindow.canvas.parentElement.clientWidth;
-            canvasWindow.height = canvasWindow.canvas.parentElement.clientHeight;
+            let rect = canvasWindow.canvas.parentElement.getBoundingClientRect();
+
+            canvasWindow.width = rect.width - 2;
+            canvasWindow.height = rect.height - 2;
 
             canvasWindow.canvas.width = canvasWindow.width;
             canvasWindow.canvas.height = canvasWindow.height;
         }
 
-        private fitCanvas(canvasWindow: CanvasWindow, fitToWindow: CanvasWindow) {
+        private resizeCanvasToCurrent(canvasWindow: CanvasWindow) {
 
-            canvasWindow.width = fitToWindow.width;
-            canvasWindow.height = fitToWindow.height;
+            canvasWindow.width = canvasWindow.canvas.clientWidth;
+            canvasWindow.height = canvasWindow.canvas.clientHeight;
+
+            canvasWindow.canvas.width = canvasWindow.width;
+            canvasWindow.canvas.height = canvasWindow.height;
+        }
+
+        private fitCanvas(canvasWindow: CanvasWindow, fitToWindow: CanvasWindow, scale: int) {
+
+            canvasWindow.width = fitToWindow.width * scale;
+            canvasWindow.height = fitToWindow.height * scale;
 
             canvasWindow.canvas.width = canvasWindow.width;
             canvasWindow.canvas.height = canvasWindow.height;

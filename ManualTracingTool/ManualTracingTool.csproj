@@ -95,6 +95,7 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="command_edit_palette.ts" />
     <TypeScriptCompile Include="logic_gpu_data.ts" />
     <TypeScriptCompile Include="logic_gpu_line.ts" />
     <TypeScriptCompile Include="platform.ts" />

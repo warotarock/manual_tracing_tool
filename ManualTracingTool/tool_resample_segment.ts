@@ -62,48 +62,45 @@ namespace ManualTracingTool {
 
         private collectEditTargets(geometry: VectorLayerGeometry, env: ToolEnvironment): boolean {
 
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
             let targetGroups = new List<VectorGroup>();
             let editLines = new List<Tool_Resample_Segment_EditLine>();
 
             let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
 
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
+            ViewKeyframeLayer.forEachLayerAndGroup(viewKeyframeLayers, (layer: VectorLayer, group: VectorGroup) => {
 
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-
-                    if (!Layer.isEditTarget(viewKeyframeLayer.layer)) {
-                        continue;
-                    }
-
-                    let existsInGroup = false;
-
-                    for (let line of group.lines) {
-
-                        if (line.isSelected && this.existsSelectedSegment(line)) {
-
-                            let editLine = new Tool_Resample_Segment_EditLine();
-                            editLine.targetLine = line;
-                            editLine.oldPoints = line.points;
-                            editLine.newPoints = new List<LinePoint>();
-
-                            editLine.newPoints = this.createResampledPoints(editLine.targetLine, resamplingUnitLength);
-
-                            editLines.push(editLine);
-
-                            existsInGroup = true;
-                        }
-                    }
-
-                    if (existsInGroup) {
-
-                        continue;
-                    }
-
-                    targetGroups.push(group);
+                if (!Layer.isEditTarget(layer)) {
+                    return;
                 }
-            }
+
+                let existsInGroup = false;
+
+                for (let line of group.lines) {
+
+                    if (line.isSelected && this.existsSelectedSegment(line)) {
+
+                        let editLine = new Tool_Resample_Segment_EditLine();
+                        editLine.targetLine = line;
+                        editLine.oldPoints = line.points;
+                        editLine.newPoints = new List<LinePoint>();
+
+                        editLine.newPoints = this.createResampledPoints(editLine.targetLine, resamplingUnitLength);
+
+                        editLines.push(editLine);
+
+                        existsInGroup = true;
+                    }
+                }
+
+                if (existsInGroup) {
+
+                    return;
+                }
+
+                targetGroups.push(group);
+            });
 
             this.targetGroups = targetGroups;
             this.editLines = editLines;

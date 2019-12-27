@@ -33,7 +33,10 @@ namespace ManualTracingTool {
 
         useGroup(group: VectorGroup) {
 
-            this.useGroups();
+            if (!this.targetGroups) {
+
+                this.useGroups();
+            }
 
             this.targetGroups.push(group);
         }
