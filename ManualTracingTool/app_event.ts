@@ -925,6 +925,20 @@ namespace ManualTracingTool {
             if (key == 'l') {
             }
 
+            if (key == 'o') {
+
+                if (env.isCtrlKeyPressing()) {
+
+                    this.startReloadDocument();
+                }
+                else {
+
+                    this.currentTool.keydown(e, env);
+                }
+
+                return;
+            }
+
             if (key == 'g' || key == 'r' || key == 's') {
 
                 if (key == 's' && env.isCtrlKeyPressing()) {
@@ -1038,18 +1052,10 @@ namespace ManualTracingTool {
                 this.openExportImageFileModal();
             }
 
-            if (key == 'o') {
+            if (key == '-') {
 
-                if (env.isCtrlKeyPressing()) {
-
-                    this.startReloadDocument();
-                }
-                else {
-
-                    this.currentTool.keydown(e, env);
-                }
-
-                return;
+                context.drawCPUOnly = !this.toolContext.drawCPUOnly;
+                env.setRedrawMainWindow();
             }
         }
 

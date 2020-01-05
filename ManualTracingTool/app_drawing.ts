@@ -8,7 +8,8 @@ namespace ManualTracingTool {
         drawGPURender = new WebGLRender();
         polyLineShader = new PolyLineShader();
         bezierLineShader = new BezierLineShader();
-        lineShader: GPULineShader = this.bezierLineShader;
+        bezierDistanceLineShader = new BezierDistanceLineShader();
+        lineShader: GPULineShader = this.bezierDistanceLineShader;
         //lineShader: GPULineShader = this.polyLineShader;
 
         posing3DViewRender = new WebGLRender();
@@ -75,6 +76,7 @@ namespace ManualTracingTool {
 
                 this.drawGPURender.initializeShader(this.polyLineShader);
                 this.drawGPURender.initializeShader(this.bezierLineShader);
+                this.drawGPURender.initializeShader(this.bezierDistanceLineShader);
             }
             catch(errorMessage) {
 
@@ -2092,4 +2094,297 @@ void main(void) {
             logic_GPULine.calculateBufferData_BezierLine(buffer);
         }
     }
+
+    export class BezierDistanceLineShader extends GPULineShader {
+
+        private uColor: WebGLUniformLocation = null;
+
+        private aPosition = -1;
+        private aLocalPosition = -1;
+
+        private aLinePoint1 = -1;
+        private aControlPoint1 = -1;
+        private aLinePoint2 = -1;
+        private aControlPoint2 = -1;
+
+        private aLinePoint1R = -1;
+        private aControlPoint1R = -1;
+        private aLinePoint2R = -1;
+        private aControlPoint2R = -1;
+
+        private aWidth = -1;
+        // private aAlpha = -1;
+
+        getVertexUnitSize(): int { // @override
+
+            return (
+                2 // í∏ì_à íu vec2
+                + 3 // ÉçÅ[ÉJÉããÛä‘ç¿ïW vec3 (x, y, t)
+
+                + 2 // í∏ì_ÇP vec2
+                + 2 // êßå‰ì_ÇP vec2
+                + 2 // êßå‰ì_ÇQ vec2
+                + 2 // í∏ì_ÇQ vec2
+
+                + 2 // í∏ì_ÇPR vec2
+                + 2 // êßå‰ì_ÇPR vec2
+                + 2 // êßå‰ì_ÇQR vec2
+                + 2 // í∏ì_ÇQR vec2
+
+                + 2 // ëæÇ≥ vec2 (from, to)
+                //+ 2 // ïsìßñæìx vec2 (from, to)
+            );
+        }
+
+        getVertexCount(pointCount: int): int { // @override
+
+            return (pointCount - 1) * (4 + 4) * 3; // ï”ÇÃêî * (ç∂ë§ÇSÉ|ÉäÉSÉìÅ{âEë§ÇSÉ|ÉäÉSÉì) * 3í∏ì_
+        }
+
+        initializeVertexSourceCode() { // @override
+
+            this.vertexShaderSourceCode = `
+
+${this.floatPrecisionDefinitionCode}
+
+attribute vec2 aPosition;
+attribute vec3 aLocalPosition;
+
+attribute vec2 aLinePoint1;
+attribute vec2 aControlPoint1;
+attribute vec2 aControlPoint2;
+attribute vec2 aLinePoint2;
+
+attribute vec2 aLinePoint1R;
+attribute vec2 aControlPoint1R;
+attribute vec2 aControlPoint2R;
+attribute vec2 aLinePoint2R;
+
+attribute vec2 aWidth;
+// attribute vec2 aAlpha;
+
+uniform mat4 uPMatrix;
+uniform mat4 uMVMatrix;
+
+varying vec3 vLocalPosition;
+
+varying vec2 vLinePoint1;
+varying vec2 vControlPoint1;
+varying vec2 vControlPoint2;
+varying vec2 vLinePoint2;
+
+varying vec2 vLinePoint1R;
+varying vec2 vControlPoint1R;
+varying vec2 vControlPoint2R;
+varying vec2 vLinePoint2R;
+
+varying vec2 vWidth;
+// varying vec2 vAlpha;
+
+void main(void) {
+
+    gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 0.5, 1.0);
+
+    vLocalPosition = aLocalPosition;
+
+    vLinePoint1 = aLinePoint1;
+    vControlPoint1 = aControlPoint1;
+    vControlPoint2 = aControlPoint2;
+    vLinePoint2 = aLinePoint2;
+
+    vLinePoint1R = aLinePoint1R;
+    vControlPoint1R = aControlPoint1R;
+    vControlPoint2R = aControlPoint2R;
+    vLinePoint2R = aLinePoint2R;
+
+    vWidth = aWidth;
+    // vAlpha = aAlpha;
+}
+`;
+        }
+
+        initializeFragmentSourceCode() { // @override
+
+            this.fragmentShaderSourceCode = `
+
+${this.floatPrecisionDefinitionCode}
+
+// From https://www.shadertoy.com/view/4sXyDr
+
+#define CLAMP
+
+float distanceBezier(vec2 p, vec2 P0, vec2 P1, vec2 P2, vec2 P3, out float t)
+{
+    // Cubic Bezier curve
+    vec2 A = -P0 + 3.0 * P1 - 3.0 * P2 + P3;
+    vec2 B = 3.0 * (P0 - 2.0 * P1 + P2);
+    vec2 C = 3.0 * (P1 - P0);
+    vec2 D = P0;
+    
+    float a5 =  6.0 * dot(A, A);
+    float a4 = 10.0 * dot(A, B);
+    float a3 =  8.0 * dot(A, C)     + 4.0 * dot(B, B);
+    float a2 =  6.0 * dot(A, D - p) + 6.0 * dot(B, C);
+    float a1 =  4.0 * dot(B, D - p) + 2.0 * dot(C, C);
+    float a0 =  2.0 * dot(C, D - p);
+    
+    // calculate distances to the control points
+    float d0 = length(p - P0);
+    float d1 = length(p - P1);
+    float d2 = length(p - P2);
+    float d3 = length(p - P3);
+    float d = min(d0, min(d1, min(d2, d3)));
+    
+    // Choose initial value of t
+    //float t;
+    if (abs(d3 - d) < 1.0e-5) {
+        t = 1.0;
+    }
+    else if (abs(d0 - d) < 1.0e-5) {
+        t = 0.0;
+    }
+    else {
+        t = 0.5;
+    }
+        
+	// iteration
+    for (int i = 0; i < 10; i++) {
+
+        float t2 = t*t;
+        float t3 = t2*t;
+        float t4 = t3*t;
+        float t5 = t4*t;
+        
+        float f = a5*t5 + a4*t4 + a3*t3 + a2*t2 + a1*t + a0;
+        float df = 5.0*a5*t4 + 4.0*a4*t3 + 3.0*a3*t2 + 2.0*a2*t + a1;
+        
+        t = t - f/df;
+    }
+    
+    // clamp to edge of bezier segment
+#ifdef CLAMP
+    t = clamp(t, 0.0, 1.0);
+#endif
+    
+    // get the point on the curve
+    vec2 P = A*t*t*t + B*t*t + C*t + D;
+        
+    // return distance to the point on the curve
+    return min(length(p - P), min(d0, d3));
+}
+
+uniform vec4 uColor;
+
+varying vec3 vLocalPosition;
+
+varying vec2 vLinePoint1;
+varying vec2 vControlPoint1;
+varying vec2 vControlPoint2;
+varying vec2 vLinePoint2;
+
+varying vec2 vLinePoint1R;
+varying vec2 vControlPoint1R;
+varying vec2 vControlPoint2R;
+varying vec2 vLinePoint2R;
+
+varying vec2 vWidth;
+// varying vec2 vAlpha;
+
+void main(void) {
+
+	vec2 p  = vLocalPosition.xy;
+    vec2 P0 = vLinePoint1;
+    vec2 P1 = vControlPoint1;
+    vec2 P2 = vControlPoint2;
+    vec2 P3 = vLinePoint2;
+    
+    float t;
+    float distance = distanceBezier(p, P0, P1, P2, P3, t);
+    float width = mix(vWidth.x, vWidth.y, t);
+    
+    if (distance > width) {
+
+		discard;
+    }
+	else {
+
+        float col = 1.0 - smoothstep(width - 0.05, width, distance);
+        //float col = distance * 0.1;
+
+        gl_FragColor = vec4(uColor.rgb, col * uColor.a * 0.9 + 0.1);
+        //gl_FragColor = vec4(0.0, 0.0, 0.0, col * mix(vAlpha[0], vAlpha[1], vLocalPosition.z));
+        //gl_FragColor = vec4(0.0, 0.0, 0.0, 0.1);
+        //gl_FragColor = vec4(vWidth.y, 0.0, 0.0, col * uColor.a * 0.9 + 0.1);
+    }
+}
+`;
+        }
+
+        initializeAttributes() { // @override
+
+            this.initializeAttributes_RenderShader();
+            this.initializeAttributes_PolyLineShader();
+        }
+
+        initializeAttributes_PolyLineShader() {
+
+            this.uColor = this.getUniformLocation('uColor');
+
+            this.aPosition = this.getAttribLocation('aPosition');
+            this.aLocalPosition = this.getAttribLocation('aLocalPosition');
+
+            this.aLinePoint1 = this.getAttribLocation('aLinePoint1');
+            this.aControlPoint1 = this.getAttribLocation('aControlPoint1');
+            this.aControlPoint2 = this.getAttribLocation('aControlPoint2');
+            this.aLinePoint2 = this.getAttribLocation('aLinePoint2');
+
+            this.aLinePoint1R = this.getAttribLocation('aLinePoint1R');
+            this.aControlPoint1R = this.getAttribLocation('aControlPoint1R');
+            this.aControlPoint2R = this.getAttribLocation('aControlPoint2R');
+            this.aLinePoint2R = this.getAttribLocation('aLinePoint2R');
+
+            this.aWidth = this.getAttribLocation('aWidth');
+            // this.aAlpha = this.getAttribLocation('aAlpha');
+        }
+
+        setBuffers(buffer: WebGLBuffer, color: Vec4) { // @override
+
+            let gl = this.gl;
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+            this.enableVertexAttributes();
+            this.resetVertexAttribPointerOffset();
+
+            gl.uniform4fv(this.uColor, color);
+
+            let vertexDataStride = 4 * this.getVertexUnitSize();
+
+            this.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLocalPosition, 3, gl.FLOAT, vertexDataStride);
+
+            this.vertexAttribPointer(this.aLinePoint1, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint1, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint2, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint2, 2, gl.FLOAT, vertexDataStride);
+
+            this.vertexAttribPointer(this.aLinePoint1R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint1R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint2R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint2R, 2, gl.FLOAT, vertexDataStride);
+
+            this.vertexAttribPointer(this.aWidth, 2, gl.FLOAT, vertexDataStride);
+            // this.vertexAttribPointer(this.aAlpha, 2, gl.FLOAT, vertexDataStride);
+        }
+
+        calculateBufferData(buffer: GPUVertexBuffer, logic_GPULine: Logic_GPULine) { // @override
+
+            logic_GPULine.calculateLinePointEdges(buffer);
+            logic_GPULine.calculateLinePointBezierLocation(buffer);
+            logic_GPULine.calculateControlPointVertexLocations(buffer);
+
+            logic_GPULine.calculateBufferData_BezierLine(buffer);
+        }
+    }
+
 }

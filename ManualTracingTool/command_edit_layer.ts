@@ -155,13 +155,6 @@ namespace ManualTracingTool {
             }
         }
 
-        protected execute(env: ToolEnvironment) { // @override
-
-            this.executeCommand(env);
-
-            env.setRedrawMainWindowEditorWindow();
-        }
-
         undo(env: ToolEnvironment) { // @override
 
             if (this.insertTo_ParentLayer != null) {
@@ -230,13 +223,15 @@ namespace ManualTracingTool {
             return true;
         }
 
-        executeCommand(env: ToolEnvironment) { // @override
+        execute(env: ToolEnvironment) { // @override
 
             this.newLayer = new VectorLayer();
 
             if (!this.createForFillColor) {
 
                 this.newLayer.name = 'new line layer';
+                this.newLayer.drawLineType = DrawLineTypeID.paletteColor;
+                this.newLayer.fillAreaType = FillAreaTypeID.none;
             }
             else {
 
@@ -280,7 +275,7 @@ namespace ManualTracingTool {
             return true;
         }
 
-        executeCommand(env: ToolEnvironment) { // @override
+        execute(env: ToolEnvironment) { // @override
 
             this.newLayer = new VectorLayerReferenceLayer();
             this.newLayer.name = 'new ref layer';
@@ -311,7 +306,7 @@ namespace ManualTracingTool {
             return true;
         }
 
-        executeCommand(env: ToolEnvironment) { // @override
+        execute(env: ToolEnvironment) { // @override
 
             this.newLayer = new GroupLayer();
             this.newLayer.name = 'new group';
@@ -339,7 +334,7 @@ namespace ManualTracingTool {
             return true;
         }
 
-        executeCommand(env: ToolEnvironment) { // @override
+        execute(env: ToolEnvironment) { // @override
 
             this.newLayer = new ImageFileReferenceLayer();
             this.newLayer.name = 'new file';
@@ -367,7 +362,7 @@ namespace ManualTracingTool {
             return true;
         }
 
-        executeCommand(env: ToolEnvironment) { // @override
+        execute(env: ToolEnvironment) { // @override
 
             this.newLayer = new PosingLayer();
             this.newLayer.name = 'new posing';
@@ -395,7 +390,7 @@ namespace ManualTracingTool {
             return true;
         }
 
-        executeCommand(env: ToolEnvironment) { // @override
+        execute(env: ToolEnvironment) { // @override
 
             this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
 
@@ -432,7 +427,7 @@ namespace ManualTracingTool {
             return true;
         }
 
-        executeCommand(env: ToolEnvironment) { // @override
+        execute(env: ToolEnvironment) { // @override
 
             if (this.previousLayer.type == LayerTypeID.groupLayer) {
 
@@ -482,7 +477,7 @@ namespace ManualTracingTool {
             return true;
         }
 
-        executeCommand(env: ToolEnvironment) { // @override
+        execute(env: ToolEnvironment) { // @override
 
             if (this.nextLayer.type == LayerTypeID.groupLayer) {
 

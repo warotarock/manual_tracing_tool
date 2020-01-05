@@ -425,6 +425,7 @@ namespace ManualTracingTool {
 
         drawLineBaseWidth = 1.0;
         drawLineMinWidth = 0.1;
+        drawCPUOnly = false;
 
         currentLayer: Layer = null;
 
@@ -618,6 +619,7 @@ namespace ManualTracingTool {
             this.toolContext.mainEditor.updateLayerStructure();
             this.setRedrawLayerWindow();
             this.setRedrawTimeLineWindow();
+            this.setRedrawMainWindowEditorWindow();
         }
 
         setRedrawSubtoolWindow() {

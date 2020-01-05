@@ -92,7 +92,7 @@ namespace ManualTracingTool {
             this.showMessageBox('保存しました。');
         }
 
-        protected onLayerPropertyModalClosed() { // @override
+        protected updateForLayerProperty() { // @override
 
             this.updateLayerStructureInternal(true, true, true, true);
 
@@ -425,6 +425,11 @@ namespace ManualTracingTool {
             this.setCurrentLayer(documentData.rootLayer.childLayers[0]);
 
             this.updateLayerStructureInternal(false, false, true, true);
+
+            this.mainWindow.viewScale = documentData.defaultViewScale;
+            this.mainWindow.viewRotation = 0.0;
+            this.mainWindow.mirrorX = false;
+            this.mainWindow.mirrorY = false;
 
             this.toolEnv.updateContext();
 
@@ -1049,7 +1054,7 @@ namespace ManualTracingTool {
             // Draw edit mode ui
             if (env.isDrawMode()) {
 
-                this.drawMainWindow_drawDrawMode(canvasWindow, redrawActiveLayerOnly, currentLayerOnly, isModalToolRunning);
+                this.drawMainWindow_drawDrawMode(canvasWindow, redrawActiveLayerOnly, currentLayerOnly, isModalToolRunning, this.toolContext.drawCPUOnly);
             }
             else if (env.isEditMode()) {
 
@@ -1057,7 +1062,7 @@ namespace ManualTracingTool {
             }
         }
 
-        protected drawMainWindow_drawDrawMode(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
+        protected drawMainWindow_drawDrawMode(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean, drawCPUOnly: boolean) {
 
             let drawPathContext = this.drawPathContext;
 
@@ -1070,7 +1075,7 @@ namespace ManualTracingTool {
             let activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex;
             let maxStepIndex = drawPathContext.steps.length - 1;
 
-            if (isLazyDrawFinished && !isModalToolRunning) {
+            if (isLazyDrawFinished && !isModalToolRunning && !drawCPUOnly) {
 
                 drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
             }
@@ -1458,6 +1463,10 @@ namespace ManualTracingTool {
 
         protected lazyDraw_Process(drawPathContext: DrawPathContext, isMainDrawingExist: boolean) {
 
+            if (this.toolContext.drawCPUOnly) {
+                return;
+            }
+
             let canvasWindow = drawPathContext.lazyDraw_Buffer;
             let env = this.toolEnv;
 
@@ -1701,7 +1710,7 @@ namespace ManualTracingTool {
 
                 this.onClosedLayerPropertyModal();
 
-                this.updateLayerStructureInternal(false, false, true, true);
+                this.updateForLayerProperty();
             }
             else if (this.currentModalDialogID == this.ID.paletteColorModal) {
 

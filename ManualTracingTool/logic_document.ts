@@ -72,13 +72,8 @@ namespace ManualTracingTool {
                 layer.isRenderTarget = true;
             }
 
-            if (layer.isHierarchicalVisible == undefined) {
-                layer.isHierarchicalVisible = layer.isVisible;
-            }
-
-            if (layer.isHierarchicalSelected == undefined) {
-                layer.isHierarchicalSelected = layer.isSelected;
-            }
+            layer.isHierarchicalVisible = layer.isVisible;
+            layer.isHierarchicalSelected = layer.isSelected;
 
             if (layer.isMaskedByBelowLayer == undefined) {
                 layer.isMaskedByBelowLayer = false;
@@ -356,6 +351,9 @@ namespace ManualTracingTool {
         }
 
         static releaseDocumentResources_Recursive(layer: Layer, gl: WebGLRenderingContext) {
+
+            delete layer.isHierarchicalVisible;
+            delete layer.isHierarchicalSelected;
 
             if (layer.type == LayerTypeID.vectorLayer) {
 

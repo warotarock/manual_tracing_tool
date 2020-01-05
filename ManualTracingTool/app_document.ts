@@ -508,6 +508,8 @@ namespace ManualTracingTool {
 
             if (backGroundType == DocumentBackGroundTypeID.lastPaletteColor) {
 
+                this.canvasRender.setContext(this.exportRenderWindow);
+                this.canvasRender.resetTransform();
                 this.canvasRender.setFillColorV(documentData.paletteColors[documentData.paletteColors.length - 1].color);
                 this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
             }

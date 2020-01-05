@@ -14,11 +14,11 @@ namespace ManualTracingTool {
 
         edgePointL = vec3.fromValues(0.0, 0.0, 0.0);     // 点の左側の頂点の位置
         controlPointLF = vec3.fromValues(0.0, 0.0, 0.0); // 左側の頂点から正方向への制御点の位置
-        controlPointLB = vec3.fromValues(0.0, 0.0, 0.0); // 左側の頂点から逆方向への制御点の位置
+        controlPointLB = vec3.fromValues(0.0, 0.0, 0.0); // 左側の頂点から負方向への制御点の位置
 
         edgePointR = vec3.fromValues(0.0, 0.0, 0.0);     // 点の右側の頂点の位置
         controlPointRF = vec3.fromValues(0.0, 0.0, 0.0); // 右側の頂点から正方向への制御点の位置
-        controlPointRB = vec3.fromValues(0.0, 0.0, 0.0); // 右側の頂点から逆方向への制御点の位置
+        controlPointRB = vec3.fromValues(0.0, 0.0, 0.0); // 右側の頂点から負方向への制御点の位置
 
         controlPointVertexLF = vec3.fromValues(0.0, 0.0, 0.0); // 曲線を囲むように配置したポリゴンの頂点座標
         controlPointVertexLB = vec3.fromValues(0.0, 0.0, 0.0);

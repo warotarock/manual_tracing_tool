@@ -95,10 +95,6 @@ namespace ManualTracingTool {
             return false;
         }
 
-        protected onLayerPropertyModalClosed() { // @virtual
-
-        }
-
         // Initializing devices not depending media resoures
 
         protected initializeViewDevices() {
@@ -846,8 +842,6 @@ namespace ManualTracingTool {
             }
 
             this.layerPropertyWindow_EditLayer = null;
-
-            this.onLayerPropertyModalClosed();
         }
 
         protected openPaletteColorModal(mode: OpenPaletteColorModalMode, documentData: DocumentData, layer: Layer) {

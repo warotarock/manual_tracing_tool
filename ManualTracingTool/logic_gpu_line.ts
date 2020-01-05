@@ -20,6 +20,11 @@ namespace ManualTracingTool {
         // lr 左右どちらののポリゴンであるかを指定する
         //    1: 左、2: 右
         bezierPolygonMap = [
+            //{ lr: 1, cur: 1, loc: 3 }, { lr: 1, cur: 2, loc: 2 }, { lr: 1, cur: 2, loc: 5 },
+
+            //{ lr: 1, cur: 1, loc: 1 }, { lr: 1, cur: 2, loc: 2 }, { lr: 1, cur: 2, loc: 5 },
+            //{ lr: 1, cur: 2, loc: 5 }, { lr: 1, cur: 1, loc: 5 }, { lr: 1, cur: 1, loc: 1 },
+
             // 左側
             { lr: 1, cur: 1, loc: 1 }, { lr: 1, cur: 1, loc: 2 }, { lr: 1, cur: 1, loc: 3 },
             { lr: 1, cur: 1, loc: 3 }, { lr: 1, cur: 2, loc: 4 }, { lr: 1, cur: 1, loc: 1 },
@@ -32,6 +37,7 @@ namespace ManualTracingTool {
             { lr: 2, cur: 2, loc: 1 }, { lr: 2, cur: 2, loc: 5 }, { lr: 2, cur: 2, loc: 7 },
         ];
 
+        vec = vec3.create();
         scale = vec3.create();
         direction = vec3.create();
         controlPointVec = vec3.create();
@@ -42,6 +48,8 @@ namespace ManualTracingTool {
 
         relativeVecA = vec3.create();
         relativeVecB = vec3.create();
+        relativeVecC = vec3.create();
+        relativeVecD = vec3.create();
         relativeEdgePointVecA = vec3.create();
         relativeEdgePointVecB = vec3.create();
 
@@ -117,6 +125,7 @@ namespace ManualTracingTool {
             vertexBuffer.bufferSize = bufferSize;
         }
 
+        // 1. エッジの位置の計算
         calculateLinePointEdges(vertexBuffer: GPUVertexBuffer) {
 
             let direction = this.direction;
@@ -133,18 +142,21 @@ namespace ManualTracingTool {
 
                     let gpuPointPrev: GPULinePoint;
                     let gpuPointNext: GPULinePoint;
+                    let width: float;
 
                     if (index == 0) {
 
                         // 最初の点は最初の点から次の点へのベクトルから計算
                         gpuPointPrev = gpuPoints[index];
                         gpuPointNext = gpuPoints[index + 1];
+                        width = gpuPointPrev.width;
                     }
                     else if (index == gpuPoints.length - 1) {
 
                         // 最後の点は前の点から最後の点へのベクトルから計算
                         gpuPointPrev = gpuPoints[index - 1];
                         gpuPointNext = gpuPoints[index];
+                        width = gpuPointNext.width;
 
                         // 最後の点にはフラグを設定
                         gpuPoint.isEndPoint = true;
@@ -154,13 +166,14 @@ namespace ManualTracingTool {
                         // 中間の点は前の点から次の点へのベクトルから計算
                         gpuPointPrev = gpuPoints[index - 1];
                         gpuPointNext = gpuPoints[index + 1];
+                        width = gpuPoint.width;
                     }
 
                     vec3.subtract(gpuPoint.direction, gpuPointNext.location, gpuPointPrev.location);
                     vec3.normalize(gpuPoint.direction, gpuPoint.direction);
 
                     vec3.set(normal, gpuPoint.direction[1], -gpuPoint.direction[0], 0.0); // 法線ベクトル
-                    vec3.scale(normal, normal, gpuPoint.width * 0.5);
+                    vec3.scale(normal, normal, width * 0.5);
 
                     vec3.subtract(gpuPoint.edgePointL, gpuPoint.location, normal);
                     vec3.add(gpuPoint.edgePointR, gpuPoint.location, normal);
@@ -171,24 +184,31 @@ namespace ManualTracingTool {
                     {
                         let point = gpuPoints[0];
                         let pointTo = gpuPoints[1];
-                        let distance = vec3.distance(point.location, pointTo.location);
-                        vec3.scale(this.controlPointVec, direction, distance * 0.33); // いいかげんです
-                        vec3.add(point.controlPointLF, point.edgePointL, this.controlPointVec);
-                        vec3.add(point.controlPointRF, point.edgePointR, this.controlPointVec);
+
+                        vec3.subtract(direction, pointTo.location, point.location);
+                        vec3.scale(direction, direction, 0.33); // いいかげんです
+
+                        vec3.add(point.controlPointCF, point.location, direction);
+                        vec3.add(point.controlPointLF, point.edgePointL, direction);
+                        vec3.add(point.controlPointRF, point.edgePointR, direction);
                     }
 
                     {
                         let point = gpuPoints[gpuPoints.length - 1];
-                        let pointTo = gpuPoints[gpuPoints.length - 1];
-                        let distance = vec3.distance(point.location, pointTo.location);
-                        vec3.scale(this.controlPointVec, direction, distance * 0.33); // いいかげんです
-                        vec3.add(point.controlPointLB, point.edgePointL, this.controlPointVec);
-                        vec3.add(point.controlPointRB, point.edgePointR, this.controlPointVec);
+                        let pointTo = gpuPoints[gpuPoints.length - 2];
+
+                        vec3.subtract(direction, pointTo.location, point.location);
+                        vec3.scale(direction, direction, 0.33); // いいかげんです
+
+                        vec3.add(point.controlPointCB, point.location, direction);
+                        vec3.add(point.controlPointLB, point.edgePointL, direction);
+                        vec3.add(point.controlPointRB, point.edgePointR, direction);
                     }
                 }
             }
         }
 
+        // 2. ベジエ曲線の制御点の位置の計算
         calculateLinePointBezierLocation(vertexBuffer: GPUVertexBuffer) {
 
             // 中間の点の制御点の位置を計算
@@ -200,7 +220,7 @@ namespace ManualTracingTool {
 
                     let linePoint = gpuPoints[index];
 
-                    if (index < gpuPoints.length - 1) {
+                    if (index + 1 < gpuPoints.length) {
 
                         let linePointNext = gpuPoints[index + 1];
 
@@ -208,7 +228,7 @@ namespace ManualTracingTool {
                         mat4.invert(linePoint.invMat, linePoint.pointMat);
                     }
 
-                    if (index > 0 && index <= gpuPoints.length - 2) {
+                    if (index - 1 >= 0 && index + 1 < gpuPoints.length) {
 
                         let linePointPrev = gpuPoints[index - 1];
                         let linePointNext = gpuPoints[index + 1];
@@ -243,83 +263,84 @@ namespace ManualTracingTool {
                 }
 
                 // 最初の点の制御点の位置を計算
-                {
+                if (gpuPoints.length > 2) {
+
+                    // １つ次の点の正方向の制御点と対称にする
                     let linePoint = gpuPoints[0];
                     let linePointNext = gpuPoints[1];
 
-                    this.calculateMirroredControlPoint(
+                    this.calculateMirroredPoint(
                         linePoint.controlPointCF,
+                        null,
+                        linePoint.location,
                         linePointNext.controlPointCB,
                         linePointNext.location,
-                        linePoint.location,
+                        linePointNext.location,
                         linePoint.pointMat,
                         linePoint.invMat
                     );
 
-                    this.calculateSegmentMat(this.tempMat, linePoint.edgePointL, linePointNext.edgePointL);
-                    mat4.invert(this.invMat, this.tempMat);
-
-                    this.calculateMirroredControlPoint(
+                    this.calculateMirroredPoint(
                         linePoint.controlPointLF,
+                        linePoint.edgePointL,
+                        linePoint.location,
                         linePointNext.controlPointLB,
                         linePointNext.edgePointL,
-                        linePoint.edgePointL,
-                        this.tempMat,
-                        this.invMat
+                        linePointNext.location,
+                        linePoint.pointMat,
+                        linePoint.invMat
                     );
 
-                    this.calculateSegmentMat(this.tempMat, linePoint.edgePointR, linePointNext.edgePointR);
-                    mat4.invert(this.invMat, this.tempMat);
-
-                    this.calculateMirroredControlPoint(
+                    this.calculateMirroredPoint(
                         linePoint.controlPointRF,
+                        linePoint.edgePointR,
+                        linePoint.location,
                         linePointNext.controlPointRB,
                         linePointNext.edgePointR,
-                        linePoint.edgePointR,
-                        this.tempMat,
-                        this.invMat
+                        linePointNext.location,
+                        linePoint.pointMat,
+                        linePoint.invMat
                     );
                 }
 
                 // 最後の点の制御点の位置を計算
-                {
+                if (gpuPoints.length > 2) {
+
+                    // １つ前の点の負方向の制御点と対称にする
                     let linePoint = gpuPoints[gpuPoints.length - 1];
                     let linePointNext = gpuPoints[gpuPoints.length - 2];
 
-                    this.calculateSegmentMat(linePoint.pointMat, linePoint.location, linePointNext.location);
-                    mat4.invert(linePoint.invMat, linePoint.pointMat);
-
-                    this.calculateMirroredControlPoint(
+                    this.calculateMirroredPoint(
                         linePoint.controlPointCB,
+                        null,
+                        linePoint.location,
                         linePointNext.controlPointCF,
                         linePointNext.location,
-                        linePoint.location,
-                        linePoint.pointMat,
-                        linePoint.invMat
+                        linePointNext.location,
+                        linePointNext.pointMat,
+                        linePointNext.invMat
                     );
 
-                    this.calculateSegmentMat(this.tempMat, linePoint.edgePointL, linePointNext.edgePointL);
-                    mat4.invert(this.invMat, this.tempMat);
-
-                    this.calculateMirroredControlPoint(
+                    this.calculateMirroredPoint(
                         linePoint.controlPointLB,
+                        linePoint.edgePointL,
+                        linePoint.location,
                         linePointNext.controlPointLF,
                         linePointNext.edgePointL,
-                        linePoint.edgePointL,
-                        this.tempMat,
-                        this.invMat
+                        linePointNext.location,
+                        linePointNext.pointMat,
+                        linePointNext.invMat
                     );
 
-                    this.calculateSegmentMat(this.tempMat, linePoint.edgePointR, linePointNext.edgePointR);
-                    mat4.invert(this.invMat, this.tempMat);
-
-                    this.calculateMirroredControlPoint(
+                    this.calculateMirroredPoint(
                         linePoint.controlPointRB,
+                        linePoint.edgePointR,
+                        linePoint.location,
                         linePointNext.controlPointRF,
                         linePointNext.edgePointR,
-                        linePoint.edgePointR,
-                        this.tempMat,
-                        this.invMat
+                        linePointNext.location,
+                        linePointNext.pointMat,
+                        linePointNext.invMat
                     );
                 }
             }
@@ -350,8 +371,28 @@ namespace ManualTracingTool {
             vec3.add(resultB, edgePointC, this.controlPointVec);
         }
 
-        calculateMirroredControlPoint(resultF: Vec3, controlPointTo: Vec3, edgePointTo: Vec3, edgePointFrom: Vec3, pointMat: Mat4, invMat: Mat4) {
+        calculateMirroredPoint(resultControlPoint: Vec3, resultEdgePoint: Vec3, centerPointFrom: Vec3, controlPointTo: Vec3, edgePointTo: Vec3, centerPointTo: Vec3, pointMat: Mat4, invMat: Mat4) {
 
+            vec3.transformMat4(this.relativeEdgePointVecA, edgePointTo, invMat);
+            vec3.transformMat4(this.relativeVecC, centerPointTo, invMat);
+            vec3.transformMat4(this.relativeVecD, centerPointFrom, invMat);
+
+            vec3.transformMat4(this.relativeVecA, controlPointTo, invMat);
+            this.relativeVecB[0] = (this.relativeVecA[0] - this.relativeVecC[0]) * -1 + this.relativeVecD[0];
+            this.relativeVecB[1] = this.relativeVecA[1];
+            this.relativeVecB[2] = 0.0;
+            vec3.transformMat4(resultControlPoint, this.relativeVecB, pointMat);
+
+            if (resultEdgePoint != null) {
+
+                vec3.transformMat4(this.relativeVecA, edgePointTo, invMat);
+                this.relativeVecB[0] = (this.relativeVecA[0] - this.relativeVecC[0]) * -1 + this.relativeVecD[0];
+                this.relativeVecB[1] = this.relativeVecA[1];
+                this.relativeVecB[2] = 0.0;
+                vec3.transformMat4(resultEdgePoint, this.relativeVecB, pointMat);
+            }
+
+            /*
             vec3.subtract(this.relativeVecA, controlPointTo, edgePointTo);
             vec3.add(this.relativeVecA, this.relativeVecA, edgePointFrom);
 
@@ -360,8 +401,10 @@ namespace ManualTracingTool {
             this.relativeVecB[0] *= -1;
 
             vec3.transformMat4(resultF, this.relativeVecB, pointMat);
+            */
         }
 
+        // 3. ベジエ曲線を囲むポリゴンのうち制御点の頂点位置の計算
         calculateControlPointVertexLocations(vertexBuffer: GPUVertexBuffer) {
 
             for (let line of vertexBuffer.lines) {
@@ -420,9 +463,11 @@ namespace ManualTracingTool {
 
         calculateControlPointVertexLocation(controlPointVertexLF: Vec3, edgePointFrom: Vec3, controlPointFrom: Vec3, edgePointTo: Vec3, controlPointTo: Vec3, flipY: float) {
 
+            // セグメントの座標系
             this.calculateSegmentMat(this.tempMat, edgePointFrom, edgePointTo);
             mat4.invert(this.invMat, this.tempMat);
 
+            // セグメント座標
             vec3.transformMat4(this.relativeEdgePointVecA, edgePointFrom, this.invMat);
             vec3.transformMat4(this.relativeVecA, controlPointFrom, this.invMat);
 
@@ -507,14 +552,24 @@ namespace ManualTracingTool {
 
             for (let line of vertexBuffer.lines) {
 
+                {
+                    let linePoint = line.points[0];
+                    let linePointNext = line.points[1];
+
+                    offset = this.calculateBufferData_AddBezierCapPoints(data, offset, linePoint, linePointNext, true);
+                }
+
+                {
+                    let linePoint = line.points[line.points.length - 2];
+                    let linePointNext = line.points[line.points.length - 1];
+
+                    offset = this.calculateBufferData_AddBezierCapPoints(data, offset, linePoint, linePointNext, false);
+                }
+
                 for (let index = 0; index < line.points.length - 1; index++) {
 
                     let linePoint = line.points[index];
                     let linePointNext = line.points[index + 1];
-
-                    if (linePoint.isEndPoint) {
-                        continue;
-                    }
 
                     for (let map of this.bezierPolygonMap) {
 
@@ -549,65 +604,112 @@ namespace ManualTracingTool {
                             vec = point.controlPointVertexRB;
                         }
 
-                        // 頂点位置
-                        data[offset++] = vec[0];
-                        data[offset++] = vec[1];
+                        //let flipY = (map.lr == 1 ? 1.0 : -1.0);
 
-                        let flipY = (map.lr == 1 ? 1.0 : -1.0);
-                        let flip = false;
-
-                        // セグメントローカル座標 x, y、セグメントローカル t (0.0 -> 1.0)
-                        vec3.transformMat4(this.relativeVecA, vec, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1] * (flip ? flipY : 1.0);
-
-                        let length = vec3.distance(linePoint.location, linePointNext.location);
-                        data[offset++] = this.relativeVecA[0] / length;
-
-                        // 各制御点
-                        vec3.transformMat4(this.relativeVecA, linePoint.edgePointL, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1];
-
-                        vec3.transformMat4(this.relativeVecA, linePoint.controlPointLF, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1];
-
-                        vec3.transformMat4(this.relativeVecA, linePointNext.controlPointLB, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1];
-
-                        vec3.transformMat4(this.relativeVecA, linePointNext.edgePointL, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1];
-
-                        vec3.transformMat4(this.relativeVecA, linePoint.edgePointR, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1];
-
-                        vec3.transformMat4(this.relativeVecA, linePoint.controlPointRF, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1];
-
-                        vec3.transformMat4(this.relativeVecA, linePointNext.controlPointRB, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1];
-
-                        vec3.transformMat4(this.relativeVecA, linePointNext.edgePointR, linePoint.invMat);
-                        data[offset++] = this.relativeVecA[0];
-                        data[offset++] = this.relativeVecA[1];
-
-                        // 幅
-                        data[offset++] = linePoint.width;
-                        data[offset++] = linePointNext.width;
-
-                        //data[offset++] = linePoint.alpha;
-                        //data[offset++] = linePointNext.alpha;
+                        offset = this.calculateBufferData_AddBezierPoint(data, offset, vec, linePoint, linePointNext, 1.0);
                     }
                 }
             }
 
             vertexBuffer.usedDataArraySize = offset;
+        }
+
+        calculateBufferData_AddBezierPoint(data: Float32Array, offset: int, vec: Vec3, linePoint: GPULinePoint, linePointNext: GPULinePoint, flipY: float): int {
+
+            // 頂点位置
+            data[offset++] = vec[0];
+            data[offset++] = vec[1];
+
+            // セグメントローカル座標 x, y、セグメントローカル t (0.0 -> 1.0)
+            vec3.transformMat4(this.relativeVecA, vec, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1] * flipY;
+
+            let length = vec3.distance(linePoint.location, linePointNext.location);
+            data[offset++] = this.relativeVecA[0] / length;
+
+            // 各制御点
+            // vec3.transformMat4(this.relativeVecA, linePoint.edgePointL, linePoint.invMat);
+            vec3.transformMat4(this.relativeVecA, linePoint.location, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1];
+
+            // vec3.transformMat4(this.relativeVecA, linePoint.controlPointLF, linePoint.invMat);
+            vec3.transformMat4(this.relativeVecA, linePoint.controlPointCF, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1];
+
+            // vec3.transformMat4(this.relativeVecA, linePointNext.controlPointLB, linePoint.invMat);
+            vec3.transformMat4(this.relativeVecA, linePointNext.controlPointCB, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1];
+
+            // vec3.transformMat4(this.relativeVecA, linePointNext.edgePointL, linePoint.invMat);
+            vec3.transformMat4(this.relativeVecA, linePointNext.location, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1];
+
+            vec3.transformMat4(this.relativeVecA, linePoint.edgePointR, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1];
+
+            vec3.transformMat4(this.relativeVecA, linePoint.controlPointRF, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1];
+
+            vec3.transformMat4(this.relativeVecA, linePointNext.controlPointRB, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1];
+
+            vec3.transformMat4(this.relativeVecA, linePointNext.edgePointR, linePoint.invMat);
+            data[offset++] = this.relativeVecA[0];
+            data[offset++] = this.relativeVecA[1];
+
+            // 幅
+            data[offset++] = linePoint.width * 0.5;
+            data[offset++] = linePointNext.width * 0.5;
+            //data[offset++] = map.cur == 1 ? 1.0 : 0.0;
+            //data[offset++] = map.cur == 1 ? 0.0 : 1.0;
+
+            //data[offset++] = linePoint.alpha;
+            //data[offset++] = linePointNext.alpha;
+
+            return offset;
+        }
+
+        calculateBufferData_AddBezierCapPoints(data: Float32Array, offset: int, linePoint: GPULinePoint, linePointNext: GPULinePoint, isTopCap: boolean): int {
+
+            let capPoint = (isTopCap ? linePoint : linePointNext);
+            let direction = (isTopCap ? 1.0 : -1.0);
+            let capTopRelativeX = -(capPoint.edgePointL[1] - capPoint.location[1]) * direction;
+            let capTopRelativeY = (capPoint.edgePointL[0] - capPoint.location[0]) * direction;
+
+            let leftTopX = capPoint.edgePointL[0] + capTopRelativeX;
+            let leftTopY = capPoint.edgePointL[1] + capTopRelativeY;
+            let rightTopX = capPoint.edgePointR[0] + capTopRelativeX;
+            let rightTopY = capPoint.edgePointR[1] + capTopRelativeY;
+
+            // 1
+            vec3.set(this.vec, leftTopX, leftTopY, 0.0)
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+
+            vec3.set(this.vec, capPoint.edgePointL[0], capPoint.edgePointL[1], 0.0)
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+
+            vec3.set(this.vec, capPoint.edgePointR[0], capPoint.edgePointR[1], 0.0)
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+
+            // 2
+            vec3.set(this.vec, capPoint.edgePointR[0], capPoint.edgePointR[1], 0.0)
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+
+            vec3.set(this.vec, rightTopX, rightTopY, 0.0)
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+
+            vec3.set(this.vec, leftTopX, leftTopY, 0.0)
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+
+            return offset;
         }
 
         bufferData(vertexBuffer: GPUVertexBuffer, gl: WebGLRenderingContext) {
