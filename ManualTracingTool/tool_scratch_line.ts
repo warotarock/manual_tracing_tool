@@ -257,6 +257,10 @@ namespace ManualTracingTool {
             let isExtrudeDone = false;
             let isScratchingDone = false;
 
+            let targetLine = env.currentVectorLine;
+            let targetGroup = env.currentVectorGroup;
+            let oldPoints = targetLine.points;
+
             if (this.enableExtrude) {
 
                 let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
@@ -264,22 +268,22 @@ namespace ManualTracingTool {
 
                 this.resampledLine = Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
 
-                isExtrudeDone = this.executeExtrudeLine(this.resampledLine, env);
+                isExtrudeDone = this.executeExtrudeLine(targetLine, targetGroup, this.resampledLine, env);
             }
 
             if (this.enableScratchEdit) {
 
                 this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
 
-                isScratchingDone  = this.executeScratchingLine(this.resampledLine, isExtrudeDone, env);
+                isScratchingDone  = this.executeScratchingLine(targetLine, targetGroup, this.resampledLine, isExtrudeDone, env);
             }
 
             if (isExtrudeDone || isScratchingDone) {
 
-                this.deleteDuplications(env);
+                this.deleteDuplications(targetLine, targetGroup, env);
             }
 
-            this.clearFlags(env);
+            Logic_Edit_VectorLayer.clearPointModifyFlags(oldPoints);
         }
 
         // Adjusting edit line
@@ -359,10 +363,7 @@ namespace ManualTracingTool {
 
         // Extruding edit
 
-        protected executeExtrudeLine(resampledLine: VectorLine, env: ToolEnvironment): boolean {
-
-            let targetLine = env.currentVectorLine;
-            let targetGroup = env.currentVectorGroup;
+        protected executeExtrudeLine(targetLine: VectorLine, targetGroup: VectorGroup, resampledLine: VectorLine, env: ToolEnvironment): boolean {
 
             // Create extrude points
 
@@ -510,10 +511,7 @@ namespace ManualTracingTool {
 
         // Scratching edit
 
-        protected executeScratchingLine(resampledLine: VectorLine, isExtrudeDone: boolean, env: ToolEnvironment): boolean {
-
-            let targetLine = env.currentVectorLine;
-            let targetGroup = env.currentVectorGroup;
+        protected executeScratchingLine(targetLine: VectorLine, targetGroup: VectorGroup, resampledLine: VectorLine, isExtrudeDone: boolean, env: ToolEnvironment): boolean {
 
             // Get scratching candidate points
 
@@ -724,10 +722,7 @@ namespace ManualTracingTool {
 
         // Delete duplication edit
 
-        protected deleteDuplications(env: ToolEnvironment) {
-
-            let targetLine = env.currentVectorLine;
-            let targetGroup = env.currentVectorGroup;
+        protected deleteDuplications(targetLine: VectorLine, targetGroup: VectorGroup, env: ToolEnvironment) {
 
             // Search edited index range of points
 
@@ -883,14 +878,6 @@ namespace ManualTracingTool {
             }
 
             return nearPointCcount;
-        }
-
-        protected clearFlags(env: ToolEnvironment) {
-
-            if (env.currentVectorLine != null) {
-
-                Logic_Edit_VectorLayer.clearLineModifyFlags(env.currentVectorLine);
-            }
         }
     }
 

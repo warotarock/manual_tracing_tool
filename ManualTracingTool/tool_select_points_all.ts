@@ -127,7 +127,7 @@ namespace ManualTracingTool {
             return selectionInfo;
         }
 
-        private executeCommand(selectionInfo: VectorLayerEditorSelectionInfo, env: ToolEnvironment) { // @virtual
+        private executeCommand(selectionInfo: VectorLayerEditorSelectionInfo, env: ToolEnvironment) {
 
             let command = new Command_Select();
             command.selectionInfo = selectionInfo;

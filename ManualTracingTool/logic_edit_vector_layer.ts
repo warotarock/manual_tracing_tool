@@ -448,14 +448,19 @@ namespace ManualTracingTool {
             }
         }
 
+        static clearPointModifyFlags(points: List<LinePoint>) {
+
+            for (let point of points) {
+
+                point.modifyFlag = LinePointModifyFlagID.none;
+            }
+        }
+
         static clearLineModifyFlags(line: VectorLine) {
 
             line.modifyFlag = VectorLineModifyFlagID.none;
 
-            for (let point of line.points) {
-
-                point.modifyFlag = LinePointModifyFlagID.none;
-            }
+            Logic_Edit_VectorLayer.clearPointModifyFlags(line.points);
         }
 
         static fillGeometryDeleteFlags(geometry: VectorLayerGeometry, forceDelete: boolean) {

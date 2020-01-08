@@ -22,6 +22,7 @@ namespace ManualTracingTool {
             let baseRadius = env.mouseCursorViewRadius;
             let targetLine = env.currentVectorLine;
             let targetGroup = env.currentVectorGroup;
+            let oldPoints = targetLine.points;
 
             // Resampling editor line
             this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
@@ -62,7 +63,7 @@ namespace ManualTracingTool {
                 env.commandHistory.addCommand(command);
             }
 
-            this.clearFlags(env);
+            Logic_Edit_VectorLayer.clearPointModifyFlags(oldPoints);
         }
 
         protected processPoint(editPoint: Tool_ScratchLineWidth_EditPoint, env: ToolEnvironment) { // @virtual
