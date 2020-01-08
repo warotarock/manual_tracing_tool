@@ -71,10 +71,6 @@ namespace ManualTracingTool {
 
             ViewKeyframeLayer.forEachLayerAndGroup(viewKeyframeLayers, (layer: VectorLayer, group: VectorGroup) => {
 
-                if (!Layer.isEditTarget(layer)) {
-                    return;
-                }
-
                 let existsInGroup = false;
 
                 for (let line of group.lines) {

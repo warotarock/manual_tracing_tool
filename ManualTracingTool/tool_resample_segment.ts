@@ -69,11 +69,7 @@ namespace ManualTracingTool {
 
             let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
 
-            ViewKeyframeLayer.forEachLayerAndGroup(viewKeyframeLayers, (layer: VectorLayer, group: VectorGroup) => {
-
-                if (!Layer.isEditTarget(layer)) {
-                    return;
-                }
+            ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
 
                 let existsInGroup = false;
 
@@ -84,8 +80,6 @@ namespace ManualTracingTool {
                         let editLine = new Tool_Resample_Segment_EditLine();
                         editLine.targetLine = line;
                         editLine.oldPoints = line.points;
-                        editLine.newPoints = new List<LinePoint>();
-
                         editLine.newPoints = this.createResampledPoints(editLine.targetLine, resamplingUnitLength);
 
                         editLines.push(editLine);
@@ -96,16 +90,14 @@ namespace ManualTracingTool {
 
                 if (existsInGroup) {
 
-                    return;
+                    targetGroups.push(group);
                 }
-
-                targetGroups.push(group);
             });
 
             this.targetGroups = targetGroups;
             this.editLines = editLines;
 
-            return (targetGroups.length > 0);
+            return (editLines.length > 0);
         }
 
         private existsSelectedSegment(line: VectorLine): boolean {
@@ -144,10 +136,8 @@ namespace ManualTracingTool {
 
                 let currentPoint = line.points[currentIndex];
 
-                let isSelectedSegment = (currentPoint.isSelected);
-
                 // selected segment
-                if (isSelectedSegment) {
+                if (currentPoint.isSelected) {
 
                     segmentStartIndex = currentIndex;
 
@@ -215,7 +205,7 @@ namespace ManualTracingTool {
                 }
             }
 
-            return;
+            return newPoints;
         }
     }
 

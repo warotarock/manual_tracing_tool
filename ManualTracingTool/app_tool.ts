@@ -552,7 +552,7 @@ namespace ManualTracingTool {
 
                     let layer = viewKeyframeLayer.layer;
 
-                    if (Layer.isSelected(layer) && Layer.isVisible(layer)) {
+                    if (Layer.isEditTarget(layer)) {
 
                         editableKeyframeLayers.push(viewKeyframeLayer);
                     }
