@@ -616,7 +616,7 @@ var ManualTracingTool;
                     console.log(`Calculate line point buffer data`);
                     this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
                     let vertexUnitSize = shader.getVertexUnitSize();
-                    let vertexCount = shader.getVertexCount(group.buffer.pointCount); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
+                    let vertexCount = shader.getVertexCount(group.buffer.pointCount, group.buffer.lines.length); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
                     this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
                     shader.calculateBufferData(group.buffer, this.logic_GPULine);
                     if (group.buffer.usedDataArraySize > 0) {
@@ -1063,7 +1063,7 @@ var ManualTracingTool;
         getVertexUnitSize() {
             return -1;
         }
-        getVertexCount(pointCount) {
+        getVertexCount(pointCount, lineCount) {
             return -1;
         }
         getDrawArrayTryanglesCount(bufferSize) {
@@ -1084,7 +1084,7 @@ var ManualTracingTool;
             return (2 // 頂点の位置 vec2
             );
         }
-        getVertexCount(pointCount) {
+        getVertexCount(pointCount, lineCount) {
             return (pointCount - 1) * (2 + 2) * 3; // 辺の数 * 左側２ポリゴン＋右側２ポリゴン * 3頂点
         }
         initializeVertexSourceCode() {
@@ -1171,7 +1171,7 @@ void main(void) {
             //+ 2 // 不透明度 vec2 (from, to)
             );
         }
-        getVertexCount(pointCount) {
+        getVertexCount(pointCount, lineCount) {
             return (pointCount - 1) * (4 + 4) * 3; // 辺の数 * (左側４ポリゴン＋右側４ポリゴン) * 3頂点
         }
         initializeVertexSourceCode() {
@@ -1528,8 +1528,8 @@ void main(void) {
             //+ 2 // 不透明度 vec2 (from, to)
             );
         }
-        getVertexCount(pointCount) {
-            return (pointCount - 1) * (4 + 4) * 3 + (2 + 2) * 3; // 辺の数 * (左側４ポリゴン＋右側４ポリゴン) * 3頂点 + (線端用２ポリゴン＊２)* 3頂点
+        getVertexCount(pointCount, lineCount) {
+            return (pointCount - 1) * (4 + 4) * 3 + lineCount * (2 + 2) * 3; // 辺の数 * (左側４ポリゴン＋右側４ポリゴン) * 3頂点 + (線端用２ポリゴン＊２)* 3頂点
         }
         initializeVertexSourceCode() {
             this.vertexShaderSourceCode = `

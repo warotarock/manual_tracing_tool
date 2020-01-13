@@ -946,7 +946,7 @@ namespace ManualTracingTool {
                     this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
 
                     let vertexUnitSize = shader.getVertexUnitSize();
-                    let vertexCount = shader.getVertexCount(group.buffer.pointCount); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
+                    let vertexCount = shader.getVertexCount(group.buffer.pointCount, group.buffer.lines.length); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
 
                     this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
 
@@ -1598,7 +1598,7 @@ namespace ManualTracingTool {
             return -1;
         }
 
-        getVertexCount(pointCount: int): int { // @virtual
+        getVertexCount(pointCount: int, lineCount: int): int { // @virtual
 
             return -1;
         }
@@ -1629,7 +1629,7 @@ namespace ManualTracingTool {
             );
         }
 
-        getVertexCount(pointCount: int): int { // @override
+        getVertexCount(pointCount: int, lineCount: int): int { // @override
 
             return (pointCount - 1) * (2 + 2) * 3; // 辺の数 * 左側２ポリゴン＋右側２ポリゴン * 3頂点
 
@@ -1744,7 +1744,7 @@ void main(void) {
             );
         }
 
-        getVertexCount(pointCount: int): int { // @override
+        getVertexCount(pointCount: int, lineCount: int): int { // @override
 
             return (pointCount - 1) * (4 + 4) * 3; // 辺の数 * (左側４ポリゴン＋右側４ポリゴン) * 3頂点
         }
@@ -2136,9 +2136,9 @@ void main(void) {
             );
         }
 
-        getVertexCount(pointCount: int): int { // @override
+        getVertexCount(pointCount: int, lineCount: int): int { // @override
 
-            return (pointCount - 1) * (4 + 4) * 3 + (2 + 2) * 3; // 辺の数 * (左側４ポリゴン＋右側４ポリゴン) * 3頂点 + (線端用２ポリゴン＊２)* 3頂点
+            return (pointCount - 1) * (4 + 4) * 3 + lineCount * (2 + 2) * 3; // 辺の数 * (左側４ポリゴン＋右側４ポリゴン) * 3頂点 + (線端用２ポリゴン＊２)* 3頂点
         }
 
         initializeVertexSourceCode() { // @override
