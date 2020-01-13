@@ -369,7 +369,7 @@ var ManualTracingTool;
             if (this.currentViewKeyframe != null) {
                 for (let viewKeyframeLayer of this.currentViewKeyframe.layers) {
                     let layer = viewKeyframeLayer.layer;
-                    if (ManualTracingTool.Layer.isSelected(layer) && ManualTracingTool.Layer.isVisible(layer)) {
+                    if (ManualTracingTool.Layer.isEditTarget(layer)) {
                         editableKeyframeLayers.push(viewKeyframeLayer);
                     }
                 }
@@ -418,7 +418,7 @@ var ManualTracingTool;
             }
             this.setLayerCommandParameters(layerCommand, currentLayerWindowItem);
             if (layerCommand.isAvailable(this.toolEnv)) {
-                layerCommand.execute(this.toolEnv);
+                layerCommand.executeCommand(this.toolEnv);
                 this.toolContext.commandHistory.addCommand(layerCommand);
             }
         }

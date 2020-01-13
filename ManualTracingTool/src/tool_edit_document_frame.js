@@ -54,7 +54,7 @@ var ManualTracingTool;
             command.newDocumentFrame[1] = Math.floor(this.latticePoints[0].location[1]);
             command.newDocumentFrame[2] = Math.floor(this.latticePoints[2].location[0]);
             command.newDocumentFrame[3] = Math.floor(this.latticePoints[2].location[1]);
-            command.execute(env);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
         }
     }

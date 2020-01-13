@@ -293,11 +293,14 @@ var ManualTracingTool;
                 this.clearLineModifyFlags(line);
             }
         }
-        static clearLineModifyFlags(line) {
-            line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
-            for (let point of line.points) {
+        static clearPointModifyFlags(points) {
+            for (let point of points) {
                 point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.none;
             }
+        }
+        static clearLineModifyFlags(line) {
+            line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.none;
+            Logic_Edit_VectorLayer.clearPointModifyFlags(line.points);
         }
         static fillGeometryDeleteFlags(geometry, forceDelete) {
             for (let group of geometry.groups) {

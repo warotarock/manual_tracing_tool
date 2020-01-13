@@ -49,12 +49,6 @@ var ManualTracingTool;
             return (layer.type == ManualTracingTool.LayerTypeID.rootLayer
                 || layer.type == ManualTracingTool.LayerTypeID.groupLayer);
         }
-        errorCheck(layer) {
-            if (this.currentLayerIndex == -1) {
-                throw ('Command_Layer_AddVectorLayerToPrevious: invalid current layer!');
-            }
-            return false;
-        }
         executeLayerSwap(parentLayer, swapIndex1, swapIndex2, env) {
             this.insertTo_ParentLayer = parentLayer;
             this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
@@ -135,12 +129,6 @@ var ManualTracingTool;
             }
             env.setRedrawMainWindowEditorWindow();
         }
-        execute(env) {
-            this.executeCommand(env);
-            env.setRedrawMainWindowEditorWindow();
-        }
-        executeCommand(env) {
-        }
     }
     ManualTracingTool.Command_Layer_CommandBase = Command_Layer_CommandBase;
     class Command_Layer_AddVectorLayerToCurrentPosition extends Command_Layer_CommandBase {
@@ -158,15 +146,17 @@ var ManualTracingTool;
             }
             return true;
         }
-        executeCommand(env) {
+        execute(env) {
             this.newLayer = new ManualTracingTool.VectorLayer();
             if (!this.createForFillColor) {
                 this.newLayer.name = 'new line layer';
+                this.newLayer.drawLineType = ManualTracingTool.DrawLineTypeID.paletteColor;
+                this.newLayer.fillAreaType = ManualTracingTool.FillAreaTypeID.none;
             }
             else {
                 this.newLayer.name = 'new fill layer';
                 this.newLayer.drawLineType = ManualTracingTool.DrawLineTypeID.none;
-                this.newLayer.fillAreaType = ManualTracingTool.FillAreaTypeID.palletColor;
+                this.newLayer.fillAreaType = ManualTracingTool.FillAreaTypeID.paletteColor;
             }
             let keyFrame = new ManualTracingTool.VectorLayerKeyframe();
             keyFrame.geometry = new ManualTracingTool.VectorLayerGeometry();
@@ -194,7 +184,7 @@ var ManualTracingTool;
             }
             return true;
         }
-        executeCommand(env) {
+        execute(env) {
             this.newLayer = new ManualTracingTool.VectorLayerReferenceLayer();
             this.newLayer.name = 'new ref layer';
             this.newLayer.referenceLayer = (this.currentLayer);
@@ -217,7 +207,7 @@ var ManualTracingTool;
             }
             return true;
         }
-        executeCommand(env) {
+        execute(env) {
             this.newLayer = new ManualTracingTool.GroupLayer();
             this.newLayer.name = 'new group';
             this.executeLayerInsertToCurrent(this.newLayer, env);
@@ -238,7 +228,7 @@ var ManualTracingTool;
             }
             return true;
         }
-        executeCommand(env) {
+        execute(env) {
             this.newLayer = new ManualTracingTool.ImageFileReferenceLayer();
             this.newLayer.name = 'new file';
             this.executeLayerInsertToCurrent(this.newLayer, env);
@@ -259,7 +249,7 @@ var ManualTracingTool;
             }
             return true;
         }
-        executeCommand(env) {
+        execute(env) {
             this.newLayer = new ManualTracingTool.PosingLayer();
             this.newLayer.name = 'new posing';
             this.newLayer.posingModel = env.getPosingModelByName('dummy_skin');
@@ -277,7 +267,7 @@ var ManualTracingTool;
             }
             return true;
         }
-        executeCommand(env) {
+        execute(env) {
             this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
             if (this.previousLayer != null) {
                 env.setCurrentLayer(this.previousLayer);
@@ -301,7 +291,7 @@ var ManualTracingTool;
             }
             return true;
         }
-        executeCommand(env) {
+        execute(env) {
             if (this.previousLayer.type == ManualTracingTool.LayerTypeID.groupLayer) {
                 if (this.previousLayer == this.currentLayerParent) {
                     this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
@@ -336,7 +326,7 @@ var ManualTracingTool;
             }
             return true;
         }
-        executeCommand(env) {
+        execute(env) {
             if (this.nextLayer.type == ManualTracingTool.LayerTypeID.groupLayer) {
                 this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
                 this.executeLayerInsert(this.nextLayer, 0, this.currentLayer, env);

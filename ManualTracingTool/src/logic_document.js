@@ -9,26 +9,31 @@ var ManualTracingTool;
             this.fileNameCount++;
             return localSetting.currentDirectoryPath + '\\' + fileName + '.json';
         }
-        static fixLoadedDocumentData(document, info) {
-            if (document.palletColors == undefined) {
-                ManualTracingTool.DocumentData.initializeDefaultPalletColors(document);
+        static fixLoadedDocumentData(documentData, info) {
+            if (documentData.paletteColors == undefined) {
+                if ('palletColors' in documentData) {
+                    documentData['paletteColors'] = documentData['palletColors'];
+                }
+                else {
+                    ManualTracingTool.DocumentData.initializeDefaultPaletteColors(documentData);
+                }
             }
-            while (document.palletColors.length < ManualTracingTool.DocumentData.maxPalletColors) {
-                document.palletColors.push(new ManualTracingTool.PalletColor());
+            while (documentData.paletteColors.length < ManualTracingTool.DocumentData.maxPaletteColors) {
+                documentData.paletteColors.push(new ManualTracingTool.PaletteColor());
             }
-            if (document.animationSettingData == undefined) {
-                document.animationSettingData = new ManualTracingTool.AnimationSettingData();
+            if (documentData.animationSettingData == undefined) {
+                documentData.animationSettingData = new ManualTracingTool.AnimationSettingData();
             }
-            if (document.defaultViewScale == undefined) {
-                document.defaultViewScale = 1.0;
+            if (documentData.defaultViewScale == undefined) {
+                documentData.defaultViewScale = 1.0;
             }
-            if (document.lineWidthBiasRate == undefined) {
-                document.lineWidthBiasRate = 1.0;
+            if (documentData.lineWidthBiasRate == undefined) {
+                documentData.lineWidthBiasRate = 1.0;
             }
-            if (document.exportBackGroundType == undefined) {
-                document.exportBackGroundType = ManualTracingTool.DocumentBackGroundTypeID.lastPalletColor;
+            if (documentData.exportBackGroundType == undefined) {
+                documentData.exportBackGroundType = ManualTracingTool.DocumentBackGroundTypeID.lastPaletteColor;
             }
-            this.fixLoadedDocumentData_FixLayer_Recursive(document.rootLayer, info);
+            this.fixLoadedDocumentData_FixLayer_Recursive(documentData.rootLayer, info);
         }
         static fixLoadedDocumentData_CollectLayers_Recursive(layer, info) {
             info.collectLayer(layer);
@@ -40,12 +45,8 @@ var ManualTracingTool;
             if (layer.isRenderTarget == undefined) {
                 layer.isRenderTarget = true;
             }
-            if (layer.isHierarchicalVisible == undefined) {
-                layer.isHierarchicalVisible = layer.isVisible;
-            }
-            if (layer.isHierarchicalSelected == undefined) {
-                layer.isHierarchicalSelected = layer.isSelected;
-            }
+            layer.isHierarchicalVisible = layer.isVisible;
+            layer.isHierarchicalSelected = layer.isSelected;
             if (layer.isMaskedByBelowLayer == undefined) {
                 layer.isMaskedByBelowLayer = false;
             }
@@ -61,11 +62,11 @@ var ManualTracingTool;
                 if (vectorLayer.fillColor == undefined) {
                     vectorLayer.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
                 }
-                if (vectorLayer.line_PalletColorIndex == undefined) {
-                    vectorLayer.line_PalletColorIndex = 0;
+                if (vectorLayer.line_PaletteColorIndex == undefined) {
+                    vectorLayer['line_PaletteColorIndex'] = vectorLayer['line_PalletColorIndex'] || 0;
                 }
-                if (vectorLayer.fill_PalletColorIndex == undefined) {
-                    vectorLayer.fill_PalletColorIndex = 1;
+                if (vectorLayer.fill_PaletteColorIndex == undefined) {
+                    vectorLayer['fill_PaletteColorIndex'] = vectorLayer['fill_PalletColorIndex'] || 0;
                 }
                 if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {
                     vectorLayer.keyframes = new List();
@@ -151,9 +152,9 @@ var ManualTracingTool;
         }
         static fixSaveDocumentData(document, info) {
             this.fixSaveDocumentData_FixLayer_Recursive(document.rootLayer, info);
-            for (let i = 0; i < document.palletColors.length; i++) {
-                let palletColor = document.palletColors[i];
-                palletColor.color = DocumentLogic.vec4ToArray(palletColor.color);
+            for (let i = 0; i < document.paletteColors.length; i++) {
+                let paletteColor = document.paletteColors[i];
+                paletteColor.color = DocumentLogic.vec4ToArray(paletteColor.color);
             }
         }
         static fixSaveDocumentData_SetID_Recursive(layer, info) {
@@ -230,9 +231,10 @@ var ManualTracingTool;
             this.releaseDocumentResources_Recursive(document.rootLayer, gl);
         }
         static releaseDocumentResources_Recursive(layer, gl) {
+            delete layer.isHierarchicalVisible;
+            delete layer.isHierarchicalSelected;
             if (layer.type == ManualTracingTool.LayerTypeID.vectorLayer) {
                 let vectorLayer = layer;
-                vectorLayer.fillColor = DocumentLogic.vec4ToArray(vectorLayer.fillColor);
                 for (let keyframe of vectorLayer.keyframes) {
                     for (let group of keyframe.geometry.groups) {
                         if (group.buffer.buffer != null) {

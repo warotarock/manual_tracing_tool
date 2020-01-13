@@ -34,7 +34,7 @@ var ManualTracingTool;
             let command = new Command_LoadReferenceImageToLayer();
             command.targetLayer = env.currentImageFileReferenceLayer;
             command.newFilePath = filePath;
-            command.execute(env);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
         }
     }
@@ -87,12 +87,12 @@ var ManualTracingTool;
             return env.isCurrentLayerImageFileReferenceLayer();
         }
         checkTarget(e, env) {
-            if (env.currentImageFileReferenceLayer == null) {
-                return false;
-            }
-            return true;
+            return env.isCurrentLayerImageFileReferenceLayer();
         }
         prepareLatticePoints(env) {
+            if (!ManualTracingTool.ImageFileReferenceLayer.isLoaded(env.currentImageFileReferenceLayer)) {
+                return false;
+            }
             this.calculateImageLatticePoints(env.currentImageFileReferenceLayer.imageResource.image, env.currentImageFileReferenceLayer.location, env.currentImageFileReferenceLayer.rotation, env.currentImageFileReferenceLayer.scale);
             this.resetLatticePointLocationToBaseLocation();
             return true;
@@ -123,6 +123,9 @@ var ManualTracingTool;
             for (let latticePoint of this.latticePoints) {
                 latticePoint.latticePointEditType = ManualTracingTool.LatticePointEditTypeID.allDirection;
             }
+        }
+        existsEditData() {
+            return true;
         }
         processTransform(env) {
             let ifrLayer = env.currentImageFileReferenceLayer;
@@ -164,7 +167,7 @@ var ManualTracingTool;
             vec3.copy(command.newLocation, command.targetLayer.adjustingLocation);
             vec3.copy(command.newRotation, command.targetLayer.adjustingRotation);
             vec3.copy(command.newScale, command.targetLayer.adjustingScale);
-            command.execute(env);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
         }
         cancelModal(env) {
@@ -172,6 +175,7 @@ var ManualTracingTool;
             vec3.copy(ifrLayer.adjustingLocation, ifrLayer.location);
             vec3.copy(ifrLayer.adjustingRotation, ifrLayer.rotation);
             vec3.copy(ifrLayer.adjustingScale, ifrLayer.scale);
+            env.setRedrawMainWindowEditorWindow();
         }
     }
     class Command_Transform_ReferenceImage extends ManualTracingTool.CommandBase {

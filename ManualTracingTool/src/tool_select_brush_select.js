@@ -6,11 +6,11 @@ var ManualTracingTool;
             this.helpText = '左クリックで選択を追加、Altキーを押しながらで選択を解除します。<br />Aキーで全選択／解除します。G、R、Sキーで移動、回転、拡縮します。';
             this.isEditTool = true; // @override
             this.logic_Selector = null; // @virtual
-            this.editableKeyframeLayers = null;
+            this.viewKeyframeLayers = null;
         }
         isAvailable(env) {
             return (env.currentVectorLayer != null
-                && ManualTracingTool.Layer.isVisible(env.currentVectorLayer));
+                && ManualTracingTool.Layer.isEditTarget(env.currentVectorLayer));
         }
         onDrawEditor(env, drawEnv) {
             drawEnv.editorDrawer.drawMouseCursor();
@@ -60,7 +60,7 @@ var ManualTracingTool;
             else {
                 this.logic_Selector.editMode = ManualTracingTool.SelectionEditMode.setSelected;
             }
-            this.editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            this.viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
             this.onStartSelection(e, env);
             this.logic_Selector.startProcess();
             env.startModalTool(this);
@@ -68,10 +68,10 @@ var ManualTracingTool;
         onStartSelection(e, env) {
         }
         processSelection(e, env) {
-            if (this.editableKeyframeLayers == null) {
+            if (this.viewKeyframeLayers == null) {
                 return null;
             }
-            for (let viewKeyframeLayer of this.editableKeyframeLayers) {
+            for (let viewKeyframeLayer of this.viewKeyframeLayers) {
                 this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location, env.mouseCursorViewRadius);
             }
         }
@@ -82,7 +82,7 @@ var ManualTracingTool;
                 return;
             }
             this.executeCommand(env);
-            this.editableKeyframeLayers = null;
+            this.viewKeyframeLayers = null;
         }
         existsResults() {
             return (this.logic_Selector.selectionInfo.selectedLines.length != 0
@@ -114,7 +114,7 @@ var ManualTracingTool;
         executeCommand(env) {
             let command = new Command_Select();
             command.selectionInfo = this.logic_Selector.selectionInfo;
-            command.execute(env);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
         }
     }
@@ -149,7 +149,6 @@ var ManualTracingTool;
             this.selectedPoints = null;
         }
         execute(env) {
-            this.errorCheck();
             // Selection process has done while inputting
             // so not required execute this.redo(env);
             this.selectedLines = ListClone(this.selectionInfo.selectedLines);
@@ -173,21 +172,6 @@ var ManualTracingTool;
             }
             for (let selLine of this.selectedLines) {
                 selLine.line.isSelected = selLine.selectStateAfter;
-            }
-        }
-        errorCheck() {
-            if (this.selectionInfo == null) {
-                throw ('Com_Select: selectedLines is null!');
-            }
-            if (this.selectionInfo.selectedLines == null) {
-                throw ('Com_Select: selectedLines is null!');
-            }
-            if (this.selectionInfo.selectedPoints == null) {
-                throw ('Com_Select: selectedPoints is null!');
-            }
-            if (this.selectionInfo.selectedLines.length == 0
-                && this.selectionInfo.selectedPoints.length == 0) {
-                throw ('Com_Select: no points is selected!');
             }
         }
     }

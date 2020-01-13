@@ -83,9 +83,8 @@ var ManualTracingTool;
             let divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(newLine.totalLength, resamplingUnitLength);
             let resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(newLine, divisionCount);
             let command = new ManualTracingTool.Command_AddLine();
-            command.group = env.currentVectorGroup;
-            command.line = resampledLine;
-            command.execute(env);
+            command.prepareEditTargets(env.currentVectorGroup, resampledLine);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
             return resampledLine;
         }
@@ -290,17 +289,16 @@ var ManualTracingTool;
                 this.executeProcessLine(processingState, processingState.newLine, false, env);
                 if (processingState.deleteLines.length > 0) {
                     let command = new ManualTracingTool.Command_DeleteFlaggedPoints();
-                    if (command.prepareEditTargets(env.currentVectorLayer, env.currentVectorGeometry)) {
-                        command.execute(env);
+                    if (command.prepareEditTargets(env)) {
+                        command.executeCommand(env);
                         env.commandHistory.addCommand(command);
                     }
                 }
                 {
                     let command = new ManualTracingTool.Command_AddLine();
-                    command.group = env.currentVectorGroup;
-                    command.line = processingState.newLine;
+                    command.prepareEditTargets(env.currentVectorGroup, processingState.newLine);
                     command.isContinued = true;
-                    command.execute(env);
+                    command.executeCommand(env);
                     env.commandHistory.addCommand(command);
                 }
             }

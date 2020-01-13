@@ -18,6 +18,8 @@ var ManualTracingTool;
         executeCommand(env) {
             let baseRadius = env.mouseCursorViewRadius;
             let targetLine = env.currentVectorLine;
+            let targetGroup = env.currentVectorGroup;
+            let oldPoints = targetLine.points;
             // Resampling editor line
             this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
             // Get candidate points
@@ -35,10 +37,11 @@ var ManualTracingTool;
                     this.processPoint(editPoint, env);
                     command.editPoints.push(editPoint);
                 }
-                command.execute(env);
+                command.useGroup(targetGroup);
+                command.executeCommand(env);
                 env.commandHistory.addCommand(command);
             }
-            this.clearFlags(env);
+            ManualTracingTool.Logic_Edit_VectorLayer.clearPointModifyFlags(oldPoints);
         }
         processPoint(editPoint, env) {
             let setTo_LineWidth = env.drawLineBaseWidth;
@@ -134,7 +137,6 @@ var ManualTracingTool;
             this.editPoints = new List();
         }
         execute(env) {
-            this.errorCheck();
             this.redo(env);
         }
         undo(env) {
@@ -156,11 +158,6 @@ var ManualTracingTool;
                 vec3.copy(targetPoint.adjustingLocation, editPoint.newLocation);
             }
             ManualTracingTool.Logic_Edit_Line.calculateParameters(this.targetLine);
-        }
-        errorCheck() {
-            if (this.targetLine == null) {
-                throw ('Command_ScratchLine: line is null!');
-            }
         }
     }
     ManualTracingTool.Command_ScratchLineWidth = Command_ScratchLineWidth;

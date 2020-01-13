@@ -50,7 +50,7 @@ var ManualTracingTool;
         }
         isAvailable(env) {
             return (env.currentVectorLayer != null
-                && ManualTracingTool.Layer.isVisible(env.currentVectorLayer));
+                && ManualTracingTool.Layer.isEditTarget(env.currentVectorLayer));
         }
         mouseDown(e, env) {
             if (e.isLeftButtonPressing()) {
@@ -166,20 +166,23 @@ var ManualTracingTool;
         executeCommand(env) {
             let isExtrudeDone = false;
             let isScratchingDone = false;
+            let targetLine = env.currentVectorLine;
+            let targetGroup = env.currentVectorGroup;
+            let oldPoints = targetLine.points;
             if (this.enableExtrude) {
                 let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
                 let divisionCount = ManualTracingTool.Logic_Edit_Points.clalculateSamplingDivisionCount(this.editLine.totalLength, resamplingUnitLength);
                 this.resampledLine = ManualTracingTool.Logic_Edit_Line.createResampledLine(this.editLine, divisionCount);
-                isExtrudeDone = this.executeExtrudeLine(this.resampledLine, env);
+                isExtrudeDone = this.executeExtrudeLine(targetLine, targetGroup, this.resampledLine, env);
             }
             if (this.enableScratchEdit) {
                 this.resampledLine = this.generateCutoutedResampledLine(this.editLine, env);
-                isScratchingDone = this.executeScratchingLine(this.resampledLine, isExtrudeDone, env);
+                isScratchingDone = this.executeScratchingLine(targetLine, targetGroup, this.resampledLine, isExtrudeDone, env);
             }
             if (isExtrudeDone || isScratchingDone) {
-                this.deleteDuplications(env);
+                this.deleteDuplications(targetLine, targetGroup, env);
             }
-            this.clearFlags(env);
+            ManualTracingTool.Logic_Edit_VectorLayer.clearPointModifyFlags(oldPoints);
         }
         // Adjusting edit line
         cutoutLine(result) {
@@ -230,8 +233,7 @@ var ManualTracingTool;
             return resampledLine;
         }
         // Extruding edit
-        executeExtrudeLine(resampledLine, env) {
-            let targetLine = env.currentVectorLine;
+        executeExtrudeLine(targetLine, targetGroup, resampledLine, env) {
             // Create extrude points
             let baseRadius = env.mouseCursorViewRadius;
             let editExtrudeMinRadius = baseRadius * this.editExtrudeMinRadiusRate;
@@ -252,7 +254,8 @@ var ManualTracingTool;
                 command.targetLine = targetLine;
                 command.forwardExtrude = forwardExtrude;
                 command.extrudeLine = extrudeLine;
-                command.execute(env);
+                command.useGroup(targetGroup);
+                command.executeCommand(env);
                 env.commandHistory.addCommand(command);
                 return true;
             }
@@ -323,8 +326,7 @@ var ManualTracingTool;
             return result;
         }
         // Scratching edit
-        executeScratchingLine(resampledLine, isExtrudeDone, env) {
-            let targetLine = env.currentVectorLine;
+        executeScratchingLine(targetLine, targetGroup, resampledLine, isExtrudeDone, env) {
             // Get scratching candidate points
             let baseRadius = env.mouseCursorViewRadius;
             let editFalloffRadiusMin = baseRadius * this.editFalloffRadiusMinRate;
@@ -345,7 +347,8 @@ var ManualTracingTool;
                     editPoint.pair = pair;
                     command.editPoints.push(editPoint);
                 }
-                command.execute(env);
+                command.useGroup(targetGroup);
+                command.executeCommand(env);
                 env.commandHistory.addCommand(command);
                 return true;
             }
@@ -443,8 +446,7 @@ var ManualTracingTool;
             return influence;
         }
         // Delete duplication edit
-        deleteDuplications(env) {
-            let targetLine = env.currentVectorLine;
+        deleteDuplications(targetLine, targetGroup, env) {
             // Search edited index range of points
             let firstPointIndex = -1;
             let lastPointIndex = -1;
@@ -479,7 +481,8 @@ var ManualTracingTool;
             command.targetLine = targetLine;
             command.oldPoints = targetLine.points;
             command.newPoints = newPoints;
-            command.execute(env);
+            command.useGroup(targetGroup);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
         }
         // Common functions
@@ -541,11 +544,6 @@ var ManualTracingTool;
             }
             return nearPointCcount;
         }
-        clearFlags(env) {
-            if (env.currentVectorLine != null) {
-                ManualTracingTool.Logic_Edit_VectorLayer.clearLineModifyFlags(env.currentVectorLine);
-            }
-        }
     }
     ManualTracingTool.Tool_ScratchLine = Tool_ScratchLine;
     class Tool_ExtrudeLine extends Tool_ScratchLine {
@@ -557,49 +555,39 @@ var ManualTracingTool;
         }
     }
     ManualTracingTool.Tool_ExtrudeLine = Tool_ExtrudeLine;
-    class CommandEditVectorLine {
-        constructor() {
-            this.line = null;
-            this.oldPointList = null;
-            this.newPointList = null;
-        }
-    }
     class Command_ExtrudeLine extends ManualTracingTool.CommandBase {
         constructor() {
             super(...arguments);
+            this.targetGroups = null;
             this.targetLine = null;
             this.forwardExtrude = false;
             this.extrudeLine = null;
-            this.editLine = null;
+            this.oldPointList = null;
+            this.newPointList = null;
         }
         execute(env) {
-            this.errorCheck();
             this.prepareEditPoints();
             this.redo(env);
         }
         prepareEditPoints() {
-            this.editLine = new CommandEditVectorLine();
-            this.editLine.line = this.targetLine;
-            this.editLine.oldPointList = this.targetLine.points;
+            this.oldPointList = this.targetLine.points;
             if (this.forwardExtrude) {
-                this.editLine.newPointList = ListClone(this.targetLine.points);
-                ListAddRange(this.editLine.newPointList, this.extrudeLine.points);
+                this.newPointList = ListClone(this.targetLine.points);
+                ListAddRange(this.newPointList, this.extrudeLine.points);
             }
             else {
-                this.editLine.newPointList = List();
+                this.newPointList = List();
                 for (let i = this.extrudeLine.points.length - 1; i >= 0; i--) {
-                    this.editLine.newPointList.push(this.extrudeLine.points[i]);
+                    this.newPointList.push(this.extrudeLine.points[i]);
                 }
-                ListAddRange(this.editLine.newPointList, this.targetLine.points);
+                ListAddRange(this.newPointList, this.targetLine.points);
             }
         }
         undo(env) {
-            this.targetLine.points = this.editLine.oldPointList;
+            this.targetLine.points = this.oldPointList;
         }
         redo(env) {
-            this.targetLine.points = this.editLine.newPointList;
-        }
-        errorCheck() {
+            this.targetLine.points = this.newPointList;
         }
     }
     ManualTracingTool.Command_ExtrudeLine = Command_ExtrudeLine;
@@ -610,7 +598,6 @@ var ManualTracingTool;
             this.editPoints = new List();
         }
         execute(env) {
-            this.errorCheck();
             this.prepareEditPoints();
             this.redo(env);
         }
@@ -643,11 +630,6 @@ var ManualTracingTool;
             }
             ManualTracingTool.Logic_Edit_Line.calculateParameters(this.targetLine);
         }
-        errorCheck() {
-            if (this.targetLine == null) {
-                throw ('Command_ScratchLine: line is null!');
-            }
-        }
     }
     ManualTracingTool.Command_ScratchLine = Command_ScratchLine;
     class Command_DeleteDuplicationInLine extends ManualTracingTool.CommandBase {
@@ -658,7 +640,6 @@ var ManualTracingTool;
             this.newPoints = null;
         }
         execute(env) {
-            this.errorCheck();
             this.redo(env);
         }
         undo(env) {
@@ -668,11 +649,6 @@ var ManualTracingTool;
         redo(env) {
             this.targetLine.points = this.newPoints;
             ManualTracingTool.Logic_Edit_Line.calculateParameters(this.targetLine);
-        }
-        errorCheck() {
-            if (this.targetLine == null) {
-                throw ('Command_ScratchLine: line is null!');
-            }
         }
     }
     ManualTracingTool.Command_DeleteDuplicationInLine = Command_DeleteDuplicationInLine;

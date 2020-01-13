@@ -6,6 +6,10 @@ var ManualTracingTool;
             this.canvasRender = new ManualTracingTool.CanvasRender();
             this.drawGPURender = new WebGLRender();
             this.polyLineShader = new PolyLineShader();
+            this.bezierLineShader = new BezierLineShader();
+            this.bezierDistanceLineShader = new BezierDistanceLineShader();
+            this.lineShader = this.bezierDistanceLineShader;
+            //lineShader: GPULineShader = this.polyLineShader;
             this.posing3DViewRender = new WebGLRender();
             this.posing3dView = new ManualTracingTool.Posing3DView();
             this.logic_GPULine = new ManualTracingTool.Logic_GPULine();
@@ -18,6 +22,7 @@ var ManualTracingTool;
             this.chestInvMat4 = mat4.create();
             this.hipsInvMat4 = mat4.create();
             this.editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
+            this.editOtherLayerFillColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
             this.tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
             this.tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
             this.layerPickingPositions = [[0.0, 0.0], [0.0, -2.0], [2.0, 0.0], [0.0, 2.0], [-2.0, 0.0]];
@@ -36,26 +41,28 @@ var ManualTracingTool;
             this.operatorCurosrLineDashNone = [];
             // ColorMixer window
             this.hsv = vec4.create();
-            // Pallet modal drawing
+            // Palette modal drawing
             this.colorW = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             this.colorB = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
         }
         initializeDrawingDevices() {
             this.canvasRender.setContext(this.layerWindow);
             this.canvasRender.setFontSize(18.0);
-            if (this.posing3DViewRender.initializeWebGL(this.webglWindow.canvas)) {
-                alert('�R�c�|�[�W���O�@�\���������ł��܂���ł����B');
+            if (this.posing3DViewRender.initializeWebGL(this.webglWindow.canvas, true)) {
+                alert('３Ｄポージング機能を初期化できませんでした。');
             }
             //this.pickingWindow.initializeContext();
             this.posing3dView.initialize(this.posing3DViewRender, this.webglWindow, null);
-            if (this.drawGPURender.initializeWebGL(this.drawGPUWindow.canvas)) {
-                alert('�R�c�`��@�\���������ł��܂���ł����B');
+            if (this.drawGPURender.initializeWebGL(this.drawGPUWindow.canvas, false)) {
+                alert('３Ｄ描画機能を初期化できませんでした。');
             }
             try {
                 this.drawGPURender.initializeShader(this.polyLineShader);
+                this.drawGPURender.initializeShader(this.bezierLineShader);
+                this.drawGPURender.initializeShader(this.bezierDistanceLineShader);
             }
             catch (errorMessage) {
-                alert('�V�F�[�_�̏������Ɏ��s���܂����B' + errorMessage);
+                alert('シェーダの初期化に失敗しました。' + errorMessage);
             }
         }
         // Common drawing methods
@@ -147,12 +154,7 @@ var ManualTracingTool;
             let env = this.toolEnv;
             let useAdjustingLocation = isModalToolRunning;
             let widthRate = documentData.lineWidthBiasRate;
-            let lineColor = this.getLineColor(layer, documentData);
-            if (env.isEditMode()) {
-                vec4.copy(this.editOtherLayerLineColor, lineColor);
-                this.editOtherLayerLineColor[3] *= 0.3;
-                lineColor = this.editOtherLayerLineColor;
-            }
+            let lineColor = this.getLineColor(layer, documentData, env, true);
             for (let group of geometry.groups) {
                 if (layer.drawLineType != ManualTracingTool.DrawLineTypeID.none) {
                     for (let line of group.lines) {
@@ -190,8 +192,9 @@ var ManualTracingTool;
             }
         }
         drawBackground_VectorLayer(layer, geometry, documentData, isExporting, isModalToolRunning) {
+            let env = this.toolEnv;
             let useAdjustingLocation = isModalToolRunning;
-            let fillColor = this.getFillColor(layer, documentData);
+            let fillColor = this.getFillColor(layer, documentData, env, true);
             for (let group of geometry.groups) {
                 let continuousFill = false;
                 for (let line of group.lines) {
@@ -223,8 +226,8 @@ var ManualTracingTool;
             let isEditMode = env.isEditMode();
             // drawing parameters
             let widthRate = context.document.lineWidthBiasRate;
-            let lineColor = this.getLineColor(layer, documentData);
-            let fillColor = this.getFillColor(layer, documentData);
+            let lineColor = this.getLineColor(layer, documentData, env, true);
+            let fillColor = this.getFillColor(layer, documentData, env, true);
             vec4.copy(this.editOtherLayerLineColor, lineColor);
             this.editOtherLayerLineColor[3] *= 0.3;
             if (isEditMode) {
@@ -251,18 +254,19 @@ var ManualTracingTool;
         }
         drawVectorLayerForEditMode(layer, geometry, documentData, drawStrokes, drawPoints, isModalToolRunning) {
             let context = this.toolContext;
+            let env = this.toolEnv;
             let isSelectedLayer = ManualTracingTool.Layer.isSelected(layer);
             // drawing parameters
             let widthRate = context.document.lineWidthBiasRate;
-            let lineColor = this.getLineColor(layer, documentData);
+            let lineColor = this.getLineColor(layer, documentData, env, !isSelectedLayer);
             // drawing geometry lines
             let useAdjustingLocation = isModalToolRunning;
             for (let group of geometry.groups) {
                 for (let line of group.lines) {
                     if (!isSelectedLayer) {
-                        //if (layer.drawLineType != DrawLineTypeID.none) {
-                        //    this.drawVectorLineStroke(line, this.editOtherLayerLineColor, widthRate, 0.0, useAdjustingLocation);
-                        //}
+                        if (layer.drawLineType != ManualTracingTool.DrawLineTypeID.none) {
+                            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, widthRate, 0.0, useAdjustingLocation, false);
+                        }
                     }
                     else {
                         if (this.toolContext.operationUnitID == ManualTracingTool.OperationUnitID.linePoint) {
@@ -480,31 +484,41 @@ var ManualTracingTool;
                 this.drawVectorLinePoint(point, color, false);
             }
         }
-        getLineColor(layer, documentData) {
+        getLineColor(layer, documentData, env, hideWhenEditMode) {
             let color;
             if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.layerColor) {
                 color = layer.layerColor;
             }
-            else if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.palletColor) {
-                let palletColor = documentData.palletColors[layer.line_PalletColorIndex];
-                color = palletColor.color;
+            else if (layer.drawLineType == ManualTracingTool.DrawLineTypeID.paletteColor) {
+                let paletteColor = documentData.paletteColors[layer.line_PaletteColorIndex];
+                color = paletteColor.color;
             }
             else {
                 color = layer.layerColor;
             }
+            if (hideWhenEditMode && env.isEditMode()) {
+                vec4.copy(this.editOtherLayerLineColor, color);
+                this.editOtherLayerLineColor[3] *= 0.3;
+                color = this.editOtherLayerLineColor;
+            }
             return color;
         }
-        getFillColor(layer, documentData) {
+        getFillColor(layer, documentData, env, hideWhenEditMode) {
             let color;
             if (layer.fillAreaType == ManualTracingTool.FillAreaTypeID.fillColor) {
                 color = layer.fillColor;
             }
-            else if (layer.fillAreaType == ManualTracingTool.FillAreaTypeID.palletColor) {
-                let palletColor = documentData.palletColors[layer.fill_PalletColorIndex];
-                color = palletColor.color;
+            else if (layer.fillAreaType == ManualTracingTool.FillAreaTypeID.paletteColor) {
+                let paletteColor = documentData.paletteColors[layer.fill_PaletteColorIndex];
+                color = paletteColor.color;
             }
             else {
                 color = layer.fillColor;
+            }
+            if (hideWhenEditMode && env.isEditMode()) {
+                vec4.copy(this.editOtherLayerLineColor, color);
+                this.editOtherLayerLineColor[3] *= 0.3;
+                color = this.editOtherLayerLineColor;
             }
             return color;
         }
@@ -556,18 +570,19 @@ var ManualTracingTool;
             this.canvasRender.setLineDash(this.operatorCurosrLineDashNone);
         }
         // Rendering
-        renderClearBuffer() {
-            let wnd = this.drawGPUWindow;
+        renderClearBuffer(wnd) {
             let render = this.drawGPURender;
             render.setViewport(0.0, 0.0, wnd.width, wnd.height);
             render.setDepthTest(true);
             render.setCulling(true);
             render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
         }
-        renderForeground_VectorLayer(canvasWindow, viewKeyFrameLayer, documentData, useAdjustingLocation) {
+        renderForeground_VectorLayer(wnd, viewKeyFrameLayer, documentData, useAdjustingLocation) {
+            let env = this.toolEnv;
             let render = this.drawGPURender;
-            let wnd = canvasWindow;
+            let shader = this.lineShader;
             let keyframe = viewKeyFrameLayer.vectorLayerKeyframe;
+            let layer = viewKeyFrameLayer.layer;
             render.setViewport(0.0, 0.0, wnd.width, wnd.height);
             // Calculate camera matrix
             vec3.set(this.lookatLocation, 0.0, 0.0, 0.0);
@@ -575,38 +590,43 @@ var ManualTracingTool;
             vec3.set(this.eyeLocation, 0.0, 0.0, 1.0);
             mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
             let aspect = wnd.height / wnd.width;
-            let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: �v�Z���������i�Ȃ����c�������ɓ����l���|���Ȃ��ƍ���Ȃ��j�̂Ō�Ō�������
+            let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: 計算が怪しい（なぜか縦横両方に同じ値を掛けないと合わない）ので後で検討する
             mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, orthoWidth, -orthoWidth, 0.1, 1.0);
             wnd.caluclateGLViewMatrix(this.tmpMatrix);
             mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
             render.setDepthTest(false);
             render.setCulling(false);
-            render.setShader(this.polyLineShader);
+            render.setShader(shader);
             // Set shader parameters
             vec3.set(this.modelLocation, 0.0, 0.0, 0.0);
             mat4.identity(this.modelMatrix);
             mat4.translate(this.modelMatrix, this.modelMatrix, this.modelLocation);
             mat4.multiply(this.modelViewMatrix, this.viewMatrix, this.modelMatrix);
-            this.polyLineShader.setModelViewMatrix(this.modelViewMatrix);
-            this.polyLineShader.setProjectionMatrix(this.projectionMatrix);
+            shader.setModelViewMatrix(this.modelViewMatrix);
+            shader.setProjectionMatrix(this.projectionMatrix);
+            let lineColor = this.getLineColor(layer, documentData, env, false);
+            //if (env.isEditMode()) {
+            //    vec4.copy(this.editOtherLayerLineColor, lineColor);
+            //    this.editOtherLayerLineColor[3] *= 0.3;
+            //    lineColor = this.editOtherLayerLineColor;
+            //}
             for (let group of keyframe.geometry.groups) {
                 // Calculate line point buffer data
-                group.buffer.isStored = false;
                 if (!group.buffer.isStored) {
+                    console.log(`Calculate line point buffer data`);
                     this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
-                    this.logic_GPULine.calculateLinePointEdges(group.buffer);
-                    let vertexUnitSize = this.polyLineShader.getVertexUnitSize();
-                    let vertexCount = this.polyLineShader.getVertexCount(group.buffer.pointCount); // �{���͕ӂ̐������ł悢�̂Ŏ኱���ʂ͐����邪�A�v�Z���ȒP�ɂ��邽�߂���ł悢���Ƃɂ���
+                    let vertexUnitSize = shader.getVertexUnitSize();
+                    let vertexCount = shader.getVertexCount(group.buffer.pointCount); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
                     this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
-                    this.logic_GPULine.calculateBufferData_PloyLine(group.buffer);
+                    shader.calculateBufferData(group.buffer, this.logic_GPULine);
                     if (group.buffer.usedDataArraySize > 0) {
                         this.logic_GPULine.bufferData(group.buffer, render.gl);
                     }
                 }
                 // Draw lines
                 if (group.buffer.isStored) {
-                    this.polyLineShader.setBuffers(group.buffer.buffer);
-                    let drawCount = this.polyLineShader.getDrawArrayTryanglesCount(group.buffer.usedDataArraySize);
+                    this.lineShader.setBuffers(group.buffer.buffer, lineColor);
+                    let drawCount = this.lineShader.getDrawArrayTryanglesCount(group.buffer.usedDataArraySize);
                     render.drawArrayTryangles(drawCount);
                 }
             }
@@ -867,13 +887,13 @@ var ManualTracingTool;
             }
             this.canvasRender.drawLine(left, frameLineBottom, right, frameLineBottom);
         }
-        // PalletSelector window
-        palletSelector_CaluculateLayout() {
-            this.palletSelector_CaluculateLayout_CommandButtons();
-            this.palletSelector_CaluculateLayout_PalletItems();
+        // PaletteSelector window
+        paletteSelector_CaluculateLayout() {
+            this.paletteSelector_CaluculateLayout_CommandButtons();
+            this.paletteSelector_CaluculateLayout_PaletteItems();
         }
-        palletSelector_CaluculateLayout_CommandButtons() {
-            let wnd = this.palletSelectorWindow;
+        paletteSelector_CaluculateLayout_CommandButtons() {
+            let wnd = this.paletteSelectorWindow;
             let context = this.toolContext;
             let env = this.toolEnv;
             let x = 0.0;
@@ -889,8 +909,8 @@ var ManualTracingTool;
             }
             wnd.commandButtonsBottom = y + unitHeight + wnd.buttonBottomMargin;
         }
-        palletSelector_CaluculateLayout_PalletItems() {
-            let wnd = this.palletSelectorWindow;
+        paletteSelector_CaluculateLayout_PaletteItems() {
+            let wnd = this.paletteSelectorWindow;
             let context = this.toolContext;
             let env = this.toolEnv;
             let x = wnd.leftMargin;
@@ -899,9 +919,9 @@ var ManualTracingTool;
             let itemHeight = wnd.itemHeight * wnd.itemScale;
             let viewWidth = wnd.width;
             wnd.itemAreas = new List();
-            for (let palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
+            for (let paletteColorIndex = 0; paletteColorIndex < ManualTracingTool.DocumentData.maxPaletteColors; paletteColorIndex++) {
                 let layoutArea = new ManualTracingTool.RectangleLayoutArea();
-                layoutArea.index = palletColorIndex;
+                layoutArea.index = paletteColorIndex;
                 layoutArea.left = x;
                 layoutArea.top = y;
                 layoutArea.right = x + itemWidth + wnd.itemRightMargin - 1;
@@ -914,52 +934,52 @@ var ManualTracingTool;
                 }
             }
         }
-        drawPalletSelectorWindow_CommandButtons(wnd) {
+        drawPaletteSelectorWindow_CommandButtons(wnd) {
             for (let layoutArea of wnd.commandButtonAreas) {
                 let isSelected = (wnd.currentTargetID == layoutArea.index);
                 this.drawButtonBackground(layoutArea, isSelected);
                 this.drawButtonImage(layoutArea);
             }
         }
-        drawPalletSelectorWindow_PalletItems(wnd, documentData, currentVectorLayer) {
+        drawPaletteSelectorWindow_PaletteItems(wnd, documentData, currentVectorLayer) {
             this.canvasRender.setContext(wnd);
             let viewWidth = wnd.width;
-            let currentPalletColorIndex = -1;
+            let currentPaletteColorIndex = -1;
             if (currentVectorLayer != null) {
-                if (wnd.currentTargetID == ManualTracingTool.PalletSelectorWindowButtonID.lineColor) {
-                    currentPalletColorIndex = currentVectorLayer.line_PalletColorIndex;
+                if (wnd.currentTargetID == ManualTracingTool.PaletteSelectorWindowButtonID.lineColor) {
+                    currentPaletteColorIndex = currentVectorLayer.line_PaletteColorIndex;
                 }
-                else if (wnd.currentTargetID == ManualTracingTool.PalletSelectorWindowButtonID.fillColor) {
-                    currentPalletColorIndex = currentVectorLayer.fill_PalletColorIndex;
+                else if (wnd.currentTargetID == ManualTracingTool.PaletteSelectorWindowButtonID.fillColor) {
+                    currentPaletteColorIndex = currentVectorLayer.fill_PaletteColorIndex;
                 }
             }
             for (let layoutArea of wnd.itemAreas) {
-                let palletColorIndex = layoutArea.index;
-                if (palletColorIndex > documentData.palletColors.length) {
+                let paletteColorIndex = layoutArea.index;
+                if (paletteColorIndex > documentData.paletteColors.length) {
                     break;
                 }
                 let x = layoutArea.left;
                 let y = layoutArea.top;
                 let itemWidth = layoutArea.getWidth() - wnd.itemRightMargin;
                 let itemHeight = layoutArea.getHeight() - wnd.itemBottomMargin;
-                let palletColor = documentData.palletColors[palletColorIndex];
-                this.canvasRender.setFillColorV(palletColor.color);
-                this.canvasRender.setStrokeColorV(this.drawStyle.palletSelectorItemEdgeColor);
+                let paletteColor = documentData.paletteColors[paletteColorIndex];
+                this.canvasRender.setFillColorV(paletteColor.color);
+                this.canvasRender.setStrokeColorV(this.drawStyle.paletteSelectorItemEdgeColor);
                 this.canvasRender.fillRect(x + 0.5, y + 0.5, itemWidth, itemHeight);
                 this.canvasRender.setStrokeWidth(1.0);
                 this.canvasRender.drawRectangle(x + 0.5, y + 0.5, itemWidth, itemHeight);
-                if (palletColorIndex == currentPalletColorIndex) {
+                if (paletteColorIndex == currentPaletteColorIndex) {
                     this.canvasRender.setStrokeWidth(1.5);
                     this.canvasRender.drawRectangle(x + 0.5 - 1.0, y + 0.5 - 1.0, itemWidth + 2.0, itemHeight + 2.0);
                 }
             }
         }
         drawColorMixerWindow_SetInputControls() {
-            let wnd = this.palletSelectorWindow;
+            let wnd = this.paletteSelectorWindow;
             let context = this.toolContext;
             let env = this.toolEnv;
             let documentData = context.document;
-            let color = this.getPalletSelectorWindow_CurrentColor();
+            let color = this.getPaletteSelectorWindow_CurrentColor();
             if (color != null) {
                 this.setColorMixerValue(this.ID.colorMixer_red, color[0]);
                 this.setColorMixerValue(this.ID.colorMixer_green, color[1]);
@@ -980,7 +1000,7 @@ var ManualTracingTool;
                 this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
             }
         }
-        drawPalletColorMixer(wnd) {
+        drawPaletteColorMixer(wnd) {
             let width = wnd.width;
             let height = wnd.height;
             let left = 0.0;
@@ -1039,22 +1059,33 @@ var ManualTracingTool;
         }
     }
     ManualTracingTool.App_Drawing = App_Drawing;
-    class PolyLineShader extends RenderShader {
-        constructor() {
-            super(...arguments);
-            this.aPosition = -1;
-            this.aAlpha = -1;
-        }
+    class GPULineShader extends RenderShader {
         getVertexUnitSize() {
-            return (2 // ���_�̈ʒu vec2
-                + 1 // �s�����x float
-            );
+            return -1;
         }
         getVertexCount(pointCount) {
-            return (pointCount - 1) * (2 + 2) * 3; // �ӂ̐� * �����Q�|���S���{�E���Q�|���S�� * 3���_
+            return -1;
         }
         getDrawArrayTryanglesCount(bufferSize) {
             return bufferSize / this.getVertexUnitSize();
+        }
+        setBuffers(buffer, color) {
+        }
+        calculateBufferData(buffer, logic_GPULine) {
+        }
+    }
+    class PolyLineShader extends GPULineShader {
+        constructor() {
+            super(...arguments);
+            this.uColor = null;
+            this.aPosition = -1;
+        }
+        getVertexUnitSize() {
+            return (2 // 頂点の位置 vec2
+            );
+        }
+        getVertexCount(pointCount) {
+            return (pointCount - 1) * (2 + 2) * 3; // 辺の数 * 左側２ポリゴン＋右側２ポリゴン * 3頂点
         }
         initializeVertexSourceCode() {
             this.vertexShaderSourceCode = `
@@ -1062,17 +1093,13 @@ var ManualTracingTool;
 ${this.floatPrecisionDefinitionCode}
 
 attribute vec2 aPosition;
-attribute float aAlpha;
 
 uniform mat4 uPMatrix;
 uniform mat4 uMVMatrix;
 
-varying float vAlpha;
-
 void main(void) {
 
 	   gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 0.5, 1.0);
-	   vAlpha = aAlpha;
 }
 `;
         }
@@ -1081,34 +1108,649 @@ void main(void) {
 
 ${this.floatPrecisionDefinitionCode}
 
-varying float vAlpha;
+uniform vec4 uColor;
 
 void main(void) {
 
-    gl_FragColor = vec4(0.0, 0.0, 0.0, vAlpha);
+    gl_FragColor = uColor;
 }
 `;
         }
         initializeAttributes() {
             this.initializeAttributes_RenderShader();
-            this.initializeAttributes_PosingFigureShader();
+            this.initializeAttributes_PolyLineShader();
         }
-        initializeAttributes_PosingFigureShader() {
-            let gl = this.gl;
-            this.uPMatrix = this.getUniformLocation('uPMatrix');
-            this.uMVMatrix = this.getUniformLocation('uMVMatrix');
+        initializeAttributes_PolyLineShader() {
+            this.uColor = this.getUniformLocation('uColor');
             this.aPosition = this.getAttribLocation('aPosition');
-            this.aAlpha = this.getAttribLocation('aAlpha');
         }
-        setBuffers(vertexBuffer) {
+        setBuffers(buffer, color) {
             let gl = this.gl;
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
             this.enableVertexAttributes();
             this.resetVertexAttribPointerOffset();
+            gl.uniform4fv(this.uColor, color);
             let vertexDataStride = 4 * this.getVertexUnitSize();
             this.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, vertexDataStride);
-            this.vertexAttribPointer(this.aAlpha, 1, gl.FLOAT, vertexDataStride);
+        }
+        calculateBufferData(buffer, logic_GPULine) {
+            logic_GPULine.calculateLinePointEdges(buffer);
+            logic_GPULine.calculateBufferData_PloyLine(buffer);
         }
     }
     ManualTracingTool.PolyLineShader = PolyLineShader;
+    class BezierLineShader extends GPULineShader {
+        constructor() {
+            super(...arguments);
+            this.uColor = null;
+            this.aPosition = -1;
+            this.aLocalPosition = -1;
+            this.aLinePoint1 = -1;
+            this.aControlPoint1 = -1;
+            this.aLinePoint2 = -1;
+            this.aControlPoint2 = -1;
+            this.aLinePoint1R = -1;
+            this.aControlPoint1R = -1;
+            this.aLinePoint2R = -1;
+            this.aControlPoint2R = -1;
+            this.aWidth = -1;
+        }
+        // private aAlpha = -1;
+        getVertexUnitSize() {
+            return (2 // 頂点位置 vec2
+                + 3 // ローカル空間座標 vec3 (x, y, t)
+                + 2 // 頂点１ vec2
+                + 2 // 制御点１ vec2
+                + 2 // 制御点２ vec2
+                + 2 // 頂点２ vec2
+                + 2 // 頂点１R vec2
+                + 2 // 制御点１R vec2
+                + 2 // 制御点２R vec2
+                + 2 // 頂点２R vec2
+                + 2 // 太さ vec2 (from, to)
+            //+ 2 // 不透明度 vec2 (from, to)
+            );
+        }
+        getVertexCount(pointCount) {
+            return (pointCount - 1) * (4 + 4) * 3; // 辺の数 * (左側４ポリゴン＋右側４ポリゴン) * 3頂点
+        }
+        initializeVertexSourceCode() {
+            this.vertexShaderSourceCode = `
+
+${this.floatPrecisionDefinitionCode}
+
+attribute vec2 aPosition;
+attribute vec3 aLocalPosition;
+
+attribute vec2 aLinePoint1;
+attribute vec2 aControlPoint1;
+attribute vec2 aControlPoint2;
+attribute vec2 aLinePoint2;
+
+attribute vec2 aLinePoint1R;
+attribute vec2 aControlPoint1R;
+attribute vec2 aControlPoint2R;
+attribute vec2 aLinePoint2R;
+
+attribute vec2 aWidth;
+// attribute vec2 aAlpha;
+
+uniform mat4 uPMatrix;
+uniform mat4 uMVMatrix;
+
+varying vec3 vLocalPosition;
+
+varying vec2 vLinePoint1;
+varying vec2 vControlPoint1;
+varying vec2 vControlPoint2;
+varying vec2 vLinePoint2;
+
+varying vec2 vLinePoint1R;
+varying vec2 vControlPoint1R;
+varying vec2 vControlPoint2R;
+varying vec2 vLinePoint2R;
+
+varying vec2 vWidth;
+// varying vec2 vAlpha;
+
+void main(void) {
+
+    gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 0.5, 1.0);
+
+    vLocalPosition = aLocalPosition;
+
+    vLinePoint1 = aLinePoint1;
+    vControlPoint1 = aControlPoint1;
+    vControlPoint2 = aControlPoint2;
+    vLinePoint2 = aLinePoint2;
+
+    vLinePoint1R = aLinePoint1R;
+    vControlPoint1R = aControlPoint1R;
+    vControlPoint2R = aControlPoint2R;
+    vLinePoint2R = aLinePoint2R;
+
+    vWidth = aWidth;
+    // vAlpha = aAlpha;
+}
+`;
+        }
+        initializeFragmentSourceCode() {
+            this.fragmentShaderSourceCode = `
+
+${this.floatPrecisionDefinitionCode}
+
+float cubeRoot(float x) {
+
+    float res = pow(abs(x), 1.0 / 3.0);
+    return (x >= 0.0) ? res : -res;
+}
+
+void solveQuadraticEquation(out vec3 solution, float a, float b, float c) {
+
+    float d;
+    float x1;
+    float x2;
+
+    if (a == 0.0) {
+
+        solution[0] = -c / b;
+        solution[1] = -1.0;
+        return;
+    }
+
+    d = b * b - 4.0 * a * c;
+
+    if (d > 0.0) {
+
+        if (b < 0.0) {
+
+            x1 = (-b - sqrt(d)) / 2.0 / a;
+            x2 = -b / a - x1;
+        }
+        else {
+
+            x1 = (-b + sqrt(d)) / 2.0 / a;
+            x2 = -b / a - x1;
+        }
+
+        solution[0] = x1;
+        solution[1]= x2;
+    }
+    else if (d == 0.0) {
+
+        solution[0] = -b / 2.0 / a;
+        solution[1] = -1.0;
+    }
+    else {
+
+        // imaginary root
+    }
+}
+
+void solveCubicEquation(out vec3 solution, float a, float b, float c, float d) {
+
+    float PI = 3.14159265358979323846264;
+    float p;
+    float q;
+    float t;
+    float a3;
+    float b3;
+
+    if (a == 0.0) {;
+        solveQuadraticEquation(solution, b, c, d);
+        return;
+    }
+
+    b /= 3.0 * a;
+    c /= a;
+    d /= a;
+    p = b * b - c / 3.0;
+    q = (b * (c - 2.0 * b * b) - d) / 2.0;
+
+    a = q * q - p * p * p;
+
+    if (a == 0.0) {
+  
+        q = cubeRoot(q);
+        solution[0] = 2.0 * q - b;
+        solution[1] = -q - b;
+        solution[2] = -1.0;
+    }
+    else if (a > 0.0) {
+
+        float sign = 1.0;
+        if (q <= 0.0) { sign = -1.0; }
+        a3 = cubeRoot(q + (sign) * sqrt(a));
+        b3 = p / a3;
+        solution[0] = a3 + b3 - b;
+        solution[1] = -1.0;
+        solution[2] = -1.0;
+    }
+    else {
+  
+        a = 2.0 * sqrt(p);
+        t = acos(q / (p * a / 2.0));
+        solution[0] = a * cos(t / 3.0) - b;
+        solution[1] = a * cos((t + 2.0 * PI) / 3.0) - b;
+        solution[2] = a * cos((t + 4.0 * PI) / 3.0) - b;
+    }
+}
+
+float calcBezierTimeInSection(float x1, float x2, float x3, float x4, float targetX) {
+
+    vec3 solution = vec3(0.0, 0.0, 0.0);
+    float a = x4 - 3.0 * (x3 - x2) - x1;
+    float b = 3.0 * (x3 - 2.0 * x2 + x1);
+    float c = 3.0 * (x2 - x1);
+    float d = x1 - targetX;
+
+    solveCubicEquation(solution, a, b, c, d);
+
+    if (solution[0] >= -0.1 && solution[0] <= 1.0) {
+
+        return solution[0];
+    }
+    else if (solution[1] >= 0.0 && solution[1] <= 1.0) {
+
+        return solution[1];
+    }
+    else if (solution[2] >= 0.0 && solution[2] <= 1.0) {
+
+        return solution[2];
+    }
+    else {
+
+        return -1.0;
+    }
+}
+
+float calcInterpolationBezier(float x1, float x2, float x3, float x4, float t) {
+
+    return (1.0 - t) * (1.0 - t) * (1.0 - t) * x1 +
+        3.0 * (1.0 - t) * (1.0 - t) * t * x2 +
+        3.0 * (1.0 - t) * t * t * x3 +
+        t * t * t * x4;
+}
+
+uniform vec4 uColor;
+
+varying vec3 vLocalPosition;
+
+varying vec2 vLinePoint1;
+varying vec2 vControlPoint1;
+varying vec2 vControlPoint2;
+varying vec2 vLinePoint2;
+
+varying vec2 vLinePoint1R;
+varying vec2 vControlPoint1R;
+varying vec2 vControlPoint2R;
+varying vec2 vLinePoint2R;
+
+varying vec2 vWidth;
+// varying vec2 vAlpha;
+
+void main(void) {
+
+    float t1 = calcBezierTimeInSection(
+        vLinePoint1.x,
+        vControlPoint1.x,
+        vControlPoint2.x,
+        vLinePoint2.x,
+        vLocalPosition.x
+    );
+
+    float y1;
+
+    if (t1 >= 0.0) {
+
+        y1 = calcInterpolationBezier(
+            vLinePoint1.y,
+            vControlPoint1.y,
+            vControlPoint2.y,
+            vLinePoint2.y,
+            t1
+        );
+    }
+    else {
+
+        y1 = vLocalPosition.y + 1.0;
+    }
+
+    float t2 = calcBezierTimeInSection(
+        vLinePoint1R.x,
+        vControlPoint1R.x,
+        vControlPoint2R.x,
+        vLinePoint2R.x,
+        vLocalPosition.x
+    );
+
+    float y2;
+
+    if (t2 >= 0.0) {
+
+        y2 = calcInterpolationBezier(
+            vLinePoint1R.y,
+            vControlPoint1R.y,
+            vControlPoint2R.y,
+            vLinePoint2R.y,
+            t2
+        );
+    }
+    else {
+
+        y2 = vLocalPosition.y - 1.0;
+    }
+
+    float col = (vLocalPosition.y <= y1 && vLocalPosition.y >= y2)? 1.0 : 0.0;
+
+    gl_FragColor = vec4(uColor.rgb, col * uColor.a);
+//    gl_FragColor = vec4(0.0, 0.0, 0.0, col * mix(vAlpha[0], vAlpha[1], vLocalPosition.z));
+//    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.1);
+}
+`;
+        }
+        initializeAttributes() {
+            this.initializeAttributes_RenderShader();
+            this.initializeAttributes_PolyLineShader();
+        }
+        initializeAttributes_PolyLineShader() {
+            this.uColor = this.getUniformLocation('uColor');
+            this.aPosition = this.getAttribLocation('aPosition');
+            this.aLocalPosition = this.getAttribLocation('aLocalPosition');
+            this.aLinePoint1 = this.getAttribLocation('aLinePoint1');
+            this.aControlPoint1 = this.getAttribLocation('aControlPoint1');
+            this.aControlPoint2 = this.getAttribLocation('aControlPoint2');
+            this.aLinePoint2 = this.getAttribLocation('aLinePoint2');
+            this.aLinePoint1R = this.getAttribLocation('aLinePoint1R');
+            this.aControlPoint1R = this.getAttribLocation('aControlPoint1R');
+            this.aControlPoint2R = this.getAttribLocation('aControlPoint2R');
+            this.aLinePoint2R = this.getAttribLocation('aLinePoint2R');
+            this.aWidth = this.getAttribLocation('aWidth');
+            // this.aAlpha = this.getAttribLocation('aAlpha');
+        }
+        setBuffers(buffer, color) {
+            let gl = this.gl;
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            this.enableVertexAttributes();
+            this.resetVertexAttribPointerOffset();
+            gl.uniform4fv(this.uColor, color);
+            let vertexDataStride = 4 * this.getVertexUnitSize();
+            this.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLocalPosition, 3, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint1, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint1, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint2, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint2, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint1R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint1R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint2R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint2R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aWidth, 2, gl.FLOAT, vertexDataStride);
+            // this.vertexAttribPointer(this.aAlpha, 2, gl.FLOAT, vertexDataStride);
+        }
+        calculateBufferData(buffer, logic_GPULine) {
+            logic_GPULine.calculateLinePointEdges(buffer);
+            logic_GPULine.calculateLinePointBezierLocation(buffer);
+            logic_GPULine.calculateControlPointVertexLocations(buffer);
+            logic_GPULine.calculateBufferData_BezierLine(buffer);
+        }
+    }
+    ManualTracingTool.BezierLineShader = BezierLineShader;
+    class BezierDistanceLineShader extends GPULineShader {
+        constructor() {
+            super(...arguments);
+            this.uColor = null;
+            this.aPosition = -1;
+            this.aLocalPosition = -1;
+            this.aLinePoint1 = -1;
+            this.aControlPoint1 = -1;
+            this.aLinePoint2 = -1;
+            this.aControlPoint2 = -1;
+            this.aLinePoint1R = -1;
+            this.aControlPoint1R = -1;
+            this.aLinePoint2R = -1;
+            this.aControlPoint2R = -1;
+            this.aWidth = -1;
+        }
+        // private aAlpha = -1;
+        getVertexUnitSize() {
+            return (2 // 頂点位置 vec2
+                + 3 // ローカル空間座標 vec3 (x, y, t)
+                + 2 // 頂点１ vec2
+                + 2 // 制御点１ vec2
+                + 2 // 制御点２ vec2
+                + 2 // 頂点２ vec2
+                + 2 // 頂点１R vec2
+                + 2 // 制御点１R vec2
+                + 2 // 制御点２R vec2
+                + 2 // 頂点２R vec2
+                + 2 // 太さ vec2 (from, to)
+            //+ 2 // 不透明度 vec2 (from, to)
+            );
+        }
+        getVertexCount(pointCount) {
+            return (pointCount - 1) * (4 + 4) * 3 + (2 + 2) * 3; // 辺の数 * (左側４ポリゴン＋右側４ポリゴン) * 3頂点 + (線端用２ポリゴン＊２)* 3頂点
+        }
+        initializeVertexSourceCode() {
+            this.vertexShaderSourceCode = `
+
+${this.floatPrecisionDefinitionCode}
+
+attribute vec2 aPosition;
+attribute vec3 aLocalPosition;
+
+attribute vec2 aLinePoint1;
+attribute vec2 aControlPoint1;
+attribute vec2 aControlPoint2;
+attribute vec2 aLinePoint2;
+
+attribute vec2 aLinePoint1R;
+attribute vec2 aControlPoint1R;
+attribute vec2 aControlPoint2R;
+attribute vec2 aLinePoint2R;
+
+attribute vec2 aWidth;
+// attribute vec2 aAlpha;
+
+uniform mat4 uPMatrix;
+uniform mat4 uMVMatrix;
+
+varying vec3 vLocalPosition;
+
+varying vec2 vLinePoint1;
+varying vec2 vControlPoint1;
+varying vec2 vControlPoint2;
+varying vec2 vLinePoint2;
+
+varying vec2 vLinePoint1R;
+varying vec2 vControlPoint1R;
+varying vec2 vControlPoint2R;
+varying vec2 vLinePoint2R;
+
+varying vec2 vWidth;
+// varying vec2 vAlpha;
+
+void main(void) {
+
+    gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 0.5, 1.0);
+
+    vLocalPosition = aLocalPosition;
+
+    vLinePoint1 = aLinePoint1;
+    vControlPoint1 = aControlPoint1;
+    vControlPoint2 = aControlPoint2;
+    vLinePoint2 = aLinePoint2;
+
+    vLinePoint1R = aLinePoint1R;
+    vControlPoint1R = aControlPoint1R;
+    vControlPoint2R = aControlPoint2R;
+    vLinePoint2R = aLinePoint2R;
+
+    vWidth = aWidth;
+    // vAlpha = aAlpha;
+}
+`;
+        }
+        initializeFragmentSourceCode() {
+            this.fragmentShaderSourceCode = `
+
+${this.floatPrecisionDefinitionCode}
+
+// From https://www.shadertoy.com/view/4sXyDr
+
+#define CLAMP
+
+float distanceBezier(vec2 p, vec2 P0, vec2 P1, vec2 P2, vec2 P3, out float t)
+{
+    // Cubic Bezier curve
+    vec2 A = -P0 + 3.0 * P1 - 3.0 * P2 + P3;
+    vec2 B = 3.0 * (P0 - 2.0 * P1 + P2);
+    vec2 C = 3.0 * (P1 - P0);
+    vec2 D = P0;
+    
+    float a5 =  6.0 * dot(A, A);
+    float a4 = 10.0 * dot(A, B);
+    float a3 =  8.0 * dot(A, C)     + 4.0 * dot(B, B);
+    float a2 =  6.0 * dot(A, D - p) + 6.0 * dot(B, C);
+    float a1 =  4.0 * dot(B, D - p) + 2.0 * dot(C, C);
+    float a0 =  2.0 * dot(C, D - p);
+    
+    // calculate distances to the control points
+    float d0 = length(p - P0);
+    float d1 = length(p - P1);
+    float d2 = length(p - P2);
+    float d3 = length(p - P3);
+    float d = min(d0, min(d1, min(d2, d3)));
+    
+    // Choose initial value of t
+    //float t;
+    if (abs(d3 - d) < 1.0e-5) {
+        t = 1.0;
+    }
+    else if (abs(d0 - d) < 1.0e-5) {
+        t = 0.0;
+    }
+    else {
+        t = 0.5;
+    }
+        
+	// iteration
+    for (int i = 0; i < 10; i++) {
+
+        float t2 = t*t;
+        float t3 = t2*t;
+        float t4 = t3*t;
+        float t5 = t4*t;
+        
+        float f = a5*t5 + a4*t4 + a3*t3 + a2*t2 + a1*t + a0;
+        float df = 5.0*a5*t4 + 4.0*a4*t3 + 3.0*a3*t2 + 2.0*a2*t + a1;
+        
+        t = t - f/df;
+    }
+    
+    // clamp to edge of bezier segment
+#ifdef CLAMP
+    t = clamp(t, 0.0, 1.0);
+#endif
+    
+    // get the point on the curve
+    vec2 P = A*t*t*t + B*t*t + C*t + D;
+        
+    // return distance to the point on the curve
+    return min(length(p - P), min(d0, d3));
+}
+
+uniform vec4 uColor;
+
+varying vec3 vLocalPosition;
+
+varying vec2 vLinePoint1;
+varying vec2 vControlPoint1;
+varying vec2 vControlPoint2;
+varying vec2 vLinePoint2;
+
+varying vec2 vLinePoint1R;
+varying vec2 vControlPoint1R;
+varying vec2 vControlPoint2R;
+varying vec2 vLinePoint2R;
+
+varying vec2 vWidth;
+// varying vec2 vAlpha;
+
+void main(void) {
+
+	vec2 p  = vLocalPosition.xy;
+    vec2 P0 = vLinePoint1;
+    vec2 P1 = vControlPoint1;
+    vec2 P2 = vControlPoint2;
+    vec2 P3 = vLinePoint2;
+    
+    float t;
+    float distance = distanceBezier(p, P0, P1, P2, P3, t);
+    float width = mix(vWidth.x, vWidth.y, t);
+    
+    if (distance > width) {
+
+		discard;
+    }
+	else {
+
+        float col = 1.0 - smoothstep(width - 0.08, width, distance);
+        //float col = distance * 0.1;
+
+        gl_FragColor = vec4(uColor.rgb, col * uColor.a * 0.9 + 0.1);
+        //gl_FragColor = vec4(0.0, 0.0, 0.0, col * mix(vAlpha[0], vAlpha[1], vLocalPosition.z));
+        //gl_FragColor = vec4(0.0, 0.0, 0.0, 0.1);
+        //gl_FragColor = vec4(vWidth.y, 0.0, 0.0, col * uColor.a * 0.9 + 0.1);
+    }
+}
+`;
+        }
+        initializeAttributes() {
+            this.initializeAttributes_RenderShader();
+            this.initializeAttributes_PolyLineShader();
+        }
+        initializeAttributes_PolyLineShader() {
+            this.uColor = this.getUniformLocation('uColor');
+            this.aPosition = this.getAttribLocation('aPosition');
+            this.aLocalPosition = this.getAttribLocation('aLocalPosition');
+            this.aLinePoint1 = this.getAttribLocation('aLinePoint1');
+            this.aControlPoint1 = this.getAttribLocation('aControlPoint1');
+            this.aControlPoint2 = this.getAttribLocation('aControlPoint2');
+            this.aLinePoint2 = this.getAttribLocation('aLinePoint2');
+            this.aLinePoint1R = this.getAttribLocation('aLinePoint1R');
+            this.aControlPoint1R = this.getAttribLocation('aControlPoint1R');
+            this.aControlPoint2R = this.getAttribLocation('aControlPoint2R');
+            this.aLinePoint2R = this.getAttribLocation('aLinePoint2R');
+            this.aWidth = this.getAttribLocation('aWidth');
+            // this.aAlpha = this.getAttribLocation('aAlpha');
+        }
+        setBuffers(buffer, color) {
+            let gl = this.gl;
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            this.enableVertexAttributes();
+            this.resetVertexAttribPointerOffset();
+            gl.uniform4fv(this.uColor, color);
+            let vertexDataStride = 4 * this.getVertexUnitSize();
+            this.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLocalPosition, 3, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint1, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint1, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint2, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint2, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint1R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint1R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aControlPoint2R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aLinePoint2R, 2, gl.FLOAT, vertexDataStride);
+            this.vertexAttribPointer(this.aWidth, 2, gl.FLOAT, vertexDataStride);
+            // this.vertexAttribPointer(this.aAlpha, 2, gl.FLOAT, vertexDataStride);
+        }
+        calculateBufferData(buffer, logic_GPULine) {
+            logic_GPULine.calculateLinePointEdges(buffer);
+            logic_GPULine.calculateLinePointBezierLocation(buffer);
+            logic_GPULine.calculateControlPointVertexLocations(buffer);
+            logic_GPULine.calculateBufferData_BezierLine(buffer);
+        }
+    }
+    ManualTracingTool.BezierDistanceLineShader = BezierDistanceLineShader;
 })(ManualTracingTool || (ManualTracingTool = {}));

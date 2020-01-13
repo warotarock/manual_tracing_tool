@@ -8,11 +8,10 @@ var ManualTracingTool;
         onPointHited(group, line, point) {
             if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
                 point.adjustingLineWidth = this.lineWidth;
+                this.selectionInfo.editGroup(group);
+                this.selectionInfo.editLine(line);
                 this.selectionInfo.editPoint(point);
             }
-        }
-        afterHitTest() {
-            this.selectionInfo.resetModifyStates();
         }
     }
     ManualTracingTool.Selector_HideLinePoint_BrushSelect = Selector_HideLinePoint_BrushSelect;
@@ -21,24 +20,24 @@ var ManualTracingTool;
             super(...arguments);
             this.helpText = '線の太さに最大の太さに設定します。<br />Shiftキーで最小の太さに設定します。Ctrlキーで線をの太さを０にします。';
             this.isEditTool = false; // @override
-            this.logic_Selector = new Selector_HideLinePoint_BrushSelect(); // @override
+            this.selector = new Selector_HideLinePoint_BrushSelect();
+            this.logic_Selector = this.selector; // @override
         }
         onStartSelection(e, env) {
-            let logic_Selector = this.logic_Selector;
             if (env.isShiftKeyPressing()) {
-                logic_Selector.lineWidth = env.drawLineMinWidth;
+                this.selector.lineWidth = env.drawLineMinWidth;
             }
             else if (env.isCtrlKeyPressing()) {
-                logic_Selector.lineWidth = 0.0;
+                this.selector.lineWidth = 0.0;
             }
             else {
-                logic_Selector.lineWidth = env.drawLineBaseWidth;
+                this.selector.lineWidth = env.drawLineBaseWidth;
             }
         }
         executeCommand(env) {
             let command = new Command_EditLinePointLineWidth();
-            if (command.prepareEditTargets(this.logic_Selector.selectionInfo)) {
-                command.execute(env);
+            if (command.prepareEditTargets(this.selector.selectionInfo)) {
+                command.executeCommand(env);
                 env.commandHistory.addCommand(command);
             }
             env.setRedrawMainWindow();
@@ -47,7 +46,6 @@ var ManualTracingTool;
             for (let selPoint of this.logic_Selector.selectionInfo.selectedPoints) {
                 selPoint.point.adjustingLineWidth = selPoint.point.lineWidth;
             }
-            // TODO: グループに変更フラグを設定する
             this.logic_Selector.endProcess();
             env.setRedrawMainWindowEditorWindow();
         }
@@ -76,10 +74,15 @@ var ManualTracingTool;
                 this.editPoints.push(editPoint);
                 editPointCount++;
             }
+            if (editPointCount > 0) {
+                this.useGroups();
+                for (let selGroup of selectionInfo.selectedGroups) {
+                    this.targetGroups.push(selGroup.group);
+                }
+            }
             return (editPointCount > 0);
         }
         execute(env) {
-            this.errorCheck();
             this.redo(env);
         }
         undo(env) {
@@ -95,8 +98,6 @@ var ManualTracingTool;
                 targetPoint.lineWidth = editPoint.newLineWidth;
                 targetPoint.adjustingLineWidth = targetPoint.lineWidth;
             }
-        }
-        errorCheck() {
         }
     }
     ManualTracingTool.Command_EditLinePointLineWidth = Command_EditLinePointLineWidth;

@@ -3,12 +3,34 @@ var ManualTracingTool;
     class CommandBase {
         constructor() {
             this.isContinued = false;
+            this.targetGroups = null;
+        }
+        executeCommand(env) {
+            this.execute(env);
+            if (this.targetGroups != null) {
+                ManualTracingTool.VectorGroup.setGroupsUpdated(this.targetGroups);
+                env.setLazyRedraw();
+            }
         }
         execute(env) {
         }
         undo(env) {
         }
         redo(env) {
+        }
+        useGroup(group) {
+            if (!this.targetGroups) {
+                this.useGroups();
+            }
+            this.targetGroups.push(group);
+        }
+        useGroups(targetGroups) {
+            if (targetGroups) {
+                this.targetGroups = targetGroups;
+            }
+            else {
+                this.targetGroups = new List();
+            }
         }
     }
     ManualTracingTool.CommandBase = CommandBase;
@@ -47,6 +69,10 @@ var ManualTracingTool;
                     return;
                 }
                 command.undo(env);
+                if (command.targetGroups != null) {
+                    ManualTracingTool.VectorGroup.setGroupsUpdated(command.targetGroups);
+                    env.setLazyRedraw();
+                }
                 this.redoList.push(command);
                 ListRemoveAt(this.historyList, this.historyList.length - 1);
             } while (command.isContinued);
@@ -59,6 +85,10 @@ var ManualTracingTool;
                     return;
                 }
                 command.redo(env);
+                if (command.targetGroups != null) {
+                    ManualTracingTool.VectorGroup.setGroupsUpdated(command.targetGroups);
+                    env.setLazyRedraw();
+                }
                 ListRemoveAt(this.redoList, this.redoList.length - 1);
                 this.historyList.push(command);
                 command = this.getRedoCommand();

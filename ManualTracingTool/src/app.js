@@ -33,6 +33,7 @@ var ManualTracingTool;
     // 　　　…あくまで作業の高速化であるならば、編集中のレイヤーの上下だけレイヤーであればよい
     // ・グループレイヤーを選択したとき一定時間選択レイヤーだけを表示するときグループレイヤー以下のレイヤー全てを表示対象とする（今はグループレイヤーしか表示されない）
     // ・グループレイヤーを選択したときそれ以下のレイヤーをまとめて編集できるようにする…ベクターレイヤーだけならできるだろうけど他の種類のレイヤーも一緒に編集するのは無理？
+    // ・エディットモードの各モードでラティスを表示して変形をすぐできるようにする（今はラティス変形ツールに行かないとできない）
     // どこかでやる必要があること (nearest future tasks)
     // ・モバイル対応
     // 　・タッチ操作をきちんとする
@@ -49,6 +50,8 @@ var ManualTracingTool;
     // ・ドローツールで線の最後の点が重複しているときがある？（リサンプリングで最後と同じ位置に点が追加されている？）
     // ・セグメント単位の選択ツールで選択されているセグメント単位に色が変わらず線単位で色が変わっている
     // ・座標計算でzが0.0でなくなる場合があるらしい。どこでそうなっているのか未調査手掛かりなし。
+    // ・編集単位が辺単位のときの表示が線単位になっていうｒ
+    // ・線のレンダリングで端点は隣の点のエッジをミラーしているが、太さが考慮されたエッジをコピーしているので端点より内側が細いとたぶんおかしくなる
     // いつかやるかも (anytime tasks)
     // ・アクティブ線、レイヤによる絞り込み処理と可視化
     // ・ミラー（上下反転）表示
@@ -172,30 +175,31 @@ var ManualTracingTool;
         _Main.layerWindow.canvas = document.getElementById(_Main.ID.layerCanvas);
         _Main.subtoolWindow.canvas = document.getElementById(_Main.ID.subtoolCanvas);
         _Main.timeLineWindow.canvas = document.getElementById(_Main.ID.timeLineCanvas);
-        _Main.palletSelectorWindow.canvas = document.getElementById(_Main.ID.palletSelectorCanvas);
+        _Main.paletteSelectorWindow.canvas = document.getElementById(_Main.ID.paletteSelectorCanvas);
         _Main.colorMixerWindow_colorCanvas.canvas = document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
         _Main.drawGPUWindow.createCanvas();
-        ;
         _Main.foreLayerRenderWindow.createCanvas();
         _Main.backLayerRenderWindow.createCanvas();
         //_Main.pickingWindow.createCanvas();
         _Main.exportRenderWindow.createCanvas();
-        _Main.palletColorModal_colorCanvas.canvas = document.getElementById(_Main.ID.palletColorModal_colorCanvas);
-        var layerColorModal_colors = document.getElementById(_Main.ID.palletColorModal_colors);
-        for (let palletColorIndex = 0; palletColorIndex < ManualTracingTool.DocumentData.maxPalletColors; palletColorIndex++) {
+        _Main.paletteColorModal_colorCanvas.canvas = document.getElementById(_Main.ID.paletteColorModal_colorCanvas);
+        //_Main.drawGPUWindow.canvas.id = 'debug';
+        //document.body.appendChild(_Main.drawGPUWindow.canvas);
+        var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
+        for (let paletteColorIndex = 0; paletteColorIndex < ManualTracingTool.DocumentData.maxPaletteColors; paletteColorIndex++) {
             let colorItemDiv = document.createElement('div');
-            colorItemDiv.classList.add(_Main.ID.palletColorModal_colorItemStyle);
+            colorItemDiv.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
             layerColorModal_colors.appendChild(colorItemDiv);
             let radioInput = document.createElement('input');
             radioInput.type = 'radio';
-            radioInput.id = _Main.ID.palletColorModal_colorIndex + palletColorIndex;
-            radioInput.name = _Main.ID.palletColorModal_colorIndex;
-            radioInput.value = palletColorIndex.toString();
+            radioInput.id = _Main.ID.paletteColorModal_colorIndex + paletteColorIndex;
+            radioInput.name = _Main.ID.paletteColorModal_colorIndex;
+            radioInput.value = paletteColorIndex.toString();
             colorItemDiv.appendChild(radioInput);
             let colorInput = document.createElement('input');
             colorInput.type = 'color';
-            colorInput.id = _Main.ID.palletColorModal_colorValue + palletColorIndex;
-            colorInput.classList.add(_Main.ID.palletColorModal_colorItemStyle);
+            colorInput.id = _Main.ID.paletteColorModal_colorValue + paletteColorIndex;
+            colorInput.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
             colorItemDiv.appendChild(colorInput);
         }
         _Main.onInitializeSystemDevices();

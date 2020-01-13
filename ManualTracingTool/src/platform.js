@@ -1,6 +1,13 @@
 var Platform;
 (function (Platform) {
-    Platform.fs = (typeof (require) != 'undefined') ? require('fs') : {
+    function supportsNative() {
+        return (typeof (require) != 'undefined');
+    }
+    function getCurrentTime() {
+        return performance.now();
+    }
+    Platform.getCurrentTime = getCurrentTime;
+    Platform.fs = supportsNative() ? require('fs') : {
         readFileSync(fileName) {
             return window.localStorage.getItem(fileName);
         },
@@ -8,13 +15,9 @@ var Platform;
             window.localStorage.setItem(fileName, text);
         }
     };
-    function supportsFileSystem() {
-        return (typeof (require) != 'undefined');
-    }
-    Platform.supportsFileSystem = supportsFileSystem;
     function writeFileSync(fileName, data, format, callback) {
         if (format == 'base64') {
-            if (supportsFileSystem()) {
+            if (supportsNative()) {
                 let base64Data = data.substr(data.indexOf(',') + 1);
                 Platform.fs.writeFileSync(fileName, base64Data, format, callback);
             }
@@ -30,10 +33,6 @@ var Platform;
         }
     }
     Platform.writeFileSync = writeFileSync;
-    function getCurrentTime() {
-        return performance.now();
-    }
-    Platform.getCurrentTime = getCurrentTime;
     class Settings {
         constructor() {
             this.data = {
@@ -66,7 +65,7 @@ var Platform;
     }
     ;
     Platform.settings = new Settings();
-    Platform.clipboard = (typeof (require) != 'undefined') ? require('electron').clipboard : {
+    Platform.clipboard = supportsNative() ? require('electron').clipboard : {
         writeText(text, type) {
             window.localStorage.setItem('clipboard', text);
         },

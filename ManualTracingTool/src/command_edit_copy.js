@@ -13,35 +13,35 @@ var ManualTracingTool;
             this.editDatas = null;
         }
         prepareEditData(env) {
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            this.useGroups();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
             let editDatas = new List();
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-                    let newLines = List();
-                    for (let line of group.lines) {
-                        if (!line.isSelected) {
+            ManualTracingTool.ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group) => {
+                let newLines = List();
+                for (let line of group.lines) {
+                    if (!line.isSelected) {
+                        continue;
+                    }
+                    let newLine = new ManualTracingTool.VectorLine();
+                    for (let point of line.points) {
+                        if (!point.isSelected) {
                             continue;
                         }
-                        let newLine = new ManualTracingTool.VectorLine();
-                        for (let point of line.points) {
-                            if (!point.isSelected) {
-                                continue;
-                            }
-                            newLine.points.push(ManualTracingTool.LinePoint.clone(point));
-                        }
-                        if (newLine.points.length > 0) {
-                            newLines.push(newLine);
-                        }
+                        newLine.points.push(ManualTracingTool.LinePoint.clone(point));
                     }
-                    if (newLines.length > 0) {
-                        let editData = new Command_EditGeometry_EditData();
-                        editData.targetGroup = group;
-                        editData.newLines = newLines;
-                        editData.oldLines = group.lines;
-                        editDatas.push(editData);
+                    if (newLine.points.length > 0) {
+                        newLines.push(newLine);
                     }
                 }
-            }
+                if (newLines.length > 0) {
+                    let editData = new Command_EditGeometry_EditData();
+                    editData.targetGroup = group;
+                    editData.newLines = newLines;
+                    editData.oldLines = group.lines;
+                    editDatas.push(editData);
+                    this.targetGroups.push(group);
+                }
+            });
             if (editDatas.length > 0) {
                 this.editDatas = editDatas;
                 return true;
@@ -74,28 +74,26 @@ var ManualTracingTool;
             this.copy_VectorGroup = null;
         }
         prepareEditData(env) {
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
             let copy_GroupData = new ManualTracingTool.VectorGroup();
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-                    for (let line of group.lines) {
-                        if (!line.isSelected) {
+            ManualTracingTool.ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group) => {
+                for (let line of group.lines) {
+                    if (!line.isSelected) {
+                        continue;
+                    }
+                    let newLine = new ManualTracingTool.VectorLine();
+                    for (let point of line.points) {
+                        if (!point.isSelected) {
                             continue;
                         }
-                        let newLine = new ManualTracingTool.VectorLine();
-                        for (let point of line.points) {
-                            if (!point.isSelected) {
-                                continue;
-                            }
-                            newLine.points.push(ManualTracingTool.LinePoint.clone(point));
-                        }
-                        if (newLine.points.length > 0) {
-                            ManualTracingTool.Logic_Edit_Line.calculateParameters(newLine);
-                            copy_GroupData.lines.push(newLine);
-                        }
+                        newLine.points.push(ManualTracingTool.LinePoint.clone(point));
+                    }
+                    if (newLine.points.length > 0) {
+                        ManualTracingTool.Logic_Edit_Line.calculateParameters(newLine);
+                        copy_GroupData.lines.push(newLine);
                     }
                 }
-            }
+            });
             if (copy_GroupData.lines.length > 0) {
                 this.copy_VectorGroup = copy_GroupData;
                 return true;
@@ -160,11 +158,9 @@ var ManualTracingTool;
         }
         undo(env) {
             this.editData.targetGroup.lines = this.editData.oldLines;
-            ManualTracingTool.GPUVertexBuffer.setUpdated(this.editData.targetGroup.buffer);
         }
         redo(env) {
             this.editData.targetGroup.lines = this.editData.newLines;
-            ManualTracingTool.GPUVertexBuffer.setUpdated(this.editData.targetGroup.buffer);
         }
     }
     ManualTracingTool.Command_PasteGeometry = Command_PasteGeometry;

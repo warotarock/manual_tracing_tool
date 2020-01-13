@@ -32,7 +32,8 @@ var ManualTracingTool;
             command.point = new ManualTracingTool.LinePoint();
             command.addLine = addLine;
             vec3.set(command.point.location, x, y, 0.0);
-            command.execute(env);
+            command.useGroup(command.group);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
         }
     }
@@ -46,33 +47,19 @@ var ManualTracingTool;
             this.addLine = false;
         }
         execute(env) {
-            this.errorCheck();
-            if (this.addLine) {
-                this.group.lines.push(this.line);
-            }
-            this.line.points.push(this.point);
-            ManualTracingTool.GPUVertexBuffer.setUpdated(this.group.buffer);
+            this.redo(env);
         }
         undo(env) {
             ListRemoveAt(this.line.points, this.line.points.length - 1);
             if (this.addLine) {
                 ListRemoveAt(this.group.lines, this.group.lines.length - 1);
             }
-            ManualTracingTool.GPUVertexBuffer.setUpdated(this.group.buffer);
         }
         redo(env) {
-            this.execute(env);
-        }
-        errorCheck() {
-            if (this.group == null) {
-                throw ('Com_AddLine: group is null!');
+            if (this.addLine) {
+                this.group.lines.push(this.line);
             }
-            if (this.line == null) {
-                throw ('Com_AddPoint: line is null!');
-            }
-            if (this.point == null) {
-                throw ('Com_AddPoint: point is null!');
-            }
+            this.line.points.push(this.point);
         }
     }
     ManualTracingTool.Command_AddPoint = Command_AddPoint;

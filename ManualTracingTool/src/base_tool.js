@@ -123,6 +123,20 @@ var ManualTracingTool;
         hasKeyframe() {
             return (this.vectorLayerKeyframe != null);
         }
+        static forEachGroup(viewKeyframeLayers, loopBodyFunction) {
+            for (let viewKeyframeLayer of viewKeyframeLayers) {
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                    loopBodyFunction(group);
+                }
+            }
+        }
+        static forEachLayerAndGroup(viewKeyframeLayers, loopBodyFunction) {
+            for (let viewKeyframeLayer of viewKeyframeLayers) {
+                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+                    loopBodyFunction(viewKeyframeLayer.layer, group);
+                }
+            }
+        }
     }
     ManualTracingTool.ViewKeyframeLayer = ViewKeyframeLayer;
     class ViewKeyframe {
@@ -235,7 +249,7 @@ var ManualTracingTool;
             this.steps = new List();
             this.activeDrawPathStartIndex = -1;
             this.activeDrawPathEndIndex = -1;
-            this.lazyDraw_ProcessedIndex = 0;
+            this.lazyDraw_ProcessedIndex = -1;
             this.lazyDraw_LastResetTime = 0;
             this.lazyDraw_LimitTime = 100;
             this.lazyDraw_MaxTime = 100000;
@@ -248,6 +262,7 @@ var ManualTracingTool;
             this.endIndex = 0;
             this.lastDrawPathIndex = -1;
             this.bufferStack = new List();
+            this.needsLazyRedraw = false;
         }
         clearDrawingStates() {
             this.lastDrawPathIndex = -1;
@@ -273,7 +288,7 @@ var ManualTracingTool;
             return (this.lazyDraw_ProcessedIndex == -1);
         }
         isLazyDrawFinished() {
-            return (this.lazyDraw_ProcessedIndex >= this.steps.length - 1);
+            return (this.lazyDraw_ProcessedIndex >= this.steps.length - 1) && !this.needsLazyRedraw;
         }
         isLazyDrawWaiting() {
             return (!this.isLazyDrawFinished()
@@ -301,6 +316,7 @@ var ManualTracingTool;
             this.pickingWindow = null;
             this.posing3DView = null;
             this.posing3DLogic = null;
+            this.lazy_DrawPathContext = null;
             this.mainToolID = MainToolID.none;
             this.subToolIndex = 0;
             this.editMode = EditModeID.drawMode;
@@ -310,8 +326,8 @@ var ManualTracingTool;
             this.operationUnitID = OperationUnitID.line;
             this.drawLineBaseWidth = 1.0;
             this.drawLineMinWidth = 0.1;
+            this.drawCPUOnly = false;
             this.currentLayer = null;
-            //editableKeyframeLayers: List<ViewKeyframeLayer> = null;
             this.currentVectorLayer = null;
             this.currentVectorGeometry = null;
             this.currentVectorGroup = null;
@@ -329,23 +345,16 @@ var ManualTracingTool;
             this.redrawWebGLWindow = false;
             this.redrawHeaderWindow = false;
             this.redrawFooterWindow = false;
-            this.redrawPalletSelectorWindow = false;
+            this.redrawPaletteSelectorWindow = false;
             this.redrawColorMixerWindow = false;
             this.mouseCursorRadius = 12.0;
             this.resamplingUnitLength = 8.0;
             this.operatorCursor = new OperatorCursor();
-            //latticePoints = new List<LatticePoint>();
-            //rectangleArea = new Logic_Edit_Points_RectangleArea();
             this.shiftKey = false;
             this.altKey = false;
             this.ctrlKey = false;
             this.animationPlaying = false;
             this.animationPlayingFPS = 24;
-            //constructor() {
-            //    while (this.latticePoints.length < 4) {
-            //        this.latticePoints.push(new LatticePoint());
-            //    }
-            //}
         }
     }
     ManualTracingTool.ToolContext = ToolContext;
@@ -445,13 +454,14 @@ var ManualTracingTool;
         }
         setRedrawLayerWindow() {
             this.toolContext.redrawLayerWindow = true;
-            this.toolContext.redrawPalletSelectorWindow = true;
+            this.toolContext.redrawPaletteSelectorWindow = true;
             this.toolContext.redrawColorMixerWindow = true;
         }
         updateLayerStructure() {
             this.toolContext.mainEditor.updateLayerStructure();
             this.setRedrawLayerWindow();
             this.setRedrawTimeLineWindow();
+            this.setRedrawMainWindowEditorWindow();
         }
         setRedrawSubtoolWindow() {
             this.toolContext.redrawSubtoolWindow = true;
@@ -460,7 +470,7 @@ var ManualTracingTool;
             this.toolContext.redrawTimeLineWindow = true;
         }
         setRedrawColorSelectorWindow() {
-            this.toolContext.redrawPalletSelectorWindow = true;
+            this.toolContext.redrawPaletteSelectorWindow = true;
         }
         setRedrawColorMixerWindow() {
             this.toolContext.redrawColorMixerWindow = true;
@@ -475,6 +485,9 @@ var ManualTracingTool;
             this.setRedrawTimeLineWindow();
             this.setRedrawColorSelectorWindow();
             this.setRedrawWebGLWindow();
+        }
+        setLazyRedraw() {
+            this.toolContext.lazy_DrawPathContext.needsLazyRedraw = true;
         }
         isAnyModifierKeyPressing() {
             return (this.toolContext.shiftKey || this.toolContext.altKey || this.toolContext.ctrlKey);
@@ -519,8 +532,8 @@ var ManualTracingTool;
         getCurrentLayerLineColor() {
             let color = null;
             if (this.currentVectorLayer != null) {
-                if (this.currentVectorLayer.drawLineType == ManualTracingTool.DrawLineTypeID.palletColor) {
-                    color = this.toolContext.document.palletColors[this.currentVectorLayer.line_PalletColorIndex].color;
+                if (this.currentVectorLayer.drawLineType == ManualTracingTool.DrawLineTypeID.paletteColor) {
+                    color = this.toolContext.document.paletteColors[this.currentVectorLayer.line_PaletteColorIndex].color;
                 }
                 else {
                     color = this.currentVectorLayer.layerColor;
@@ -531,8 +544,8 @@ var ManualTracingTool;
         getCurrentLayerFillColor() {
             let color = null;
             if (this.currentVectorLayer != null) {
-                if (this.currentVectorLayer.fillAreaType == ManualTracingTool.FillAreaTypeID.palletColor) {
-                    color = this.toolContext.document.palletColors[this.currentVectorLayer.fill_PalletColorIndex].color;
+                if (this.currentVectorLayer.fillAreaType == ManualTracingTool.FillAreaTypeID.paletteColor) {
+                    color = this.toolContext.document.paletteColors[this.currentVectorLayer.fill_PaletteColorIndex].color;
                 }
                 else {
                     color = this.currentVectorLayer.fillColor;
@@ -598,7 +611,7 @@ var ManualTracingTool;
             this.layerWindowBackgroundColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             this.layerWindowItemActiveLayerColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
             this.layerWindowItemSelectedColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
-            this.palletSelectorItemEdgeColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+            this.paletteSelectorItemEdgeColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
             this.timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
             this.timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);
             this.timeLineKeyFrameColor = vec4.fromValues(0.0, 0.0, 1.0, 0.1);

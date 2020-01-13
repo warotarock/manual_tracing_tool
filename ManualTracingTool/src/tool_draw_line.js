@@ -81,12 +81,10 @@ var ManualTracingTool;
                 }
             }
             let command = new Command_AddLine();
-            command.group = env.currentVectorGroup;
-            command.line = resampledLine;
-            command.continuousFill = this.continuousFill;
-            command.previousConnectedLine = previousConnectedLine;
-            command.previousConnectedLine_continuousFill = previousConnectedLine_continuousFill;
-            command.execute(env);
+            command.prepareEditTargets(env.currentVectorGroup, resampledLine);
+            command.setContiuousStates(this.continuousFill, previousConnectedLine, previousConnectedLine_continuousFill);
+            command.useGroup(env.currentVectorGroup);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
             this.editLine = null;
         }
@@ -101,8 +99,17 @@ var ManualTracingTool;
             this.previousConnectedLine = null;
             this.previousConnectedLine_continuousFill = false;
         }
+        prepareEditTargets(group, line) {
+            this.group = group;
+            this.line = line;
+            this.useGroup(group);
+        }
+        setContiuousStates(continuousFill, previousConnectedLine, previousConnectedLine_continuousFill) {
+            this.continuousFill = continuousFill;
+            this.previousConnectedLine = previousConnectedLine;
+            this.previousConnectedLine_continuousFill = previousConnectedLine_continuousFill;
+        }
         execute(env) {
-            this.errorCheck();
             this.redo(env);
         }
         undo(env) {
@@ -117,14 +124,6 @@ var ManualTracingTool;
                 this.previousConnectedLine.continuousFill = true;
             }
             env.setCurrentVectorLine(this.line, false);
-        }
-        errorCheck() {
-            if (this.group == null) {
-                throw ('Com_AddLine: group is null!');
-            }
-            if (this.line == null) {
-                throw ('Com_AddLine: line is null!');
-            }
         }
     }
     ManualTracingTool.Command_AddLine = Command_AddLine;

@@ -1,10 +1,5 @@
 var ManualTracingTool;
 (function (ManualTracingTool) {
-    class Tool_Resample_Segment_EditGroup {
-        constructor() {
-            this.group = null;
-        }
-    }
     class Tool_Resample_Segment_EditLine {
         constructor() {
             this.targetLine = null;
@@ -16,10 +11,12 @@ var ManualTracingTool;
         constructor() {
             super(...arguments);
             this.helpText = 'エンターキーで選択中の頂点の間を画面の拡大率に合わせて再分割します。';
+            this.targetGroups = null;
+            this.editLines = null;
         }
         isAvailable(env) {
             return (env.isCurrentLayerVectorLayer()
-                && ManualTracingTool.Layer.isVisible(env.currentVectorLayer));
+                && ManualTracingTool.Layer.isEditTarget(env.currentVectorLayer));
         }
         toolWindowItemClick(e, env) {
             env.setCurrentOperationUnitID(ManualTracingTool.OperationUnitID.linePoint);
@@ -35,51 +32,41 @@ var ManualTracingTool;
             return false;
         }
         executeCommand(env) {
-            let command = new Command_Resample_Segment();
-            if (command.collectEditTargets(env.currentVectorGeometry, env)) {
-                command.execute(env);
+            if (this.collectEditTargets(env.currentVectorGeometry, env)) {
+                let command = new Command_Resample_Segment();
+                command.editLines = this.editLines;
+                command.useGroups(this.targetGroups);
+                command.executeCommand(env);
                 env.commandHistory.addCommand(command);
                 env.setRedrawMainWindowEditorWindow();
             }
         }
-    }
-    ManualTracingTool.Tool_Resample_Segment = Tool_Resample_Segment;
-    class Command_Resample_Segment extends ManualTracingTool.CommandBase {
-        constructor() {
-            super(...arguments);
-            this.editGroups = null;
-            this.editLines = null;
-        }
         collectEditTargets(geometry, env) {
-            let editGroups = new List();
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let targetGroups = new List();
             let editLines = new List();
-            let modifiedGroupCount = 0;
-            for (let group of geometry.groups) {
-                let modifiedLineCount = 0;
+            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
+            ManualTracingTool.ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group) => {
+                let existsInGroup = false;
                 for (let line of group.lines) {
-                    if (line.isSelected) {
-                        let editLine = this.collectEditTargets_CreateEditLine(line);
-                        if (editLine != null) {
-                            editLines.push(editLine);
-                            editLine.targetLine.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.resampling;
-                            modifiedLineCount++;
-                        }
+                    if (line.isSelected && this.existsSelectedSegment(line)) {
+                        let editLine = new Tool_Resample_Segment_EditLine();
+                        editLine.targetLine = line;
+                        editLine.oldPoints = line.points;
+                        editLine.newPoints = this.createResampledPoints(editLine.targetLine, resamplingUnitLength);
+                        editLines.push(editLine);
+                        existsInGroup = true;
                     }
                 }
-                if (modifiedLineCount == 0) {
-                    continue;
+                if (existsInGroup) {
+                    targetGroups.push(group);
                 }
-                let editGroup = new Tool_Resample_Segment_EditGroup();
-                editGroup.group = group;
-                editGroups.push(editGroup);
-                group.linePointModifyFlag = ManualTracingTool.VectorGroupModifyFlagID.modifyLines;
-                modifiedGroupCount++;
-            }
-            this.editGroups = editGroups;
+            });
+            this.targetGroups = targetGroups;
             this.editLines = editLines;
-            return (modifiedGroupCount > 0);
+            return (editLines.length > 0);
         }
-        collectEditTargets_ExistsSelectedSegment(line) {
+        existsSelectedSegment(line) {
             let selectedPointCount = 0;
             for (let point of line.points) {
                 if (point.isSelected) {
@@ -94,33 +81,15 @@ var ManualTracingTool;
             }
             return (selectedPointCount >= 2);
         }
-        collectEditTargets_CreateEditLine(line) {
-            // check selected point exists
-            if (!this.collectEditTargets_ExistsSelectedSegment(line)) {
-                return null;
-            }
-            let result = new Tool_Resample_Segment_EditLine();
-            result.targetLine = line;
-            result.oldPoints = line.points;
-            result.newPoints = new List();
-            return result;
-        }
-        executeResampling(env) {
-            let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
-            for (let editLine of this.editLines) {
-                this.createResampledLineToEditLine(editLine, resamplingUnitLength);
-            }
-        }
-        createResampledLineToEditLine(editLine, resamplingUnitLength) {
-            let line = editLine.targetLine;
+        createResampledPoints(line, resamplingUnitLength) {
             let currentIndex = 0;
             let segmentStartIndex = -1;
             let segmentEndIndex = -1;
+            let newPoints = new List();
             while (currentIndex < line.points.length) {
                 let currentPoint = line.points[currentIndex];
-                let isSelectedSegment = (currentPoint.isSelected);
                 // selected segment
-                if (isSelectedSegment) {
+                if (currentPoint.isSelected) {
                     segmentStartIndex = currentIndex;
                     // search end of selected segment
                     for (let i = segmentStartIndex; i < line.points.length; i++) {
@@ -132,12 +101,12 @@ var ManualTracingTool;
                     }
                     // if exists selected segment, execute resampling
                     if (segmentEndIndex > segmentStartIndex) {
-                        ManualTracingTool.Logic_Edit_Points.resamplePoints(editLine.newPoints, line.points, segmentStartIndex, segmentEndIndex, resamplingUnitLength);
+                        ManualTracingTool.Logic_Edit_Points.resamplePoints(newPoints, line.points, segmentStartIndex, segmentEndIndex, resamplingUnitLength);
                     }
                     // if no segment, execute insert current point
                     else {
                         let point = line.points[currentIndex];
-                        editLine.newPoints.push(point);
+                        newPoints.push(point);
                     }
                     currentIndex = segmentEndIndex + 1;
                 }
@@ -152,41 +121,39 @@ var ManualTracingTool;
                         }
                         segmentEndIndex = i;
                     }
-                    // execute insert original point
+                    // execute insert original points
                     for (let i = segmentStartIndex; i <= segmentEndIndex; i++) {
                         let point = line.points[i];
-                        editLine.newPoints.push(point);
+                        newPoints.push(point);
                     }
                     currentIndex = segmentEndIndex + 1;
                 }
             }
+            return newPoints;
+        }
+    }
+    ManualTracingTool.Tool_Resample_Segment = Tool_Resample_Segment;
+    class Command_Resample_Segment extends ManualTracingTool.CommandBase {
+        constructor() {
+            super(...arguments);
+            this.editLines = null;
         }
         execute(env) {
-            this.errorCheck();
-            this.executeResampling(env);
             this.redo(env);
         }
         undo(env) {
             for (let editLine of this.editLines) {
                 editLine.targetLine.points = editLine.oldPoints;
             }
-            this.calculateLineParameters();
+            this.updateRelatedObjects();
         }
         redo(env) {
-            for (let editGroup of this.editGroups) {
-                ManualTracingTool.Logic_Edit_VectorLayer.clearGroupModifyFlags(editGroup.group);
-            }
             for (let editLine of this.editLines) {
                 editLine.targetLine.points = editLine.newPoints;
             }
-            this.calculateLineParameters();
+            this.updateRelatedObjects();
         }
-        errorCheck() {
-            if (this.editLines == null) {
-                throw ('Command_TransformLattice: line is null!');
-            }
-        }
-        calculateLineParameters() {
+        updateRelatedObjects() {
             for (let editLine of this.editLines) {
                 ManualTracingTool.Logic_Edit_Line.calculateParameters(editLine.targetLine);
             }

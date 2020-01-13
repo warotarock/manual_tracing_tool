@@ -18,8 +18,8 @@ var ManualTracingTool;
         }
         executeCommand(env) {
             let command = new ManualTracingTool.Command_DeleteFlaggedPoints();
-            if (command.prepareEditTargets(env.currentVectorLayer, env.currentVectorGeometry)) {
-                command.execute(env);
+            if (command.prepareEditTargets(env)) {
+                command.executeCommand(env);
                 env.commandHistory.addCommand(command);
             }
             env.setRedrawMainWindow();

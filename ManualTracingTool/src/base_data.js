@@ -6,19 +6,19 @@ var ManualTracingTool;
             this.exportPath = null;
             this.lastUsedFilePaths = ['./test/test01.json'];
             this.maxLastUsedFilePaths = 5;
-            this.referenceDirectoryPath = null;
+            this.referenceDirectoryPath = './test';
             this.currentDirectoryPath = null;
         }
         ;
     }
     ManualTracingTool.LocalSetting = LocalSetting;
     // Color
-    class PalletColor {
+    class PaletteColor {
         constructor() {
             this.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
         }
     }
-    ManualTracingTool.PalletColor = PalletColor;
+    ManualTracingTool.PaletteColor = PaletteColor;
     // Base layer class
     let LayerTypeID;
     (function (LayerTypeID) {
@@ -61,6 +61,9 @@ var ManualTracingTool;
                     Layer.updateHierarchicalStatesRecursive(layer);
                 }
             }
+        }
+        static isEditTarget(layer) {
+            return (Layer.isSelected(layer) && Layer.isVisible(layer));
         }
         static isSelected(layer) {
             return (layer.isSelected || layer.isHierarchicalSelected);
@@ -150,6 +153,14 @@ var ManualTracingTool;
             this.linePointModifyFlag = VectorGroupModifyFlagID.none;
             this.buffer = new ManualTracingTool.GPUVertexBuffer();
         }
+        static setUpdated(group) {
+            group.buffer.isStored = false;
+        }
+        static setGroupsUpdated(groups) {
+            for (let group of groups) {
+                VectorGroup.setUpdated(group);
+            }
+        }
     }
     ManualTracingTool.VectorGroup = VectorGroup;
     class VectorLayerGeometry {
@@ -169,24 +180,24 @@ var ManualTracingTool;
     (function (DrawLineTypeID) {
         DrawLineTypeID[DrawLineTypeID["none"] = 1] = "none";
         DrawLineTypeID[DrawLineTypeID["layerColor"] = 2] = "layerColor";
-        DrawLineTypeID[DrawLineTypeID["palletColor"] = 3] = "palletColor";
+        DrawLineTypeID[DrawLineTypeID["paletteColor"] = 3] = "paletteColor";
     })(DrawLineTypeID = ManualTracingTool.DrawLineTypeID || (ManualTracingTool.DrawLineTypeID = {}));
     let FillAreaTypeID;
     (function (FillAreaTypeID) {
         FillAreaTypeID[FillAreaTypeID["none"] = 1] = "none";
         FillAreaTypeID[FillAreaTypeID["fillColor"] = 2] = "fillColor";
-        FillAreaTypeID[FillAreaTypeID["palletColor"] = 3] = "palletColor";
+        FillAreaTypeID[FillAreaTypeID["paletteColor"] = 3] = "paletteColor";
     })(FillAreaTypeID = ManualTracingTool.FillAreaTypeID || (ManualTracingTool.FillAreaTypeID = {}));
     class VectorLayer extends Layer {
         constructor() {
             super();
             this.type = LayerTypeID.vectorLayer;
             this.keyframes = new List();
-            this.drawLineType = DrawLineTypeID.palletColor;
+            this.drawLineType = DrawLineTypeID.paletteColor;
             this.fillAreaType = FillAreaTypeID.none;
             this.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-            this.line_PalletColorIndex = 0;
-            this.fill_PalletColorIndex = 1;
+            this.line_PaletteColorIndex = 0;
+            this.fill_PaletteColorIndex = 1;
             let key = new VectorLayerKeyframe();
             key.frame = 0;
             key.geometry = new VectorLayerGeometry();
@@ -244,6 +255,9 @@ var ManualTracingTool;
             this.adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
             this.adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
             this.adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
+        }
+        static isLoaded(layer) {
+            return (layer.imageResource != null && layer.imageResource.loaded);
         }
     }
     ManualTracingTool.ImageFileReferenceLayer = ImageFileReferenceLayer;
@@ -477,24 +491,24 @@ var ManualTracingTool;
             this.documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
             this.defaultViewScale = 1.0;
             this.lineWidthBiasRate = 1.0;
-            this.exportBackGroundType = DocumentBackGroundTypeID.lastPalletColor;
-            this.palletColors = new List();
+            this.exportBackGroundType = DocumentBackGroundTypeID.lastPaletteColor;
+            this.paletteColors = new List();
             this.animationSettingData = new AnimationSettingData();
             this.loaded = false;
             this.hasErrorOnLoading = false;
-            DocumentData.initializeDefaultPalletColors(this);
+            DocumentData.initializeDefaultPaletteColors(this);
         }
-        static initializeDefaultPalletColors(documentData) {
-            documentData.palletColors = new List();
+        static initializeDefaultPaletteColors(documentData) {
+            documentData.paletteColors = new List();
             for (let color of defaultColors) {
-                let palletColor = new PalletColor();
-                vec4.copy(palletColor.color, color);
-                documentData.palletColors.push(palletColor);
+                let paletteColor = new PaletteColor();
+                vec4.copy(paletteColor.color, color);
+                documentData.paletteColors.push(paletteColor);
             }
-            while (documentData.palletColors.length < DocumentData.maxPalletColors) {
-                let palletColor = new PalletColor();
-                vec4.set(palletColor.color, 1.0, 1.0, 1.0, 1.0);
-                documentData.palletColors.push(palletColor);
+            while (documentData.paletteColors.length < DocumentData.maxPaletteColors) {
+                let paletteColor = new PaletteColor();
+                vec4.set(paletteColor.color, 1.0, 1.0, 1.0, 1.0);
+                documentData.paletteColors.push(paletteColor);
             }
         }
         static getDocumentLayout(documentData) {
@@ -505,7 +519,7 @@ var ManualTracingTool;
             return { left: frameLeft, top: frameTop, width: documentWidth, height: documentHeight };
         }
     }
-    DocumentData.maxPalletColors = 50;
+    DocumentData.maxPaletteColors = 50;
     ManualTracingTool.DocumentData = DocumentData;
     class DocumentDataSaveInfo {
         constructor() {
@@ -530,7 +544,7 @@ var ManualTracingTool;
     ManualTracingTool.DocumentDataSaveInfo = DocumentDataSaveInfo;
     let DocumentBackGroundTypeID;
     (function (DocumentBackGroundTypeID) {
-        DocumentBackGroundTypeID[DocumentBackGroundTypeID["lastPalletColor"] = 1] = "lastPalletColor";
+        DocumentBackGroundTypeID[DocumentBackGroundTypeID["lastPaletteColor"] = 1] = "lastPaletteColor";
         DocumentBackGroundTypeID[DocumentBackGroundTypeID["transparent"] = 2] = "transparent";
     })(DocumentBackGroundTypeID = ManualTracingTool.DocumentBackGroundTypeID || (ManualTracingTool.DocumentBackGroundTypeID = {}));
 })(ManualTracingTool || (ManualTracingTool = {}));

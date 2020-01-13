@@ -60,7 +60,7 @@ var ManualTracingTool;
         }
         isAvailable(env) {
             return (env.currentVectorLayer != null
-                && ManualTracingTool.Layer.isVisible(env.currentVectorLayer));
+                && ManualTracingTool.Layer.isEditTarget(env.currentVectorLayer));
         }
         onActivated(env) {
             this.latticeState = LatticeStateID.invalid;
@@ -100,7 +100,7 @@ var ManualTracingTool;
             // Create edit info
             this.prepareEditData(e, env);
             this.prepareModalExt(e, env);
-            return true;
+            return this.existsEditData();
         }
         createLatticePoints() {
             this.latticePoints = new List();
@@ -152,6 +152,9 @@ var ManualTracingTool;
         prepareEditData(e, env) {
         }
         prepareModalExt(e, env) {
+        }
+        existsEditData() {
+            return ManualTracingTool.Logic_Edit_Points.existsRectangleArea(this.baseRectangleArea);
         }
         // Operation functions
         setLatticeAffineTransform(transformType, env) {

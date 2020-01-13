@@ -15,9 +15,13 @@ var ManualTracingTool;
             this.lerpLocation1 = vec3.create();
             this.lerpLocation2 = vec3.create();
             this.lerpLocation3 = vec3.create();
+            this.targetGroups = null;
+            this.targetLines = null;
             this.editPoints = null;
         }
         clearEditData(e, env) {
+            this.targetGroups = null;
+            this.targetLines = null;
             this.editPoints = null;
         }
         checkTarget(e, env) {
@@ -30,45 +34,55 @@ var ManualTracingTool;
             let rect = this.baseRectangleArea;
             ManualTracingTool.Logic_Edit_Points.setMinMaxToRectangleArea(rect);
             let selectedOnly = true;
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-                    for (let line of group.lines) {
-                        ManualTracingTool.Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
-                    }
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            ManualTracingTool.ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group) => {
+                for (let line of group.lines) {
+                    ManualTracingTool.Logic_Edit_Points.calculateSurroundingRectangle(rect, rect, line.points, selectedOnly);
                 }
-            }
+            });
             let available = ManualTracingTool.Logic_Edit_Points.existsRectangleArea(rect);
             return available;
         }
         prepareEditData(e, env) {
-            for (let latticePoint of this.latticePoints) {
-                latticePoint.latticePointEditType = ManualTracingTool.LatticePointEditTypeID.allDirection;
-            }
+            let targetGroups = new List();
+            let targetLines = new List();
             let editPoints = new List();
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-                    for (let line of group.lines) {
-                        for (let point of line.points) {
-                            if ((env.operationUnitID != ManualTracingTool.OperationUnitID.line && !point.isSelected)
-                                || !line.isSelected) {
-                                continue;
-                            }
-                            let editPoint = new Tool_Transform_Lattice_EditPoint();
-                            editPoint.targetPoint = point;
-                            editPoint.targetLine = line;
-                            vec3.copy(editPoint.oldLocation, point.location);
-                            vec3.copy(editPoint.newLocation, point.location);
-                            let xPosition = this.rectangleArea.getHorizontalPositionInRate(point.location[0]);
-                            let yPosition = this.rectangleArea.getVerticalPositionInRate(point.location[1]);
-                            vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
-                            editPoints.push(editPoint);
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            ManualTracingTool.ViewKeyframeLayer.forEachLayerAndGroup(viewKeyframeLayers, (layer, group) => {
+                let existsInGroup = false;
+                for (let line of group.lines) {
+                    let existsInLine = false;
+                    for (let point of line.points) {
+                        if ((env.operationUnitID != ManualTracingTool.OperationUnitID.line && !point.isSelected)
+                            || !line.isSelected) {
+                            continue;
                         }
+                        let editPoint = new Tool_Transform_Lattice_EditPoint();
+                        editPoint.targetPoint = point;
+                        editPoint.targetLine = line;
+                        vec3.copy(editPoint.oldLocation, point.location);
+                        vec3.copy(editPoint.newLocation, point.location);
+                        let xPosition = this.rectangleArea.getHorizontalPositionInRate(point.location[0]);
+                        let yPosition = this.rectangleArea.getVerticalPositionInRate(point.location[1]);
+                        vec3.set(editPoint.relativeLocation, xPosition, yPosition, 0.0);
+                        editPoints.push(editPoint);
+                        existsInLine = true;
+                    }
+                    if (existsInLine) {
+                        targetLines.push(line);
+                        existsInGroup = true;
                     }
                 }
-            }
+                if (existsInGroup) {
+                    targetGroups.push(group);
+                }
+            });
+            this.targetGroups = targetGroups;
+            this.targetLines = targetLines;
             this.editPoints = editPoints;
+        }
+        existsEditData() {
+            return (this.editPoints.length > 0);
         }
         cancelModal(env) {
             for (let editPoint of this.editPoints) {
@@ -103,23 +117,18 @@ var ManualTracingTool;
             }
         }
         executeCommand(env) {
-            let targetLines = new List();
+            if (this.editPoints.length == 0) {
+                return;
+            }
             for (let editPoint of this.editPoints) {
                 vec3.copy(editPoint.newLocation, editPoint.targetPoint.adjustingLocation);
             }
-            // Get target line
-            for (let editPoint of this.editPoints) {
-                if (editPoint.targetLine.modifyFlag == ManualTracingTool.VectorLineModifyFlagID.none) {
-                    targetLines.push(editPoint.targetLine);
-                    editPoint.targetLine.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.transform;
-                }
-            }
-            ManualTracingTool.Logic_Edit_Line.resetModifyStates(targetLines);
             // Execute the command
             let command = new Command_TransformLattice_LinePoint();
             command.editPoints = this.editPoints;
-            command.targetLines = targetLines;
-            command.execute(env);
+            command.targetLines = this.targetLines;
+            command.useGroups(this.targetGroups);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
             this.editPoints = null;
         }
@@ -140,14 +149,14 @@ var ManualTracingTool;
                 vec3.copy(editPoint.targetPoint.location, editPoint.oldLocation);
                 vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.oldLocation);
             }
-            this.calculateLineParameters();
+            this.updateRelatedObjects();
         }
         redo(env) {
             for (let editPoint of this.editPoints) {
                 vec3.copy(editPoint.targetPoint.location, editPoint.newLocation);
                 vec3.copy(editPoint.targetPoint.adjustingLocation, editPoint.newLocation);
             }
-            this.calculateLineParameters();
+            this.updateRelatedObjects();
         }
         errorCheck() {
             if (this.targetLines == null) {
@@ -157,7 +166,7 @@ var ManualTracingTool;
                 throw ('Command_TransformLattice: no target point!');
             }
         }
-        calculateLineParameters() {
+        updateRelatedObjects() {
             ManualTracingTool.Logic_Edit_Line.calculateParametersV(this.targetLines);
         }
     }

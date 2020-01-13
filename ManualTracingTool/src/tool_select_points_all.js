@@ -5,17 +5,17 @@ var ManualTracingTool;
             if (env.currentVectorLayer == null) {
                 return;
             }
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
-            let existsSelectedPoints = this.isSelectedAnyPoint(editableKeyframeLayers, env);
-            this.executeModifySelection(editableKeyframeLayers, existsSelectedPoints, env);
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            let existsSelectedPoints = this.isSelectedAnyPoint(viewKeyframeLayers, env);
+            this.executeModifySelection(viewKeyframeLayers, existsSelectedPoints, env);
         }
         executeSelectAll(env) {
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
-            this.executeModifySelection(editableKeyframeLayers, false, env);
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            this.executeModifySelection(viewKeyframeLayers, false, env);
         }
         executeClearSelectAll(env) {
-            let editableKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
-            this.executeModifySelection(editableKeyframeLayers, true, env);
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
+            this.executeModifySelection(viewKeyframeLayers, true, env);
         }
         executeModifySelection(editableKeyframeLayers, clearSelection, env) {
             let selectionInfo;
@@ -33,60 +33,54 @@ var ManualTracingTool;
             selectionInfo.resetModifyStates();
             env.setRedrawMainWindowEditorWindow();
         }
-        isSelectedAnyPoint(editableKeyframeLayers, env) {
+        isSelectedAnyPoint(viewKeyframeLayers, env) {
             let isSelected = false;
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-                    for (let line of group.lines) {
-                        if (line.isSelected) {
+            ManualTracingTool.ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group) => {
+                for (let line of group.lines) {
+                    if (line.isSelected) {
+                        isSelected = true;
+                        break;
+                    }
+                    for (let point of line.points) {
+                        if (point.isSelected) {
                             isSelected = true;
                             break;
                         }
-                        for (let point of line.points) {
-                            if (point.isSelected) {
-                                isSelected = true;
-                                break;
-                            }
-                        }
                     }
                 }
-            }
+            });
             return isSelected;
         }
-        createSelectionInfo_SelectAll(editableKeyframeLayers, env) {
+        createSelectionInfo_SelectAll(viewKeyframeLayers, env) {
             let selectionInfo = new ManualTracingTool.VectorLayerEditorSelectionInfo();
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-                    for (let line of group.lines) {
-                        for (let point of line.points) {
-                            if (!point.isSelected) {
-                                selectionInfo.selectPoint(line, point, ManualTracingTool.SelectionEditMode.setSelected);
-                            }
+            ManualTracingTool.ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group) => {
+                for (let line of group.lines) {
+                    for (let point of line.points) {
+                        if (!point.isSelected) {
+                            selectionInfo.selectPoint(line, point, ManualTracingTool.SelectionEditMode.setSelected);
                         }
                     }
                 }
-            }
+            });
             return selectionInfo;
         }
-        createSelectionInfo_ClearAllSelection(editableKeyframeLayers, env) {
+        createSelectionInfo_ClearAllSelection(viewKeyframeLayers, env) {
             let selectionInfo = new ManualTracingTool.VectorLayerEditorSelectionInfo();
-            for (let viewKeyframeLayer of editableKeyframeLayers) {
-                for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
-                    for (let line of group.lines) {
-                        for (let point of line.points) {
-                            if (point.isSelected) {
-                                selectionInfo.selectPoint(line, point, ManualTracingTool.SelectionEditMode.setUnselected);
-                            }
+            ManualTracingTool.ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group) => {
+                for (let line of group.lines) {
+                    for (let point of line.points) {
+                        if (point.isSelected) {
+                            selectionInfo.selectPoint(line, point, ManualTracingTool.SelectionEditMode.setUnselected);
                         }
                     }
                 }
-            }
+            });
             return selectionInfo;
         }
         executeCommand(selectionInfo, env) {
             let command = new ManualTracingTool.Command_Select();
             command.selectionInfo = selectionInfo;
-            command.execute(env);
+            command.executeCommand(env);
             env.commandHistory.addCommand(command);
         }
     }

@@ -113,11 +113,11 @@ var ManualTracingTool;
         storeLoadedDocumentJSON(documentData, loadedData, filePath) {
             documentData.rootLayer = loadedData.rootLayer;
             documentData.documentFrame = loadedData.documentFrame;
-            if (loadedData['palletColos']) {
-                documentData.palletColors = loadedData['palletColos'];
+            if (loadedData['paletteColos']) {
+                documentData.paletteColors = loadedData['paletteColos'];
             }
             else {
-                documentData.palletColors = loadedData.palletColors;
+                documentData.paletteColors = loadedData.paletteColors;
             }
             documentData.defaultViewScale = loadedData.defaultViewScale;
             documentData.lineWidthBiasRate = loadedData.lineWidthBiasRate;
@@ -337,8 +337,10 @@ var ManualTracingTool;
             this.exportRenderWindow.centerLocationRate[0] = 0.0;
             this.exportRenderWindow.centerLocationRate[1] = 0.0;
             this.clearWindow(this.exportRenderWindow);
-            if (backGroundType == ManualTracingTool.DocumentBackGroundTypeID.lastPalletColor) {
-                this.canvasRender.setFillColorV(documentData.palletColors[documentData.palletColors.length - 1].color);
+            if (backGroundType == ManualTracingTool.DocumentBackGroundTypeID.lastPaletteColor) {
+                this.canvasRender.setContext(this.exportRenderWindow);
+                this.canvasRender.resetTransform();
+                this.canvasRender.setFillColorV(documentData.paletteColors[documentData.paletteColors.length - 1].color);
                 this.canvasRender.fillRect(0, 0, imageWidth, imageHeight);
             }
             this.drawExportImage(this.exportRenderWindow);

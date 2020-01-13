@@ -22,7 +22,7 @@ var ManualTracingTool;
         }
         onPointHited(group, line, point) {
         }
-        onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ) {
+        onLineSegmentHited(group, line, point1, point2, location, minDistanceSQ, distanceSQ) {
         }
         onLineSegmentNotHited(line, point1, point2) {
         }
@@ -100,7 +100,7 @@ var ManualTracingTool;
                 let point2 = line.points[i + 1];
                 let distanceSQ = ManualTracingTool.Logic_Points.pointToLineSegmentDistanceSQ(point1.location, point2.location, location[0], location[1]);
                 if (distanceSQ < minDistanceSQ) {
-                    this.onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ);
+                    this.onLineSegmentHited(group, line, point1, point2, location, minDistanceSQ, distanceSQ);
                     lineHited = true;
                 }
                 else {
@@ -122,7 +122,7 @@ var ManualTracingTool;
         beforeHitTest() {
             this.hitedLine = null;
         }
-        onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ) {
+        onLineSegmentHited(group, line, point1, point2, location, minDistanceSQ, distanceSQ) {
             this.hitedLine = line;
             this.existsPointHitTest = true;
         }
@@ -136,7 +136,7 @@ var ManualTracingTool;
         beforeHitTest() {
             this.isChanged = false;
         }
-        onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ) {
+        onLineSegmentHited(group, line, point1, point2, location, minDistanceSQ, distanceSQ) {
             // to stop hit test early
             this.existsPointHitTest = true;
         }

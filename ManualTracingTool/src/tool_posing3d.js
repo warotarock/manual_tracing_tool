@@ -644,14 +644,11 @@ var ManualTracingTool;
     ManualTracingTool.Tool_Posing3d_LocateRightLeg2 = Tool_Posing3d_LocateRightLeg2;
     class Command_Posing3d_LocateHead extends ManualTracingTool.CommandBase {
         execute(env) {
-            this.errorCheck();
+            this.redo(env);
         }
         undo(env) {
         }
         redo(env) {
-            this.execute(env);
-        }
-        errorCheck() {
         }
     }
     ManualTracingTool.Command_Posing3d_LocateHead = Command_Posing3d_LocateHead;

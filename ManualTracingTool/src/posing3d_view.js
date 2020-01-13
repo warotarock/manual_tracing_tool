@@ -320,7 +320,7 @@ var ManualTracingTool;
             if (this.isHeadDrawable(posingData)) {
                 this.setShaderParameters(posingData.headMatrix, false, this.posingFigureShader);
                 this.posingFigureShader.setAlpha(posingLayer.layerColor[3]);
-                this.drawModel(this.headModel.model, this.imageResurces[0].image);
+                this.drawModel(this.posingFigureShader, this.headModel.model, this.imageResurces[0].image);
             }
             if (this.isBodyDrawable(posingData)) {
                 //mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.chestModelConvertMatrix);
@@ -349,7 +349,7 @@ var ManualTracingTool;
                     }
                     this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
                     this.posingFigureShader.setAlpha(drawingUnit.visualModelAlpha * posingLayer.layerColor[3]);
-                    this.drawModel(drawingUnit.modelResource.model, this.imageResurces[0].image);
+                    this.drawModel(this.posingFigureShader, drawingUnit.modelResource.model, this.imageResurces[0].image);
                     //this.drawAxis(drawingUnit.targetData.matrix, 0.2, 0.5, env);
                 }
             }
@@ -510,27 +510,27 @@ var ManualTracingTool;
             else {
                 this.posingFigureShader.setAlpha(0.8);
             }
-            this.drawModel(modelResource.model, this.imageResurces[0].image);
+            this.drawModel(this.posingFigureShader, modelResource.model, this.imageResurces[0].image);
             this.render.setCullingBackFace(true);
         }
         drawZTestSphereDepth(locationMatrix, inputSideID, env) {
             let flipSide = (inputSideID == ManualTracingTool.InputSideID.back);
             this.setShaderParameters(locationMatrix, flipSide, this.depthShader);
             let modelResource1 = this.zTestShpereModel;
-            this.drawModel(this.zTestShpereModel.model, this.imageResurces[0].image);
+            this.drawModel(this.depthShader, this.zTestShpereModel.model, this.imageResurces[0].image);
             let modelResource2 = this.zTestShpereEdgeModel;
-            this.drawModel(this.zTestShpereEdgeModel.model, this.imageResurces[0].image);
+            this.drawModel(this.depthShader, this.zTestShpereEdgeModel.model, this.imageResurces[0].image);
         }
         drawAxis(locationMatrix, scale, alpha, env) {
             mat4.copy(this.modelMatrix, locationMatrix);
             mat4.scale(this.modelMatrix, this.modelMatrix, vec3.set(this.tempVec3, scale, scale, scale));
             this.setShaderParameters(this.modelMatrix, false, this.posingFigureShader);
             this.posingFigureShader.setAlpha(alpha);
-            this.drawModel(this.axisModel.model, this.imageResurces[0].image);
+            this.drawModel(this.posingFigureShader, this.axisModel.model, this.imageResurces[0].image);
         }
-        drawModel(model, image) {
+        drawModel(shader, model, image) {
             let gl = this.render.gl;
-            this.render.setBuffers(model, [image]);
+            shader.setBuffers(model, [image]);
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, image.texture);
             this.render.drawElements(model);

@@ -28,6 +28,8 @@ class RenderShader {
         this.vertexAttribPointerOffset = 0;
         this.uPMatrix = null;
         this.uMVMatrix = null;
+        //setBuffers(model: RenderModel, images: List<RenderImage>) { // @virtual
+        //}
     }
     initializeSourceCode(precisionText) {
         this.floatPrecisionDefinitionCode = '#ifdef GL_ES\n precision ' + precisionText + ' float;\n #endif\n';
@@ -54,9 +56,6 @@ class RenderShader {
     }
     getUniformLocation(name) {
         return this.gl.getUniformLocation(this.program, name);
-    }
-    setBuffers(model, images) {
-        // Override method
     }
     enableVertexAttributes() {
         for (let attribLocation of this.attribLocationList) {
@@ -103,9 +102,9 @@ class WebGLRender {
         this.floatPrecisionText = '';
         this.currentShader = null;
     }
-    initializeWebGL(canvas) {
+    initializeWebGL(canvas, antialias) {
         try {
-            let option = { preserveDrawingBuffer: true, antialias: true };
+            let option = { preserveDrawingBuffer: true, antialias: antialias };
             let gl = (canvas.getContext('webgl', option)
                 || canvas.getContext('experimental-webgl', option));
             if (gl != null) {
@@ -251,9 +250,9 @@ class WebGLRender {
             lastShader.disableVertexAttributes();
         }
     }
-    setBuffers(model, images) {
-        this.currentShader.setBuffers(model, images);
-    }
+    //setBuffers(model: RenderModel, images: List<RenderImage>) {
+    //    this.currentShader.setBuffers(model, images);
+    //}
     clearColorBufferDepthBuffer(r, g, b, a) {
         this.gl.clearColor(r, g, b, a);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);

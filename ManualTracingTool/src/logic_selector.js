@@ -6,6 +6,12 @@ var ManualTracingTool;
         SelectionEditMode[SelectionEditMode["setUnselected"] = 2] = "setUnselected";
         SelectionEditMode[SelectionEditMode["toggle"] = 3] = "toggle";
     })(SelectionEditMode = ManualTracingTool.SelectionEditMode || (ManualTracingTool.SelectionEditMode = {}));
+    class GroupSelectionInfo {
+        constructor() {
+            this.group = null;
+        }
+    }
+    ManualTracingTool.GroupSelectionInfo = GroupSelectionInfo;
     class LineSelectionInfo {
         constructor() {
             this.line = null;
@@ -24,18 +30,32 @@ var ManualTracingTool;
     ManualTracingTool.PointSelectionInfo = PointSelectionInfo;
     class VectorLayerEditorSelectionInfo {
         constructor() {
+            this.selectedGroups = null;
             this.selectedLines = null;
             this.selectedPoints = null;
             this.clear();
         }
         clear() {
+            this.selectedGroups = new List();
             this.selectedLines = new List();
             this.selectedPoints = new List();
         }
+        isGroupDone(group) {
+            return (group.modifyFlag != ManualTracingTool.VectorGroupModifyFlagID.none);
+        }
+        isLineDone(line) {
+            return (line.modifyFlag != ManualTracingTool.VectorLineModifyFlagID.none);
+        }
+        isPointDone(point) {
+            return (point.modifyFlag != ManualTracingTool.LinePointModifyFlagID.none);
+        }
         selectPoint(line, point, editMode) {
+            if (this.isPointDone(point)) {
+                return;
+            }
             if (editMode == SelectionEditMode.setSelected
                 || editMode == SelectionEditMode.toggle) {
-                if (!point.isSelected && point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
+                if (!point.isSelected) {
                     let selPoint = new PointSelectionInfo();
                     selPoint.point = point;
                     selPoint.selectStateAfter = true;
@@ -48,7 +68,7 @@ var ManualTracingTool;
             }
             if (editMode == SelectionEditMode.setUnselected
                 || editMode == SelectionEditMode.toggle) {
-                if (point.isSelected && point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
+                if (point.isSelected) {
                     let selPoint = new PointSelectionInfo();
                     selPoint.point = point;
                     selPoint.selectStateAfter = false;
@@ -66,33 +86,33 @@ var ManualTracingTool;
             }
         }
         selectLine(line, editMode) {
-            if (line.modifyFlag != ManualTracingTool.VectorLineModifyFlagID.none) {
+            if (this.isLineDone(line)) {
                 return;
             }
-            let selLine = new LineSelectionInfo();
-            selLine.line = line;
-            selLine.selectStateBefore = line.isSelected;
+            let selInfo = new LineSelectionInfo();
+            selInfo.line = line;
+            selInfo.selectStateBefore = line.isSelected;
             if (editMode == SelectionEditMode.setSelected) {
-                selLine.selectStateAfter = true;
+                selInfo.selectStateAfter = true;
                 line.isSelected = true;
                 line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.unselectedToSelected;
             }
             else if (editMode == SelectionEditMode.setUnselected) {
-                selLine.selectStateAfter = false;
+                selInfo.selectStateAfter = false;
                 line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.selectedToUnselected;
             }
             else if (editMode == SelectionEditMode.toggle) {
                 if (line.isSelected) {
-                    selLine.selectStateAfter = false;
+                    selInfo.selectStateAfter = false;
                     line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.selectedToUnselected;
                 }
                 else {
-                    selLine.selectStateAfter = true;
+                    selInfo.selectStateAfter = true;
                     line.isSelected = true;
                     line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.unselectedToSelected;
                 }
             }
-            this.selectedLines.push(selLine);
+            this.selectedLines.push(selInfo);
         }
         selectLinePointsForLines(editMode) {
             for (let selLineInfo of this.selectedLines) {
@@ -101,21 +121,41 @@ var ManualTracingTool;
                 }
             }
         }
-        editPoint(point) {
-            if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
-                let selPoint = new PointSelectionInfo();
-                selPoint.point = point;
-                this.selectedPoints.push(selPoint);
-                point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.edit;
+        editGroup(group) {
+            if (this.isGroupDone(group)) {
+                return;
             }
+            let selInfo = new GroupSelectionInfo();
+            selInfo.group = group;
+            this.selectedGroups.push(selInfo);
+            group.modifyFlag = ManualTracingTool.VectorGroupModifyFlagID.edit;
+        }
+        editLine(line) {
+            if (this.isLineDone(line)) {
+                return;
+            }
+            let selInfo = new LineSelectionInfo();
+            selInfo.line = line;
+            this.selectedLines.push(selInfo);
+            line.modifyFlag = ManualTracingTool.VectorLineModifyFlagID.edit;
+        }
+        editPoint(point) {
+            if (this.isPointDone(point)) {
+                return;
+            }
+            let selInfo = new PointSelectionInfo();
+            selInfo.point = point;
+            this.selectedPoints.push(selInfo);
+            point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.edit;
         }
         deletePoint(point) {
-            if (point.modifyFlag == ManualTracingTool.LinePointModifyFlagID.none) {
-                let selPoint = new PointSelectionInfo();
-                selPoint.point = point;
-                this.selectedPoints.push(selPoint);
-                point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.delete;
+            if (this.isPointDone(point)) {
+                return;
             }
+            let selInfo = new PointSelectionInfo();
+            selInfo.point = point;
+            this.selectedPoints.push(selInfo);
+            point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.delete;
         }
         updateLineSelectionState() {
             for (let selLineInfo of this.selectedLines) {
@@ -131,6 +171,9 @@ var ManualTracingTool;
             }
         }
         resetModifyStates() {
+            for (let selGroup of this.selectedGroups) {
+                selGroup.group.modifyFlag = ManualTracingTool.VectorGroupModifyFlagID.none;
+            }
             for (let selPoint of this.selectedPoints) {
                 selPoint.point.modifyFlag = ManualTracingTool.LinePointModifyFlagID.none;
             }
@@ -154,6 +197,9 @@ var ManualTracingTool;
         }
         afterHitTest() {
             this.selectionInfo.updateLineSelectionState();
+            this.resetModifyStates();
+        }
+        resetModifyStates() {
             this.selectionInfo.resetModifyStates();
         }
     }
@@ -167,7 +213,7 @@ var ManualTracingTool;
         beforeHitTest() {
             this.selectionInfo.clear();
         }
-        onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ) {
+        onLineSegmentHited(group, line, point1, point2, location, minDistanceSQ, distanceSQ) {
             this.selectionInfo.selectLine(line, this.editMode);
             this.existsPointHitTest = true;
         }
@@ -187,12 +233,15 @@ var ManualTracingTool;
         beforeHitTest() {
             this.selectionInfo.clear();
         }
-        onLineSegmentHited(line, point1, point2, location, minDistanceSQ, distanceSQ) {
+        onLineSegmentHited(group, line, point1, point2, location, minDistanceSQ, distanceSQ) {
             this.selectionInfo.selectPoint(line, point1, this.editMode);
             this.selectionInfo.selectPoint(line, point2, this.editMode);
         }
         afterHitTest() {
             this.selectionInfo.updateLineSelectionState();
+            this.selectionInfo.resetModifyStates();
+        }
+        resetModifyStates() {
             this.selectionInfo.resetModifyStates();
         }
     }
