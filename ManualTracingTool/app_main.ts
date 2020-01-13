@@ -849,7 +849,16 @@ namespace ManualTracingTool {
 
                     let vectorLayer = <VectorLayer>vLayer.layer;
 
-                    // Insert a step to draw line
+                    // Insert a step to draw fill
+                    if (vectorLayer.fillAreaType != FillAreaTypeID.none) {
+
+                        let drawPathStep = new DrawPathStep();
+                        drawPathStep.layer = vLayer.layer;
+                        drawPathStep.setType(DrawPathOperationTypeID.drawBackground);
+                        result.push(drawPathStep);
+                    }
+
+                    // Insert steps to draw line
                     if (vectorLayer.drawLineType != DrawLineTypeID.none) {
 
                         // Insert a step to clear gl buffer
@@ -870,7 +879,7 @@ namespace ManualTracingTool {
                             result.push(drawPathStep);
                         }
 
-                        // Insert a step to flush gl buffer
+                        // Insert a step to flush gl buffer if the next layer dont need draw lines
                         isGPUDrawContinuing = false;
                         if (vectorLayer.fillAreaType == FillAreaTypeID.none && i > 0) {
 
@@ -880,7 +889,8 @@ namespace ManualTracingTool {
 
                                 let next_vectorLayer = <VectorLayer>next_layer;
 
-                                if (next_vectorLayer.drawLineType != DrawLineTypeID.none) {
+                                if (next_vectorLayer.drawLineType != DrawLineTypeID.none
+                                    && next_vectorLayer.fillAreaType != FillAreaTypeID.none) {
 
                                     isGPUDrawContinuing = true;
                                 }
@@ -895,15 +905,6 @@ namespace ManualTracingTool {
                             drawPathStep.compositeOperation = (vLayer.layer.isMaskedByBelowLayer ? 'source-atop' : 'source-over');
                             result.push(drawPathStep);
                         }
-                    }
-
-                    // Insert a step to draw fill
-                    if (vectorLayer.fillAreaType != FillAreaTypeID.none) {
-
-                        let drawPathStep = new DrawPathStep();
-                        drawPathStep.layer = vLayer.layer;
-                        drawPathStep.setType(DrawPathOperationTypeID.drawBackground);
-                        result.push(drawPathStep);
                     }
                 }
                 else {
@@ -1224,6 +1225,7 @@ namespace ManualTracingTool {
 
             let bufferCanvasWindow = canvasWindow;
             let startTime = Platform.getCurrentTime();
+            let isFullRendering = drawPathContext.isFullRendering();
 
             if (clearState) {
 
@@ -1285,7 +1287,7 @@ namespace ManualTracingTool {
 
                     if (drawPathStep.operationType == DrawPathOperationTypeID.drawForeground) {
 
-                        if (drawPathContext.isFullRendering() && VectorLayer.isVectorLayer(layer)) {
+                        if (isFullRendering && VectorLayer.isVectorLayer(layer)) {
 
                             // GPU rendering
                             this.mainWindow.copyTransformTo(this.drawGPUWindow);
@@ -1300,27 +1302,27 @@ namespace ManualTracingTool {
 
                             // CPU drawing
                             this.drawForeground(viewKeyFrameLayer, this.toolContext.document
-                                , drawPathContext.isFullRendering(), drawPathContext.isModalToolRunning);
+                                , isFullRendering, drawPathContext.isModalToolRunning);
                         }
                     }
                     else if (drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
 
                         this.drawBackground(viewKeyFrameLayer, this.toolContext.document
-                            , drawPathContext.isFullRendering(), drawPathContext.isModalToolRunning);
+                            , isFullRendering, drawPathContext.isModalToolRunning);
                     }
 
                     this.canvasRender.setCompositeOperation('source-over');
                 }
                 else if (drawPathStep.operationType == DrawPathOperationTypeID.prepareRendering) {
 
-                    if (drawPathContext.isFullRendering()) {
+                    if (isFullRendering) {
 
                         this.renderClearBuffer(this.drawGPUWindow);
                     }
                 }
                 else if (drawPathStep.operationType == DrawPathOperationTypeID.flushRendering) {
 
-                    if (drawPathContext.isFullRendering()) {
+                    if (isFullRendering) {
 
                         let renderCanvasWindow = this.drawGPUWindow;
 

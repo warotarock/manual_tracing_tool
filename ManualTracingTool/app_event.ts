@@ -1531,7 +1531,7 @@ namespace ManualTracingTool {
                 if (clickedX <= selectedItem.textLeft) {
 
                     this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
-                    Layer.updateHierarchicalStatesRecursive(selectedItem.layer);
+                    Layer.updateHierarchicalStatesRecursive(this.toolEnv.document.rootLayer);
                     this.activateCurrentTool();
 
                     this.toolEnv.setRedrawMainWindowEditorWindow();

@@ -60,7 +60,7 @@ namespace ManualTracingTool {
 
             if (this.posing3DViewRender.initializeWebGL(this.webglWindow.canvas, true)) {
 
-                alert('‚R‚cƒ|[ƒWƒ“ƒO‹@”\‚ğ‰Šú‰»‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B');
+                alert('ï¼“ï¼¤ãƒãƒ¼ã‚¸ãƒ³ã‚°æ©Ÿèƒ½ã‚’åˆæœŸåŒ–ã§ãã¾ã›ã‚“ã§ã—ãŸã€‚');
             }
 
             //this.pickingWindow.initializeContext();
@@ -69,7 +69,7 @@ namespace ManualTracingTool {
 
             if (this.drawGPURender.initializeWebGL(this.drawGPUWindow.canvas, false)) {
 
-                alert('‚R‚c•`‰æ‹@”\‚ğ‰Šú‰»‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B');
+                alert('ï¼“ï¼¤æç”»æ©Ÿèƒ½ã‚’åˆæœŸåŒ–ã§ãã¾ã›ã‚“ã§ã—ãŸã€‚');
             }
 
             try {
@@ -80,7 +80,7 @@ namespace ManualTracingTool {
             }
             catch(errorMessage) {
 
-                alert('ƒVƒF[ƒ_‚Ì‰Šú‰»‚É¸”s‚µ‚Ü‚µ‚½B' + errorMessage);
+                alert('ã‚·ã‚§ãƒ¼ãƒ€ã®åˆæœŸåŒ–ã«å¤±æ•—ã—ã¾ã—ãŸã€‚' + errorMessage);
             }
         }
 
@@ -905,7 +905,7 @@ namespace ManualTracingTool {
             mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
 
             let aspect = wnd.height / wnd.width;
-            let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: ŒvZ‚ª‰ö‚µ‚¢i‚È‚º‚©c‰¡—¼•û‚É“¯‚¶’l‚ğŠ|‚¯‚È‚¢‚Æ‡‚í‚È‚¢j‚Ì‚ÅŒã‚ÅŒŸ“¢‚·‚é
+            let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: è¨ˆç®—ãŒæ€ªã—ã„ï¼ˆãªãœã‹ç¸¦æ¨ªä¸¡æ–¹ã«åŒã˜å€¤ã‚’æ›ã‘ãªã„ã¨åˆã‚ãªã„ï¼‰ã®ã§å¾Œã§æ¤œè¨ã™ã‚‹
             mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, orthoWidth, -orthoWidth, 0.1, 1.0);
 
             wnd.caluclateGLViewMatrix(this.tmpMatrix);
@@ -946,7 +946,7 @@ namespace ManualTracingTool {
                     this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
 
                     let vertexUnitSize = shader.getVertexUnitSize();
-                    let vertexCount = shader.getVertexCount(group.buffer.pointCount); // –{“–‚Í•Ó‚Ì”‚¾‚¯‚Å‚æ‚¢‚Ì‚ÅáŠ±–³‘Ê‚Í¶‚¶‚é‚ªAŒvZ‚ğŠÈ’P‚É‚·‚é‚½‚ß‚±‚ê‚Å‚æ‚¢‚±‚Æ‚É‚·‚é
+                    let vertexCount = shader.getVertexCount(group.buffer.pointCount); // æœ¬å½“ã¯è¾ºã®æ•°ã ã‘ã§ã‚ˆã„ã®ã§è‹¥å¹²ç„¡é§„ã¯ç”Ÿã˜ã‚‹ãŒã€è¨ˆç®—ã‚’ç°¡å˜ã«ã™ã‚‹ãŸã‚ã“ã‚Œã§ã‚ˆã„ã“ã¨ã«ã™ã‚‹
 
                     this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
 
@@ -1625,13 +1625,13 @@ namespace ManualTracingTool {
         getVertexUnitSize(): int { // @override
 
             return (
-                2 // ’¸“_‚ÌˆÊ’u vec2
+                2 // é ‚ç‚¹ã®ä½ç½® vec2
             );
         }
 
         getVertexCount(pointCount: int): int { // @override
 
-            return (pointCount - 1) * (2 + 2) * 3; // •Ó‚Ì” * ¶‘¤‚Qƒ|ƒŠƒSƒ“{‰E‘¤‚Qƒ|ƒŠƒSƒ“ * 3’¸“_
+            return (pointCount - 1) * (2 + 2) * 3; // è¾ºã®æ•° * å·¦å´ï¼’ãƒãƒªã‚´ãƒ³ï¼‹å³å´ï¼’ãƒãƒªã‚´ãƒ³ * 3é ‚ç‚¹
 
         }
 
@@ -1726,27 +1726,27 @@ void main(void) {
         getVertexUnitSize(): int { // @override
 
             return (
-                2 // ’¸“_ˆÊ’u vec2
-                + 3 // ƒ[ƒJƒ‹‹óŠÔÀ•W vec3 (x, y, t)
+                2 // é ‚ç‚¹ä½ç½® vec2
+                + 3 // ãƒ­ãƒ¼ã‚«ãƒ«ç©ºé–“åº§æ¨™ vec3 (x, y, t)
 
-                + 2 // ’¸“_‚P vec2
-                + 2 // §Œä“_‚P vec2
-                + 2 // §Œä“_‚Q vec2
-                + 2 // ’¸“_‚Q vec2
+                + 2 // é ‚ç‚¹ï¼‘ vec2
+                + 2 // åˆ¶å¾¡ç‚¹ï¼‘ vec2
+                + 2 // åˆ¶å¾¡ç‚¹ï¼’ vec2
+                + 2 // é ‚ç‚¹ï¼’ vec2
 
-                + 2 // ’¸“_‚PR vec2
-                + 2 // §Œä“_‚PR vec2
-                + 2 // §Œä“_‚QR vec2
-                + 2 // ’¸“_‚QR vec2
+                + 2 // é ‚ç‚¹ï¼‘R vec2
+                + 2 // åˆ¶å¾¡ç‚¹ï¼‘R vec2
+                + 2 // åˆ¶å¾¡ç‚¹ï¼’R vec2
+                + 2 // é ‚ç‚¹ï¼’R vec2
 
-                + 2 // ‘¾‚³ vec2 (from, to)
-                //+ 2 // •s“§–¾“x vec2 (from, to)
+                + 2 // å¤ªã• vec2 (from, to)
+                //+ 2 // ä¸é€æ˜åº¦ vec2 (from, to)
             );
         }
 
         getVertexCount(pointCount: int): int { // @override
 
-            return (pointCount - 1) * (4 + 4) * 3; // •Ó‚Ì” * (¶‘¤‚Sƒ|ƒŠƒSƒ“{‰E‘¤‚Sƒ|ƒŠƒSƒ“) * 3’¸“_
+            return (pointCount - 1) * (4 + 4) * 3; // è¾ºã®æ•° * (å·¦å´ï¼”ãƒãƒªã‚´ãƒ³ï¼‹å³å´ï¼”ãƒãƒªã‚´ãƒ³) * 3é ‚ç‚¹
         }
 
         initializeVertexSourceCode() { // @override
@@ -2118,27 +2118,27 @@ void main(void) {
         getVertexUnitSize(): int { // @override
 
             return (
-                2 // ’¸“_ˆÊ’u vec2
-                + 3 // ƒ[ƒJƒ‹‹óŠÔÀ•W vec3 (x, y, t)
+                2 // é ‚ç‚¹ä½ç½® vec2
+                + 3 // ãƒ­ãƒ¼ã‚«ãƒ«ç©ºé–“åº§æ¨™ vec3 (x, y, t)
 
-                + 2 // ’¸“_‚P vec2
-                + 2 // §Œä“_‚P vec2
-                + 2 // §Œä“_‚Q vec2
-                + 2 // ’¸“_‚Q vec2
+                + 2 // é ‚ç‚¹ï¼‘ vec2
+                + 2 // åˆ¶å¾¡ç‚¹ï¼‘ vec2
+                + 2 // åˆ¶å¾¡ç‚¹ï¼’ vec2
+                + 2 // é ‚ç‚¹ï¼’ vec2
 
-                + 2 // ’¸“_‚PR vec2
-                + 2 // §Œä“_‚PR vec2
-                + 2 // §Œä“_‚QR vec2
-                + 2 // ’¸“_‚QR vec2
+                + 2 // é ‚ç‚¹ï¼‘R vec2
+                + 2 // åˆ¶å¾¡ç‚¹ï¼‘R vec2
+                + 2 // åˆ¶å¾¡ç‚¹ï¼’R vec2
+                + 2 // é ‚ç‚¹ï¼’R vec2
 
-                + 2 // ‘¾‚³ vec2 (from, to)
-                //+ 2 // •s“§–¾“x vec2 (from, to)
+                + 2 // å¤ªã• vec2 (from, to)
+                //+ 2 // ä¸é€æ˜åº¦ vec2 (from, to)
             );
         }
 
         getVertexCount(pointCount: int): int { // @override
 
-            return (pointCount - 1) * (4 + 4) * 3; // •Ó‚Ì” * (¶‘¤‚Sƒ|ƒŠƒSƒ“{‰E‘¤‚Sƒ|ƒŠƒSƒ“) * 3’¸“_
+            return (pointCount - 1) * (4 + 4) * 3 + (2 + 2) * 3; // è¾ºã®æ•° * (å·¦å´ï¼”ãƒãƒªã‚´ãƒ³ï¼‹å³å´ï¼”ãƒãƒªã‚´ãƒ³) * 3é ‚ç‚¹ + (ç·šç«¯ç”¨ï¼’ãƒãƒªã‚´ãƒ³ï¼Šï¼’)* 3é ‚ç‚¹
         }
 
         initializeVertexSourceCode() { // @override
@@ -2308,7 +2308,7 @@ void main(void) {
     }
 	else {
 
-        float col = 1.0 - smoothstep(width - 0.05, width, distance);
+        float col = 1.0 - smoothstep(width - 0.08, width, distance);
         //float col = distance * 0.1;
 
         gl_FragColor = vec4(uColor.rgb, col * uColor.a * 0.9 + 0.1);
