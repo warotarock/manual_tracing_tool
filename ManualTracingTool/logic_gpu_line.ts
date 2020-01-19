@@ -52,6 +52,10 @@ namespace ManualTracingTool {
         relativeVecD = vec3.create();
         relativeEdgePointVecA = vec3.create();
         relativeEdgePointVecB = vec3.create();
+        relativeVecCenterFrom = vec3.create();
+        relativeVecCenterTo = vec3.create();
+        relativeVecEdgeFrom = vec3.create();
+        relativeVecEdgeTo = vec3.create();
 
         minimumSegmentDistance = 0.001;
 
@@ -273,9 +277,11 @@ namespace ManualTracingTool {
                         linePoint.controlPointCF,
                         null,
                         linePoint.location,
+                        linePoint.location,
+                        linePoint.width,
+                        linePointNext.location,
+                        linePointNext.location,
                         linePointNext.controlPointCB,
-                        linePointNext.location,
-                        linePointNext.location,
                         linePoint.pointMat,
                         linePoint.invMat
                     );
@@ -284,9 +290,11 @@ namespace ManualTracingTool {
                         linePoint.controlPointLF,
                         linePoint.edgePointL,
                         linePoint.location,
-                        linePointNext.controlPointLB,
-                        linePointNext.edgePointL,
+                        linePoint.edgePointL,
+                        linePoint.width,
                         linePointNext.location,
+                        linePointNext.edgePointL,
+                        linePointNext.controlPointLB,
                         linePoint.pointMat,
                         linePoint.invMat
                     );
@@ -295,9 +303,11 @@ namespace ManualTracingTool {
                         linePoint.controlPointRF,
                         linePoint.edgePointR,
                         linePoint.location,
-                        linePointNext.controlPointRB,
-                        linePointNext.edgePointR,
+                        linePoint.edgePointR,
+                        linePoint.width,
                         linePointNext.location,
+                        linePointNext.edgePointR,
+                        linePointNext.controlPointRB,
                         linePoint.pointMat,
                         linePoint.invMat
                     );
@@ -314,9 +324,11 @@ namespace ManualTracingTool {
                         linePoint.controlPointCB,
                         null,
                         linePoint.location,
+                        linePoint.location,
+                        linePoint.width,
+                        linePointNext.location,
+                        linePointNext.location,
                         linePointNext.controlPointCF,
-                        linePointNext.location,
-                        linePointNext.location,
                         linePointNext.pointMat,
                         linePointNext.invMat
                     );
@@ -325,9 +337,11 @@ namespace ManualTracingTool {
                         linePoint.controlPointLB,
                         linePoint.edgePointL,
                         linePoint.location,
-                        linePointNext.controlPointLF,
-                        linePointNext.edgePointL,
+                        linePoint.edgePointL,
+                        linePoint.width,
                         linePointNext.location,
+                        linePointNext.edgePointL,
+                        linePointNext.controlPointLF,
                         linePointNext.pointMat,
                         linePointNext.invMat
                     );
@@ -336,9 +350,11 @@ namespace ManualTracingTool {
                         linePoint.controlPointRB,
                         linePoint.edgePointR,
                         linePoint.location,
-                        linePointNext.controlPointRF,
-                        linePointNext.edgePointR,
+                        linePoint.edgePointR,
+                        linePoint.width,
                         linePointNext.location,
+                        linePointNext.edgePointR,
+                        linePointNext.controlPointRF,
                         linePointNext.pointMat,
                         linePointNext.invMat
                     );
@@ -371,37 +387,46 @@ namespace ManualTracingTool {
             vec3.add(resultB, edgePointC, this.controlPointVec);
         }
 
-        calculateMirroredPoint(resultControlPoint: Vec3, resultEdgePoint: Vec3, centerPointFrom: Vec3, controlPointTo: Vec3, edgePointTo: Vec3, centerPointTo: Vec3, pointMat: Mat4, invMat: Mat4) {
-
-            vec3.transformMat4(this.relativeEdgePointVecA, edgePointTo, invMat);
-            vec3.transformMat4(this.relativeVecC, centerPointTo, invMat);
-            vec3.transformMat4(this.relativeVecD, centerPointFrom, invMat);
-
-            vec3.transformMat4(this.relativeVecA, controlPointTo, invMat);
-            this.relativeVecB[0] = (this.relativeVecA[0] - this.relativeVecC[0]) * -1 + this.relativeVecD[0];
-            this.relativeVecB[1] = this.relativeVecA[1];
-            this.relativeVecB[2] = 0.0;
-            vec3.transformMat4(resultControlPoint, this.relativeVecB, pointMat);
+        calculateMirroredPoint(resultControlPoint: Vec3, resultEdgePoint: Vec3
+            , centerPointFrom: Vec3, edgePointfrom: Vec3, radiusFrom: float
+            , centerPointTo: Vec3, edgePointTo: Vec3, controlPointTo: Vec3
+            , pointMat: Mat4, invMat: Mat4) {
 
             if (resultEdgePoint != null) {
 
+                vec3.transformMat4(this.relativeVecCenterTo, centerPointTo, invMat);
+                vec3.transformMat4(this.relativeVecCenterFrom, centerPointFrom, invMat);
+
                 vec3.transformMat4(this.relativeVecA, edgePointTo, invMat);
-                this.relativeVecB[0] = (this.relativeVecA[0] - this.relativeVecC[0]) * -1 + this.relativeVecD[0];
-                this.relativeVecB[1] = this.relativeVecA[1];
+
+                vec3.subtract(this.relativeVecB, this.relativeVecA, this.relativeVecCenterTo);
+                let length = vec3.length(this.relativeVecB);
+                if (length > 0) {
+
+                    vec3.scale(this.relativeVecB, this.relativeVecB, radiusFrom / length);
+                }
+                else {
+
+                    vec3.set(this.relativeVecB, 0.0, 0.0, 0.0);
+                }
+
+                this.relativeVecB[0] = this.relativeVecB[0] * -1 + this.relativeVecCenterFrom[0];
+                this.relativeVecB[1] = this.relativeVecB[1] + this.relativeVecCenterFrom[1];
                 this.relativeVecB[2] = 0.0;
                 vec3.transformMat4(resultEdgePoint, this.relativeVecB, pointMat);
             }
 
-            /*
-            vec3.subtract(this.relativeVecA, controlPointTo, edgePointTo);
-            vec3.add(this.relativeVecA, this.relativeVecA, edgePointFrom);
+            if (resultControlPoint != null) {
 
-            vec3.transformMat4(this.relativeVecB, this.relativeVecA, invMat);
+                vec3.transformMat4(this.relativeVecEdgeTo, edgePointTo, invMat);
+                vec3.transformMat4(this.relativeVecEdgeFrom, edgePointfrom, invMat);
 
-            this.relativeVecB[0] *= -1;
-
-            vec3.transformMat4(resultF, this.relativeVecB, pointMat);
-            */
+                vec3.transformMat4(this.relativeVecA, controlPointTo, invMat);
+                this.relativeVecB[0] = (this.relativeVecA[0] - this.relativeVecEdgeTo[0]) * -1 + this.relativeVecEdgeFrom[0];
+                this.relativeVecB[1] = (this.relativeVecA[1] - this.relativeVecEdgeTo[1]) + this.relativeVecEdgeFrom[1];
+                this.relativeVecB[2] = 0.0;
+                vec3.transformMat4(resultControlPoint, this.relativeVecB, pointMat);
+            }
         }
 
         // 3. ベジエ曲線を囲むポリゴンのうち制御点の頂点位置の計算
@@ -606,7 +631,8 @@ namespace ManualTracingTool {
 
                         //let flipY = (map.lr == 1 ? 1.0 : -1.0);
 
-                        offset = this.calculateBufferData_AddBezierPoint(data, offset, vec, linePoint, linePointNext, 1.0);
+                        offset = this.calculateBufferData_AddBezierPoint(data, offset, vec, linePoint, linePointNext, 1.0
+                            , linePoint.width, linePointNext.width);
                     }
                 }
             }
@@ -614,7 +640,9 @@ namespace ManualTracingTool {
             vertexBuffer.usedDataArraySize = offset;
         }
 
-        calculateBufferData_AddBezierPoint(data: Float32Array, offset: int, vec: Vec3, linePoint: GPULinePoint, linePointNext: GPULinePoint, flipY: float): int {
+        calculateBufferData_AddBezierPoint(data: Float32Array, offset: int, vec: Vec3
+            , linePoint: GPULinePoint, linePointNext: GPULinePoint, flipY: float
+            , widthFrom: float, widthTo: float): int {
 
             // 頂点位置
             data[offset++] = vec[0];
@@ -666,13 +694,8 @@ namespace ManualTracingTool {
             data[offset++] = this.relativeVecA[1];
 
             // 幅
-            data[offset++] = linePoint.width * 0.5;
-            data[offset++] = linePointNext.width * 0.5;
-            //data[offset++] = map.cur == 1 ? 1.0 : 0.0;
-            //data[offset++] = map.cur == 1 ? 0.0 : 1.0;
-
-            //data[offset++] = linePoint.alpha;
-            //data[offset++] = linePointNext.alpha;
+            data[offset++] = widthFrom * 0.5;
+            data[offset++] = widthTo * 0.5;
 
             return offset;
         }
@@ -689,25 +712,27 @@ namespace ManualTracingTool {
             let rightTopX = capPoint.edgePointR[0] + capTopRelativeX;
             let rightTopY = capPoint.edgePointR[1] + capTopRelativeY;
 
+            let width = (isTopCap ? linePoint.width : linePointNext.width);;
+
             // 1
             vec3.set(this.vec, leftTopX, leftTopY, 0.0)
-            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0, width, width);
 
             vec3.set(this.vec, capPoint.edgePointL[0], capPoint.edgePointL[1], 0.0)
-            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0, width, width);
 
             vec3.set(this.vec, capPoint.edgePointR[0], capPoint.edgePointR[1], 0.0)
-            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0, width, width);
 
             // 2
             vec3.set(this.vec, capPoint.edgePointR[0], capPoint.edgePointR[1], 0.0)
-            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0, width, width);
 
             vec3.set(this.vec, rightTopX, rightTopY, 0.0)
-            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0, width, width);
 
             vec3.set(this.vec, leftTopX, leftTopY, 0.0)
-            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0);
+            offset = this.calculateBufferData_AddBezierPoint(data, offset, this.vec, linePoint, linePointNext, 1.0, width, width);
 
             return offset;
         }
