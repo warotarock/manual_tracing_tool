@@ -1176,44 +1176,46 @@ namespace ManualTracingTool {
 
         // Header window
 
+        uiToolWindow: UI_MenuButtons;
+
         protected updateHeaderButtons() {
 
-            {
-                let isButtonON = (this.toolContext.editMode == EditModeID.drawMode
-                    && (this.toolContext.mainToolID == MainToolID.drawLine
-                        || this.toolContext.mainToolID == MainToolID.posing
-                        || this.toolContext.mainToolID == MainToolID.imageReferenceLayer));
+            let activeElementID = '';
 
-                this.setHeaderButtonVisual(this.ID.menu_btnDrawTool, isButtonON);
+            if (this.toolContext.editMode == EditModeID.drawMode
+                && (this.toolContext.mainToolID == MainToolID.drawLine
+                    || this.toolContext.mainToolID == MainToolID.posing
+                    || this.toolContext.mainToolID == MainToolID.imageReferenceLayer)) {
+
+                activeElementID = this.ID.menu_btnDrawTool;
             }
-            {
-                let isButtonON = (this.toolContext.editMode == EditModeID.editMode);
+            else if (this.toolContext.editMode == EditModeID.editMode) {
 
-                this.setHeaderButtonVisual(this.ID.menu_btnEditTool, isButtonON);
-            }
-            {
-                let isButtonON = (this.toolContext.editMode == EditModeID.drawMode
-                    && this.toolContext.mainToolID == MainToolID.misc);
-
-                this.setHeaderButtonVisual(this.ID.menu_btnMiscTool, isButtonON);
-            }
-        }
-
-        private setHeaderButtonVisual(elementID: string, isSelected: boolean) {
-
-            var element = this.getElement(elementID);
-
-            if (isSelected) {
-
-                element.classList.remove(this.ID.unselectedMainButton);
-                element.classList.add(this.ID.selectedMainButton);
+                activeElementID = this.ID.menu_btnEditTool;
             }
             else {
 
-                element.classList.remove(this.ID.selectedMainButton);
-                element.classList.add(this.ID.unselectedMainButton);
+                activeElementID = this.ID.menu_btnMiscTool;
             }
+
+            this.uiToolWindow.setState({ activeElementID: activeElementID });
         }
+
+        //private setHeaderButtonVisual(elementID: string, isSelected: boolean) {
+
+        //    var element = this.getElement(elementID);
+
+        //    if (isSelected) {
+
+        //        element.classList.remove(this.ID.unselectedMainButton);
+        //        element.classList.add(this.ID.selectedMainButton);
+        //    }
+        //    else {
+
+        //        element.classList.remove(this.ID.selectedMainButton);
+        //        element.classList.add(this.ID.unselectedMainButton);
+        //    }
+        //}
 
         protected setHeaderDocumentFileName(lastURL: string) {
 
@@ -1691,6 +1693,7 @@ namespace ManualTracingTool {
         paletteSelectorCanvas = 'paletteSelectorCanvas';
         colorMixerWindow_colorCanvas = 'colorMixer_colorCanvas';
 
+        mainToolButtons = "mainToolButtons";
         menu_btnDrawTool = 'menu_btnDrawTool';
         menu_btnMiscTool = 'menu_btnMiscTool';
         menu_btnEditTool = 'menu_btnEditTool';

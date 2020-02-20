@@ -196,6 +196,16 @@ namespace ManualTracingTool {
         //_Main.drawGPUWindow.canvas.id = 'debug';
         //document.body.appendChild(_Main.drawGPUWindow.canvas);
 
+        _Main.uiToolWindow = ReactDOM.render(
+            React.createElement(UI_MenuButtons, { context: _Main })
+            , document.getElementById(_Main.ID.mainToolButtons)
+        );
+
+        ReactDOM.render(
+            React.createElement(UI_ScrollView, { children: UI_CommandButtons })
+            , document.getElementById('dndtest')
+        );
+
         var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
         for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
 

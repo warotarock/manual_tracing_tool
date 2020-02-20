@@ -64,27 +64,35 @@ header {
         }
     }
 
-    .mainToolButton {
-        width: 120px;
-        height: 26px;
-        border: solid;
-        border-width: 1px;
-        margin-left: 5px;
-        text-align: center;
-        padding-top: 5px;
-        cursor: default;
+    .mainToolButtons {
+        display: flex;
 
-        &.selectedMainButton {
-            color: #fff;
-            background: #333;
-        }
+        > div {
+            width: 120px;
+            height: 26px;
+            border: solid;
+            border-width: 1px;
+            margin-left: 5px;
+            text-align: center;
+            padding-top: 5px;
+            cursor: default;
 
-        &.unselectedMainButton {
-            color: #333;
-            background: #fff;
+            &.selectedMainButton {
+                color: #fff;
+                background: #333;
 
-            &:hover {
-                background-color: $hoverBackground;
+                &:hover {
+                    color: $hoverBackground;
+                }
+            }
+
+            &.unselectedMainButton {
+                color: #333;
+                background: #fff;
+
+                &:hover {
+                    background-color: $hoverBackground;
+                }
             }
         }
     }
@@ -495,5 +503,26 @@ input[type=number] {
     div label input {
         margin-left: 15px;
         margin-top: 15px;
+    }
+}
+
+.scroll-container {
+    height: 350px;
+    overflow: hidden;
+}
+
+.scrollTest {
+    //overflow-y: scroll;
+    border: solid 1px #000;
+    margin-top: 4px;
+
+    .list-item {
+        padding-left: 6px;
+        line-height: 45px;
+        vertical-align: middle;
+
+        &:nth-child(odd) {
+            background-color: #eee;
+        }
     }
 }

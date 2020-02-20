@@ -2311,10 +2311,10 @@ void main(void) {
         float col = 1.0 - smoothstep(width - 0.08, width, distance);
         //float col = distance * 0.1;
 
-        gl_FragColor = vec4(uColor.rgb, col * uColor.a * 0.9 + 0.1);
-        //gl_FragColor = vec4(0.0, 0.0, 0.0, col * mix(vAlpha[0], vAlpha[1], vLocalPosition.z));
         //gl_FragColor = vec4(0.0, 0.0, 0.0, 0.1);
+        //gl_FragColor = vec4(vLocalPosition.z, 0.0, 0.0, col);
         //gl_FragColor = vec4(vWidth.y, 0.0, 0.0, col * uColor.a * 0.9 + 0.1);
+        gl_FragColor = vec4(uColor.rgb, col * uColor.a * 0.9 + 0.1);
     }
 }
 `;

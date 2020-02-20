@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
 
     <title>Manual tracing tool</title>
 
@@ -18,54 +18,65 @@
     <script src="./external/ora_js/ora.js"></script>
     <script src="./external/ora_js/ora-blending.js"></script>
 
+    <script src="./dist/react_bundle.js"></script>
+    <script>
+        var ReactLib = window["ReactLib"];
+        var React = ReactLib["GetReact"]();
+        var ReactDOM = ReactLib["GetReactDOM"]();
+    </script>
+
     <link rel="stylesheet" href="index_style.css" type="text/css" />
-    <script src="./src/conversion.js"></script>
-    <script src="./src/platform.js"></script>
-    <script src="./src/render2d.js"></script>
-    <script src="./src/render3d.js"></script>
-    <script src="./src/logic_gpu_data.js"></script>
-    <script src="./src/base_data.js"></script>
-    <script src="./src/base_command.js"></script>
-    <script src="./src/base_tool.js"></script>
-    <script src="./src/logic_math.js"></script>
-    <script src="./src/logic_color.js"></script>
-    <script src="./src/logic_points.js"></script>
-    <script src="./src/logic_hittest.js"></script>
-    <script src="./src/logic_selector.js"></script>
-    <script src="./src/logic_document.js"></script>
-    <script src="./src/logic_edit_vector_layer.js"></script>
-    <script src="./src/logic_gpu_line.js"></script>
-    <script src="./src/command_delete_points.js"></script>
-    <script src="./src/command_edit_layer.js"></script>
-    <script src="./src/command_edit_animation.js"></script>
-    <script src="./src/command_edit_copy.js"></script>
-    <script src="./src/command_edit_palette.js"></script>
-    <script src="./src/tool_draw_line.js"></script>
-    <script src="./src/tool_add_point.js"></script>
-    <script src="./src/tool_scratch_line.js"></script>
-    <script src="./src/tool_scratch_line_width.js"></script>
-    <script src="./src/tool_scratch_line_draw.js"></script>
-    <script src="./src/tool_resample_segment.js"></script>
-    <script src="./src/tool_select_brush_select.js"></script>
-    <script src="./src/tool_select_points_all.js"></script>
-    <script src="./src/tool_delete_points_brush_select.js"></script>
-    <script src="./src/tool_delete_points_divide_line.js"></script>
-    <script src="./src/tool_edit_points.js"></script>
-    <script src="./src/tool_transform_lattice.js"></script>
-    <script src="./src/tool_transform_line_point.js"></script>
-    <script src="./src/tool_edit_mode_main.js"></script>
-    <script src="./src/tool_edit_image_file_ref.js"></script>
-    <script src="./src/tool_edit_document_frame.js"></script>
-    <script src="./src/tool_posing3d.js"></script>
-    <script src="./src/posing3d_logic.js"></script>
-    <script src="./src/posing3d_view.js"></script>
-    <script src="./src/app_view.js"></script>
-    <script src="./src/app_drawing.js"></script>
-    <script src="./src/app_tool.js"></script>
-    <script src="./src/app_document.js"></script>
-    <script src="./src/app_event.js"></script>
-    <script src="./src/app_main.js"></script>
-    <script src="./src/app.js"></script>
+    <script src="./dist/conversion.js"></script>
+    <script src="./dist/platform.js"></script>
+    <script src="./dist/render2d.js"></script>
+    <script src="./dist/render3d.js"></script>
+    <script src="./dist/logic_gpu_data.js"></script>
+    <script src="./dist/base_data.js"></script>
+    <script src="./dist/base_command.js"></script>
+    <script src="./dist/base_tool.js"></script>
+    <script src="./dist/logic_math.js"></script>
+    <script src="./dist/logic_color.js"></script>
+    <script src="./dist/logic_points.js"></script>
+    <script src="./dist/logic_hittest.js"></script>
+    <script src="./dist/logic_selector.js"></script>
+    <script src="./dist/logic_document.js"></script>
+    <script src="./dist/logic_edit_vector_layer.js"></script>
+    <script src="./dist/logic_gpu_line.js"></script>
+    <script src="./dist/command_delete_points.js"></script>
+    <script src="./dist/command_edit_layer.js"></script>
+    <script src="./dist/command_edit_animation.js"></script>
+    <script src="./dist/command_edit_copy.js"></script>
+    <script src="./dist/command_edit_palette.js"></script>
+    <script src="./dist/tool_draw_line.js"></script>
+    <script src="./dist/tool_add_point.js"></script>
+    <script src="./dist/tool_scratch_line.js"></script>
+    <script src="./dist/tool_scratch_line_width.js"></script>
+    <script src="./dist/tool_scratch_line_draw.js"></script>
+    <script src="./dist/tool_resample_segment.js"></script>
+    <script src="./dist/tool_select_brush_select.js"></script>
+    <script src="./dist/tool_select_points_all.js"></script>
+    <script src="./dist/tool_delete_points_brush_select.js"></script>
+    <script src="./dist/tool_delete_points_divide_line.js"></script>
+    <script src="./dist/tool_edit_points.js"></script>
+    <script src="./dist/tool_transform_lattice.js"></script>
+    <script src="./dist/tool_transform_line_point.js"></script>
+    <script src="./dist/tool_edit_mode_main.js"></script>
+    <script src="./dist/tool_edit_image_file_ref.js"></script>
+    <script src="./dist/tool_edit_document_frame.js"></script>
+    <script src="./dist/tool_posing3d.js"></script>
+    <script src="./dist/posing3d_logic.js"></script>
+    <script src="./dist/posing3d_view.js"></script>
+    <script src="./dist/ui_menu_buttons.js"></script>
+    <script src="./dist/ui_scroll_view.js"></script>
+    <script src="./dist/ui_command_buttons.js"></script>
+    <script src="./dist/ui_tool_window.js"></script>
+    <script src="./dist/app_view.js"></script>
+    <script src="./dist/app_drawing.js"></script>
+    <script src="./dist/app_tool.js"></script>
+    <script src="./dist/app_document.js"></script>
+    <script src="./dist/app_event.js"></script>
+    <script src="./dist/app_main.js"></script>
+    <script src="./dist/app.js"></script>
     <style>
     </style>
 </head>
@@ -77,9 +88,10 @@
         <div class="fileCommandButton" id="menu_btnProperty"><img class="mainMenuButtonImage" src="./res/icons8-settings-100.png" /></div>
         <div class="fileNameText" id="menu_btnSystem"><input type="text" id="fileName" /></div>
         <div class="mainMenuButton" id="menu_btnOperationOption"><img class="mainMenuButtonImage" src="./res/icons8-settings-100.png" /></div>
-        <div class="mainToolButton" id="menu_btnDrawTool">Draw</div>
+        <div id="mainToolButtons" class="mainToolButtons"></div>
+        <!--<div class="mainToolButton" id="menu_btnDrawTool">Draw</div>
         <div class="mainToolButton" id="menu_btnEditTool">Edit</div>
-        <div class="mainToolButton" id="menu_btnMiscTool">Setting</div>
+        <div class="mainToolButton" id="menu_btnMiscTool">Setting</div>-->
         <!--
     <div class="mainMenuButton" id="menu_btnPalette2"><img class="mainMenuButtonImage" src="./res/icons8-paint-palette-96.png" /></div>
     <div class="mainMenuButton" id="menu_btnPalette1"><img class="mainMenuButtonImage" src="./res/icons8-paint-palette-96.png" /></div>
@@ -163,6 +175,7 @@
                         </div>
                     </div>
                 </div>
+                <div id="dndtest" class="scrollTest"></div>
             </div>
         </div>
     </main>

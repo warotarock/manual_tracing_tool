@@ -21,7 +21,7 @@
     <UseGlobalApplicationHostFile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <TypeScriptToolsVersion>3.6</TypeScriptToolsVersion>
+    <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
     <Use64BitIISExpress />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -33,13 +33,13 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TypeScriptTarget>ES2018</TypeScriptTarget>
-    <TypeScriptJSXEmit>None</TypeScriptJSXEmit>
+    <TypeScriptJSXEmit>React</TypeScriptJSXEmit>
     <TypeScriptModuleKind>None</TypeScriptModuleKind>
     <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
     <TypeScriptNoImplicitAny>False</TypeScriptNoImplicitAny>
     <TypeScriptRemoveComments>False</TypeScriptRemoveComments>
     <TypeScriptOutFile />
-    <TypeScriptOutDir>./src</TypeScriptOutDir>
+    <TypeScriptOutDir>./dist</TypeScriptOutDir>
     <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
     <TypeScriptNoEmitOnError>False</TypeScriptNoEmitOnError>
     <TypeScriptSourceMap>False</TypeScriptSourceMap>
@@ -71,10 +71,16 @@
     <TypeScriptSourceRoot />
   </PropertyGroup>
   <ItemGroup>
+    <Content Include=".babelrc" />
+    <Content Include="package_main.js" />
+    <Content Include="webpack_development.js" />
+    <Content Include="webpack.config.js" />
     <None Include="compilerconfig.json" />
     <None Include="compilerconfig.json.defaults">
       <DependentUpon>compilerconfig.json</DependentUpon>
     </None>
+    <Content Include="tsconfig.json" />
+    <Content Include="tslint.json" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -98,6 +104,7 @@
     <TypeScriptCompile Include="command_edit_palette.ts" />
     <TypeScriptCompile Include="logic_gpu_data.ts" />
     <TypeScriptCompile Include="logic_gpu_line.ts" />
+    <TypeScriptCompile Include="node_modules\%40types\react\index.d.ts" />
     <TypeScriptCompile Include="platform.ts" />
     <TypeScriptCompile Include="app_event.ts" />
     <TypeScriptCompile Include="app_drawing.ts" />
@@ -144,6 +151,10 @@
     <TypeScriptCompile Include="tool_transform_lattice.ts" />
     <TypeScriptCompile Include="typings\glmatrix\gl-matrix.d.ts" />
     <TypeScriptCompile Include="typings\ora_js\ora_js.d.ts" />
+    <TypeScriptCompile Include="ui_scroll_view.tsx" />
+    <TypeScriptCompile Include="ui_command_buttons.tsx" />
+    <TypeScriptCompile Include="ui_menu_buttons.tsx" />
+    <TypeScriptCompile Include="ui_tool_window.tsx" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />

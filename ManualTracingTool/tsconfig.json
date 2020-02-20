@@ -9,7 +9,8 @@
     "preserveConstEnums": true,
     "suppressImplicitAnyIndexErrors": true,
     "sourceMap": false,
-    "outDir": "./src/"
+    "jsx": "react",
+    "outDir": "./dist/"
   },
   "formatCodeOptions": {
     "indentSize": 4,

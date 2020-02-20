@@ -287,5 +287,8 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
+# npm
+*node_modules/
+
 # Setting.json
 ManualTracingTool/settings.json
