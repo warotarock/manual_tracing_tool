@@ -1,11 +1,11 @@
 
 namespace ManualTracingTool {
 
-    export function UI_ScrollView({ children, wheelScrollY = 16 }) {
+    export function UI_ScrollView({ content, contentRef = null, wheelScrollY = 16 }) {
 
-        let containerRef = React.useRef(null);
+        const containerRef = React.useRef(null);
 
-        let internalState = React.useRef({
+        const internalState = React.useRef({
             lastMouseX: null,
             lastMouseY: null,
             isMouseDown: false,
@@ -13,18 +13,18 @@ namespace ManualTracingTool {
             isFocused: false,
         });
 
-        let runScroll = ({ dx, dy }) => {
+        const runScroll = ({ dx, dy }) => {
 
             containerRef.current.scrollTop += dy;
         };
 
-        let scroll = React.useCallback(({ dx, dy }) => {
+        const scroll = React.useCallback(({ dx, dy }) => {
 
             runScroll({ dx, dy });
 
         }, [containerRef.current?.scrollTop]);
 
-        let onMouseDown = (e: React.MouseEvent) => {
+        const onMouseDown = (e: React.MouseEvent) => {
 
             internalState.current.isMouseDown = true;
             internalState.current.lastMouseX = e.clientX;
@@ -33,7 +33,7 @@ namespace ManualTracingTool {
             e.preventDefault();
         };
 
-        let onMouseUp = (e: MouseEvent) => {
+        const onMouseUp = (e: MouseEvent) => {
 
             internalState.current.isMouseDown = false;
             internalState.current.lastMouseX = null;
@@ -41,7 +41,7 @@ namespace ManualTracingTool {
             internalState.current.isScrolling = false;
         };
 
-        let onMouseMove = (e: MouseEvent) => {
+        const onMouseMove = (e: MouseEvent) => {
 
             if (!internalState.current.isMouseDown) {
 
@@ -62,21 +62,21 @@ namespace ManualTracingTool {
             // console.log(dx, dy);
         };
 
-        let onMouseEnter = (e: React.MouseEvent) => {
+        const onMouseEnter = (e: React.MouseEvent) => {
 
             internalState.current.isFocused = true;
 
             // console.log('onMouseEnter');
         };
 
-        let onMouseLeave = (e: React.MouseEvent) => {
+        const onMouseLeave = (e: React.MouseEvent) => {
 
             internalState.current.isFocused = false;
 
             // console.log('onMouseLeave');
         };
 
-        let onWheel = (e: React.WheelEvent) => {
+        const onWheel = (e: React.WheelEvent) => {
 
             let dx = 0;
             let dy = (e.deltaY > 0 ? wheelScrollY : -wheelScrollY);
@@ -86,7 +86,7 @@ namespace ManualTracingTool {
             // console.log('onMouseLeave');
         };
 
-        let onKeyDown = (e: KeyboardEvent) => {
+        const onKeyDown = (e: KeyboardEvent) => {
 
             if (e.key === ' ') {
 
@@ -99,7 +99,7 @@ namespace ManualTracingTool {
             }
         };
 
-        let onKeyUp = (e: KeyboardEvent) => {
+        const onKeyUp = (e: KeyboardEvent) => {
 
             if (e.key === ' ') {
 
@@ -124,13 +124,13 @@ namespace ManualTracingTool {
         });
 
         return (
-            <div ref={containerRef} className="scroll-container"
+            <div ref={containerRef} className="ui-scroll-view-container"
                 onMouseDown={onMouseDown}
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
                 onWheel={onWheel}
             >
-                { children() }
+                {content({ ref: contentRef })}
             </div>
         );
     }

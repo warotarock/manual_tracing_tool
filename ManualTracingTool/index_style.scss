@@ -1,6 +1,24 @@
 ﻿
-$hoverBackground: #ddf;
+$activeBackground: #ddf;
+$hoverBackground: #eef;
 $buttonCornerRadius: 3px;
+
+.image-splite-system {
+    background-image: url(./res/system_image01.png);
+}
+
+.image-splite-subtool {
+    background-image: url(./res/toolbar_image02.png);
+}
+
+.image-splite-posing3d {
+    background-image: url(./res/toolbar_image03.png);
+}
+
+.ui-scroll-view-container {
+    overflow: hidden;
+    height: 100%;
+}
 
 html {
     margin: 0;
@@ -119,147 +137,185 @@ header {
 }
 
 main {
+    display: flex;
     flex: 1;
     padding: 0 20px 0 20px;
 
-    .middle-section {
+    .side-panel1 {
         display: flex;
-        height: 100%;
+        flex-direction: column;
+        width: 200px;
 
-        .side-panel1 {
-            display: flex;
-            flex-direction: column;
-            width: 200px;
-
-            .layer-window {
-                overflow: hidden;
-                flex: 1;
-                margin-bottom: 5px;
-                border: 1px solid;
-
-                canvas {
-                    border: none;
-                    width: 100%;
-                    height: 100%;
-                }
-            }
-
-            .subtool-window {
-                overflow: hidden;
-                flex: 1;
-                border: 1px solid;
-
-                canvas {
-                    border: none;
-                    width: 100%;
-                    height: 100%;
-                }
-            }
-        }
-
-        .center-panel {
-            display: flex;
-            flex-direction: column;
+        .layer-window {
+            overflow: hidden;
             flex: 1;
-            padding: 0 5px 0 5px;
+            margin-bottom: 5px;
+            border: 1px solid;
 
-            .main-canvas-window {
-                flex: 1;
-                position: relative;
-                border: 1px solid;
-                margin-bottom: 5px;
-
-                .main-canvas {
-                    position: absolute;
-                    border: none;
-                    z-index: 2;
-                }
-
-                .editor-canvas {
-                    position: absolute;
-                    border: none;
-                    z-index: 3;
-                }
-
-                .webgl-canvas {
-                    position: absolute;
-                    border: none;
-                    z-index: 1;
-                }
-            }
-
-            .time-line-window {
-                overflow: hidden;
-                height: 46px;
-                border: 1px solid;
-
-                canvas {
-                    border: none;
-                    width: 100%;
-                    height: 100%;
-                }
+            canvas {
+                border: none;
+                width: 100%;
+                height: 100%;
             }
         }
 
-        .side-panel2 {
-            display: flex;
-            flex-direction: column;
-            width: 202px;
+        .subtool-window {
+            overflow: hidden;
+            flex: 1;
+            border: 1px solid;
 
-            .palette-window {
-                overflow: hidden;
-                height: 238px;
-                margin-bottom: 5px;
-                border: 1px solid;
+            canvas {
+                border: none;
+                width: 100%;
+                height: 100%;
+            }
+        }
+    }
 
-                canvas {
-                    border: none;
-                    width: 100%;
-                    height: 100%;
-                }
+    .center-panel {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 0 5px 0 5px;
+
+        .main-canvas-window {
+            flex: 1;
+            position: relative;
+            border: 1px solid;
+            margin-bottom: 5px;
+
+            .main-canvas {
+                position: absolute;
+                border: none;
+                z-index: 2;
             }
 
-            .color-mixer-window {
-                flex-direction: column;
-                border: 1px solid;
-                padding: 0px 0 8px 0;
+            .editor-canvas {
+                position: absolute;
+                border: none;
+                z-index: 3;
+            }
 
-                #colorMixer_colorCanvas {
-                    border: none;
-                    width: 100%;
-                    height: 50px;
+            .webgl-canvas {
+                position: absolute;
+                border: none;
+                z-index: 1;
+            }
+        }
+
+        .time-line-window {
+            overflow: hidden;
+            height: 46px;
+            border: 1px solid;
+
+            canvas {
+                border: none;
+                width: 100%;
+                height: 100%;
+            }
+        }
+    }
+
+    .side-panel2 {
+        display: flex;
+        flex-direction: column;
+        width: 202px;
+
+        .palette-window {
+            overflow: hidden;
+            height: 238px;
+            margin-bottom: 5px;
+            border: 1px solid;
+
+            canvas {
+                border: none;
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        .color-mixer-window {
+            display: flex;
+            flex-direction: column;
+            height: 220px;
+            border: 1px solid;
+            padding: 0px 0 8px 0;
+
+            #colorMixer_colorCanvas {
+                border: none;
+                width: 100%;
+                height: 50px;
+            }
+
+            .colorMixerValueSlide {
+                display: flex;
+                height: 22px;
+                padding: 2px 10px 0 4px;
+
+                div.label {
+                    width: 20px;
+                    font-size: 14px;
+                    text-align: center;
                 }
 
-                .colorMixerValueSlide {
-                    display: flex;
-                    height: 22px;
-                    padding: 2px 10px 0 4px;
+                input[type=number] {
+                    width: 50px;
+                    height: 16px;
+                    font-size: 14px;
+                    border: none;
+                    background-color: #f8f8f8;
+                    margin-top: 2px;
+                    margin-left: 4px;
+                }
 
-                    div.label {
-                        width: 20px;
-                        font-size: 14px;
-                        text-align: center;
-                    }
+                div.range {
+                    flex: 1;
 
-                    input[type=number] {
-                        width: 50px;
-                        height: 16px;
-                        font-size: 14px;
-                        border: none;
-                        background-color: #f8f8f8;
-                        margin-top: 2px;
+                    input[type=range] {
+                        width: 100%;
+                        height: 14px;
                         margin-left: 4px;
                     }
+                }
+            }
+        }
 
-                    div.range {
-                        flex: 1;
+        .subtool-window {
+            flex: 1;
+            border: solid 1px #000;
+            margin-top: 4px;
+            height: 1px;
 
-                        input[type=range] {
-                            width: 100%;
-                            height: 14px;
-                            margin-left: 4px;
-                        }
-                    }
+            .list-item {
+                display: flex;
+                box-sizing: border-box;
+                height: 64px;
+                padding-left: 6px;
+                line-height: 64px;
+                vertical-align: middle;
+                background-color: #fff;
+                background-size: 128px;
+                background-repeat: no-repeat;
+                border-bottom: 1px solid #eee;
+                /*&:nth-child(odd) {
+                    background-color: #eeeeee;
+                }*/
+                &:hover {
+                    background-color: $hoverBackground;
+                }
+
+                &.active {
+                    background-color: $activeBackground;
+                }
+
+                .spacer {
+                    width: 120px;
+                }
+
+                .command-button {
+                    width: 64px;
+                    height: 64px;
+                    background-size: 256px;
                 }
             }
         }
@@ -506,23 +562,3 @@ input[type=number] {
     }
 }
 
-.scroll-container {
-    height: 350px;
-    overflow: hidden;
-}
-
-.scrollTest {
-    //overflow-y: scroll;
-    border: solid 1px #000;
-    margin-top: 4px;
-
-    .list-item {
-        padding-left: 6px;
-        line-height: 45px;
-        vertical-align: middle;
-
-        &:nth-child(odd) {
-            background-color: #eee;
-        }
-    }
-}

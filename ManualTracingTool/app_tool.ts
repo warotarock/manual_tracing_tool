@@ -83,16 +83,18 @@ namespace ManualTracingTool {
             this.modelFile.file('models.json');
 
             this.imageResurces.push(new ImageResource().file('texture01.png').tex(true));
-            this.imageResurces.push(new ImageResource().file('system_image01.png'));
-            this.imageResurces.push(new ImageResource().file('toolbar_image01.png'));
-            this.imageResurces.push(new ImageResource().file('toolbar_image02.png'));
-            this.imageResurces.push(new ImageResource().file('toolbar_image03.png'));
+            this.imageResurces.push(new ImageResource().file('system_image01.png').cssImage('image-splite-system'));
+            this.imageResurces.push(new ImageResource().file('toolbar_image01.png').cssImage('image-splite-document'));
+            this.imageResurces.push(new ImageResource().file('toolbar_image02.png').cssImage('image-splite-subtool'));
+            this.imageResurces.push(new ImageResource().file('toolbar_image03.png').cssImage('image-splite-posing3d'));
             this.imageResurces.push(new ImageResource().file('layerbar_image01.png'));
 
             this.systemImage = this.imageResurces[1];
+
             this.subToolImages.push(this.imageResurces[2]);
             this.subToolImages.push(this.imageResurces[3]);
             this.subToolImages.push(this.imageResurces[4]);
+
             this.layerButtonImage = this.imageResurces[5];
         }
 
@@ -308,16 +310,20 @@ namespace ManualTracingTool {
 
                 this.toolEnv.setRedrawHeaderWindow()
                 this.updateFooterMessage();
+
+                this.updateUISubToolWindow();
             }
         }
 
         protected setCurrentSubTool(subToolIndex: int) {
 
+            var env = this.toolEnv;
+
             this.cancelModalTool();
 
             let mainTool = this.getCurrentMainTool();
 
-            if (this.toolContext.mainToolID != subToolIndex) {
+            if (this.toolContext.subToolIndex != subToolIndex) {
 
                 this.toolContext.redrawFooterWindow = true;
             }
@@ -327,6 +333,22 @@ namespace ManualTracingTool {
             this.toolContext.subToolIndex = subToolIndex;
 
             this.currentTool = mainTool.subTools[subToolIndex];
+
+            env.setRedrawSubtoolWindow();
+
+            this.updateUISubToolWindow();
+        }
+
+        protected updateUISubToolWindow(forceRedraw = false) {
+
+            if (forceRedraw) {
+
+                this.uiSubToolWindowRef.update(this.subToolViewItems.slice(), this.toolContext.subToolIndex);
+            }
+            else {
+
+                this.uiSubToolWindowRef.update(this.subToolViewItems, this.toolContext.subToolIndex);
+            }
         }
 
         public setCurrentOperationUnitID(operationUnitID: OperationUnitID) { // @implements MainEditor

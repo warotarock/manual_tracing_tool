@@ -2,6 +2,7 @@
 namespace ManualTracingTool {
 
     interface UI_MenuButtons_State {
+
         activeElementID: string;
     }
 

@@ -69,7 +69,7 @@
     <script src="./dist/ui_menu_buttons.js"></script>
     <script src="./dist/ui_scroll_view.js"></script>
     <script src="./dist/ui_command_buttons.js"></script>
-    <script src="./dist/ui_tool_window.js"></script>
+    <script src="./dist/ui_subtool_window.js"></script>
     <script src="./dist/app_view.js"></script>
     <script src="./dist/app_drawing.js"></script>
     <script src="./dist/app_tool.js"></script>
@@ -98,85 +98,83 @@
     -->
     </header>
     <main>
-        <div class="middle-section">
-            <div class="side-panel1">
-                <div id="sideWindow1" class="layer-window">
-                    <canvas id="layerCanvas"></canvas>
-                </div>
-                <div id="sideWindow2" class="subtool-window">
-                    <canvas id="subtoolCanvas"></canvas>
-                </div>
+        <div class="side-panel1">
+            <div id="sideWindow1" class="layer-window">
+                <canvas id="layerCanvas"></canvas>
             </div>
+            <div id="sideWindow2" class="subtool-window">
+                <canvas id="subtoolCanvas"></canvas>
+            </div>
+        </div>
 
-            <div class="center-panel">
-                <div class="main-canvas-window">
-                    <canvas id="webglCanvas" class="webgl-canvas"></canvas>
-                    <canvas id="mainCanvas" class="main-canvas"></canvas>
-                    <canvas id="editorCanvas" class="editor-canvas"></canvas>
-                </div>
-                <div class="time-line-window">
-                    <canvas id="timeLineCanvas"></canvas>
-                </div>
+        <div class="center-panel">
+            <div class="main-canvas-window">
+                <canvas id="webglCanvas" class="webgl-canvas"></canvas>
+                <canvas id="mainCanvas" class="main-canvas"></canvas>
+                <canvas id="editorCanvas" class="editor-canvas"></canvas>
             </div>
+            <div class="time-line-window">
+                <canvas id="timeLineCanvas"></canvas>
+            </div>
+        </div>
 
-            <div class="side-panel2">
-                <div class="palette-window">
-                    <canvas id="paletteSelectorCanvas"></canvas>
-                </div>
-                <div class="color-mixer-window">
-                    <canvas id="colorMixer_colorCanvas"></canvas>
-                    <div class="colorMixerValueSlide">
-                        <div class="label">A</div>
-                        <input type="number" id="colorMixer_alpha_number" step="0.01" min="0.0" max="1.0" />
-                        <div class="range">
-                            <input type="range" id="colorMixer_alpha_range" min="0" max="255">
-                        </div>
-                    </div>
-                    <div class="colorMixerValueSlide">
-                        <div class="label">R</div>
-                        <input type="number" id="colorMixer_red_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0a0" />
-                        <div class="range">
-                            <input type="range" id="colorMixer_red_range" min="0" max="255">
-                        </div>
-                    </div>
-                    <div class="colorMixerValueSlide">
-                        <div class="label">G</div>
-                        <input type="number" id="colorMixer_green_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffa0" />
-                        <div class="range">
-                            <input type="range" id="colorMixer_green_range" min="0" max="255">
-                        </div>
-                    </div>
-                    <div class="colorMixerValueSlide">
-                        <div class="label">B</div>
-                        <input type="number" id="colorMixer_blue_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0a0ff" />
-                        <div class="range">
-                            <input type="range" id="colorMixer_blue_range" min="0" max="255">
-                        </div>
-                    </div>
-                    <div class="colorMixerValueSlide">
-                        <div class="label">H</div>
-                        <input type="number" id="colorMixer_hue_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffffa0" />
-                        <div class="range">
-                            <input type="range" id="colorMixer_hue_range" min="0" max="255">
-                        </div>
-                    </div>
-                    <div class="colorMixerValueSlide">
-                        <div class="label">S</div>
-                        <input type="number" id="colorMixer_sat_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffff" />
-                        <div class="range">
-                            <input type="range" id="colorMixer_sat_range" min="0" max="255">
-                        </div>
-                    </div>
-                    <div class="colorMixerValueSlide">
-                        <div class="label">V</div>
-                        <input type="number" id="colorMixer_val_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0ff" />
-                        <div class="range">
-                            <input type="range" id="colorMixer_val_range" min="0" max="255">
-                        </div>
-                    </div>
-                </div>
-                <div id="dndtest" class="scrollTest"></div>
+        <div class="side-panel2">
+            <div class="palette-window">
+                <canvas id="paletteSelectorCanvas"></canvas>
             </div>
+            <div class="color-mixer-window">
+                <canvas id="colorMixer_colorCanvas"></canvas>
+                <div class="colorMixerValueSlide">
+                    <div class="label">A</div>
+                    <input type="number" id="colorMixer_alpha_number" step="0.01" min="0.0" max="1.0" />
+                    <div class="range">
+                        <input type="range" id="colorMixer_alpha_range" min="0" max="255">
+                    </div>
+                </div>
+                <div class="colorMixerValueSlide">
+                    <div class="label">R</div>
+                    <input type="number" id="colorMixer_red_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0a0" />
+                    <div class="range">
+                        <input type="range" id="colorMixer_red_range" min="0" max="255">
+                    </div>
+                </div>
+                <div class="colorMixerValueSlide">
+                    <div class="label">G</div>
+                    <input type="number" id="colorMixer_green_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffa0" />
+                    <div class="range">
+                        <input type="range" id="colorMixer_green_range" min="0" max="255">
+                    </div>
+                </div>
+                <div class="colorMixerValueSlide">
+                    <div class="label">B</div>
+                    <input type="number" id="colorMixer_blue_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0a0ff" />
+                    <div class="range">
+                        <input type="range" id="colorMixer_blue_range" min="0" max="255">
+                    </div>
+                </div>
+                <div class="colorMixerValueSlide">
+                    <div class="label">H</div>
+                    <input type="number" id="colorMixer_hue_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffffa0" />
+                    <div class="range">
+                        <input type="range" id="colorMixer_hue_range" min="0" max="255">
+                    </div>
+                </div>
+                <div class="colorMixerValueSlide">
+                    <div class="label">S</div>
+                    <input type="number" id="colorMixer_sat_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffff" />
+                    <div class="range">
+                        <input type="range" id="colorMixer_sat_range" min="0" max="255">
+                    </div>
+                </div>
+                <div class="colorMixerValueSlide">
+                    <div class="label">V</div>
+                    <input type="number" id="colorMixer_val_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0ff" />
+                    <div class="range">
+                        <input type="range" id="colorMixer_val_range" min="0" max="255">
+                    </div>
+                </div>
+            </div>
+            <div id="dndtest" class="subtool-window"></div>
         </div>
     </main>
     <footer id="footer">

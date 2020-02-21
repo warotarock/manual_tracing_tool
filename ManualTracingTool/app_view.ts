@@ -16,6 +16,8 @@ namespace ManualTracingTool {
         colorMixerWindow_colorCanvas = new ColorCanvasWindow();
         paletteColorModal_colorCanvas = new ColorCanvasWindow();
 
+        uiSubToolWindowRef: UI_SubToolWindowRef = {};
+
         // Drawing variables
 
         foreLayerRenderWindow = new CanvasWindow();
@@ -627,8 +629,16 @@ namespace ManualTracingTool {
                 let tool = <Tool_Posing3d_ToolBase>currentMainTool.subTools[i];
 
                 let viewItem = new SubToolViewItem();
-                viewItem.toolIndex = i;
+                viewItem.subToolIndex = i;
                 viewItem.tool = tool;
+
+                // TODO: 再描画時と同じ処理をしているため共通化する
+                viewItem.isAvailable = tool.isAvailable(this.toolEnv);
+                if (viewItem.buttons.length > 0) {
+
+                    // TODO: 複数ボタンが必要か検討
+                    viewItem.buttonStateID = tool.getInputSideID(0, this.toolEnv);
+                }
 
                 for (let buttonIndex = 0; buttonIndex < tool.inputSideOptionCount; buttonIndex++) {
 
@@ -1176,7 +1186,7 @@ namespace ManualTracingTool {
 
         // Header window
 
-        uiToolWindow: UI_MenuButtons;
+        uiMenuButtons: UI_MenuButtons;
 
         protected updateHeaderButtons() {
 
@@ -1198,7 +1208,7 @@ namespace ManualTracingTool {
                 activeElementID = this.ID.menu_btnMiscTool;
             }
 
-            this.uiToolWindow.setState({ activeElementID: activeElementID });
+            this.uiMenuButtons.setState({ activeElementID: activeElementID });
         }
 
         //private setHeaderButtonVisual(elementID: string, isSelected: boolean) {
@@ -1650,7 +1660,9 @@ namespace ManualTracingTool {
 
     export class SubToolViewItem extends RectangleLayoutArea {
 
-        toolIndex = 0;
+        subToolIndex = 0;
+        isAvailable = false;
+        buttonStateID = InputSideID.front;
         tool: Tool_Posing3d_ToolBase = null;
         buttons = new List<SubToolViewItemOptionButton>();
     }

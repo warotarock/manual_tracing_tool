@@ -154,7 +154,7 @@
     <TypeScriptCompile Include="ui_scroll_view.tsx" />
     <TypeScriptCompile Include="ui_command_buttons.tsx" />
     <TypeScriptCompile Include="ui_menu_buttons.tsx" />
-    <TypeScriptCompile Include="ui_tool_window.tsx" />
+    <TypeScriptCompile Include="ui_subtool_window.tsx" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />

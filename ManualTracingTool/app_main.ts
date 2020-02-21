@@ -1639,6 +1639,15 @@ namespace ManualTracingTool {
                     continue;
                 }
 
+                // TODO: 再構築時と同じ処理をしているため共通化する
+                viewItem.isAvailable = tool.isAvailable(this.toolEnv);
+                if (viewItem.buttons.length > 0) {
+
+                    // TODO: 複数ボタンが必要か検討
+                    viewItem.buttonStateID = tool.getInputSideID(0, this.toolEnv);
+                }
+
+                // TODO: 以降、React移行により削除
                 let srcY = tool.toolBarImageIndex * unitHeight;
                 let dstY = viewItem.top;
 
@@ -1677,14 +1686,13 @@ namespace ManualTracingTool {
                     button.right = button.left + buttonWidth - 1;
                     button.bottom = button.top + buttonHeight - 1;
 
-                    let inpuSideID = tool.getInputSideID(button.index, this.toolEnv);
-                    if (inpuSideID == InputSideID.front) {
+                    if (viewItem.buttonStateID == InputSideID.front) {
 
                         this.canvasRender.drawImage(this.systemImage.image.imageData
                             , 0, 0, 128, 128
                             , button.left, button.top, buttonWidth, buttonHeight);
                     }
-                    else if (inpuSideID == InputSideID.back) {
+                    else {
 
                         this.canvasRender.drawImage(this.systemImage.image.imageData
                             , 128, 0, 128, 128
@@ -1702,6 +1710,8 @@ namespace ManualTracingTool {
             this.canvasRender.setGlobalAlpha(1.0);
 
             this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
+
+            this.updateUISubToolWindow(true);
         }
 
         // View operations

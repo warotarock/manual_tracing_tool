@@ -6,13 +6,21 @@ namespace ManualTracingTool {
 
         fileName: string = null;
         image = new RenderImage();
-        loaded = false;
-
         isGLTexture = false;
+        cssImageClassName = '';
+
+        loaded = false;
 
         file(fileName: string): ImageResource {
 
             this.fileName = fileName;
+
+            return this;
+        }
+
+        cssImage(className: string): ImageResource {
+
+            this.cssImageClassName = className;
 
             return this;
         }

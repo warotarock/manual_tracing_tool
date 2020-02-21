@@ -295,6 +295,18 @@ namespace ManualTracingTool {
             });
             */
 
+            // React conponents
+
+            this.uiSubToolWindowRef.item_Click = (item: SubToolViewItem) => {
+
+                this.subtoolWindow_Item_Click(item);
+            }
+
+            this.uiSubToolWindowRef.itemButton_Click = (item: SubToolViewItem) => {
+
+                this.subtoolWindow_Button_Click(item);
+            }
+
             // Modal window
 
             document.addEventListener('custombox:content:open', () => {
@@ -1592,24 +1604,23 @@ namespace ManualTracingTool {
             if (e.isLeftButtonPressing()) {
 
                 let firstItem = this.subToolViewItems[0];
-                let selectedIndex = Math.floor((clickedY - firstItem.top) / (firstItem.getHeight()));
+                let subToolIndex = Math.floor((clickedY - firstItem.top) / (firstItem.getHeight()));
 
-                if (selectedIndex < 0 || selectedIndex >= this.subToolViewItems.length) {
+                if (subToolIndex < 0 || subToolIndex >= this.subToolViewItems.length) {
 
                     return;
                 }
 
-                let viewItem = this.subToolViewItems[selectedIndex];
+                let viewItem = this.subToolViewItems[subToolIndex];
                 let tool = viewItem.tool;
 
                 if (tool.isAvailable(env)) {
 
                     // Change current sub tool
-                    this.setCurrentSubTool(selectedIndex);
+                    this.setCurrentSubTool(subToolIndex);
 
                     this.updateFooterMessage();
                     env.setRedrawMainWindowEditorWindow();
-                    env.setRedrawSubtoolWindow();
 
                     // Option button click
                     let button = this.hitTestLayout(viewItem.buttons, clickedX, clickedY);
@@ -1671,6 +1682,47 @@ namespace ManualTracingTool {
         protected subtoolWindow_mouseup() {
 
             this.subtoolWindow.endMouseDragging();
+        }
+
+        protected subtoolWindow_selectItem(item: SubToolViewItem) {
+
+            let tool = item.tool;
+            let env = this.toolEnv;
+
+            if (!tool.isAvailable(env)) {
+                return;
+            }
+
+            // Change current sub tool
+            this.setCurrentSubTool(item.subToolIndex);
+        }
+
+        protected subtoolWindow_Item_Click(item: SubToolViewItem) {
+
+            this.subtoolWindow_selectItem(item);
+        }
+
+        protected subtoolWindow_Button_Click(item: SubToolViewItem) {
+
+            let tool = item.tool;
+            let env = this.toolEnv;
+
+            if (!tool.isAvailable(env)) {
+                return;
+            }
+
+            let buttonIndex = 0; // TODO: 複数ボタンが必要か検討
+            let inpuSideID = tool.getInputSideID(buttonIndex, env);
+
+            if (tool.setInputSide(buttonIndex, inpuSideID, env)) {
+
+                item.buttonStateID = tool.getInputSideID(buttonIndex, env);
+
+                env.setRedrawMainWindowEditorWindow();
+                env.setRedrawSubtoolWindow();
+
+                this.updateUISubToolWindow();
+            }
         }
 
         protected paletteSelectorWindow_mousedown() {
