@@ -10,7 +10,7 @@ namespace ManualTracingTool {
         mainWindow = new MainWindow();
         editorWindow = new CanvasWindow();
         layerWindow = new LayerWindow();
-        subtoolWindow = new SubtoolWindow();
+        //subtoolWindow = new SubtoolWindow();
         timeLineWindow = new TimeLineWindow();
         paletteSelectorWindow = new PaletteSelectorWindow();
         colorMixerWindow_colorCanvas = new ColorCanvasWindow();
@@ -109,7 +109,7 @@ namespace ManualTracingTool {
             this.backLayerRenderWindow.initializeContext();
 
             this.layerWindow.initializeContext();
-            this.subtoolWindow.initializeContext();
+            //this.subtoolWindow.initializeContext();
 
             this.paletteSelectorWindow.initializeContext();
             this.colorMixerWindow_colorCanvas.initializeContext();
@@ -147,7 +147,7 @@ namespace ManualTracingTool {
             this.fitCanvas(this.drawGPUWindow, this.mainWindow, 2.0);
 
             this.resizeCanvasToCurrent(this.layerWindow);
-            this.resizeCanvasToCurrent(this.subtoolWindow);
+            //this.resizeCanvasToCurrent(this.subtoolWindow);
             this.resizeCanvasToCurrent(this.paletteSelectorWindow);
             this.resizeCanvasToCurrent(this.timeLineWindow);
         }
@@ -652,26 +652,26 @@ namespace ManualTracingTool {
             }
         }
 
-        protected subtoolWindow_CaluculateLayout(subtoolWindow: SubtoolWindow) {
+        //protected subtoolWindow_CaluculateLayout(subtoolWindow: SubtoolWindow) {
 
-            let scale = subtoolWindow.subToolItemScale;
-            let fullWidth = subtoolWindow.width - 1;
-            let unitHeight = subtoolWindow.subToolItemUnitHeight * scale - 1;
+        //    let scale = subtoolWindow.subToolItemScale;
+        //    let fullWidth = subtoolWindow.width - 1;
+        //    let unitHeight = subtoolWindow.subToolItemUnitHeight * scale - 1;
 
-            let currentY = 0;
+        //    let currentY = 0;
 
-            for (let viewItem of this.subToolViewItems) {
+        //    for (let viewItem of this.subToolViewItems) {
 
-                viewItem.left = 0.0;
-                viewItem.top = currentY;
-                viewItem.right = fullWidth;
-                viewItem.bottom = currentY + unitHeight - 1;
+        //        viewItem.left = 0.0;
+        //        viewItem.top = currentY;
+        //        viewItem.right = fullWidth;
+        //        viewItem.bottom = currentY + unitHeight - 1;
 
-                currentY += unitHeight;
-            }
+        //        currentY += unitHeight;
+        //    }
 
-            subtoolWindow.subToolItemsBottom = currentY;
-        }
+        //    subtoolWindow.subToolItemsBottom = currentY;
+        //}
 
         // Color mixer window
 
@@ -1696,11 +1696,13 @@ namespace ManualTracingTool {
 
         footer = 'footer';
 
+        subtoolWindow = "subtoolWindow";
+
         mainCanvas = 'mainCanvas';
         editorCanvas = 'editorCanvas';
         webglCanvas = 'webglCanvas';
         layerCanvas = 'layerCanvas';
-        subtoolCanvas = 'subtoolCanvas';
+        //subtoolCanvas = 'subtoolCanvas';
         timeLineCanvas = 'timeLineCanvas';
         paletteSelectorCanvas = 'paletteSelectorCanvas';
         colorMixerWindow_colorCanvas = 'colorMixer_colorCanvas';

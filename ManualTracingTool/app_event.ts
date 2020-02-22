@@ -48,13 +48,13 @@ namespace ManualTracingTool {
                 , false
             );
 
-            this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
-                , this.subtoolWindow_mousedown
-                , this.subtoolWindow_mousemove
-                , this.subtoolWindow_mouseup
-                , null
-                , false
-            );
+            //this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
+            //    , this.subtoolWindow_mousedown
+            //    , this.subtoolWindow_mousemove
+            //    , this.subtoolWindow_mouseup
+            //    , null
+            //    , false
+            //);
 
             this.setCanvasWindowMouseEvent(this.paletteSelectorWindow, this.paletteSelectorWindow
                 , this.paletteSelectorWindow_mousedown
@@ -860,10 +860,10 @@ namespace ManualTracingTool {
 
                     this.layerWindow.startMouseDragging();
                 }
-                else if (this.activeCanvasWindow == this.subtoolWindow) {
+                //else if (this.activeCanvasWindow == this.subtoolWindow) {
 
-                    this.subtoolWindow.startMouseDragging();
-                }
+                //    this.subtoolWindow.startMouseDragging();
+                //}
 
                 return;
             }
@@ -1087,10 +1087,10 @@ namespace ManualTracingTool {
 
                     this.layerWindow.endMouseDragging();
                 }
-                else if (this.activeCanvasWindow == this.subtoolWindow) {
+                //else if (this.activeCanvasWindow == this.subtoolWindow) {
 
-                    this.subtoolWindow.endMouseDragging();
-                }
+                //    this.subtoolWindow.endMouseDragging();
+                //}
             }
         }
 
@@ -1583,106 +1583,106 @@ namespace ManualTracingTool {
             this.toolEnv.setRedrawSubtoolWindow();
         }
 
-        protected subtoolWindow_mousedown() {
+        //protected subtoolWindow_mousedown() {
 
-            let context = this.toolContext;
-            let wnd = this.subtoolWindow;
-            let e = wnd.toolMouseEvent;
-            let env = this.toolEnv;
-            let doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
+        //    let context = this.toolContext;
+        //    let wnd = this.subtoolWindow;
+        //    let e = wnd.toolMouseEvent;
+        //    let env = this.toolEnv;
+        //    let doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
 
-            if (context.mainToolID == MainToolID.none || this.subToolViewItems.length == 0) {
+        //    if (context.mainToolID == MainToolID.none || this.subToolViewItems.length == 0) {
 
-                return;
-            }
+        //        return;
+        //    }
 
-            env.updateContext();
+        //    env.updateContext();
 
-            let clickedX = e.location[0];
-            let clickedY = e.location[1];
+        //    let clickedX = e.location[0];
+        //    let clickedY = e.location[1];
 
-            if (e.isLeftButtonPressing()) {
+        //    if (e.isLeftButtonPressing()) {
 
-                let firstItem = this.subToolViewItems[0];
-                let subToolIndex = Math.floor((clickedY - firstItem.top) / (firstItem.getHeight()));
+        //        let firstItem = this.subToolViewItems[0];
+        //        let subToolIndex = Math.floor((clickedY - firstItem.top) / (firstItem.getHeight()));
 
-                if (subToolIndex < 0 || subToolIndex >= this.subToolViewItems.length) {
+        //        if (subToolIndex < 0 || subToolIndex >= this.subToolViewItems.length) {
 
-                    return;
-                }
+        //            return;
+        //        }
 
-                let viewItem = this.subToolViewItems[subToolIndex];
-                let tool = viewItem.tool;
+        //        let viewItem = this.subToolViewItems[subToolIndex];
+        //        let tool = viewItem.tool;
 
-                if (tool.isAvailable(env)) {
+        //        if (tool.isAvailable(env)) {
 
-                    // Change current sub tool
-                    this.setCurrentSubTool(subToolIndex);
+        //            // Change current sub tool
+        //            this.setCurrentSubTool(subToolIndex);
 
-                    this.updateFooterMessage();
-                    env.setRedrawMainWindowEditorWindow();
+        //            this.updateFooterMessage();
+        //            env.setRedrawMainWindowEditorWindow();
 
-                    // Option button click
-                    let button = this.hitTestLayout(viewItem.buttons, clickedX, clickedY);
-                    if (button != null) {
+        //            // Option button click
+        //            let button = this.hitTestLayout(viewItem.buttons, clickedX, clickedY);
+        //            if (button != null) {
 
-                        let inpuSideID = tool.getInputSideID(button.index, env);
+        //                let inpuSideID = tool.getInputSideID(button.index, env);
 
-                        if (tool.setInputSide(button.index, inpuSideID, env)) {
+        //                if (tool.setInputSide(button.index, inpuSideID, env)) {
 
-                            env.setRedrawMainWindowEditorWindow();
-                            env.setRedrawSubtoolWindow();
-                        }
-                    }
+        //                    env.setRedrawMainWindowEditorWindow();
+        //                    env.setRedrawSubtoolWindow();
+        //                }
+        //            }
 
-                    // Tool event
-                    if (button == null && this.currentTool != null) {
+        //            // Tool event
+        //            if (button == null && this.currentTool != null) {
 
-                        if (doubleClicked) {
+        //                if (doubleClicked) {
 
-                            this.currentTool.toolWindowItemDoubleClick(e, env);
-                        }
-                        else if (e.isLeftButtonPressing()) {
+        //                    this.currentTool.toolWindowItemDoubleClick(e, env);
+        //                }
+        //                else if (e.isLeftButtonPressing()) {
 
-                            this.activateCurrentTool();
-                            this.currentTool.toolWindowItemClick(e, env);
-                        }
-                    }
-                }
-            }
-            else if (e.isCenterButtonPressing() || e.isRightButtonPressing()) {
+        //                    this.activateCurrentTool();
+        //                    this.currentTool.toolWindowItemClick(e, env);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    else if (e.isCenterButtonPressing() || e.isRightButtonPressing()) {
 
-                wnd.startMouseDragging();
-            }
-        }
+        //        wnd.startMouseDragging();
+        //    }
+        //}
 
-        protected subtoolWindow_mousemove() {
+        //protected subtoolWindow_mousemove() {
 
-            let wnd = this.subtoolWindow;
-            let e = wnd.toolMouseEvent;
+        //    let wnd = this.subtoolWindow;
+        //    let e = wnd.toolMouseEvent;
 
-            // View operation
-            if (e.isMouseDragging) {
+        //    // View operation
+        //    if (e.isMouseDragging) {
 
-                vec3.add(wnd.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedOffset);
-                wnd.viewLocation[0] = 0.0;
+        //        vec3.add(wnd.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedOffset);
+        //        wnd.viewLocation[0] = 0.0;
 
-                if (wnd.viewLocation[1] < 0.0) {
-                    wnd.viewLocation[1] = 0.0;
-                }
+        //        if (wnd.viewLocation[1] < 0.0) {
+        //            wnd.viewLocation[1] = 0.0;
+        //        }
 
-                if (wnd.viewLocation[1] > wnd.subToolItemsBottom - wnd.subToolItemUnitHeight) {
-                    wnd.viewLocation[1] = wnd.subToolItemsBottom - wnd.subToolItemUnitHeight;
-                }
+        //        if (wnd.viewLocation[1] > wnd.subToolItemsBottom - wnd.subToolItemUnitHeight) {
+        //            wnd.viewLocation[1] = wnd.subToolItemsBottom - wnd.subToolItemUnitHeight;
+        //        }
 
-                this.toolEnv.setRedrawSubtoolWindow();
-            }
-        }
+        //        this.toolEnv.setRedrawSubtoolWindow();
+        //    }
+        //}
 
-        protected subtoolWindow_mouseup() {
+        //protected subtoolWindow_mouseup() {
 
-            this.subtoolWindow.endMouseDragging();
-        }
+        //    this.subtoolWindow.endMouseDragging();
+        //}
 
         protected subtoolWindow_selectItem(item: SubToolViewItem) {
 

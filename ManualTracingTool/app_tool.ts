@@ -302,9 +302,9 @@ namespace ManualTracingTool {
 
             if (isChanged) {
 
-                this.subtoolWindow.viewLocation[1] = 0.0;
+                //this.subtoolWindow.viewLocation[1] = 0.0;
                 this.subtoolWindow_CollectViewItems();
-                this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+                //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
 
                 this.activateCurrentTool();
 

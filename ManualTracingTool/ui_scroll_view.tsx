@@ -9,57 +9,67 @@ namespace ManualTracingTool {
             lastMouseX: null,
             lastMouseY: null,
             isMouseDown: false,
+            isTouch: false,
             isScrolling: false,
             isFocused: false,
         });
 
-        const runScroll = ({ dx, dy }) => {
-
-            containerRef.current.scrollTop += dy;
-        };
-
         const scroll = React.useCallback(({ dx, dy }) => {
 
-            runScroll({ dx, dy });
+            containerRef.current.scrollTop += dy;
 
         }, [containerRef.current?.scrollTop]);
 
+        const endScroll = () => {
+
+            internalState.current.isMouseDown = false;
+            internalState.current.isTouch = false;
+            internalState.current.lastMouseX = null;
+            internalState.current.lastMouseY = null;
+            internalState.current.isScrolling = false;
+        }
+
         const onMouseDown = (e: React.MouseEvent) => {
 
+            let x = e.pageX;
+            let y = e.pageY;
+
             internalState.current.isMouseDown = true;
-            internalState.current.lastMouseX = e.clientX;
-            internalState.current.lastMouseY = e.clientY;
+            internalState.current.lastMouseX = x;
+            internalState.current.lastMouseY = y;
 
             e.preventDefault();
+
+            //console.log('onMouseDown', x, y);
         };
 
         const onMouseUp = (e: MouseEvent) => {
 
-            internalState.current.isMouseDown = false;
-            internalState.current.lastMouseX = null;
-            internalState.current.lastMouseY = null;
-            internalState.current.isScrolling = false;
+            endScroll();
         };
 
         const onMouseMove = (e: MouseEvent) => {
 
+            let x = e.pageX;
+            let y = e.pageY;
+
             if (!internalState.current.isMouseDown) {
 
-                internalState.current.lastMouseX = e.clientX;
-                internalState.current.lastMouseY = e.clientY;
+                internalState.current.lastMouseX = x;
+                internalState.current.lastMouseY = y;
                 return;
             }
 
             internalState.current.isScrolling = true;
 
-            const dx = -(e.clientX - internalState.current.lastMouseX);
-            const dy = -(e.clientY - internalState.current.lastMouseY);
-            internalState.current.lastMouseX = e.clientX;
-            internalState.current.lastMouseY = e.clientY;
+            const dx = -(x - internalState.current.lastMouseX);
+            const dy = -(y - internalState.current.lastMouseY);
+            internalState.current.lastMouseX = x;
+            internalState.current.lastMouseY = y;
 
             scroll({ dx, dy });
 
-            // console.log(dx, dy);
+            //console.log('onMouseMove', dx, dy);
         };
 
         const onMouseEnter = (e: React.MouseEvent) => {
@@ -74,6 +84,55 @@ namespace ManualTracingTool {
             internalState.current.isFocused = false;
 
             // console.log('onMouseLeave');
+        };
+
+        const onTouchStart = (e: React.TouchEvent) => {
+
+            if (!e.touches || !e.touches[0]) {
+                return;
+            }
+
+            let x = e.touches[0].pageX;
+            let y = e.touches[0].pageY;
+
+            internalState.current.isTouch = true;
+            internalState.current.lastMouseX = x;
+            internalState.current.lastMouseY = y;
+
+            //console.log('onTouchStart', x, y);
+        };
+
+        const onTouchUp = (e: MouseEvent) => {
+
+            endScroll();
+        };
+
+        const onTouchMove = (e: TouchEvent) => {
+
+            if (!e.touches || !e.touches[0]) {
+                return;
+            }
+
+            let x = e.touches[0].pageX;
+            let y = e.touches[0].pageY;
+
+            if (!internalState.current.isTouch) {
+
+                internalState.current.lastMouseX = x;
+                internalState.current.lastMouseY = y;
+                return;
+            }
+
+            internalState.current.isScrolling = true;
+
+            const dx = -(x - internalState.current.lastMouseX);
+            const dy = -(y - internalState.current.lastMouseY);
+            internalState.current.lastMouseX = x;
+            internalState.current.lastMouseY = y;
+
+            scroll({ dx, dy });
+
+            //console.log('onTouchMove', dx, dy);
         };
 
         const onWheel = (e: React.WheelEvent) => {
@@ -111,6 +170,8 @@ namespace ManualTracingTool {
 
             window.addEventListener('mouseup', onMouseUp);
             window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('touchup', onTouchUp);
+            window.addEventListener('touchmove', onTouchMove);
             window.addEventListener('keydown', onKeyDown);
             window.addEventListener('keyup', onKeyUp);
 
@@ -118,6 +179,8 @@ namespace ManualTracingTool {
 
                 window.removeEventListener('mouseup', onMouseUp);
                 window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('touchup', onTouchUp);
+                window.removeEventListener('touchmove', onTouchMove);
                 window.removeEventListener('keydown', onKeyDown);
                 window.removeEventListener('keyup', onKeyUp);
             };
@@ -128,6 +191,7 @@ namespace ManualTracingTool {
                 onMouseDown={onMouseDown}
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
+                onTouchStart={onTouchStart}
                 onWheel={onWheel}
             >
                 {content({ ref: contentRef })}

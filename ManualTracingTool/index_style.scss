@@ -279,44 +279,44 @@ main {
                 }
             }
         }
+    }
 
-        .subtool-window {
-            flex: 1;
-            border: solid 1px #000;
-            margin-top: 4px;
-            height: 1px;
+    .subtool-window {
+        flex: 1;
+        border: solid 1px #000;
+        margin-top: 4px;
+        height: 1px;
 
-            .list-item {
-                display: flex;
-                box-sizing: border-box;
-                height: 64px;
-                padding-left: 6px;
-                line-height: 64px;
-                vertical-align: middle;
-                background-color: #fff;
-                background-size: 128px;
-                background-repeat: no-repeat;
-                border-bottom: 1px solid #eee;
-                /*&:nth-child(odd) {
+        .list-item {
+            display: flex;
+            box-sizing: border-box;
+            height: 64px;
+            padding-left: 6px;
+            line-height: 64px;
+            vertical-align: middle;
+            background-color: #fff;
+            background-size: 128px;
+            background-repeat: no-repeat;
+            border-bottom: 1px solid #eee;
+            /*&:nth-child(odd) {
                     background-color: #eeeeee;
                 }*/
-                &:hover {
-                    background-color: $hoverBackground;
-                }
+            &:hover {
+                background-color: $hoverBackground;
+            }
 
-                &.active {
-                    background-color: $activeBackground;
-                }
+            &.active {
+                background-color: $activeBackground;
+            }
 
-                .spacer {
-                    width: 120px;
-                }
+            .spacer {
+                width: 120px;
+            }
 
-                .command-button {
-                    width: 64px;
-                    height: 64px;
-                    background-size: 256px;
-                }
+            .command-button {
+                width: 64px;
+                height: 64px;
+                background-size: 256px;
             }
         }
     }

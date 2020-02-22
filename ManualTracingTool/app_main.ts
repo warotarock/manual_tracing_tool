@@ -110,7 +110,7 @@ namespace ManualTracingTool {
             this.initializeDrawingDevices();
 
             this.layerWindow_CaluculateLayout(this.layerWindow);
-            this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+            //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
             this.paletteSelector_CaluculateLayout();
 
             this.startLoadingSystemResources();
@@ -656,8 +656,8 @@ namespace ManualTracingTool {
 
             if (this.toolContext.redrawSubtoolWindow) {
 
-                this.clearWindow(this.subtoolWindow);
-                this.subtoolWindow_Draw(this.subtoolWindow);
+                //this.clearWindow(this.subtoolWindow);
+                this.subtoolWindow_Draw();
 
                 this.toolContext.redrawSubtoolWindow = false;
             }
@@ -1615,29 +1615,29 @@ namespace ManualTracingTool {
         subToolItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
         subToolItemSeperatorLineColor = vec4.fromValues(0.0, 0.0, 0.0, 0.5);
 
-        private subtoolWindow_Draw(subtoolWindow: SubtoolWindow) {
+        private subtoolWindow_Draw() {
 
-            this.canvasRender.setContext(subtoolWindow);
+            //this.canvasRender.setContext(subtoolWindow);
 
-            let context = this.toolContext;
+            //let context = this.toolContext;
 
-            let currentMainTool = this.getCurrentMainTool();
+            //let currentMainTool = this.getCurrentMainTool();
 
-            let scale = subtoolWindow.subToolItemScale;
-            let fullWidth = subtoolWindow.width - 1;
-            let unitWidth = subtoolWindow.subToolItemUnitWidth;
-            let unitHeight = subtoolWindow.subToolItemUnitHeight;
+            //let scale = subtoolWindow.subToolItemScale;
+            //let fullWidth = subtoolWindow.width - 1;
+            //let unitWidth = subtoolWindow.subToolItemUnitWidth;
+            //let unitHeight = subtoolWindow.subToolItemUnitHeight;
 
-            let lastY = 0.0;
+            //let lastY = 0.0;
 
             for (let viewItem of this.subToolViewItems) {
 
                 let tool = viewItem.tool;
                 let srcImage = tool.toolBarImage;
 
-                if (srcImage == null) {
-                    continue;
-                }
+                //if (srcImage == null) {
+                //    continue;
+                //}
 
                 // TODO: 再構築時と同じ処理をしているため共通化する
                 viewItem.isAvailable = tool.isAvailable(this.toolEnv);
@@ -1648,68 +1648,68 @@ namespace ManualTracingTool {
                 }
 
                 // TODO: 以降、React移行により削除
-                let srcY = tool.toolBarImageIndex * unitHeight;
-                let dstY = viewItem.top;
+                //let srcY = tool.toolBarImageIndex * unitHeight;
+                //let dstY = viewItem.top;
 
-                // Draw subtool image
-                if (tool == this.currentTool) {
+                //// Draw subtool image
+                //if (tool == this.currentTool) {
 
-                    this.canvasRender.setFillColorV(this.subToolItemSelectedColor);
-                }
-                else {
+                //    this.canvasRender.setFillColorV(this.subToolItemSelectedColor);
+                //}
+                //else {
 
-                    this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
-                }
-                this.canvasRender.fillRect(0, dstY, fullWidth, unitHeight * scale);
+                //    this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
+                //}
+                //this.canvasRender.fillRect(0, dstY, fullWidth, unitHeight * scale);
 
-                if (tool.isAvailable(this.toolEnv)) {
+                //if (tool.isAvailable(this.toolEnv)) {
 
-                    this.canvasRender.setGlobalAlpha(1.0);
-                }
-                else {
+                //    this.canvasRender.setGlobalAlpha(1.0);
+                //}
+                //else {
 
-                    this.canvasRender.setGlobalAlpha(0.5);
-                }
+                //    this.canvasRender.setGlobalAlpha(0.5);
+                //}
 
-                this.canvasRender.drawImage(srcImage.image.imageData
-                    , 0, srcY, unitWidth, unitHeight
-                    , 0, dstY, unitWidth * scale, unitHeight * scale);
+                //this.canvasRender.drawImage(srcImage.image.imageData
+                //    , 0, srcY, unitWidth, unitHeight
+                //    , 0, dstY, unitWidth * scale, unitHeight * scale);
 
-                // Draw subtool option buttons
-                for (let button of viewItem.buttons) {
+                //// Draw subtool option buttons
+                //for (let button of viewItem.buttons) {
 
-                    let buttonWidth = 128 * scale;
-                    let buttonHeight = 128 * scale;
+                //    let buttonWidth = 128 * scale;
+                //    let buttonHeight = 128 * scale;
 
-                    button.left = unitWidth * scale * 0.8;
-                    button.top = dstY;
-                    button.right = button.left + buttonWidth - 1;
-                    button.bottom = button.top + buttonHeight - 1;
+                //    button.left = unitWidth * scale * 0.8;
+                //    button.top = dstY;
+                //    button.right = button.left + buttonWidth - 1;
+                //    button.bottom = button.top + buttonHeight - 1;
 
-                    if (viewItem.buttonStateID == InputSideID.front) {
+                //    if (viewItem.buttonStateID == InputSideID.front) {
 
-                        this.canvasRender.drawImage(this.systemImage.image.imageData
-                            , 0, 0, 128, 128
-                            , button.left, button.top, buttonWidth, buttonHeight);
-                    }
-                    else {
+                //        this.canvasRender.drawImage(this.systemImage.image.imageData
+                //            , 0, 0, 128, 128
+                //            , button.left, button.top, buttonWidth, buttonHeight);
+                //    }
+                //    else {
 
-                        this.canvasRender.drawImage(this.systemImage.image.imageData
-                            , 128, 0, 128, 128
-                            , button.left, button.top, buttonWidth, buttonHeight);
-                    }
-                }
+                //        this.canvasRender.drawImage(this.systemImage.image.imageData
+                //            , 128, 0, 128, 128
+                //            , button.left, button.top, buttonWidth, buttonHeight);
+                //    }
+                //}
 
-                this.canvasRender.setStrokeWidth(0.0);
-                this.canvasRender.setStrokeColorV(this.subToolItemSeperatorLineColor);
-                this.canvasRender.drawLine(0, dstY, fullWidth, dstY);
+                //this.canvasRender.setStrokeWidth(0.0);
+                //this.canvasRender.setStrokeColorV(this.subToolItemSeperatorLineColor);
+                //this.canvasRender.drawLine(0, dstY, fullWidth, dstY);
 
-                lastY = dstY + unitHeight * scale;
+                //lastY = dstY + unitHeight * scale;
             }
 
-            this.canvasRender.setGlobalAlpha(1.0);
+            //this.canvasRender.setGlobalAlpha(1.0);
 
-            this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
+            //this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
 
             this.updateUISubToolWindow(true);
         }

@@ -125,6 +125,7 @@ namespace ManualTracingTool {
             let hited = env.posing3DLogic.processMouseInputLocation(
                 this.tempTargetLocation
                 , e.location
+                , inputData.inputSideID
                 , inputData
                 , env.currentPosingData
                 , env.posing3DView
@@ -227,6 +228,7 @@ namespace ManualTracingTool {
                 let hited = env.posing3DLogic.processMouseInputLocation(
                     inputData.rollInputLocation
                     , e.location
+                    , InputSideID.front
                     , inputData
                     , env.currentPosingData
                     , env.posing3DView
@@ -276,6 +278,7 @@ namespace ManualTracingTool {
                 let hited = env.posing3DLogic.processMouseInputLocation(
                     inputData.rollInputLocation
                     , e.location
+                    , InputSideID.front
                     , inputData
                     , env.currentPosingData
                     , env.posing3DView
@@ -355,6 +358,7 @@ namespace ManualTracingTool {
             let hited = env.posing3DLogic.processMouseInputLocation(
                 this.inputLocation
                 , this.location2D
+                , InputSideID.front
                 , inputData
                 , env.currentPosingData
                 , env.posing3DView
@@ -386,7 +390,7 @@ namespace ManualTracingTool {
                 inputData.rollInputDone = true;
 
                 inputData.rollInputAngle = this.lastAngle + (angle - this.startAngle);
-                if (inputData.rollInputAngle <= 0.0) {
+                if (inputData.rollInputAngle <= 0.0) {// TODO: 共通化する
                     inputData.rollInputAngle += Math.PI * 2.0;
                 }
                 if (inputData.rollInputAngle >= Math.PI * 2.0) {

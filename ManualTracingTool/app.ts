@@ -184,7 +184,7 @@ namespace ManualTracingTool {
         _Main.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.editorCanvas);
         _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.webglCanvas);
         _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
-        _Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
+        //_Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
         _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
         _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
         _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
@@ -205,7 +205,7 @@ namespace ManualTracingTool {
 
         ReactDOM.render(
             React.createElement(UI_ScrollView, { content: UI_SubToolWindow, wheelScrollY: 32, contentRef: _Main.uiSubToolWindowRef })
-            , document.getElementById('dndtest')
+            , document.getElementById(_Main.ID.subtoolWindow)
         );
 
         var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);

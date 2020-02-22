@@ -39,7 +39,7 @@ namespace ManualTracingTool {
         private tempResultLocation = vec3.create();
         private tempInvMat = mat4.create();
 
-        processMouseInputLocation(result: Vec3, location2D: Vec3, targetData: DirectionInputData, posingData: PosingData, posing3DView: Posing3DView): boolean {
+        processMouseInputLocation(result: Vec3, location2D: Vec3, inputSideID: InputSideID, targetData: DirectionInputData, posingData: PosingData, posing3DView: Posing3DView): boolean {
 
             posing3DView.calculate3DLocationFrom2DLocation(
                 this.tempTargetLocation
@@ -67,7 +67,7 @@ namespace ManualTracingTool {
                 z = Math.sqrt(dist);
             }
 
-            if (targetData.inputSideID == InputSideID.back) {
+            if (inputSideID == InputSideID.back) {
                 z = -z;
             }
 
@@ -89,6 +89,7 @@ namespace ManualTracingTool {
 
             this.processMouseInputLocation(this.inputLocation,
                 inputData.inputLocation2D,
+                inputData.inputSideID,
                 inputData,
                 posingData,
                 posing3DView
