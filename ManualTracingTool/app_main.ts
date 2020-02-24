@@ -754,6 +754,15 @@ namespace ManualTracingTool {
             this.collectDrawPasths_CollectSelectionInfo(this.drawPathContext);
 
             this.lazy_DrawPathContext.steps = this.drawPathContext.steps;
+
+            console.log(`collectDrawPaths`);
+            let stepIndex = 0;
+            for (let step of this.drawPathContext.steps) {
+
+                console.log(` ${stepIndex}: ${step._debugText} ${step.layer ? step.layer.name : step.layer}`);
+
+                stepIndex++;
+            }
         }
 
         protected collectDrawPaths_CollectVirtualLayerRecursive(result: List<TempVirtualLayer>, layers: List<Layer>) {
@@ -890,7 +899,7 @@ namespace ManualTracingTool {
                                 let next_vectorLayer = <VectorLayer>next_layer;
 
                                 if (next_vectorLayer.drawLineType != DrawLineTypeID.none
-                                    && next_vectorLayer.fillAreaType != FillAreaTypeID.none) {
+                                    && next_vectorLayer.fillAreaType == FillAreaTypeID.none) {
 
                                     isGPUDrawContinuing = true;
                                 }
@@ -1492,7 +1501,7 @@ namespace ManualTracingTool {
 
             let clearState = drawPathContext.isLazyDrawBigining();
 
-            console.log(`LazyDraw from ${drawPathContext.lazyDraw_ProcessedIndex} clear: ${clearState} stack: ${drawPathContext.bufferStack.length}`);
+            console.log(`LazyDraw from ${drawPathContext.lazyDraw_ProcessedIndex}${clearState ? ' clear' : ''} buffer-stack[${drawPathContext.bufferStack.length}]`);
 
             // Draw steps
             drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;

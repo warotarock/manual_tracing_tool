@@ -1695,6 +1695,8 @@ namespace ManualTracingTool {
 
             // Change current sub tool
             this.setCurrentSubTool(item.subToolIndex);
+
+            env.setRedrawMainWindowEditorWindow();
         }
 
         protected subtoolWindow_Item_Click(item: SubToolViewItem) {
