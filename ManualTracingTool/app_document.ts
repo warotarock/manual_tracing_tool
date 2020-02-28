@@ -4,9 +4,9 @@ namespace ManualTracingTool {
     export class App_Document extends App_Tool {
 
         localSetting = new LocalSetting();
-        localStorage_SettingKey = 'MTT-Settings';
-        localStorage_SettingIndexKey = 'MTT-Settings Index';
-        tempFileNameKey = 'Manual tracing tool save data';
+        localStorage_SettingKey = 'setting';
+        localStrageSaveDataKey = 'Manual tracing tool save data';
+        activeSettingName = 'activeSettingName';
         oraScriptPath = './external/ora_js/';
         oraVectorFileName = 'mttf.json';
 
@@ -46,8 +46,8 @@ namespace ManualTracingTool {
 
         protected loadSettings() {
 
-            let index = Platform.settings.getItem(this.localStorage_SettingIndexKey);
-            let localSetting: LocalSetting = Platform.settings.getItem(this.localStorage_SettingKey + index);
+            let activeSettingName = Platform.settings.getItem(this.activeSettingName);
+            let localSetting: LocalSetting = Platform.settings.getItem(activeSettingName);
 
             if (localSetting != null) {
 
@@ -57,9 +57,9 @@ namespace ManualTracingTool {
 
         protected saveSettings() {
 
-            let index = Platform.settings.getItem(this.localStorage_SettingIndexKey);
+            let activeSettingName = Platform.settings.getItem(this.activeSettingName);
 
-            Platform.settings.setItem(this.localStorage_SettingKey + index, this.localSetting);
+            Platform.settings.setItem(activeSettingName, this.localSetting);
         }
 
         protected registerLastUsedFile(filePath: string) {
@@ -231,7 +231,7 @@ namespace ManualTracingTool {
 
         protected createDefaultDocumentData(): DocumentData {
 
-            let saveData = Platform.settings.getItem(this.tempFileNameKey);
+            let saveData = Platform.settings.getItem(this.localStrageSaveDataKey);
 
             if (!StringIsNullOrEmpty(saveData)) {
 
@@ -426,7 +426,7 @@ namespace ManualTracingTool {
 
             if (forceToLocalStrage) {
 
-                Platform.settings.setItem(this.tempFileNameKey, save_DocumentData);
+                Platform.settings.setItem(this.localStrageSaveDataKey, save_DocumentData);
 
                 return;
             }

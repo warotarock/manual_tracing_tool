@@ -51,13 +51,13 @@ namespace Platform {
     class Settings {
 
         data = {
-            "MTT-Settings Index": 3,
-            "MTT-Settings1": <ManualTracingTool.LocalSetting>{
-                "lastUsedFilePaths": [],
-                "maxLastUsedFilePaths": 5,
+            "activeSettingName": "setting1",
+            "setting1": <ManualTracingTool.LocalSetting>{
                 "exportPath": ".\\",
                 "referenceDirectoryPath": ".\\",
-                "currentDirectoryPath": ".\\"
+                "currentDirectoryPath": ".\\",
+                "maxLastUsedFilePaths": 5,
+                "lastUsedFilePaths": []
             }
         };
 
