@@ -24,7 +24,7 @@ namespace ManualTracingTool {
             );
         }
 
-        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        toolWindowItemClick(env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.linePoint);
             env.setRedrawMainWindow();

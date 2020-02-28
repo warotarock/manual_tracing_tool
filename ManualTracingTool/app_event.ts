@@ -1684,21 +1684,6 @@ namespace ManualTracingTool {
         //    this.subtoolWindow.endMouseDragging();
         //}
 
-        protected subtoolWindow_selectItem(item: SubToolViewItem) {
-
-            let tool = item.tool;
-            let env = this.toolEnv;
-
-            if (!tool.isAvailable(env)) {
-                return;
-            }
-
-            // Change current sub tool
-            this.setCurrentSubTool(item.subToolIndex);
-
-            env.setRedrawMainWindowEditorWindow();
-        }
-
         protected subtoolWindow_Item_Click(item: SubToolViewItem) {
 
             this.subtoolWindow_selectItem(item);
@@ -1725,6 +1710,25 @@ namespace ManualTracingTool {
 
                 this.updateUISubToolWindow();
             }
+        }
+
+        protected subtoolWindow_selectItem(item: SubToolViewItem) {
+
+            let tool = item.tool;
+            let env = this.toolEnv;
+
+            if (!tool.isAvailable(env)) {
+                return;
+            }
+
+            // Change current sub tool
+            this.setCurrentSubTool(item.subToolIndex);
+
+            env.setRedrawMainWindowEditorWindow();
+
+            // Tool event
+            this.activateCurrentTool();
+            this.currentTool.toolWindowItemClick(env);
         }
 
         protected paletteSelectorWindow_mousedown() {

@@ -149,7 +149,7 @@ namespace ManualTracingTool {
 
         logic_Selector: ISelector_BrushSelect = new Selector_LinePoint_BrushSelect(); // @override
 
-        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        toolWindowItemClick(env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.linePoint);
             env.setRedrawCurrentLayer();
@@ -187,7 +187,7 @@ namespace ManualTracingTool {
 
         logic_Selector: ISelector_BrushSelect = new Selector_Line_BrushSelect(); // @override
 
-        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        toolWindowItemClick(env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.line);
             env.setRedrawCurrentLayer();
@@ -198,7 +198,7 @@ namespace ManualTracingTool {
 
         logic_Selector: ISelector_BrushSelect = new Selector_LineSegment_BrushSelect(); // @override
 
-        toolWindowItemClick(e: ToolMouseEvent, env: ToolEnvironment) { // @override
+        toolWindowItemClick(env: ToolEnvironment) { // @override
 
             env.setCurrentOperationUnitID(OperationUnitID.lineSegment);
             env.setRedrawCurrentLayer();
