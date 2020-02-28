@@ -502,6 +502,8 @@ namespace ManualTracingTool {
             }
             ColorLogic.hsvToRGBv(this.tempEditorLinePointColor2, this.tempEditorLinePointColor1);
 
+            this.tempEditorLinePointColor2[3] = color[3];
+
             for (let point of line.points) {
 
                 this.drawVectorLinePoint(point, this.tempEditorLinePointColor2, useAdjustingLocation);
