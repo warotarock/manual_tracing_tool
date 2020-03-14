@@ -5,10 +5,9 @@ namespace ManualTracingTool {
 
         executeToggleSelection(env: ToolEnvironment) {
 
-            if (env.currentVectorLayer == null) {
-
-                return;
-            }
+            //if (env.currentVectorLayer == null) {
+            //    return;
+            //}
 
             let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 

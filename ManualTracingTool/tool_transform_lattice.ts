@@ -71,8 +71,10 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentVectorLayer != null
-                && Layer.isEditTarget(env.currentVectorLayer)
+                //env.currentVectorLayer != null
+                //&& Layer.isEditTarget(env.currentVectorLayer)
+                env.currentLayer != null
+                && Layer.isEditTarget(env.currentLayer)
             );
         }
 

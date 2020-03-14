@@ -167,6 +167,10 @@ namespace ManualTracingTool {
 
             for (let viewKeyframeLayer of viewKeyframeLayers) {
 
+                if (viewKeyframeLayer.vectorLayerKeyframe == null) {
+                    continue;
+                }
+
                 for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
                     loopBodyFunction(group);
@@ -174,9 +178,25 @@ namespace ManualTracingTool {
             }
         }
 
+        static forEachGeometry(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (geometry: VectorLayerGeometry) => void) {
+
+            for (let viewKeyframeLayer of viewKeyframeLayers) {
+
+                if (viewKeyframeLayer.vectorLayerKeyframe == null) {
+                    continue;
+                }
+
+                loopBodyFunction(viewKeyframeLayer.vectorLayerKeyframe.geometry);
+            }
+        }
+
         static forEachLayerAndGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (layer: VectorLayer, group: VectorGroup) => void) {
 
             for (let viewKeyframeLayer of viewKeyframeLayers) {
+
+                if (viewKeyframeLayer.vectorLayerKeyframe == null) {
+                    continue;
+                }
 
                 for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
 
@@ -425,7 +445,7 @@ namespace ManualTracingTool {
 
         drawLineBaseWidth = 1.0;
         drawLineMinWidth = 0.1;
-        drawCPUOnly = false;
+        drawCPUOnly = true;
 
         currentLayer: Layer = null;
 
@@ -707,6 +727,11 @@ namespace ManualTracingTool {
             return (this.currentImageFileReferenceLayer != null);
         }
 
+        isCurrentLayerContainerLayer(): boolean {
+
+            return (this.currentLayer.type == LayerTypeID.groupLayer);
+        }
+
         needsDrawOperatorCursor(): boolean {
 
             return (this.isEditMode() || this.toolContext.needsDrawOperatorCursor);
@@ -722,10 +747,13 @@ namespace ManualTracingTool {
             this.toolContext.mainEditor.setCurrentLayer(layer);
         }
 
-        setCurrentVectorLine(line: VectorLine, isEditTarget: boolean) {
+        setCurrentVectorLine(line: VectorLine, group: VectorGroup) {
 
             this.toolContext.currentVectorLine = line;
             this.currentVectorLine = line;
+
+            this.toolContext.currentVectorGroup = group;
+            this.currentVectorGroup = group;
         }
 
         getCurrentLayerLineColor(): Vec4 {
@@ -840,6 +868,7 @@ namespace ManualTracingTool {
         selectedVectorLineColor = vec4.fromValues(1.0, 0.5, 0.0, 0.8);
 
         linePointVisualBrightnessAdjustRate = 0.3;
+        editModeOtherLayerAlphaAdjustRate = 0.3;
 
         mouseCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);
         operatorCursorCircleColor = vec4.fromValues(1.0, 0.5, 0.5, 1.0);

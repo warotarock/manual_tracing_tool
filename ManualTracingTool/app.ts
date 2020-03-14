@@ -33,6 +33,8 @@ namespace ManualTracingTool {
     // ・collectEditTargetViewKeyframeLayersは何度も実行する必要はないのだが、選択状態が変わったりするたびに更新する必要があり辛いので現状リストを生成しているのでなんとかしたい
     // ・コードの全体的構造の整理
     // 　・ImageResourceがPoing3Dに依存しているのをどうにかしたい
+    // 　・複数レイヤー選択、グループレイヤー選択時の全てのツールの動作確認修正
+    // ・Render2DのtrnasformMatrixの更新やコピーのタイミングが分かりづらすぎる。というかRender2Dも3Dも描画関係はもうわけわからん…なんとかしる！
 
     // 既知のバグ (remaining bugs)
     // ・グループレイヤー

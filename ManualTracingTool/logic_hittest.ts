@@ -201,15 +201,18 @@ namespace ManualTracingTool {
     export class HitTest_Line_PointToLineByDistanceSingle extends HitTest_Line_PointToLineByDistance {
 
         hitedLine: VectorLine = null;
+        hitedGroup: VectorGroup = null;
 
         protected beforeHitTest() { // @override
 
             this.hitedLine = null;
+            this.hitedGroup = null;
         }
 
         protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
             this.hitedLine = line;
+            this.hitedGroup = group;
 
             this.existsPointHitTest = true;
         }

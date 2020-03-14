@@ -61,8 +61,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentVectorLayer != null
-                && Layer.isEditTarget(env.currentVectorLayer)
+                env.currentLayer != null
+                && Layer.isEditTarget(env.currentLayer)
             );
         }
 
@@ -176,16 +176,18 @@ namespace ManualTracingTool {
 
                 var drawPointsAll = false;
 
-                if (env.currentVectorLine != null
-                    && env.currentVectorLayer != null) {
+                if (env.currentVectorLine != null) {
 
                     if (drawPointsAll) {
 
-                        drawEnv.editorDrawer.drawEditorVectorLinePoints(
-                            env.currentVectorLine
-                            , env.currentVectorLayer.layerColor
-                            , false
-                        );
+                        if (env.currentVectorLayer != null) {
+
+                            drawEnv.editorDrawer.drawEditorVectorLinePoints(
+                                env.currentVectorLine
+                                , env.currentVectorLayer.layerColor
+                                , false
+                            );
+                        }
                     }
                     else {
 
@@ -234,18 +236,26 @@ namespace ManualTracingTool {
 
         selectLine(location: Vec3, env: ToolEnvironment) {
 
-            if (env.currentVectorLayer == null) {
+            let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-                return;
-            }
+            let hitedLine: VectorLine = null;
+            let hitedGroup: VectorGroup = null;
 
-            this.lineSingleHitTester.processLayer(env.currentVectorGeometry, location, env.mouseCursorViewRadius);
+            ViewKeyframeLayer.forEachGeometry(viewKeyframeLayers, (geometry: VectorLayerGeometry) => {
 
-            let hitedLine = this.lineSingleHitTester.hitedLine;
+                if (hitedLine == null) {
+
+                    this.lineSingleHitTester.startProcess();
+                    this.lineSingleHitTester.processLayer(geometry, location, env.mouseCursorViewRadius);
+
+                    hitedLine = this.lineSingleHitTester.hitedLine;
+                    hitedGroup = this.lineSingleHitTester.hitedGroup;
+                }
+            });
 
             if (hitedLine != null) {
 
-                env.setCurrentVectorLine(hitedLine, true);
+                env.setCurrentVectorLine(hitedLine, hitedGroup);
 
                 env.setRedrawCurrentLayer();
                 env.setRedrawEditorWindow();

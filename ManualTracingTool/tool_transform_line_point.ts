@@ -30,12 +30,7 @@ namespace ManualTracingTool {
 
         protected checkTarget(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
-            if (env.currentVectorLayer == null) {
-
-                return false;
-            }
-
-            return true;
+            return (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer());
         }
 
         protected prepareLatticePoints(env: ToolEnvironment): boolean { // @override

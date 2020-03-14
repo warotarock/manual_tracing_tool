@@ -51,7 +51,7 @@ namespace ManualTracingTool {
         tool_ScratchLineWidth = new Tool_ScratchLineWidth();
         tool_ResampleSegment = new Tool_Resample_Segment();
         //tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
-        tool_DeletePoints_BrushSelect = new Tool_DeletePoints_DivideLine();
+        tool_DeletePoints_DivideLine = new Tool_DeletePoints_DivideLine();
         tool_EditLinePointWidth_BrushSelect = new Tool_HideLinePoint_BrushSelect();
 
         hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
@@ -112,7 +112,7 @@ namespace ManualTracingTool {
                 new MainTool().id(MainToolID.drawLine)
                     .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
                     .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
-                    .subTool(this.tool_DeletePoints_BrushSelect, this.subToolImages[1], 5)
+                    .subTool(this.tool_DeletePoints_DivideLine, this.subToolImages[1], 5)
                     .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
                     .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                     .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
@@ -221,6 +221,8 @@ namespace ManualTracingTool {
             this.footerText = modeText + ' ' + toolText;
 
             this.footerText = this.currentTool.helpText;
+
+            this.toolContext.redrawFooterWindow = true;
         }
 
         protected setCurrentEditMode(editModeID: EditModeID) {
@@ -325,7 +327,7 @@ namespace ManualTracingTool {
 
             if (this.toolContext.subToolIndex != subToolIndex) {
 
-                this.toolContext.redrawFooterWindow = true;
+                this.updateFooterMessage();
             }
 
             mainTool.currentSubToolIndex = subToolIndex;
@@ -360,6 +362,8 @@ namespace ManualTracingTool {
 
             let viewKeyframe = this.currentViewKeyframe;
             let currentLayer = this.toolContext.currentLayer;
+
+            this.toolContext.currentVectorLine = null;
 
             if (currentLayer != null && VectorLayer.isVectorLayer(currentLayer) && viewKeyframe != null) {
 

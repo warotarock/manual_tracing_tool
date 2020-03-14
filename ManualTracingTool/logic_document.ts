@@ -15,7 +15,7 @@ namespace ManualTracingTool {
 
             this.fileNameCount++;
 
-            return localSetting.currentDirectoryPath + '\\' + fileName + '.json';
+            return localSetting.currentDirectoryPath + '\\' + fileName + '.ora';
         }
 
         static fixLoadedDocumentData(documentData: DocumentData, info: DocumentDataSaveInfo) {

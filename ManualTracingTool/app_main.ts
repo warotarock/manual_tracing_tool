@@ -1068,11 +1068,16 @@ namespace ManualTracingTool {
             }
             else if (env.isEditMode()) {
 
-                this.drawMainWindow_drawEditMode(canvasWindow, this.currentViewKeyframe, isFullRendering, currentLayerOnly, isModalToolRunning);
+                this.drawMainWindow_drawEditMode(canvasWindow, redrawActiveLayerOnly, currentLayerOnly, isModalToolRunning);
             }
         }
 
-        protected drawMainWindow_drawDrawMode(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean, drawCPUOnly: boolean) {
+        protected drawMainWindow_drawDrawMode(
+            canvasWindow: CanvasWindow,
+            redrawActiveLayerOnly: boolean,
+            currentLayerOnly: boolean,
+            isModalToolRunning: boolean,
+            drawCPUOnly: boolean) {
 
             let drawPathContext = this.drawPathContext;
 
@@ -1164,67 +1169,182 @@ namespace ManualTracingTool {
                 canvasWindow.copyTransformTo(bufferCanvasWindow);
 
                 this.drawDrawPaths(bufferCanvasWindow, drawPathContext, true);
-
-                //console.log('drawPathStepsToBuffer', drawPathContext.startIndex, drawPathContext.endIndex);
             }
 
             // Draw layers from buffer
 
             this.drawFullWindowImage(canvasWindow, bufferCanvasWindow);
-
-            //this.canvasRender.setContext(bufferCanvasWindow);
-            //this.canvasRender.resetTransform();
-            //this.canvasRender.setFillColor(1.0, 0.0, 0.0, 0.5);
-            //this.canvasRender.fillRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
-
-            //this.canvasRender.setContext(canvasWindow);
-            //this.canvasRender.resetTransform();
-            //this.canvasRender.drawImage(bufferCanvasWindow.canvas
-            //    , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height
-            //    , 0, 0, canvasWindow.width, canvasWindow.height);
         }
 
-        protected drawMainWindow_drawEditMode(canvasWindow: CanvasWindow, viewKeyframe: ViewKeyframe, isFullRendering: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
+        protected drawMainWindow_drawEditMode(
+            canvasWindow: CanvasWindow,
+            redrawActiveLayerOnly: boolean,
+            currentLayerOnly: boolean,
+            isModalToolRunning: boolean) {
+
+            let drawPathContext = this.drawPathContext;
+            let activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex;
+            let activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex;
+            let maxStepIndex = drawPathContext.steps.length - 1;
+
+            // TODO: 必要なときだけ実行する
+            this.collectDrawPasths_CollectSelectionInfo(drawPathContext);
 
             this.canvasRender.setContext(canvasWindow);
 
             this.clearWindow(canvasWindow);
 
-            let documentData = this.toolContext.document;
+            //redrawActiveLayerOnly = false;
 
+            if (redrawActiveLayerOnly && activeRangeStartIndex != -1) {
+
+                // Draw back layers
+                if (activeRangeStartIndex > 0) {
+
+                    drawPathContext.startIndex = 0;
+                    drawPathContext.endIndex = activeRangeStartIndex - 1;
+
+                    this.drawMainWindow_drawEditModeToBuffer(
+                        canvasWindow,
+                        this.backLayerRenderWindow,
+                        drawPathContext,
+                        this.activeLayerBufferDrawn,
+                        currentLayerOnly,
+                        isModalToolRunning
+                    );
+                }
+
+                // Draw current layers
+                drawPathContext.startIndex = activeRangeStartIndex;
+                drawPathContext.endIndex = activeRangeEndIndex;
+
+                this.drawMainWindow_drawEditModeToBuffer(
+                    canvasWindow,
+                    null,
+                    drawPathContext,
+                    false,
+                    currentLayerOnly,
+                    isModalToolRunning
+                );
+
+                // Draw fore layers
+                if (activeRangeEndIndex < maxStepIndex) {
+
+                    drawPathContext.startIndex = activeRangeEndIndex + 1;
+                    drawPathContext.endIndex = maxStepIndex;
+
+                    this.drawMainWindow_drawEditModeToBuffer(
+                        canvasWindow,
+                        this.foreLayerRenderWindow,
+                        drawPathContext,
+                        this.activeLayerBufferDrawn,
+                        currentLayerOnly,
+                        isModalToolRunning
+                    );
+                }
+
+                this.activeLayerBufferDrawn = true;
+            }
+            else {
+
+                // Draw all layers
+                drawPathContext.startIndex = 0;
+                drawPathContext.endIndex = maxStepIndex;
+
+                this.drawMainWindow_drawEditModeToBuffer(
+                    canvasWindow,
+                    null,
+                    drawPathContext,
+                    false,
+                    currentLayerOnly,
+                    isModalToolRunning
+                );
+
+                this.activeLayerBufferDrawn = false;
+            }
+        }
+
+        protected drawMainWindow_drawEditModeToBuffer(
+            canvasWindow: CanvasWindow,
+            bufferCanvasWindow: CanvasWindow,
+            drawPathContext: DrawPathContext,
+            activeLayerBufferDrawn: boolean,
+            currentLayerOnly: boolean,
+            isModalToolRunning: boolean
+        ) {
+
+            let documentData = this.toolContext.document;
             let drawStrokes = true;//!isFullRendering;
             let drawPoints = true;
 
-            for (let i = viewKeyframe.layers.length - 1; i >= 0; i--) {
+            if (!activeLayerBufferDrawn) {
 
-                let viewKeyFrameLayer = viewKeyframe.layers[i];
-                let layer = viewKeyFrameLayer.layer;
+                if (bufferCanvasWindow != null) {
 
-                if (currentLayerOnly) {
+                    this.clearWindow(bufferCanvasWindow);
 
-                    if (layer != this.selectCurrentLayerAnimationLayer) {
+                    canvasWindow.copyTransformTo(bufferCanvasWindow);
+                    this.canvasRender.setContextTransformByWindow(bufferCanvasWindow);
+                }
+
+                for (let i = drawPathContext.startIndex; i <= drawPathContext.endIndex; i++) {
+
+                    let drawPathStep = drawPathContext.steps[i];
+
+                    if (drawPathStep.operationType != DrawPathOperationTypeID.drawForeground
+                        && drawPathStep.operationType != DrawPathOperationTypeID.drawBackground) {
+
                         continue;
                     }
-                }
-                else {
 
-                    if (!Layer.isVisible(layer)) {
-                        continue;
+                    let viewKeyFrameLayer = drawPathStep.viewKeyframeLayer;
+                    let layer = viewKeyFrameLayer ? viewKeyFrameLayer.layer : null;
+
+                    //console.log('  DrawPath EditMode', i, drawPathStep._debugText, layer ? layer.name : '');
+
+                    if (currentLayerOnly) {
+
+                        //if (layer != this.selectCurrentLayerAnimationLayer) {
+                        if (!this.isdrawTargetForCurrentLayerOnly(layer)) {
+                            continue;
+                        }
+                    }
+                    else {
+
+                        if (!Layer.isVisible(layer)) {
+                            continue;
+                        }
+                    }
+
+                    if (VectorLayer.isVectorLayer(layer)) {
+
+                        let vectorLayer = <VectorLayer>layer;
+
+                        if (drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
+
+                            this.drawBackground(
+                                viewKeyFrameLayer,
+                                this.toolContext.document,
+                                false,
+                                drawPathContext.isModalToolRunning
+                            );
+                        }
+
+                        this.drawVectorLayerForEditMode(
+                            vectorLayer
+                            , viewKeyFrameLayer.vectorLayerKeyframe.geometry
+                            , documentData
+                            , drawStrokes
+                            , drawPoints
+                            , isModalToolRunning
+                        );
                     }
                 }
+            }
 
-                if (VectorLayer.isVectorLayer(layer)) {
+            if (bufferCanvasWindow != null) {
 
-                    let vectorLayer = <VectorLayer>layer;
-
-                    this.drawVectorLayerForEditMode(
-                        vectorLayer
-                        , viewKeyFrameLayer.vectorLayerKeyframe.geometry
-                        , documentData
-                        , drawStrokes
-                        , drawPoints
-                        , isModalToolRunning);
-                }
+                this.drawFullWindowImage(canvasWindow, bufferCanvasWindow);
             }
         }
 
@@ -1413,7 +1533,7 @@ namespace ManualTracingTool {
 
             if (currentLayerOnly) {
 
-                if (layer != this.selectCurrentLayerAnimationLayer) {
+                if (!this.isdrawTargetForCurrentLayerOnly(layer)) {
                     return false;
                 }
             }
@@ -1437,6 +1557,12 @@ namespace ManualTracingTool {
 
                 this.canvasRender.setCompositeOperation('source-over');
             }
+        }
+
+        private isdrawTargetForCurrentLayerOnly(layer: Layer) {
+
+            //return (layer != this.selectCurrentLayerAnimationLayer);
+            return (Layer.isSelected(layer));
         }
 
         protected drawLayers(canvasWindow: CanvasWindow, startIndex: int, endIndex: int, isExporting: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
@@ -1533,7 +1659,7 @@ namespace ManualTracingTool {
 
                     if (env.isEditMode()) {
 
-                        this.drawMainWindow_drawEditMode(this.mainWindow, this.currentViewKeyframe, true, false, false);
+                        this.drawMainWindow_drawEditMode(this.mainWindow, true, false, false);
                     }
                 }
             }

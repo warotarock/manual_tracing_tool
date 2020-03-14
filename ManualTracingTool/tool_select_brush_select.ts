@@ -13,8 +13,8 @@ namespace ManualTracingTool {
         isAvailable(env: ToolEnvironment): boolean { // @override
 
             return (
-                env.currentVectorLayer != null
-                && Layer.isEditTarget(env.currentVectorLayer)
+                env.currentLayer != null
+                && Layer.isEditTarget(env.currentLayer)
             );
         }
 
@@ -41,9 +41,11 @@ namespace ManualTracingTool {
 
         mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            if (env.currentVectorLayer == null) {
-
-                env.setRedrawEditorWindow();
+            //if (env.currentVectorLayer == null) {
+            //    env.setRedrawEditorWindow();
+            //    return;
+            //}
+            if (!this.isAvailable(env)) {
                 return;
             }
 
@@ -62,8 +64,10 @@ namespace ManualTracingTool {
 
         mouseUp(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
-            if (env.currentVectorLayer == null) {
-
+            //if (env.currentVectorLayer == null) {
+            //    return;
+            //}
+            if (!this.isAvailable(env)) {
                 return;
             }
 
@@ -114,7 +118,14 @@ namespace ManualTracingTool {
 
             for (let viewKeyframeLayer of this.viewKeyframeLayers) {
 
-                this.logic_Selector.processLayer(viewKeyframeLayer.vectorLayerKeyframe.geometry, e.location, env.mouseCursorViewRadius);
+                if (VectorLayer.isVectorLayer(viewKeyframeLayer.layer)) {
+
+                    this.logic_Selector.processLayer(
+                        viewKeyframeLayer.vectorLayerKeyframe.geometry,
+                        e.location,
+                        env.mouseCursorViewRadius
+                    );
+                }
             }
         }
 
@@ -223,7 +234,7 @@ namespace ManualTracingTool {
             if (this.selectedLines.length > 0) {
 
                 let firstLine = this.selectedLines[0];
-                env.setCurrentVectorLine(firstLine.line, false);
+                env.setCurrentVectorLine(firstLine.line, env.currentVectorGroup);
             }
         }
 

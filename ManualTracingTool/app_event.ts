@@ -635,9 +635,7 @@ namespace ManualTracingTool {
 
                 if (env.isEditMode()) {
 
-                    if (this.toolContext.currentVectorLayer != null
-                        && this.toolContext.currentVectorGeometry != null
-                        && this.toolContext.currentVectorGroup != null) {
+                    if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
 
                         let withCut = (key == 'x' && env.isCtrlKeyPressing());
 
@@ -997,16 +995,9 @@ namespace ManualTracingTool {
                         modalToolID = ModalToolID.scale;
                     }
 
-                    if (env.isCurrentLayerVectorLayer()) {
+                    if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
 
-                        if (env.isEditMode()) {
-
-                            this.startVectorLayerModalTool(modalToolID);
-                        }
-                        else {
-
-                            this.currentTool.keydown(e, env);
-                        }
+                        this.startVectorLayerModalTool(modalToolID);
                     }
                     else if (env.isCurrentLayerImageFileReferenceLayer()) {
 

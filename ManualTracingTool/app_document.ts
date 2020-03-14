@@ -254,12 +254,12 @@ namespace ManualTracingTool {
                 layer1.keyframes[0].geometry.groups.push(group1);
             }
 
-            {
-                let layer1 = new PosingLayer();
-                layer1.name = 'posing1'
-                rootLayer.childLayers.push(layer1);
-                layer1.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
-            }
+            //{
+            //    let layer1 = new PosingLayer();
+            //    layer1.name = 'posing1'
+            //    rootLayer.childLayers.push(layer1);
+            //    layer1.posingModel = this.modelFile.posingModelDictionary['dummy_skin'];
+            //}
 
             document.loaded = true;
 

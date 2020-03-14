@@ -307,7 +307,9 @@ namespace ManualTracingTool {
             let env = this.toolEnv;
             let useAdjustingLocation = isModalToolRunning;
 
-            let fillColor = this.getFillColor(layer, documentData, env, true);
+            let isSelectedLayer = Layer.isSelected(layer);
+
+            let fillColor = this.getFillColor(layer, documentData, env, !isSelectedLayer);
 
             for (let group of geometry.groups) {
 
@@ -759,7 +761,7 @@ namespace ManualTracingTool {
             if (hideWhenEditMode && env.isEditMode()) {
 
                 vec4.copy(this.editOtherLayerLineColor, color);
-                this.editOtherLayerLineColor[3] *= 0.3;
+                this.editOtherLayerLineColor[3] *= env.drawStyle.editModeOtherLayerAlphaAdjustRate;
 
                 color = this.editOtherLayerLineColor;
             }
@@ -787,7 +789,7 @@ namespace ManualTracingTool {
             if (hideWhenEditMode && env.isEditMode()) {
 
                 vec4.copy(this.editOtherLayerLineColor, color);
-                this.editOtherLayerLineColor[3] *= 0.3;
+                this.editOtherLayerLineColor[3] *= env.drawStyle.editModeOtherLayerAlphaAdjustRate;
 
                 color = this.editOtherLayerLineColor;
             }

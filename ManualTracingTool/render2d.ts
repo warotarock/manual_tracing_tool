@@ -214,7 +214,7 @@ namespace ManualTracingTool {
             this.setContextTransform(this.currentTransform);
         }
 
-        private setContextTransformByWindow(canvasWindow: CanvasWindow) {
+        setContextTransformByWindow(canvasWindow: CanvasWindow) {
 
             mat4.copy(this.currentTransform, canvasWindow.transformMatrix);
 
@@ -223,7 +223,12 @@ namespace ManualTracingTool {
 
         private setContextTransform(matrix: Mat4) {
 
-            this.context.setTransform(
+            CanvasRender.setContextTransformToCanvas(this.context, matrix);
+        }
+
+        static setContextTransformToCanvas(context: CanvasRenderingContext2D, matrix: Mat4) {
+
+            context.setTransform(
                 matrix[0], matrix[1],
                 matrix[4], matrix[5],
                 matrix[12], matrix[13]);

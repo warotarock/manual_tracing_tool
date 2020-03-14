@@ -186,7 +186,7 @@ namespace ManualTracingTool {
                 this.previousConnectedLine.continuousFill = true;
             }
 
-            env.setCurrentVectorLine(this.line, false);
+            env.setCurrentVectorLine(this.line, this.group);
         }
     }
 }

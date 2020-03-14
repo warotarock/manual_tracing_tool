@@ -21,6 +21,14 @@ namespace ManualTracingTool {
 
         logic_Selector: ISelector_BrushSelect = new Selector_DeleteLinePoint_BrushSelect(); // @override
 
+        isAvailable(env: ToolEnvironment): boolean { // @override
+
+            return (
+                env.isCurrentLayerVectorLayer()
+                && Layer.isEditTarget(env.currentLayer)
+            );
+        }
+
         protected executeCommand(env: ToolEnvironment) { // @override
 
             let command = new Command_DeleteFlaggedPoints();
