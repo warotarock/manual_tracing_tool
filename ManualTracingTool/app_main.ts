@@ -1326,7 +1326,7 @@ namespace ManualTracingTool {
                                 viewKeyFrameLayer,
                                 this.toolContext.document,
                                 false,
-                                drawPathContext.isModalToolRunning
+                                isModalToolRunning
                             );
                         }
 
