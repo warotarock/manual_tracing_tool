@@ -32,6 +32,11 @@ namespace ManualTracingTool {
                 }
             }
 
+            if (documentData.exportingCount == undefined) {
+
+                documentData.exportingCount = 1;
+            }
+
             while (documentData.paletteColors.length < DocumentData.maxPaletteColors) {
 
                 documentData.paletteColors.push(new PaletteColor());

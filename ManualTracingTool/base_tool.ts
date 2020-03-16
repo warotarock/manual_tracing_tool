@@ -883,6 +883,7 @@ namespace ManualTracingTool {
         layerWindowItemSelectedColor = vec4.fromValues(0.95, 0.95, 1.0, 1.0);
 
         paletteSelectorItemEdgeColor = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        paletteSelectorItemSelectedColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
 
         timeLineUnitFrameColor = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
         timeLineCurrentFrameColor = vec4.fromValues(0.2, 1.0, 0.2, 0.5);

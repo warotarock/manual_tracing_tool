@@ -1473,8 +1473,9 @@ namespace ManualTracingTool {
 
                 if (paletteColorIndex == currentPaletteColorIndex) {
 
-                    this.canvasRender.setStrokeWidth(1.5);
-                    this.canvasRender.drawRectangle(x + 0.5 - 1.0, y + 0.5 - 1.0, itemWidth + 2.0, itemHeight + 2.0);
+                    this.canvasRender.setStrokeColorV(this.drawStyle.paletteSelectorItemSelectedColor);
+                    this.canvasRender.setStrokeWidth(2.5);
+                    this.canvasRender.drawRectangle(x + 0.5 - 2.0, y + 0.5 - 2.0, itemWidth + 4.0, itemHeight + 4.0);
                 }
             }
         }

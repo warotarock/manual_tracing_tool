@@ -614,6 +614,23 @@ namespace ManualTracingTool {
             this.paletteSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PaletteSelectorWindowButtonID.fillColor).setIcon(6));
         }
 
+        protected paletteSelector_SetCurrentModeForCurrentLayer() {
+
+            if (VectorLayer.isVectorLayer(this.toolContext.currentLayer)) {
+
+                let vectorLayer = <VectorLayer>(this.toolContext.currentLayer);
+
+                if (vectorLayer.fillAreaType != FillAreaTypeID.none) {
+
+                    this.paletteSelectorWindow.currentTargetID = PaletteSelectorWindowButtonID.fillColor;
+                }
+                else if (vectorLayer.drawLineType != DrawLineTypeID.none) {
+
+                    this.paletteSelectorWindow.currentTargetID = PaletteSelectorWindowButtonID.lineColor;
+                }
+            }
+        }
+
         // Subtool window
 
         subToolViewItems = new List<SubToolViewItem>();
@@ -1082,6 +1099,8 @@ namespace ManualTracingTool {
 
         protected setExportImageFileNameFromFileName() {
 
+            let documentData = this.toolEnv.document;
+
             let fileName = this.getInputElementText(this.ID.fileName);
             let lastSeperatorIndex = StringLastIndexOf(fileName, '\\');
             if (lastSeperatorIndex == -1) {
@@ -1093,7 +1112,11 @@ namespace ManualTracingTool {
                 fileName = StringSubstring(fileName, lastSeperatorIndex + 1, separatorDotIndex - lastSeperatorIndex - 1);
             }
 
+            fileName += '_' + ('00' + documentData.exportingCount).slice(-2);
+
             this.setInputElementText(this.ID.exportImageFileModal_fileName, fileName);
+
+            documentData.exportingCount++;
         }
 
         protected openNewKeyframeModal() {
@@ -1170,7 +1193,8 @@ namespace ManualTracingTool {
                 if (this.toolContext.currentLayer != null
                     && this.toolContext.currentLayer.type == LayerTypeID.imageFileReferenceLayer) {
 
-                    let filePath = (<ImageFileReferenceLayer>(this.toolContext.currentLayer)).imageFilePath;
+                    let ifrLayer = <ImageFileReferenceLayer>(this.toolContext.currentLayer);
+                    let filePath = ifrLayer.imageFilePath;
 
                     this.openFileDialogModal(targetID, filePath);
                 }

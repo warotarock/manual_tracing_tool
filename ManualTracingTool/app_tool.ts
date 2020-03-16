@@ -183,42 +183,43 @@ namespace ManualTracingTool {
 
         protected updateFooterMessage() {
 
-            let context = this.toolContext;
-            let modeText = '';
+            {
+                let context = this.toolContext;
+                let modeText = '';
 
-            if (this.toolEnv.isDrawMode()) {
+                if (this.toolEnv.isDrawMode()) {
 
-                modeText = 'DrawMode';
-            }
-            else if (this.toolEnv.isEditMode()) {
-
-                modeText = 'SelectMode';
-            }
-
-            let toolText = '';
-
-            if (this.toolEnv.isDrawMode()) {
-
-                if (this.currentTool == this.tool_DrawLine) {
-
-                    toolText = 'Draw line';
+                    modeText = 'DrawMode';
                 }
-                else if (this.currentTool == this.tool_ScratchLine) {
+                else if (this.toolEnv.isEditMode()) {
 
-                    toolText = 'Scratch line';
+                    modeText = 'SelectMode';
                 }
-                else if (this.currentTool == this.tool_Posing3d_LocateHead) {
 
-                    toolText = 'Posing(Head location)';
+                let toolText = '';
+
+                if (this.toolEnv.isDrawMode()) {
+
+                    if (this.currentTool == this.tool_DrawLine) {
+
+                        toolText = 'Draw line';
+                    }
+                    else if (this.currentTool == this.tool_ScratchLine) {
+
+                        toolText = 'Scratch line';
+                    }
+                    else if (this.currentTool == this.tool_Posing3d_LocateHead) {
+
+                        toolText = 'Posing(Head location)';
+                    }
                 }
+                else if (this.toolEnv.isEditMode()) {
+
+                    toolText = '';
+                }
+
+                // console.log(modeText, toolText);
             }
-            else if (this.toolEnv.isEditMode()) {
-
-                toolText = '';
-            }
-
-
-            this.footerText = modeText + ' ' + toolText;
 
             this.footerText = this.currentTool.helpText;
 
@@ -325,11 +326,6 @@ namespace ManualTracingTool {
 
             let mainTool = this.getCurrentMainTool();
 
-            if (this.toolContext.subToolIndex != subToolIndex) {
-
-                this.updateFooterMessage();
-            }
-
             mainTool.currentSubToolIndex = subToolIndex;
 
             this.toolContext.subToolIndex = subToolIndex;
@@ -339,6 +335,8 @@ namespace ManualTracingTool {
             env.setRedrawSubtoolWindow();
 
             this.updateUISubToolWindow();
+
+            this.updateFooterMessage();
         }
 
         protected updateUISubToolWindow(forceRedraw = false) {
@@ -423,6 +421,8 @@ namespace ManualTracingTool {
             this.updateContextCurrentRefferences();
 
             this.setCurrentMainToolForCurentLayer();
+
+            this.paletteSelector_SetCurrentModeForCurrentLayer();
 
             this.activateCurrentTool();
         }

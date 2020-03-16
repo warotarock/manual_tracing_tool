@@ -164,7 +164,9 @@ namespace ManualTracingTool {
 
                         this.startReloadDocumentFromText(documentData, text, filePath);
 
-                        this.updateFileNameRelatedUI(filePath);
+                        this.registerLastUsedFile(filePath);
+
+                        this.setHeaderDocumentFileName(filePath);
                     });
                 }
                 else {
@@ -190,10 +192,12 @@ namespace ManualTracingTool {
             documentData.defaultViewScale = loadedData.defaultViewScale;
             documentData.lineWidthBiasRate = loadedData.lineWidthBiasRate;
             documentData.animationSettingData = loadedData.animationSettingData;
+            documentData.exportBackGroundType = loadedData.exportBackGroundType;
+            documentData.exportingCount = loadedData.exportingCount;
 
             documentData.loaded = true;
 
-            this.updateFileNameRelatedUI(filePath);
+            this.setHeaderDocumentFileName(filePath);
         }
 
         protected fixLoadedDocumentData(documentData: DocumentData) {
@@ -203,13 +207,6 @@ namespace ManualTracingTool {
 
             DocumentLogic.fixLoadedDocumentData_CollectLayers_Recursive(documentData.rootLayer, info);
             DocumentLogic.fixLoadedDocumentData(documentData, info);
-        }
-
-        private updateFileNameRelatedUI(filePath: string) {
-
-            this.registerLastUsedFile(filePath);
-            this.setHeaderDocumentFileName(filePath);
-            this.setExportImageFileNameFromFileName();
         }
 
         // Document data operations

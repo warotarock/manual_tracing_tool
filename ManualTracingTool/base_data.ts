@@ -244,8 +244,12 @@ namespace ManualTracingTool {
 
         static isVectorLayer(layer: Layer): boolean {
 
-            return (layer.type == LayerTypeID.vectorLayer
-                || layer.type == LayerTypeID.vectorLayerReferenceLayer);
+            return (layer != null
+                && (
+                    (layer.type == LayerTypeID.vectorLayer
+                        || layer.type == LayerTypeID.vectorLayerReferenceLayer)
+                )
+            );
         }
 
         static findLastKeyframeIndex(vectorLayer: VectorLayer, targetFrame: int): int {
@@ -590,12 +594,18 @@ namespace ManualTracingTool {
         static maxPaletteColors = 50;
 
         rootLayer = new Layer();
+
+        paletteColors = new List<PaletteColor>();
+
         documentFrame = vec4.fromValues(-960.0, -540.0, 959.0, 539.0);
+
+        animationSettingData = new AnimationSettingData();
+
         defaultViewScale = 1.0;
         lineWidthBiasRate = 1.0;
+
         exportBackGroundType = DocumentBackGroundTypeID.lastPaletteColor;
-        paletteColors = new List<PaletteColor>();
-        animationSettingData = new AnimationSettingData();
+        exportingCount = 1;
 
         loaded = false;
         hasErrorOnLoading = false;
