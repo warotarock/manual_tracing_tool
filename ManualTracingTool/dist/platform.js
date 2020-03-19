@@ -38,11 +38,11 @@ var Platform;
             this.data = {
                 "activeSettingName": "setting1",
                 "setting1": {
-                    "exportPath": ".\\",
-                    "referenceDirectoryPath": ".\\",
                     "currentDirectoryPath": ".\\",
+                    "referenceDirectoryPath": ".\\",
+                    "exportPath": ".\\",
                     "maxLastUsedFilePaths": 5,
-                    "lastUsedFilePaths": []
+                    "lastUsedFilePaths": ['./test/test01_app_demo.json']
                 }
             };
         }

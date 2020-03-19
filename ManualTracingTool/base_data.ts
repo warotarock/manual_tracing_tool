@@ -5,11 +5,11 @@ namespace ManualTracingTool {
 
     export class LocalSetting {
 
-        exportPath: string = null;
-        lastUsedFilePaths: List<string> = ['./test/test01_app_demo.json'];;
-        maxLastUsedFilePaths = 5;
-        referenceDirectoryPath: string = './test';
         currentDirectoryPath: string = null;
+        referenceDirectoryPath: string = './test';
+        exportPath: string = null;
+        lastUsedFilePaths: List<string> = [];
+        maxLastUsedFilePaths = 5;
     }
 
     // Color

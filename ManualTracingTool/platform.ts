@@ -53,11 +53,11 @@ namespace Platform {
         data = {
             "activeSettingName": "setting1",
             "setting1": <ManualTracingTool.LocalSetting>{
-                "exportPath": ".\\",
-                "referenceDirectoryPath": ".\\",
                 "currentDirectoryPath": ".\\",
+                "referenceDirectoryPath": ".\\",
+                "exportPath": ".\\",
                 "maxLastUsedFilePaths": 5,
-                "lastUsedFilePaths": []
+                "lastUsedFilePaths": ['./test/test01_app_demo.json']]
             }
         };
 

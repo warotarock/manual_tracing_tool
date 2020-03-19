@@ -16,13 +16,12 @@ var ManualTracingTool;
     // Setting
     var LocalSetting = /** @class */ (function () {
         function LocalSetting() {
-            this.exportPath = null;
-            this.lastUsedFilePaths = ['./test/test01_app_demo.json'];
-            this.maxLastUsedFilePaths = 5;
-            this.referenceDirectoryPath = './test';
             this.currentDirectoryPath = null;
+            this.referenceDirectoryPath = './test';
+            this.exportPath = null;
+            this.lastUsedFilePaths = [];
+            this.maxLastUsedFilePaths = 5;
         }
-        ;
         return LocalSetting;
     }());
     ManualTracingTool.LocalSetting = LocalSetting;
