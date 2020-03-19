@@ -38,9 +38,9 @@ var Platform;
             this.data = {
                 "activeSettingName": "setting1",
                 "setting1": {
-                    "currentDirectoryPath": ".\\",
-                    "referenceDirectoryPath": ".\\",
-                    "exportPath": ".\\",
+                    "currentDirectoryPath": "./",
+                    "referenceDirectoryPath": "./test",
+                    "exportPath": "./",
                     "maxLastUsedFilePaths": 5,
                     "lastUsedFilePaths": ['./test/test01_app_demo.json']
                 }

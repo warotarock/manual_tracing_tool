@@ -6,7 +6,7 @@ namespace ManualTracingTool {
     export class LocalSetting {
 
         currentDirectoryPath: string = null;
-        referenceDirectoryPath: string = './test';
+        referenceDirectoryPath: string = '';
         exportPath: string = null;
         lastUsedFilePaths: List<string> = [];
         maxLastUsedFilePaths = 5;
