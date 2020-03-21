@@ -186,7 +186,7 @@ namespace ManualTracingTool {
 
                 if (inputData.inputDone && inputData.directionInputDone) {
 
-                    env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, inputData.inputLocation, env.currentPosingData.real3DViewHalfWidth);
+                    env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, inputData.inputLocation, env.currentPosingData);
                     let distance = vec3.distance(env.mouseCursorLocation, this.location2D);
 
                     if (resultRelativeMouseLocation != null) {
@@ -316,7 +316,7 @@ namespace ManualTracingTool {
 
             if (this.enableDirectionInput && inputData.directionInputDone) {
 
-                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, inputData.inputLocation, env.currentPosingData.real3DViewHalfWidth);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, inputData.inputLocation, env.currentPosingData);
                 let strokeWidth = (this.mouseOnInputMode == JointPartInputMode.directionInput) ? 4.0 : 2.0;
                 drawEnv.drawCircle(this.location2D, circleRadius, env.getViewScaledLength(strokeWidth), drawEnv.style.posing3DBoneHeadColor);
             }
@@ -324,13 +324,13 @@ namespace ManualTracingTool {
             if (this.enableRollInput && this.jointPartInputMode == JointPartInputMode.rollInput) {
 
                 vec3.set(this.location3D, inputData.matrix[12], inputData.matrix[13], inputData.matrix[14]);
-                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData.real3DViewHalfWidth);
-                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.inputLocation, env.currentPosingData.real3DViewHalfWidth);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.inputLocation, env.currentPosingData);
                 drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
 
                 vec3.set(this.location3D, this.rollInputRootMatrix[12], this.rollInputRootMatrix[13], this.rollInputRootMatrix[14]);
-                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData.real3DViewHalfWidth);
-                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.rollInputLocation, env.currentPosingData.real3DViewHalfWidth);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData);
+                env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.rollInputLocation, env.currentPosingData);
                 drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(2.0), drawEnv.style.posing3DBoneGrayColor);
                 drawEnv.drawCircle(this.location2D, env.getViewScaledLength(2.0), env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
 
@@ -497,8 +497,8 @@ namespace ManualTracingTool {
         centerLocation3D = vec3.fromValues(0.0, 0.0, 0.0);
         subLocation = vec3.fromValues(0.0, 0.0, 0.0);
         inputRadius = 0.0;
-        inputRadiusAdjustRate = 1.2;
-        minInputRadius = 25.0;
+        inputRadiusAdjustRate = 1.0;
+        minInputRadius = 5.0;
 
         prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
 
@@ -618,8 +618,9 @@ namespace ManualTracingTool {
             //     headSphereSize[m] / real3DViewHalfWidth[m] = radiusSum[px] / real2DViewWidth[px]
             //     real3DViewHalfWidth[m] / headSphereSize[m] = real2DViewWidth[px] / radiusSum[px]
             //     real3DViewHalfWidth[m]                     = (real2DViewWidth[px] / radiusSum[px]) * headSphereSize[m]
-            let real2DViewWidth = env.mainWindow.width / 2;
+            let real2DViewWidth = env.mainWindow.height / 2;
             env.currentPosingData.real3DViewHalfWidth = (real2DViewWidth / radiusSum) * env.currentPosingModel.headSphereSize;
+            env.currentPosingData.real3DViewMeterPerPixel = env.currentPosingData.real3DViewHalfWidth / real2DViewWidth;
 
             // debug
             //env.currentPosingData.viewZoomRate = env.currentPosingModel.headSphereSize / 50.0;
@@ -636,7 +637,7 @@ namespace ManualTracingTool {
                 this.centerLocation3D
                 , this.centerLocationSum
                 , 2.0 // 2.0m
-                , env.currentPosingData.real3DViewHalfWidth);
+                , env.currentPosingData);
 
             //console.log(this.centerLocation);
 

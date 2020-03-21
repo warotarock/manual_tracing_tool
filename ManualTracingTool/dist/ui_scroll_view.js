@@ -114,14 +114,14 @@ var ManualTracingTool;
         React.useEffect(function () {
             window.addEventListener('mouseup', onMouseUp);
             window.addEventListener('mousemove', onMouseMove);
-            window.addEventListener('touchup', onTouchUp);
+            window.addEventListener('touchend', onTouchUp);
             window.addEventListener('touchmove', onTouchMove);
             window.addEventListener('keydown', onKeyDown);
             window.addEventListener('keyup', onKeyUp);
             return function cleanup() {
                 window.removeEventListener('mouseup', onMouseUp);
                 window.removeEventListener('mousemove', onMouseMove);
-                window.removeEventListener('touchup', onTouchUp);
+                window.removeEventListener('touchend', onTouchUp);
                 window.removeEventListener('touchmove', onTouchMove);
                 window.removeEventListener('keydown', onKeyDown);
                 window.removeEventListener('keyup', onKeyUp);

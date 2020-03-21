@@ -320,7 +320,7 @@ var ManualTracingTool;
         Posing3DView.prototype.drawManipulaters = function (posingLayer, env) {
             var posingData = posingLayer.posingData;
             var posingModel = posingLayer.posingModel;
-            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth);
+            this.caluculateCameraMatrix(posingData);
             // Draws input manipulaters
             this.drawHeadSphere(DrawImageType.visualImage, posingLayer, env);
             for (var _i = 0, _a = posingLayer.drawingUnits; _i < _a.length; _i++) {
@@ -337,7 +337,7 @@ var ManualTracingTool;
             }
             var posingData = posingLayer.posingData;
             var posingModel = posingLayer.posingModel;
-            this.caluculateCameraMatrix(posingData.real3DViewHalfWidth);
+            this.caluculateCameraMatrix(posingData);
             this.render.clearDepthBuffer();
             if (this.isHeadDrawable(posingData)) {
                 this.setShaderParameters(posingData.headMatrix, false, this.posingFigureShader);
@@ -560,8 +560,10 @@ var ManualTracingTool;
             gl.bindTexture(gl.TEXTURE_2D, image.texture);
             this.render.drawElements(model);
         };
-        Posing3DView.prototype.caluculateCameraMatrix = function (real3DViewHalfWidth) {
+        Posing3DView.prototype.caluculateCameraMatrix = function (posingData) {
             var wnd = this.webglWindow;
+            //let real3DViewHalfWidth = posingData.real3DViewHalfWidth;
+            var real3DViewHalfWidth = posingData.real3DViewMeterPerPixel * (wnd.height / 2.0);
             // Tareget position
             vec3.set(this.modelLocation, 0.0, 0.0, 0.0);
             // Camera position
@@ -598,9 +600,9 @@ var ManualTracingTool;
             mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
             mat4.invert(this.cameraMatrix, this.viewMatrix);
         };
-        Posing3DView.prototype.calculate3DLocationFrom2DLocation = function (result, real2DLocation, depth, real3DViewHalfWidth) {
+        Posing3DView.prototype.calculate3DLocationFrom2DLocation = function (result, real2DLocation, depth, posingData) {
             var wnd = this.webglWindow;
-            this.caluculateCameraMatrix(real3DViewHalfWidth);
+            this.caluculateCameraMatrix(posingData);
             vec3.transformMat4(this.screenLocation, real2DLocation, wnd.transformMatrix);
             var viewHalfWidth = wnd.width / 2;
             var viewHalfHeight = wnd.height / 2;
@@ -611,15 +613,15 @@ var ManualTracingTool;
             this.invProjectedVec3[2] = -depth;
             vec3.transformMat4(result, this.invProjectedVec3, this.cameraMatrix);
         };
-        Posing3DView.prototype.calculate2DLocationFrom3DLocation = function (result, real3DLocation, real3DViewHalfWidth) {
+        Posing3DView.prototype.calculate2DLocationFrom3DLocation = function (result, real3DLocation, posingData) {
             var wnd = this.webglWindow;
-            this.caluculateCameraMatrix(real3DViewHalfWidth);
+            this.caluculateCameraMatrix(posingData);
             vec3.transformMat4(result, real3DLocation, this.viewMatrix);
             vec3.transformMat4(result, result, this.real3DProjectionMatrix);
             result[0] *= (wnd.height / 2.0);
             result[1] *= -(wnd.height / 2.0);
         };
-        Posing3DView.prototype.pick3DLocationFromDepthImage = function (result, location2d, real3DViewHalfWidth, pickingWindow) {
+        Posing3DView.prototype.pick3DLocationFromDepthImage = function (result, location2d, posingData, pickingWindow) {
             vec3.transformMat4(this.tempVec3, location2d, pickingWindow.transformMatrix);
             if (this.tempVec3[0] < 0 || this.tempVec3[0] >= pickingWindow.width
                 || this.tempVec3[1] < 0 || this.tempVec3[1] >= pickingWindow.height) {
@@ -634,7 +636,7 @@ var ManualTracingTool;
             }
             var depth = (r / 255) + (g / Math.pow(255, 2)) + (b / Math.pow(255, 3));
             depth *= pickingWindow.maxDepth;
-            this.calculate3DLocationFrom2DLocation(result, location2d, depth, real3DViewHalfWidth);
+            this.calculate3DLocationFrom2DLocation(result, location2d, depth, posingData);
             return true;
         };
         return Posing3DView;

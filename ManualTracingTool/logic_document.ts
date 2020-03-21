@@ -210,9 +210,20 @@ namespace ManualTracingTool {
 
                 posingLayer.drawingUnits = null;
 
-                if (posingLayer.posingData.rootMatrix == undefined) {
+                let posingData = posingLayer.posingData;
 
-                    posingLayer.posingData = new PosingData();
+                if (posingData.rootMatrix == undefined) {
+
+                    posingData = new PosingData();
+                }
+
+                if (posingData.real3DViewMeterPerPixel == undefined) {
+
+                    let posingModel = posingLayer.posingModel;
+                    let radiusSum = posingData.headLocationInputData.radius;
+                    let real2DViewWidth = posingData.real3DViewHalfWidth / posingModel.headSphereSize * radiusSum;
+
+                    posingData.real3DViewMeterPerPixel = posingData.real3DViewHalfWidth / real2DViewWidth / 1.75 * 2.0;
                 }
 
                 posingLayer.posingModel = info.modelFile.posingModelDictionary['dummy_skin'];

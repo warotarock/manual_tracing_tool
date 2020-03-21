@@ -323,7 +323,7 @@ var ManualTracingTool;
                 });
             }
             if (mousewheel != null) {
-                eventCanvasWindow.canvas.addEventListener('mousewheel', function (e) {
+                eventCanvasWindow.canvas.addEventListener('wheel', function (e) {
                     if (_this.isEventDisabled() && !isModal) {
                         return;
                     }
@@ -1087,75 +1087,6 @@ var ManualTracingTool;
             this.toolEnv.setRedrawLayerWindow();
             this.toolEnv.setRedrawSubtoolWindow();
         };
-        //protected subtoolWindow_mousedown() {
-        //    let context = this.toolContext;
-        //    let wnd = this.subtoolWindow;
-        //    let e = wnd.toolMouseEvent;
-        //    let env = this.toolEnv;
-        //    let doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
-        //    if (context.mainToolID == MainToolID.none || this.subToolViewItems.length == 0) {
-        //        return;
-        //    }
-        //    env.updateContext();
-        //    let clickedX = e.location[0];
-        //    let clickedY = e.location[1];
-        //    if (e.isLeftButtonPressing()) {
-        //        let firstItem = this.subToolViewItems[0];
-        //        let subToolIndex = Math.floor((clickedY - firstItem.top) / (firstItem.getHeight()));
-        //        if (subToolIndex < 0 || subToolIndex >= this.subToolViewItems.length) {
-        //            return;
-        //        }
-        //        let viewItem = this.subToolViewItems[subToolIndex];
-        //        let tool = viewItem.tool;
-        //        if (tool.isAvailable(env)) {
-        //            // Change current sub tool
-        //            this.setCurrentSubTool(subToolIndex);
-        //            this.updateFooterMessage();
-        //            env.setRedrawMainWindowEditorWindow();
-        //            // Option button click
-        //            let button = this.hitTestLayout(viewItem.buttons, clickedX, clickedY);
-        //            if (button != null) {
-        //                let inpuSideID = tool.getInputSideID(button.index, env);
-        //                if (tool.setInputSide(button.index, inpuSideID, env)) {
-        //                    env.setRedrawMainWindowEditorWindow();
-        //                    env.setRedrawSubtoolWindow();
-        //                }
-        //            }
-        //            // Tool event
-        //            if (button == null && this.currentTool != null) {
-        //                if (doubleClicked) {
-        //                    this.currentTool.toolWindowItemDoubleClick(e, env);
-        //                }
-        //                else if (e.isLeftButtonPressing()) {
-        //                    this.activateCurrentTool();
-        //                    this.currentTool.toolWindowItemClick(e, env);
-        //                }
-        //            }
-        //        }
-        //    }
-        //    else if (e.isCenterButtonPressing() || e.isRightButtonPressing()) {
-        //        wnd.startMouseDragging();
-        //    }
-        //}
-        //protected subtoolWindow_mousemove() {
-        //    let wnd = this.subtoolWindow;
-        //    let e = wnd.toolMouseEvent;
-        //    // View operation
-        //    if (e.isMouseDragging) {
-        //        vec3.add(wnd.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedOffset);
-        //        wnd.viewLocation[0] = 0.0;
-        //        if (wnd.viewLocation[1] < 0.0) {
-        //            wnd.viewLocation[1] = 0.0;
-        //        }
-        //        if (wnd.viewLocation[1] > wnd.subToolItemsBottom - wnd.subToolItemUnitHeight) {
-        //            wnd.viewLocation[1] = wnd.subToolItemsBottom - wnd.subToolItemUnitHeight;
-        //        }
-        //        this.toolEnv.setRedrawSubtoolWindow();
-        //    }
-        //}
-        //protected subtoolWindow_mouseup() {
-        //    this.subtoolWindow.endMouseDragging();
-        //}
         App_Event.prototype.subtoolWindow_Item_Click = function (item) {
             this.subtoolWindow_selectItem(item);
         };

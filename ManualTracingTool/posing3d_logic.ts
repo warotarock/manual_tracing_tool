@@ -45,7 +45,7 @@ namespace ManualTracingTool {
                 this.tempTargetLocation
                 , location2D
                 , 2.0 // 2.0m
-                , posingData.real3DViewHalfWidth);
+                , posingData);
 
             vec3.transformMat4(this.tempLocalLocation, this.tempTargetLocation, posing3DView.viewMatrix);
 

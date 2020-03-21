@@ -667,7 +667,6 @@ var ManualTracingTool;
             var env = this.toolEnv;
             this.posing3DViewRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
             this.posing3dView.clear(env);
-            //mainWindow.copyTransformTo(pickingWindow);
             mainWindow.copyTransformTo(webglWindow);
             for (var _i = 0, layerWindowItems_1 = layerWindowItems; _i < layerWindowItems_1.length; _i++) {
                 var item = layerWindowItems_1[_i];
@@ -680,11 +679,6 @@ var ManualTracingTool;
             if (env.currentPosingLayer != null && ManualTracingTool.Layer.isVisible(env.currentPosingLayer)
                 && this.toolContext.mainToolID == ManualTracingTool.MainToolID.posing) {
                 var posingLayer = env.currentPosingLayer;
-                // this.posing3dView.prepareDrawingStructures(posingLayer);
-                //this.posing3dView.drawPickingImage(posingLayer, env);
-                //pickingWindow.context.clearRect(0, 0, pickingWindow.width, pickingWindow.height);
-                //pickingWindow.context.drawImage(webglWindow.canvas, 0, 0, webglWindow.width, webglWindow.height);
-                //this.posing3dView.clear(env);
                 this.posing3dView.drawManipulaters(posingLayer, env);
             }
             for (var index = layerWindowItems.length - 1; index >= 0; index--) {
@@ -693,7 +687,6 @@ var ManualTracingTool;
                     continue;
                 }
                 var posingLayer = item.layer;
-                //this.posing3dView.prepareDrawingStructures(posingLayer);
                 this.posing3dView.drawPosingModel(posingLayer, env);
             }
         };

@@ -145,8 +145,15 @@ var ManualTracingTool;
             else if (layer.type == ManualTracingTool.LayerTypeID.posingLayer) {
                 var posingLayer = layer;
                 posingLayer.drawingUnits = null;
-                if (posingLayer.posingData.rootMatrix == undefined) {
-                    posingLayer.posingData = new ManualTracingTool.PosingData();
+                var posingData = posingLayer.posingData;
+                if (posingData.rootMatrix == undefined) {
+                    posingData = new ManualTracingTool.PosingData();
+                }
+                if (posingData.real3DViewMeterPerPixel == undefined) {
+                    var posingModel = posingLayer.posingModel;
+                    var radiusSum = posingData.headLocationInputData.radius;
+                    var real2DViewWidth = posingData.real3DViewHalfWidth / posingModel.headSphereSize * radiusSum;
+                    posingData.real3DViewMeterPerPixel = posingData.real3DViewHalfWidth / real2DViewWidth / 1.75 * 2.0;
                 }
                 posingLayer.posingModel = info.modelFile.posingModelDictionary['dummy_skin'];
             }

@@ -463,6 +463,7 @@ namespace ManualTracingTool {
     export class PosingData {
 
         real3DViewHalfWidth = 1.0;
+        real3DViewMeterPerPixel = 1.0;
 
         rootMatrix = mat4.create();
 

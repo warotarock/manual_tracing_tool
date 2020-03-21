@@ -452,6 +452,7 @@ var ManualTracingTool;
     var PosingData = /** @class */ (function () {
         function PosingData() {
             this.real3DViewHalfWidth = 1.0;
+            this.real3DViewMeterPerPixel = 1.0;
             this.rootMatrix = mat4.create();
             this.headMatrix = mat4.create();
             this.headTopMatrix = mat4.create();

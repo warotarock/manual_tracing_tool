@@ -33,7 +33,7 @@ var ManualTracingTool;
         }
         Posing3DLogic.prototype.processMouseInputLocation = function (result, location2D, inputSideID, targetData, posingData, posing3DView) {
             posing3DView.calculate3DLocationFrom2DLocation(this.tempTargetLocation, location2D, 2.0 // 2.0m
-            , posingData.real3DViewHalfWidth);
+            , posingData);
             vec3.transformMat4(this.tempLocalLocation, this.tempTargetLocation, posing3DView.viewMatrix);
             this.tempCenterLocation[0] = targetData.parentMatrix[12];
             this.tempCenterLocation[1] = targetData.parentMatrix[13];
