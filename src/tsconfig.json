@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "es2015",
+    "jsx": "react",
+    "declaration": false,
+    "noImplicitAny": false,
+    "removeComments": false,
+    "noLib": false,
+    "preserveConstEnums": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "sourceMap": false,
+    "outDir": "../dist/",
+    "baseUrl": "src",
+    "paths": {
+    },
+  },
+  "filesGlob": [
+    "!./node_modules/**/*.ts",
+    "./**/*.ts"
+  ],
+  "compileOnSave": true,
+}
