@@ -27,7 +27,7 @@ export class App_Document extends App_Tool {
     localStorage_SettingKey = 'setting';
     localStrageSaveDataKey = 'Manual tracing tool save data';
     activeSettingName = 'activeSettingName';
-    oraScriptPath = './external/ora_js/';
+    oraScriptPath = './libs/ora_js/';
     oraVectorFileName = 'mttf.json';
 
     // Backward interface implementations
