@@ -163,11 +163,11 @@ export enum MainProcessStateID {
 
             // Start loading
 
-            this.loadModels(this.modelFile, './res/' + this.modelFile.fileName);
+            this.loadModels(this.modelFile, './dist/res/' + this.modelFile.fileName);
 
             for (let imageResource of this.imageResurces) {
 
-                this.loadTexture(imageResource, './res/' + imageResource.fileName);
+                this.loadTexture(imageResource, './dist/res/' + imageResource.fileName);
             }
 
             this.mainProcessState = MainProcessStateID.systemResourceLoading;
