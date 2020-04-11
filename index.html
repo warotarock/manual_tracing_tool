@@ -1,262 +1,272 @@
 ﻿<!DOCTYPE html>
 
 <html lang="en">
+
 <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Manual tracing tool</title>
+  <title>Manual tracing tool</title>
 
-    <script src="./libs/glmatrix/gl-matrix-min.js"></script>
+  <script src="./libs/glmatrix/gl-matrix-min.js"></script>
 
-    <link href="./libs/custombox/custombox.min.css" rel="stylesheet">
-    <script src="./libs/custombox/custombox.min.js"></script>
-    <script src="./libs/custombox/custombox.legacy.min.js"></script>
+  <link href="./libs/custombox/custombox.min.css" rel="stylesheet">
+  <script src="./libs/custombox/custombox.min.js"></script>
+  <script src="./libs/custombox/custombox.legacy.min.js"></script>
 
-    <script src="./libs/ora_js/zip.js"></script>
-    <script src="./libs/ora_js/zip-fs.js"></script>
-    <script src="./libs/ora_js/ora.js"></script>
-    <script src="./libs/ora_js/ora-blending.js"></script>
+  <script src="./libs/ora_js/zip.js"></script>
+  <script src="./libs/ora_js/zip-fs.js"></script>
+  <script src="./libs/ora_js/ora.js"></script>
+  <script src="./libs/ora_js/ora-blending.js"></script>
 
-    <link rel="stylesheet" href="./dist/index.min.css" type="text/css" />
-    <script src="./dist/bundle.js"></script>
+  <link rel="stylesheet" href="./dist/index.min.css" type="text/css" />
+  <script src="./dist/bundle.js"></script>
 </head>
+
 <body>
-    <header>
-        <div class="fileCommandButton" id="menu_btnOpen"><img class="mainMenuButtonImage" src="./dist/res/icons8-opened-folder-100.png" /></div>
-        <div class="fileCommandButton" id="menu_btnSave"><img class="mainMenuButtonImage" src="./dist/res/icons8-save-filled-100.png" /></div>
-        <div class="fileCommandButton" id="menu_btnExport"><img class="mainMenuButtonImage" src="./dist/res/icons8-export-96.png" /></div>
-        <div class="fileCommandButton" id="menu_btnProperty"><img class="mainMenuButtonImage" src="./dist/res/icons8-settings-100.png" /></div>
-        <div class="fileNameText" id="menu_btnSystem"><input type="text" id="fileName" /></div>
-        <div class="mainMenuButton" id="menu_btnOperationOption"><img class="mainMenuButtonImage" src="./dist/res/icons8-settings-100.png" /></div>
-        <div id="mainToolButtons" class="mainToolButtons"></div>
-        <!--<div class="mainToolButton" id="menu_btnDrawTool">Draw</div>
+  <header>
+    <div class="fileCommandButton" id="menu_btnOpen"><img class="mainMenuButtonImage" src="./dist/res/icons8-opened-folder-100.png" /></div>
+    <div class="fileCommandButton" id="menu_btnSave"><img class="mainMenuButtonImage" src="./dist/res/icons8-save-filled-100.png" /></div>
+    <div class="fileCommandButton" id="menu_btnExport"><img class="mainMenuButtonImage" src="./dist/res/icons8-export-96.png" /></div>
+    <div class="fileCommandButton" id="menu_btnProperty"><img class="mainMenuButtonImage" src="./dist/res/icons8-settings-100.png" /></div>
+    <div class="fileNameText" id="menu_btnSystem"><input type="text" id="fileName" /></div>
+    <div class="mainMenuButton" id="menu_btnOperationOption"><img class="mainMenuButtonImage"
+        src="./dist/res/icons8-settings-100.png" /></div>
+    <div id="mainToolButtons" class="mainToolButtons"></div>
+    <!--<div class="mainToolButton" id="menu_btnDrawTool">Draw</div>
         <div class="mainToolButton" id="menu_btnEditTool">Edit</div>
         <div class="mainToolButton" id="menu_btnMiscTool">Setting</div>-->
-        <!--
+    <!--
     <div class="mainMenuButton" id="menu_btnPalette2"><img class="mainMenuButtonImage" src="./res/icons8-paint-palette-96.png" /></div>
     <div class="mainMenuButton" id="menu_btnPalette1"><img class="mainMenuButtonImage" src="./res/icons8-paint-palette-96.png" /></div>
     -->
-    </header>
-    <main>
-        <div class="side-panel1">
-            <div id="sideWindow1" class="layer-window">
-                <canvas id="layerCanvas"></canvas>
-            </div>
-            <!--<div id="sideWindow2" class="subtool-window">
+  </header>
+  <main>
+    <div class="side-panel1">
+      <div id="sideWindow1" class="layer-window">
+        <div class="command-test-window" id="command-test-window"></div>
+        <canvas id="layerCanvas"></canvas>
+      </div>
+      <!--<div id="sideWindow2" class="subtool-window">
                 <canvas id="subtoolCanvas"></canvas>
             </div>-->
-            <div id="subtoolWindow" class="subtool-window"></div>
-        </div>
-
-        <div class="center-panel">
-            <div class="main-canvas-window">
-                <canvas id="webglCanvas" class="webgl-canvas"></canvas>
-                <canvas id="mainCanvas" class="main-canvas"></canvas>
-                <canvas id="editorCanvas" class="editor-canvas"></canvas>
-            </div>
-            <div class="time-line-window">
-                <canvas id="timeLineCanvas"></canvas>
-            </div>
-        </div>
-
-        <div class="side-panel2">
-            <div class="palette-window">
-                <canvas id="paletteSelectorCanvas"></canvas>
-            </div>
-            <div class="color-mixer-window">
-                <canvas id="colorMixer_colorCanvas"></canvas>
-                <div class="colorMixerValueSlide">
-                    <div class="label">A</div>
-                    <input type="number" id="colorMixer_alpha_number" step="0.01" min="0.0" max="1.0" />
-                    <div class="range">
-                        <input type="range" id="colorMixer_alpha_range" min="0" max="255">
-                    </div>
-                </div>
-                <div class="colorMixerValueSlide">
-                    <div class="label">R</div>
-                    <input type="number" id="colorMixer_red_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0a0" />
-                    <div class="range">
-                        <input type="range" id="colorMixer_red_range" min="0" max="255">
-                    </div>
-                </div>
-                <div class="colorMixerValueSlide">
-                    <div class="label">G</div>
-                    <input type="number" id="colorMixer_green_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffa0" />
-                    <div class="range">
-                        <input type="range" id="colorMixer_green_range" min="0" max="255">
-                    </div>
-                </div>
-                <div class="colorMixerValueSlide">
-                    <div class="label">B</div>
-                    <input type="number" id="colorMixer_blue_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0a0ff" />
-                    <div class="range">
-                        <input type="range" id="colorMixer_blue_range" min="0" max="255">
-                    </div>
-                </div>
-                <div class="colorMixerValueSlide">
-                    <div class="label">H</div>
-                    <input type="number" id="colorMixer_hue_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffffa0" />
-                    <div class="range">
-                        <input type="range" id="colorMixer_hue_range" min="0" max="255">
-                    </div>
-                </div>
-                <div class="colorMixerValueSlide">
-                    <div class="label">S</div>
-                    <input type="number" id="colorMixer_sat_number" step="0.01" min="0.0" max="1.0" style="background-color: #a0ffff" />
-                    <div class="range">
-                        <input type="range" id="colorMixer_sat_range" min="0" max="255">
-                    </div>
-                </div>
-                <div class="colorMixerValueSlide">
-                    <div class="label">V</div>
-                    <input type="number" id="colorMixer_val_number" step="0.01" min="0.0" max="1.0" style="background-color: #ffa0ff" />
-                    <div class="range">
-                        <input type="range" id="colorMixer_val_range" min="0" max="255">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-    <footer id="footer">
-    </footer>
-
-    <div id="messageDialogModal" class="modalDialogWindow messageDialogModal">
-        <div id="messageDialogModal_message">
-        </div>
-        <div class="OKCalcelButtons">
-            <input type="button" id="messageDialogModal_ok" value="OK">
-        </div>
+      <div id="subtoolWindow" class="subtool-window"></div>
     </div>
 
-    <div id="openFileDialogModal" class="modalDialogWindow openFileDialogModal">
-        <label>
-            <input type="file" class="openFileDialogModal_file" id="openFileDialogModal_file" />
-        </label>
-        <br />
-        <div class="OKCalcelButtons">
-            <input type="button" id="openFileDialogModal_ok" value="ロード">
-            <input type="button" id="openFileDialogModal_cancel" value="キャンセル">
-        </div>
+    <div class="center-panel">
+      <div class="main-canvas-window">
+        <canvas id="webglCanvas" class="webgl-canvas"></canvas>
+        <canvas id="mainCanvas" class="main-canvas"></canvas>
+        <canvas id="editorCanvas" class="editor-canvas"></canvas>
+      </div>
+      <div class="time-line-window">
+        <canvas id="timeLineCanvas"></canvas>
+      </div>
     </div>
 
-    <div id="layerPropertyModal" class="modalDialogWindow layerPropertyModal">
-        <label id="layerPropertyModal_layerTypeName">
-            レイヤータイプ
-        </label>
-        <div>
-            <label>
-                名前
-                <input type="text" id="layerPropertyModal_layerName" class="nameInputTextBox" onfocus="this.select();" />
-            </label>
+    <div class="side-panel2">
+      <div class="palette-window">
+        <canvas id="paletteSelectorCanvas"></canvas>
+      </div>
+      <div class="color-mixer-window">
+        <canvas id="colorMixer_colorCanvas"></canvas>
+        <div class="colorMixerValueSlide">
+          <div class="label">A</div>
+          <input type="number" id="colorMixer_alpha_number" step="0.01" min="0.0" max="1.0" />
+          <div class="range">
+            <input type="range" id="colorMixer_alpha_range" min="0" max="255">
+          </div>
         </div>
-        <div>
-            <label>
-                レイヤー色　
-                <input type="color" id="layerPropertyModal_layerColor">
-            </label>
-            <input type="range" id="layerPropertyModal_layerAlpha" min="0" max="500">
+        <div class="colorMixerValueSlide">
+          <div class="label">R</div>
+          <input type="number" id="colorMixer_red_number" step="0.01" min="0.0" max="1.0"
+            style="background-color: #ffa0a0" />
+          <div class="range">
+            <input type="range" id="colorMixer_red_range" min="0" max="255">
+          </div>
         </div>
-        <div>
+        <div class="colorMixerValueSlide">
+          <div class="label">G</div>
+          <input type="number" id="colorMixer_green_number" step="0.01" min="0.0" max="1.0"
+            style="background-color: #a0ffa0" />
+          <div class="range">
+            <input type="range" id="colorMixer_green_range" min="0" max="255">
+          </div>
         </div>
-        <label>
-            <label>
-                塗りつぶし色
-                <input type="color" id="layerPropertyModal_fillColor">
-            </label>
-            <input type="range" id="layerPropertyModal_fillColorAlpha" min="0" max="500">
-        </label>
-        <div>
-            線<br />
-            <label>
-                <input type="radio" name="layerPropertyModal_drawLineType" value="1">
-                なし
-            </label>
-            <label>
-                <input type="radio" name="layerPropertyModal_drawLineType" value="2">
-                レイヤー色
-            </label>
-            <label>
-                <input type="radio" name="layerPropertyModal_drawLineType" value="3">
-                パレット
-            </label>
-            <br />
+        <div class="colorMixerValueSlide">
+          <div class="label">B</div>
+          <input type="number" id="colorMixer_blue_number" step="0.01" min="0.0" max="1.0"
+            style="background-color: #a0a0ff" />
+          <div class="range">
+            <input type="range" id="colorMixer_blue_range" min="0" max="255">
+          </div>
         </div>
-        <div>
-            塗りつぶし<br />
-            <label>
-                <input type="radio" name="layerPropertyModal_fillAreaType" value="1">
-                なし
-            </label>
-            <label>
-                <input type="radio" name="layerPropertyModal_fillAreaType" value="2">
-                塗りつぶし色
-            </label>
-            <label>
-                <input type="radio" name="layerPropertyModal_fillAreaType" value="3">
-                パレット
-            </label>
+        <div class="colorMixerValueSlide">
+          <div class="label">H</div>
+          <input type="number" id="colorMixer_hue_number" step="0.01" min="0.0" max="1.0"
+            style="background-color: #ffffa0" />
+          <div class="range">
+            <input type="range" id="colorMixer_hue_range" min="0" max="255">
+          </div>
         </div>
-        <div>
-            設定<br />
-            <label>
-                <input type="checkbox" id="layerPropertyModal_isRenderTarget" value="1">エクスポート
-            </label><br />
-            <label>
-                <input type="checkbox" id="layerPropertyModal_isMaskedBelowLayer" value="1">下のレイヤーでマスク
-            </label>
+        <div class="colorMixerValueSlide">
+          <div class="label">S</div>
+          <input type="number" id="colorMixer_sat_number" step="0.01" min="0.0" max="1.0"
+            style="background-color: #a0ffff" />
+          <div class="range">
+            <input type="range" id="colorMixer_sat_range" min="0" max="255">
+          </div>
         </div>
+        <div class="colorMixerValueSlide">
+          <div class="label">V</div>
+          <input type="number" id="colorMixer_val_number" step="0.01" min="0.0" max="1.0"
+            style="background-color: #ffa0ff" />
+          <div class="range">
+            <input type="range" id="colorMixer_val_range" min="0" max="255">
+          </div>
+        </div>
+      </div>
     </div>
+  </main>
+  <footer id="footer">
+  </footer>
 
-    <div id="paletteColorModal" class="modalDialogWindow paletteColorModal">
-        <label id="paletteColorModal_targetName">
-            線色/塗りつぶし色
-        </label>
-        <label>
-            <input type="color" id="paletteColorModal_currentColor">
-        </label>
-        <label>
-            <input type="range" id="paletteColorModal_currentAlpha" min="0" max="500">
-        </label><br />
-        <div id="paletteColorModal_colors">
-            <!--<div>
+  <div id="messageDialogModal" class="modalDialogWindow messageDialogModal">
+    <div id="messageDialogModal_message">
+    </div>
+    <div class="OKCalcelButtons">
+      <input type="button" id="messageDialogModal_ok" value="OK">
+    </div>
+  </div>
+
+  <div id="openFileDialogModal" class="modalDialogWindow openFileDialogModal">
+    <label>
+      <input type="file" class="openFileDialogModal_file" id="openFileDialogModal_file" />
+    </label>
+    <br />
+    <div class="OKCalcelButtons">
+      <input type="button" id="openFileDialogModal_ok" value="ロード">
+      <input type="button" id="openFileDialogModal_cancel" value="キャンセル">
+    </div>
+  </div>
+
+  <div id="layerPropertyModal" class="modalDialogWindow layerPropertyModal">
+    <label id="layerPropertyModal_layerTypeName">
+      レイヤータイプ
+    </label>
+    <div>
+      <label>
+        名前
+        <input type="text" id="layerPropertyModal_layerName" class="nameInputTextBox" onfocus="this.select();" />
+      </label>
+    </div>
+    <div>
+      <label>
+        レイヤー色　
+        <input type="color" id="layerPropertyModal_layerColor">
+      </label>
+      <input type="range" id="layerPropertyModal_layerAlpha" min="0" max="500">
+    </div>
+    <div>
+    </div>
+    <label>
+      <label>
+        塗りつぶし色
+        <input type="color" id="layerPropertyModal_fillColor">
+      </label>
+      <input type="range" id="layerPropertyModal_fillColorAlpha" min="0" max="500">
+    </label>
+    <div>
+      線<br />
+      <label>
+        <input type="radio" name="layerPropertyModal_drawLineType" value="1">
+        なし
+      </label>
+      <label>
+        <input type="radio" name="layerPropertyModal_drawLineType" value="2">
+        レイヤー色
+      </label>
+      <label>
+        <input type="radio" name="layerPropertyModal_drawLineType" value="3">
+        パレット
+      </label>
+      <br />
+    </div>
+    <div>
+      塗りつぶし<br />
+      <label>
+        <input type="radio" name="layerPropertyModal_fillAreaType" value="1">
+        なし
+      </label>
+      <label>
+        <input type="radio" name="layerPropertyModal_fillAreaType" value="2">
+        塗りつぶし色
+      </label>
+      <label>
+        <input type="radio" name="layerPropertyModal_fillAreaType" value="3">
+        パレット
+      </label>
+    </div>
+    <div>
+      設定<br />
+      <label>
+        <input type="checkbox" id="layerPropertyModal_isRenderTarget" value="1">エクスポート
+      </label><br />
+      <label>
+        <input type="checkbox" id="layerPropertyModal_isMaskedBelowLayer" value="1">下のレイヤーでマスク
+      </label>
+    </div>
+  </div>
+
+  <div id="paletteColorModal" class="modalDialogWindow paletteColorModal">
+    <label id="paletteColorModal_targetName">
+      線色/塗りつぶし色
+    </label>
+    <label>
+      <input type="color" id="paletteColorModal_currentColor">
+    </label>
+    <label>
+      <input type="range" id="paletteColorModal_currentAlpha" min="0" max="500">
+    </label><br />
+    <div id="paletteColorModal_colors">
+      <!--<div>
                 <input type="radio" name="paletteColorModal_colorIndex">
                 <input type="color">
             </div>-->
-        </div>
-        <div id="paletteColorModal_colorMixer">
-            <canvas id="paletteColorModal_colorCanvas"></canvas>
-        </div>
     </div>
+    <div id="paletteColorModal_colorMixer">
+      <canvas id="paletteColorModal_colorCanvas"></canvas>
+    </div>
+  </div>
 
-    <div id="operationOptionModal" class="modalDialogWindow operationOptionModal">
-        <div>
-            <label>
-                線の太さ
-                &emsp;基本<input type="number" id="operationOptionModal_LineWidth" class="lineWidthMax" step="0.1" />
-                &emsp;最小<input type="number" id="operationOptionModal_LineMinWidth" class="lineWidthMin" step="0.1" />
-            </label>
-            <br />
-        </div>
-        <div>
-            編集単位
-            <label>
-                <input type="radio" name="operationOptionModal_operationUnit" value="3">
-                線
-            </label>
-            <label>
-                <input type="radio" name="operationOptionModal_operationUnit" value="1">
-                点
-            </label>
-            <label>
-                <input type="radio" name="operationOptionModal_operationUnit" value="2">
-                辺
-            </label>
-            <br />
-        </div>
-        <!--<div>
+  <div id="operationOptionModal" class="modalDialogWindow operationOptionModal">
+    <div>
+      <label>
+        線の太さ
+        &emsp;基本<input type="number" id="operationOptionModal_LineWidth" class="lineWidthMax" step="0.1" />
+        &emsp;最小<input type="number" id="operationOptionModal_LineMinWidth" class="lineWidthMin" step="0.1" />
+      </label>
+      <br />
+    </div>
+    <div>
+      編集単位
+      <label>
+        <input type="radio" name="operationOptionModal_operationUnit" value="3">
+        線
+      </label>
+      <label>
+        <input type="radio" name="operationOptionModal_operationUnit" value="1">
+        点
+      </label>
+      <label>
+        <input type="radio" name="operationOptionModal_operationUnit" value="2">
+        辺
+      </label>
+      <br />
+    </div>
+    <!--<div>
             絞り込み<br />
             <label>
                 <input type="checkbox" name="operationOptionModal_activeLineOnly" value="1">
@@ -271,167 +281,168 @@
                 選択中の点のみ
             </label><br />
         </div>-->
-    </div>
+  </div>
 
-    <div id="newLayerCommandOptionModal" class="modalDialogWindow newLayerCommandOptionModal">
-        <div>
-            レイヤーの種類<br />
-            <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="2" checked>
-                ベクター（線）
-            </label>
-            <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="3">
-                ベクター（塗り）
-            </label>
-            <br />
-            <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="7">
-                ベクター参照
-            </label>
-            <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="5">
-                画像ファイル
-            </label>
-            <br />
-            <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="6">
-                ３Dポーズ
-            </label>
-            <br />
-            <label>
-                <input type="radio" name="newLayerCommandOptionModal_layerType" value="4">
-                グループ
-            </label>
-            <br />
-            <div class="OKCalcelButtons">
-                <input type="button" id="newLayerCommandOptionModal_ok" value="　　作成　　">
-                <input type="button" id="newLayerCommandOptionModal_cancel" value="キャンセル">
-            </div>
-        </div>
+  <div id="newLayerCommandOptionModal" class="modalDialogWindow newLayerCommandOptionModal">
+    <div>
+      レイヤーの種類<br />
+      <label>
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="2" checked>
+        ベクター（線）
+      </label>
+      <label>
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="3">
+        ベクター（塗り）
+      </label>
+      <br />
+      <label>
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="7">
+        ベクター参照
+      </label>
+      <label>
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="5">
+        画像ファイル
+      </label>
+      <br />
+      <label>
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="6">
+        ３Dポーズ
+      </label>
+      <br />
+      <label>
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="4">
+        グループ
+      </label>
+      <br />
+      <div class="OKCalcelButtons">
+        <input type="button" id="newLayerCommandOptionModal_ok" value="　　作成　　">
+        <input type="button" id="newLayerCommandOptionModal_cancel" value="キャンセル">
+      </div>
     </div>
+  </div>
 
-    <div id="documentSettingModal" class="modalDialogWindow documentSettingModal">
-        <div>
-            ビュー<br />
-            <label>
-                基本の拡大率
-                <input type="number" id="documentSettingModal_ViewScale" class="lineWidthMax" step="0.01" />
-            </label>
-            <br />
-        </div>
-        <div>
-            描画設定<br />
-            <label>
-                線の基本太さ（倍率で指定）
-                <input type="number" id="documentSettingModal_LineWidth" class="lineWidthMax" step="0.1" />
-            </label>
-            <br />
-        </div>
-        <div>
-            エクスポート範囲<br />
-            <label>
-                左上
-                <input type="number" id="documentSettingModal_FrameLeft" class="location" step="1" />
-            </label>
-            <label>
-                <input type="number" id="documentSettingModal_FrameTop" class="location" step="1" />
-            </label><br />
-            <label>
-                右下
-                <input type="number" id="documentSettingModal_FrameRight" class="location" step="1" />
-            </label>
-            <label>
-                <input type="number" id="documentSettingModal_FrameBottom" class="location" step="1" />
-            </label><br />
-        </div>
+  <div id="documentSettingModal" class="modalDialogWindow documentSettingModal">
+    <div>
+      ビュー<br />
+      <label>
+        基本の拡大率
+        <input type="number" id="documentSettingModal_ViewScale" class="lineWidthMax" step="0.01" />
+      </label>
+      <br />
     </div>
+    <div>
+      描画設定<br />
+      <label>
+        線の基本太さ（倍率で指定）
+        <input type="number" id="documentSettingModal_LineWidth" class="lineWidthMax" step="0.1" />
+      </label>
+      <br />
+    </div>
+    <div>
+      エクスポート範囲<br />
+      <label>
+        左上
+        <input type="number" id="documentSettingModal_FrameLeft" class="location" step="1" />
+      </label>
+      <label>
+        <input type="number" id="documentSettingModal_FrameTop" class="location" step="1" />
+      </label><br />
+      <label>
+        右下
+        <input type="number" id="documentSettingModal_FrameRight" class="location" step="1" />
+      </label>
+      <label>
+        <input type="number" id="documentSettingModal_FrameBottom" class="location" step="1" />
+      </label><br />
+    </div>
+  </div>
 
-    <div id="exportImageFileModal" class="modalDialogWindow exportImageFileModal">
-        <div>
-            <label>
-                ファイル名（拡張子を除く）<br />
-                <input type="text" id="exportImageFileModal_fileName" class="nameInputTextBox" onfocus="this.select();" />
-            </label><br />
-        </div>
-        <div>
-            画像形式
-            <label>
-                <input type="radio" name="exportImageFileModal_imageFileType" value="2" checked>
-                jpeg
-            </label>
-            <label>
-                <input type="radio" name="exportImageFileModal_imageFileType" value="1">
-                png
-            </label>
-            <br />
-        </div>
-        <div>
-            背景　　　
-            <label>
-                <input type="radio" name="exportImageFileModal_backGroundType" value="1" checked>
-                最後のパレットの色
-            </label>
-            <label>
-                <input type="radio" name="exportImageFileModal_backGroundType" value="2">
-                透過色
-            </label>
-            <br />
-        </div>
-        <div>
-            <label>
-                スケール
-                <input type="number" id="exportImageFileModal_scale" class="scale" step="0.1" />
-            </label>
-        </div>
-        <div class="OKCalcelButtons">
-            <input type="button" id="exportImageFileModal_ok" value="エクスポート">
-            <input type="button" id="exportImageFileModal_cancel" value="キャンセル">
-        </div>
+  <div id="exportImageFileModal" class="modalDialogWindow exportImageFileModal">
+    <div>
+      <label>
+        ファイル名（拡張子を除く）<br />
+        <input type="text" id="exportImageFileModal_fileName" class="nameInputTextBox" onfocus="this.select();" />
+      </label><br />
     </div>
+    <div>
+      画像形式
+      <label>
+        <input type="radio" name="exportImageFileModal_imageFileType" value="2" checked>
+        jpeg
+      </label>
+      <label>
+        <input type="radio" name="exportImageFileModal_imageFileType" value="1">
+        png
+      </label>
+      <br />
+    </div>
+    <div>
+      背景　　　
+      <label>
+        <input type="radio" name="exportImageFileModal_backGroundType" value="1" checked>
+        最後のパレットの色
+      </label>
+      <label>
+        <input type="radio" name="exportImageFileModal_backGroundType" value="2">
+        透過色
+      </label>
+      <br />
+    </div>
+    <div>
+      <label>
+        スケール
+        <input type="number" id="exportImageFileModal_scale" class="scale" step="0.1" />
+      </label>
+    </div>
+    <div class="OKCalcelButtons">
+      <input type="button" id="exportImageFileModal_ok" value="エクスポート">
+      <input type="button" id="exportImageFileModal_cancel" value="キャンセル">
+    </div>
+  </div>
 
-    <div id="newKeyframeModal" class="modalDialogWindow newKeyframeModal">
-        <div>
-            キーフレームの挿入<br />
-            <label>
-                <input type="radio" name="newKeyframeModal_InsertType" value="1" checked>
-                コピーを挿入（全レイヤー）
-            </label><br />
-            <label>
-                <input type="radio" name="newKeyframeModal_InsertType" value="2">
-                コピーを挿入（アクティブなレイヤー）
-            </label><br />
-            <label>
-                <input type="radio" name="newKeyframeModal_InsertType" value="3">
-                空のキーを挿入（全レイヤー）
-            </label><br />
-            <label>
-                <input type="radio" name="newKeyframeModal_InsertType" value="4">
-                空のキーを挿入（アクティブなレイヤー）
-            </label><br />
-        </div>
-        <div class="OKCalcelButtons">
-            <input type="button" id="newKeyframeModal_ok" value="ＯＫ">
-            <input type="button" id="newKeyframeModal_cancel" value="キャンセル">
-        </div>
+  <div id="newKeyframeModal" class="modalDialogWindow newKeyframeModal">
+    <div>
+      キーフレームの挿入<br />
+      <label>
+        <input type="radio" name="newKeyframeModal_InsertType" value="1" checked>
+        コピーを挿入（全レイヤー）
+      </label><br />
+      <label>
+        <input type="radio" name="newKeyframeModal_InsertType" value="2">
+        コピーを挿入（アクティブなレイヤー）
+      </label><br />
+      <label>
+        <input type="radio" name="newKeyframeModal_InsertType" value="3">
+        空のキーを挿入（全レイヤー）
+      </label><br />
+      <label>
+        <input type="radio" name="newKeyframeModal_InsertType" value="4">
+        空のキーを挿入（アクティブなレイヤー）
+      </label><br />
     </div>
+    <div class="OKCalcelButtons">
+      <input type="button" id="newKeyframeModal_ok" value="ＯＫ">
+      <input type="button" id="newKeyframeModal_cancel" value="キャンセル">
+    </div>
+  </div>
 
-    <div id="deleteKeyframeModal" class="modalDialogWindow deleteKeyframeModal">
-        <div>
-            キーフレームの削除<br />
-            <label>
-                <input type="radio" name="deleteKeyframeModal_InsertType" value="1" checked>
-                全レイヤーのキーを削除
-            </label><br />
-            <label>
-                <input type="radio" name="deleteKeyframeModal_InsertType" value="2">
-                アクティブなレイヤーのキーを削除
-            </label><br />
-        </div>
-        <div class="OKCalcelButtons">
-            <input type="button" id="deleteKeyframeModal_ok" value="ＯＫ">
-            <input type="button" id="deleteKeyframeModal_cancel" value="キャンセル">
-        </div>
+  <div id="deleteKeyframeModal" class="modalDialogWindow deleteKeyframeModal">
+    <div>
+      キーフレームの削除<br />
+      <label>
+        <input type="radio" name="deleteKeyframeModal_InsertType" value="1" checked>
+        全レイヤーのキーを削除
+      </label><br />
+      <label>
+        <input type="radio" name="deleteKeyframeModal_InsertType" value="2">
+        アクティブなレイヤーのキーを削除
+      </label><br />
     </div>
+    <div class="OKCalcelButtons">
+      <input type="button" id="deleteKeyframeModal_ok" value="ＯＫ">
+      <input type="button" id="deleteKeyframeModal_cancel" value="キャンセル">
+    </div>
+  </div>
 </body>
+
 </html>

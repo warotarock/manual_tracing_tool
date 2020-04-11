@@ -1,4 +1,3 @@
-require('@babel/register'); // development.jsでES6を使えるようにする
 
 var path = require('path');
 
@@ -8,6 +7,8 @@ const dist = path.resolve(__dirname, 'dist')
 module.exports = {
   mode: "development",
   entry: src + "/index.ts",
+  cache: true,
+  devtool: '#eval-cheap-source-map',
 
   output: {
     path: dist,

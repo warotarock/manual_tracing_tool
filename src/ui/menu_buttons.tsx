@@ -1,34 +1,35 @@
 import * as React from 'react';
 
-interface UI_MenuButtons_State {
+export interface UI_MenuButtonsRef {
 
-    activeElementID: string;
+    update?(activeElementID: string): void;
 }
 
-export class UI_MenuButtons extends React.Component<any, UI_MenuButtons_State> {
+export interface UI_MenuButtonsParam {
 
-    constructor(props: any) {
-        super(props);
+    uiRef: UI_MenuButtonsRef;
+}
 
-        this.state = {
-            activeElementID: ''
+export function UI_MenuButtons({ uiRef }: UI_MenuButtonsParam) {
+
+    const [activeElementID, setActiveElementID] = React.useState('');
+
+    React.useEffect(() => {
+
+        uiRef.update = (activeElementID: string) => {
+
+            setActiveElementID(activeElementID);
         };
-    }
 
-    render() {
+        return function cleanup() {
 
-        return (
-            <React.Fragment>
-                <div id="menu_btnDrawTool" className={this.getClassName('menu_btnDrawTool')}>Draw</div>
-                <div id="menu_btnEditTool" className={this.getClassName('menu_btnEditTool')}>Edit</div>
-                <div id="menu_btnMiscTool" className={this.getClassName('menu_btnMiscTool')}>Setting</div>
-            </React.Fragment>
-        );
-    }
+            uiRef.update = null;
+        };
+    });
 
-    getClassName(id: string): string {
+    const getClassName = (id: string) => {
 
-        if (this.state.activeElementID == id) {
+        if (activeElementID == id) {
 
             return 'selectedMainButton';
         }
@@ -37,4 +38,12 @@ export class UI_MenuButtons extends React.Component<any, UI_MenuButtons_State> {
             return 'unselectedMainButton';
         }
     }
+
+    return (
+        <React.Fragment>
+            <div id="menu_btnDrawTool" className={getClassName('menu_btnDrawTool')}>Draw</div>
+            <div id="menu_btnEditTool" className={getClassName('menu_btnEditTool')}>Edit</div>
+            <div id="menu_btnMiscTool" className={getClassName('menu_btnMiscTool')}>Setting</div>
+        </React.Fragment>
+    );
 }

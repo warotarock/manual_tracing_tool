@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export function UI_ScrollView({ content, contentRef = null, wheelScrollY = 16 }) {
+export function UI_ScrollView({ content, uiRef = null, wheelScrollY = 16 }) {
 
     const containerRef = React.useRef(null);
 
@@ -193,7 +193,7 @@ export function UI_ScrollView({ content, contentRef = null, wheelScrollY = 16 })
             onTouchStart={onTouchStart}
             onWheel={onWheel}
         >
-            {content({ ref: contentRef })}
+            {content({ uiRef })}
         </div>
     );
 }

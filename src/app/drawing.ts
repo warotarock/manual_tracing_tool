@@ -1062,7 +1062,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
         wnd.layerWindowLayoutArea.copyRectangle(wnd);
         wnd.layerWindowLayoutArea.bottom = wnd.height - 1.0;
 
-        this.layerWindow_CaluculateLayout_CommandButtons(wnd, wnd.layerWindowLayoutArea);
+        // this.layerWindow_CaluculateLayout_CommandButtons(wnd, wnd.layerWindowLayoutArea);
 
         if (wnd.layerWindowCommandButtons.length > 0) {
 
@@ -1074,27 +1074,27 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
         this.layerWindow_CaluculateLayout_LayerWindowItem(wnd, wnd.layerWindowLayoutArea);
     }
 
-    protected layerWindow_CaluculateLayout_CommandButtons(wnd: LayerWindow, layoutArea: RectangleLayoutArea) {
+    // protected layerWindow_CaluculateLayout_CommandButtons(wnd: LayerWindow, layoutArea: RectangleLayoutArea) {
 
-        let x = layoutArea.left;
-        let y = wnd.viewLocation[1]; // layoutArea.top;
-        let unitWidth = wnd.layerItemButtonWidth * wnd.layerItemButtonScale;
-        let unitHeight = wnd.layerItemButtonHeight * wnd.layerItemButtonScale;
+    //     let x = layoutArea.left;
+    //     let y = wnd.viewLocation[1]; // layoutArea.top;
+    //     let unitWidth = wnd.layerItemButtonWidth * wnd.layerItemButtonScale;
+    //     let unitHeight = wnd.layerItemButtonHeight * wnd.layerItemButtonScale;
 
-        wnd.layerCommandButtonButtom = unitHeight + 1.0;
+    //     wnd.layerCommandButtonButtom = unitHeight + 1.0;
 
-        for (let button of wnd.layerWindowCommandButtons) {
+    //     for (let button of wnd.layerWindowCommandButtons) {
 
-            button.left = x;
-            button.right = x + unitWidth - 1;
-            button.top = y;
-            button.bottom = y + unitHeight - 1;
+    //         button.left = x;
+    //         button.right = x + unitWidth - 1;
+    //         button.top = y;
+    //         button.bottom = y + unitHeight - 1;
 
-            x += unitWidth;
+    //         x += unitWidth;
 
-            wnd.layerItemButtonButtom = button.bottom + 1.0;
-        }
-    }
+    //         wnd.layerItemButtonButtom = button.bottom + 1.0;
+    //     }
+    // }
 
     protected layerWindow_CaluculateLayout_LayerWindowItem(wnd: LayerWindow, layoutArea: RectangleLayoutArea) {
 
@@ -1132,12 +1132,12 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
         this.drawLayerWindow_LayerItems(wnd);
 
-        this.drawLayerWindow_LayerWindowButtons(wnd);
+        // this.drawLayerWindow_LayerWindowButtons(wnd);
     }
 
     protected drawLayerWindow_LayerWindowButtons(wnd: LayerWindow) {
 
-        this.layerWindow_CaluculateLayout_CommandButtons(wnd, wnd.layerWindowLayoutArea);
+        // this.layerWindow_CaluculateLayout_CommandButtons(wnd, wnd.layerWindowLayoutArea);
 
         if (wnd.layerWindowCommandButtons.length > 0) {
 

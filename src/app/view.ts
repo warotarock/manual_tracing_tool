@@ -38,7 +38,8 @@ import {
 } from 'app/view.class';
 
 import { UI_SubToolWindowRef } from 'ui/subtool_window';
-import { UI_MenuButtons } from 'ui/menu_buttons';
+import { UI_MenuButtonsRef } from 'ui/menu_buttons';
+import { UI_CommandButtonsRef } from 'ui/command_buttons';
 
 declare var Custombox: any;
 
@@ -58,6 +59,15 @@ export class App_View {
     paletteColorModal_colorCanvas = new ColorCanvasWindow();
 
     uiSubToolWindowRef: UI_SubToolWindowRef = {};
+    uiMenuButtonsRef: UI_MenuButtonsRef = {};
+    uiCommandButtonsRef: UI_CommandButtonsRef = {
+        items: [
+            { index: <int>LayerWindowButtonID.addLayer, iconIndex: 1},
+            { index: <int>LayerWindowButtonID.deleteLayer, iconIndex: 2},
+            { index: <int>LayerWindowButtonID.moveUp, iconIndex: 3},
+            { index: <int>LayerWindowButtonID.moveDown, iconIndex: 4},
+        ]
+    };
 
     // Drawing variables
 
@@ -1249,8 +1259,6 @@ export class App_View {
 
     // Header window
 
-    uiMenuButtons: UI_MenuButtons;
-
     protected updateHeaderButtons() {
 
         let activeElementID = '';
@@ -1271,7 +1279,7 @@ export class App_View {
             activeElementID = this.ID.menu_btnMiscTool;
         }
 
-        this.uiMenuButtons.setState({ activeElementID: activeElementID });
+        this.uiMenuButtonsRef.update(activeElementID);
     }
 
     //private setHeaderButtonVisual(elementID: string, isSelected: boolean) {

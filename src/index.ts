@@ -9,6 +9,7 @@ import { App_Main, MainProcessStateID } from 'app/main';
 import { UI_MenuButtons } from 'ui/menu_buttons';
 import { UI_ScrollView } from 'ui/scroll_view';
 import { UI_SubToolWindow } from 'ui/subtool_window';
+import { UI_CommandButtons } from 'ui/command_buttons';
 
 // 大改修計画
 // ・レイヤーウィンドウをアウトライナーウィンドウにして、レイヤー以外の情報も表示できるようにする
@@ -209,98 +210,103 @@ var _Main: App_Main;
 
 window.onload = () => {
 
-    Platform.settings.load();
+  Platform.settings.load();
 
-    _Main = new App_Main();
-    _Main.mainWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.mainCanvas);
-    _Main.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.editorCanvas);
-    _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.webglCanvas);
-    _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
-    //_Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
-    _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
-    _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
-    _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
-    _Main.drawGPUWindow.createCanvas();
-    _Main.foreLayerRenderWindow.createCanvas();
-    _Main.backLayerRenderWindow.createCanvas();
-    //_Main.pickingWindow.createCanvas();
-    _Main.exportRenderWindow.createCanvas();
-    _Main.paletteColorModal_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteColorModal_colorCanvas);
+  _Main = new App_Main();
+  _Main.mainWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.mainCanvas);
+  _Main.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.editorCanvas);
+  _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.webglCanvas);
+  _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
+  //_Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
+  _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
+  _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
+  _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
+  _Main.drawGPUWindow.createCanvas();
+  _Main.foreLayerRenderWindow.createCanvas();
+  _Main.backLayerRenderWindow.createCanvas();
+  //_Main.pickingWindow.createCanvas();
+  _Main.exportRenderWindow.createCanvas();
+  _Main.paletteColorModal_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteColorModal_colorCanvas);
 
-    _Main.uiMenuButtons = ReactDOM.render(
-        React.createElement(UI_MenuButtons, { context: _Main })
-        , document.getElementById(_Main.ID.mainToolButtons)
-    );
+  ReactDOM.render(
+    React.createElement(UI_MenuButtons, { uiRef: _Main.uiMenuButtonsRef })
+    , document.getElementById(_Main.ID.mainToolButtons)
+  );
 
-    ReactDOM.render(
-        React.createElement(UI_ScrollView, { content: UI_SubToolWindow, wheelScrollY: 32, contentRef: _Main.uiSubToolWindowRef })
-        , document.getElementById(_Main.ID.subtoolWindow)
-    );
+  ReactDOM.render(
+    React.createElement(UI_ScrollView, { content: UI_SubToolWindow, uiRef: _Main.uiSubToolWindowRef, wheelScrollY: 32 })
+    , document.getElementById(_Main.ID.subtoolWindow)
+  );
 
-    var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
-    for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
+  ReactDOM.render(
+    React.createElement(UI_CommandButtons, { uiRef: _Main.uiCommandButtonsRef })
+    , document.getElementById("command-test-window")
+  );
 
-        let colorItemDiv = document.createElement('div');
-        colorItemDiv.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
-        layerColorModal_colors.appendChild(colorItemDiv);
+  var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
+  for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
 
-        let radioInput = document.createElement('input');
-        radioInput.type = 'radio';
-        radioInput.id = _Main.ID.paletteColorModal_colorIndex + paletteColorIndex;
-        radioInput.name = _Main.ID.paletteColorModal_colorIndex;
-        radioInput.value = paletteColorIndex.toString();
-        colorItemDiv.appendChild(radioInput);
+    let colorItemDiv = document.createElement('div');
+    colorItemDiv.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
+    layerColorModal_colors.appendChild(colorItemDiv);
 
-        let colorInput = document.createElement('input');
-        colorInput.type = 'color';
-        colorInput.id = _Main.ID.paletteColorModal_colorValue + paletteColorIndex;
-        colorInput.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
-        colorItemDiv.appendChild(colorInput);
-    }
+    let radioInput = document.createElement('input');
+    radioInput.type = 'radio';
+    radioInput.id = _Main.ID.paletteColorModal_colorIndex + paletteColorIndex;
+    radioInput.name = _Main.ID.paletteColorModal_colorIndex;
+    radioInput.value = paletteColorIndex.toString();
+    colorItemDiv.appendChild(radioInput);
 
-    _Main.onInitializeSystemDevices();
+    let colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.id = _Main.ID.paletteColorModal_colorValue + paletteColorIndex;
+    colorInput.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
+    colorItemDiv.appendChild(colorInput);
+  }
 
-    setTimeout(run, 1000 / 30);
+  _Main.onInitializeSystemDevices();
+
+  setTimeout(run, 1000 / 30);
 };
 
 function run() {
 
-    try {
+  try {
 
-        if (_Main.mainProcessState == MainProcessStateID.pause) {
+    if (_Main.mainProcessState == MainProcessStateID.pause) {
 
-            setTimeout(run, 1000);
-            return;
-        }
-        else if (_Main.mainProcessState == MainProcessStateID.running) {
-
-            _Main.run();
-            _Main.draw();
-        }
-        else if (_Main.mainProcessState == MainProcessStateID.systemResourceLoading) {
-
-            _Main.processLoadingSystemResources();
-        }
-        else if (_Main.mainProcessState == MainProcessStateID.documentJSONLoading) {
-
-            _Main.processLoadingDocumentJSON();
-        }
-        else if (_Main.mainProcessState == MainProcessStateID.documentResourceLoading) {
-
-            _Main.processLoadingDocumentResources();
-        }
-
-        if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
-
-            setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
-        }
-        else {
-
-            window.requestAnimationFrame(run);
-        }
+      setTimeout(run, 1000);
+      return;
     }
-    catch (e) {
-        console.log(e);
-        setTimeout(run, 1000);
+    else if (_Main.mainProcessState == MainProcessStateID.running) {
+
+      _Main.run();
+      _Main.draw();
     }
+    else if (_Main.mainProcessState == MainProcessStateID.systemResourceLoading) {
+
+      _Main.processLoadingSystemResources();
+    }
+    else if (_Main.mainProcessState == MainProcessStateID.documentJSONLoading) {
+
+      _Main.processLoadingDocumentJSON();
+    }
+    else if (_Main.mainProcessState == MainProcessStateID.documentResourceLoading) {
+
+      _Main.processLoadingDocumentResources();
+    }
+
+    if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
+
+      setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
+    }
+    else {
+
+      window.requestAnimationFrame(run);
+    }
+  }
+  catch (e) {
+    console.log(e);
+    setTimeout(run, 1000);
+  }
 }

@@ -1,25 +1,42 @@
 import * as React from 'react';
 
-export function UI_CommandButtons({ props }) {
+import { int } from 'base/conversion';
+import { RectangleLayoutArea } from 'app/view.class';
 
-    const [items, setItems] = React.useState((() => {
+export interface UI_CommandButtonsItem {
 
-        let init_Items = [];
-        for (let i = 0; i < 30; i++) {
+  index: int;
+  iconIndex: int;
+}
 
-            init_Items.push(i);
-        }
+export interface UI_CommandButtonsRef {
 
-        return init_Items;
-    })());
+  items: UI_CommandButtonsItem[];
 
-    return (
-        <div>
-            {
-                items.map(i => (
-                    <div key={i}>{i}</div>
-                ))
-            }
-        </div>
-    );
+  onClick?: (item: UI_CommandButtonsItem) => void;
+}
+
+export interface UI_CommandButtonsParam {
+
+  uiRef: UI_CommandButtonsRef;
+}
+
+export function UI_CommandButtons({ uiRef }: UI_CommandButtonsParam) {
+
+  return (
+    <React.Fragment>
+      {
+        uiRef.items.map(item => (
+          <div key={item.index}>
+            <button
+              className='image-splite-layerbar'
+              onClick={() => { uiRef.onClick && uiRef.onClick(item) }}
+              style={{ backgroundPosition: `0 -${(item.iconIndex - 1) * 32}px` }}
+            >
+            </button>
+          </div>
+        ))
+      }
+    </React.Fragment>
+  );
 }

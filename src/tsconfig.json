@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2015",
     "module": "es2015",
     "jsx": "react",
     "declaration": false,
@@ -9,8 +9,8 @@
     "noLib": false,
     "preserveConstEnums": true,
     "suppressImplicitAnyIndexErrors": true,
-    "sourceMap": false,
-    "outDir": "../dist/",
+    "sourceMap": true,
+    "outDir": "../obj/",
     "baseUrl": "src",
     "paths": {
     },

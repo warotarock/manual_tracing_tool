@@ -1,5 +1,5 @@
 import { float, StringIsNullOrEmpty, int } from 'base/conversion';
-import { Layer, DocumentData} from 'base/data';
+import { Layer, DocumentData } from 'base/data';
 import { EditModeID, MainToolID, ToolBaseWindow, DrawLineToolSubToolID, ModalToolID } from 'base/tool';
 
 import { ColorLogic } from 'logics/color';
@@ -10,1982 +10,1982 @@ import { Command_DeleteSelectedPoints } from 'commands/delete_points';
 import { Command_CopyGeometry, Command_PasteGeometry } from 'commands/edit_copy';
 import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown } from 'commands/edit_layer';
 
-import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, OpenPaletteColorModalMode } from 'app/view.class';
+import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, OpenPaletteColorModalMode, RectangleLayoutArea } from 'app/view.class';
 import { App_Document } from 'app/document';
+import { UI_CommandButtonsItem } from '../ui/command_buttons';
 
 export class App_Event extends App_Document {
 
-    isEventSetDone = false;
+  isEventSetDone = false;
 
-    // Backward interface definitions
+  // Backward interface definitions
 
-    protected onWindowBlur() { // @virtual
+  protected onWindowBlur() { // @virtual
+  }
+
+  protected onWindowFocus() { // @virtual
+  }
+
+  protected openDocumentSettingDialog() { // @virtual
+  }
+
+  protected setDefferedWindowResize() { // @virtual
+  }
+
+  protected onModalWindowClosed() { // @virtual
+  }
+
+  // Events
+
+  protected setEvents() {
+
+    if (this.isEventSetDone) {
+      return;
     }
 
-    protected onWindowFocus() { // @virtual
-    }
+    this.isEventSetDone = true;
 
-    protected openDocumentSettingDialog() { // @virtual
-    }
+    this.setCanvasWindowMouseEvent(this.editorWindow, this.mainWindow
+      , this.mainWindow_mousedown
+      , this.mainWindow_mousemove
+      , this.mainWindow_mouseup
+      , this.mainWindow_mousewheel
+      , false
+    );
 
-    protected setDefferedWindowResize() { // @virtual
-    }
+    this.setCanvasWindowMouseEvent(this.layerWindow, this.layerWindow
+      , this.layerWindow_mousedown
+      , this.layerWindow_mousemove
+      , this.layerWindow_mouseup
+      , null
+      , false
+    );
 
-    protected onModalWindowClosed() { // @virtual
-    }
+    this.uiCommandButtonsRef.onClick = ((item) => this.layerWindow_mousedown_LayerCommandButton(item));
 
-    // Events
+    //this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
+    //    , this.subtoolWindow_mousedown
+    //    , this.subtoolWindow_mousemove
+    //    , this.subtoolWindow_mouseup
+    //    , null
+    //    , false
+    //);
 
-    protected setEvents() {
+    this.setCanvasWindowMouseEvent(this.paletteSelectorWindow, this.paletteSelectorWindow
+      , this.paletteSelectorWindow_mousedown
+      , null
+      , null
+      , null
+      , false
+    );
 
-        if (this.isEventSetDone) {
+    this.setCanvasWindowMouseEvent(this.timeLineWindow, this.timeLineWindow
+      , this.timeLineWindow_mousedown
+      , this.timeLineWindow_mousemove
+      , this.timeLineWindow_mouseup
+      , this.timeLineWindow_mousewheel
+      , false
+    );
+
+    this.setCanvasWindowMouseEvent(this.paletteColorModal_colorCanvas, this.paletteColorModal_colorCanvas
+      , this.onPaletteColorModal_ColorCanvas_mousedown
+      , null
+      , null
+      , null
+      , true
+    );
+
+    this.setCanvasWindowMouseEvent(this.colorMixerWindow_colorCanvas, this.colorMixerWindow_colorCanvas
+      , this.colorMixerWindow_colorCanvas_mousedown
+      , this.colorMixerWindow_colorCanvas_mousedown
+      , null
+      , null
+      , true
+    );
+
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+
+      if (this.isWhileLoading()) {
+        return;
+      }
+
+      if (this.isModalShown()) {
+        return;
+      }
+
+      if (document.activeElement.nodeName == 'INPUT') {
+        return;
+      }
+
+      this.document_keydown(e);
+    });
+
+    document.addEventListener('keyup', (e: KeyboardEvent) => {
+
+      if (this.isModalShown()) {
+        return;
+      }
+
+      if (document.activeElement.nodeName == 'INPUT') {
+        return;
+      }
+
+      this.document_keyup(e);
+    });
+
+    window.addEventListener('resize', (e: Event) => {
+      this.htmlWindow_resize();
+    });
+
+    window.addEventListener('contextmenu', (e: Event) => {
+      return this.htmlWindow_contextmenu(e);
+    });
+
+    window.addEventListener('blur', () => {
+
+      this.onWindowBlur();
+    });
+
+    window.addEventListener('focus', () => {
+
+      this.onWindowFocus();
+    });
+
+    document.addEventListener('dragover', (e: DragEvent) => {
+
+      e.stopPropagation();
+      e.preventDefault();
+
+      let available = false;
+      if (e.dataTransfer.types.length > 0) {
+
+        for (let type of e.dataTransfer.types) {
+
+          if (type == 'Files') {
+
+            available = true;
+            break;
+          }
+        }
+      }
+
+      if (available) {
+
+        e.dataTransfer.dropEffect = 'move';
+      }
+      else {
+
+        e.dataTransfer.dropEffect = 'none';
+      }
+    });
+
+    document.addEventListener('drop', (e: DragEvent) => {
+
+      this.document_drop(e);
+    });
+
+    // Menu buttons
+
+    this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', (e: Event) => {
+
+      if (this.isEventDisabled()) {
+        return;
+      }
+
+
+      this.setCurrentEditMode(EditModeID.drawMode);
+      this.setCurrentMainToolForCurentLayer();
+
+      this.toolEnv.setRedrawMainWindowEditorWindow();
+      this.toolEnv.setRedrawLayerWindow();
+      this.toolEnv.setRedrawSubtoolWindow();
+
+      e.preventDefault();
+    });
+
+    this.getElement(this.ID.menu_btnEditTool).addEventListener('mousedown', (e: Event) => {
+
+      if (this.isEventDisabled()) {
+        return;
+      }
+
+      let env = this.toolEnv;
+
+      if (env.isDrawMode()) {
+
+        this.setCurrentEditMode(EditModeID.editMode);
+      }
+
+      e.preventDefault();
+    });
+
+    this.getElement(this.ID.menu_btnMiscTool).addEventListener('mousedown', (e: Event) => {
+
+      if (this.isEventDisabled()) {
+        return;
+      }
+
+      this.setCurrentEditMode(EditModeID.drawMode);
+      this.setCurrentMainTool(MainToolID.misc);
+
+      this.toolEnv.setRedrawMainWindowEditorWindow();
+      this.toolEnv.setRedrawLayerWindow();
+      this.toolEnv.setRedrawSubtoolWindow();
+
+      e.preventDefault();
+    });
+
+    this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', (e: Event) => {
+
+      if (this.isEventDisabled()) {
+        return;
+      }
+
+      this.openOperationOptionModal();
+      e.preventDefault();
+    });
+
+    this.getElement(this.ID.menu_btnOpen).addEventListener('mousedown', (e: Event) => {
+
+      if (this.isEventDisabled()) {
+        return;
+      }
+
+      this.startReloadDocument();
+      e.preventDefault();
+    });
+
+    this.getElement(this.ID.menu_btnSave).addEventListener('mousedown', (e: Event) => {
+
+      if (this.isEventDisabled()) {
+        return;
+      }
+
+      this.saveDocument();
+      e.preventDefault();
+    });
+
+    this.getElement(this.ID.menu_btnExport).addEventListener('mousedown', (e: Event) => {
+
+      if (this.isEventDisabled()) {
+        return;
+      }
+
+      this.openExportImageFileModal();
+      e.preventDefault();
+    });
+
+    this.getElement(this.ID.menu_btnProperty).addEventListener('mousedown', (e: Event) => {
+
+      if (this.isEventDisabled()) {
+        return;
+      }
+
+      this.openDocumentSettingDialog();
+      e.preventDefault();
+    });
+
+    /*
+    this.getElement(this.ID.menu_btnPalette1).addEventListener('mousedown', (e: Event) => {
+
+        if (this.isEventDisabled()) {
             return;
         }
 
-        this.isEventSetDone = true;
-
-        this.setCanvasWindowMouseEvent(this.editorWindow, this.mainWindow
-            , this.mainWindow_mousedown
-            , this.mainWindow_mousemove
-            , this.mainWindow_mouseup
-            , this.mainWindow_mousewheel
-            , false
-        );
-
-        this.setCanvasWindowMouseEvent(this.layerWindow, this.layerWindow
-            , this.layerWindow_mousedown
-            , this.layerWindow_mousemove
-            , this.layerWindow_mouseup
-            , null
-            , false
-        );
-
-        //this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
-        //    , this.subtoolWindow_mousedown
-        //    , this.subtoolWindow_mousemove
-        //    , this.subtoolWindow_mouseup
-        //    , null
-        //    , false
-        //);
-
-        this.setCanvasWindowMouseEvent(this.paletteSelectorWindow, this.paletteSelectorWindow
-            , this.paletteSelectorWindow_mousedown
-            , null
-            , null
-            , null
-            , false
-        );
-
-        this.setCanvasWindowMouseEvent(this.timeLineWindow, this.timeLineWindow
-            , this.timeLineWindow_mousedown
-            , this.timeLineWindow_mousemove
-            , this.timeLineWindow_mouseup
-            , this.timeLineWindow_mousewheel
-            , false
-        );
-
-        this.setCanvasWindowMouseEvent(this.paletteColorModal_colorCanvas, this.paletteColorModal_colorCanvas
-            , this.onPaletteColorModal_ColorCanvas_mousedown
-            , null
-            , null
-            , null
-            , true
-        );
-
-        this.setCanvasWindowMouseEvent(this.colorMixerWindow_colorCanvas, this.colorMixerWindow_colorCanvas
-            , this.colorMixerWindow_colorCanvas_mousedown
-            , this.colorMixerWindow_colorCanvas_mousedown
-            , null
-            , null
-            , true
-        );
-
-        document.addEventListener('keydown', (e: KeyboardEvent) => {
-
-            if (this.isWhileLoading()) {
-                return;
-            }
-
-            if (this.isModalShown()) {
-                return;
-            }
-
-            if (document.activeElement.nodeName == 'INPUT') {
-                return;
-            }
-
-            this.document_keydown(e);
-        });
-
-        document.addEventListener('keyup', (e: KeyboardEvent) => {
-
-            if (this.isModalShown()) {
-                return;
-            }
-
-            if (document.activeElement.nodeName == 'INPUT') {
-                return;
-            }
-
-            this.document_keyup(e);
-        });
-
-        window.addEventListener('resize', (e: Event) => {
-            this.htmlWindow_resize();
-        });
-
-        window.addEventListener('contextmenu', (e: Event) => {
-            return this.htmlWindow_contextmenu(e);
-        });
-
-        window.addEventListener('blur', () => {
-
-            this.onWindowBlur();
-        });
-
-        window.addEventListener('focus', () => {
-
-            this.onWindowFocus();
-        });
-
-        document.addEventListener('dragover', (e: DragEvent) => {
-
-            e.stopPropagation();
-            e.preventDefault();
-
-            let available = false;
-            if (e.dataTransfer.types.length > 0) {
-
-                for (let type of e.dataTransfer.types) {
-
-                    if (type == 'Files') {
-
-                        available = true;
-                        break;
-                    }
-                }
-            }
-
-            if (available) {
-
-                e.dataTransfer.dropEffect = 'move';
-            }
-            else {
-
-                e.dataTransfer.dropEffect = 'none';
-            }
-        });
-
-        document.addEventListener('drop', (e: DragEvent) => {
-
-            this.document_drop(e);
-        });
-
-        // Menu buttons
-
-        this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-
-            this.setCurrentEditMode(EditModeID.drawMode);
-            this.setCurrentMainToolForCurentLayer();
-
-            this.toolEnv.setRedrawMainWindowEditorWindow();
-            this.toolEnv.setRedrawLayerWindow();
-            this.toolEnv.setRedrawSubtoolWindow();
-
-            e.preventDefault();
-        });
-
-        this.getElement(this.ID.menu_btnEditTool).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            let env = this.toolEnv;
-
-            if (env.isDrawMode()) {
-
-                this.setCurrentEditMode(EditModeID.editMode);
-            }
-
-            e.preventDefault();
-        });
-
-        this.getElement(this.ID.menu_btnMiscTool).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            this.setCurrentEditMode(EditModeID.drawMode);
-            this.setCurrentMainTool(MainToolID.misc);
-
-            this.toolEnv.setRedrawMainWindowEditorWindow();
-            this.toolEnv.setRedrawLayerWindow();
-            this.toolEnv.setRedrawSubtoolWindow();
-
-            e.preventDefault();
-        });
-
-        this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            this.openOperationOptionModal();
-            e.preventDefault();
-        });
-
-        this.getElement(this.ID.menu_btnOpen).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            this.startReloadDocument();
-            e.preventDefault();
-        });
-
-        this.getElement(this.ID.menu_btnSave).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            this.saveDocument();
-            e.preventDefault();
-        });
-
-        this.getElement(this.ID.menu_btnExport).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            this.openExportImageFileModal();
-            e.preventDefault();
-        });
-
-        this.getElement(this.ID.menu_btnProperty).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            this.openDocumentSettingDialog();
-            e.preventDefault();
-        });
-
-        /*
-        this.getElement(this.ID.menu_btnPalette1).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            this.openPaletteColorModal(OpenPaletteColorModalMode.LineColor, this.toolContext.document, this.toolContext.currentLayer);
-            e.preventDefault();
-        });
-
-        this.getElement(this.ID.menu_btnPalette2).addEventListener('mousedown', (e: Event) => {
-
-            if (this.isEventDisabled()) {
-                return;
-            }
-
-            this.openPaletteColorModal(OpenPaletteColorModalMode.FillColor, this.toolContext.document, this.toolContext.currentLayer);
-            e.preventDefault();
-        });
-        */
-
-        // React conponents
-
-        this.uiSubToolWindowRef.item_Click = (item: SubToolViewItem) => {
-
-            this.subtoolWindow_Item_Click(item);
-        }
-
-        this.uiSubToolWindowRef.itemButton_Click = (item: SubToolViewItem) => {
-
-            this.subtoolWindow_Button_Click(item);
-        }
-
-        // Modal window
-
-        document.addEventListener('custombox:content:open', () => {
-
-            this.onModalWindowShown();
-        });
-
-        document.addEventListener('custombox:content:close', () => {
-
-            this.onModalWindowClosed();
-        });
-
-        this.setEvents_ModalCloseButton(this.ID.messageDialogModal_ok);
-
-        this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_ok);
-        this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_cancel);
-
-        this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_ok);
-        this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_cancel);
-
-        this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_ok);
-        this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_cancel);
-
-        this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_ok);
-        this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_cancel);
-
-        this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_ok);
-        this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_cancel);
-
-        // Color mixer window
-        this.setColorMixerRGBElementEvent(this.ID.colorMixer_red, 0);
-        this.setColorMixerRGBElementEvent(this.ID.colorMixer_green, 1);
-        this.setColorMixerRGBElementEvent(this.ID.colorMixer_blue, 2);
-        this.setColorMixerRGBElementEvent(this.ID.colorMixer_alpha, 3);
-
-        this.setColorMixerHSVElementEvent(this.ID.colorMixer_hue);
-        this.setColorMixerHSVElementEvent(this.ID.colorMixer_sat);
-        this.setColorMixerHSVElementEvent(this.ID.colorMixer_val);
-
-        // Palette modal
-
-        this.getElement(this.ID.paletteColorModal_currentColor).addEventListener('change', () => {
-
-            this.onPaletteColorModal_CurrentColorChanged();
-        });
-
-        this.getElement(this.ID.paletteColorModal_currentAlpha).addEventListener('change', () => {
-
-            this.onPaletteColorModal_CurrentColorChanged();
-        });
-
-        for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
-
-            {
-                let id = this.ID.paletteColorModal_colorValue + paletteColorIndex;
-                let colorButton = <HTMLInputElement>this.getElement(id);
-
-                colorButton.addEventListener('change', () => {
-
-                    this.onPaletteColorModal_ColorChanged(paletteColorIndex);
-                });
-            }
-
-            {
-                let id = this.ID.paletteColorModal_colorIndex + paletteColorIndex;
-                let radioButton = <HTMLInputElement>this.getElement(id);
-
-                radioButton.addEventListener('click', () => {
-
-                    this.onPaletteColorModal_ColorIndexChanged();
-                });
-            }
-        }
-    }
-
-    protected setCanvasWindowMouseEvent(eventCanvasWindow: CanvasWindow, drawCanvasWindew: ToolBaseWindow, mousedown: Function, mousemove: Function, mouseup: Function, mousewheel: Function, isModal: boolean) {
-
-        if (mousedown != null) {
-
-            eventCanvasWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-
-                if (this.isEventDisabled() && !isModal) {
-                    return;
-                }
-
-                this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
-                mousedown.call(this);
-                e.preventDefault();
-            });
-        }
-
-        if (mousemove != null) {
-
-            eventCanvasWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
-
-                if (this.isEventDisabled() && !isModal) {
-                    return;
-                }
-
-                this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
-                mousemove.call(this);
-                e.preventDefault();
-            });
-        }
-
-        if (mouseup != null) {
-
-            eventCanvasWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
-
-                if (this.isEventDisabled() && !isModal) {
-                    return;
-                }
-
-                this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, true, drawCanvasWindew);
-                mouseup.call(this);
-                e.preventDefault();
-            });
-        }
-
-        if (mousedown != null) {
-
-            eventCanvasWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
-
-                if (this.isEventDisabled() && !isModal) {
-                    return;
-                }
-
-                this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, true, false, drawCanvasWindew);
-                mousedown.call(this);
-                e.preventDefault();
-            });
-        }
-
-        if (mousemove != null) {
-
-            eventCanvasWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
-
-                if (this.isEventDisabled() && !isModal) {
-                    return;
-                }
-
-                this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, false, false, drawCanvasWindew);
-                mousemove.call(this);
-                e.preventDefault();
-            });
-        }
-
-        if (mouseup != null) {
-
-            eventCanvasWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
-
-                if (this.isEventDisabled() && !isModal) {
-                    return;
-                }
-
-                this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, false, true, drawCanvasWindew);
-                mouseup.call(this);
-                e.preventDefault();
-            });
-        }
-
-        if (mousewheel != null) {
-
-            eventCanvasWindow.canvas.addEventListener('wheel', (e: MouseEvent) => {
-
-                if (this.isEventDisabled() && !isModal) {
-                    return;
-                }
-
-                this.getWheelInfo(drawCanvasWindew.toolMouseEvent, e);
-                this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
-
-                mousewheel.call(this);
-                e.preventDefault();
-            });
-        }
-    }
-
-    protected setEvents_ModalCloseButton(id: string) {
-
-        this.getElement(id).addEventListener('click', (e: Event) => {
-
-            this.currentModalDialogResult = id;
-
-            this.closeModal();
-
-            e.preventDefault();
-        });
-    }
-
-    protected document_keydown(e: KeyboardEvent) {
-
-        var env = this.toolEnv;
-        let context = this.toolContext;
-        let key = e.key;
-        if (key.length == 1) {
-            key = key.toLowerCase();
-        }
-
+        this.openPaletteColorModal(OpenPaletteColorModalMode.LineColor, this.toolContext.document, this.toolContext.currentLayer);
         e.preventDefault();
+    });
 
-        this.toolContext.shiftKey = e.shiftKey;
-        this.toolContext.altKey = e.altKey;
-        this.toolContext.ctrlKey = e.ctrlKey;
+    this.getElement(this.ID.menu_btnPalette2).addEventListener('mousedown', (e: Event) => {
 
-        env.updateContext();
-
-        if (this.activeCanvasWindow == this.timeLineWindow) {
-
-            if (this.document_keydown_timeLineWindow(key)) {
-
-                return;
-            }
-        }
-
-        if (key == '.' && env.needsDrawOperatorCursor()) {
-
-            this.setOperatorCursorLocationToMouse();
-        }
-
-        if (this.isModalToolRunning()) {
-
-            this.document_keydown_modalTool(key, e);
-
-            return;
-        }
-        else if (env.isEditMode()) {
-
-            if (this.currentTool.keydown(e, env)) {
-                return;
-            }
-        }
-
-        if (key == 'Tab') {
-
-            // Change mode
-            if (env.isDrawMode()) {
-
-                this.setCurrentEditMode(EditModeID.editMode);
-            }
-            else {
-
-                this.setCurrentEditMode(EditModeID.drawMode);
-            }
-
-            env.setRedrawLayerWindow();
-            env.setRedrawSubtoolWindow();
-
+        if (this.isEventDisabled()) {
             return;
         }
 
-        if (key == 'n' && env.isCtrlKeyPressing()) {
+        this.openPaletteColorModal(OpenPaletteColorModalMode.FillColor, this.toolContext.document, this.toolContext.currentLayer);
+        e.preventDefault();
+    });
+    */
 
-            this.resetDocument();
+    // React conponents
 
-            return;
+    this.uiSubToolWindowRef.item_Click = (item: SubToolViewItem) => {
+
+      this.subtoolWindow_Item_Click(item);
+    }
+
+    this.uiSubToolWindowRef.itemButton_Click = (item: SubToolViewItem) => {
+
+      this.subtoolWindow_Button_Click(item);
+    }
+
+    // Modal window
+
+    document.addEventListener('custombox:content:open', () => {
+
+      this.onModalWindowShown();
+    });
+
+    document.addEventListener('custombox:content:close', () => {
+
+      this.onModalWindowClosed();
+    });
+
+    this.setEvents_ModalCloseButton(this.ID.messageDialogModal_ok);
+
+    this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_ok);
+    this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_cancel);
+
+    this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_ok);
+    this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_cancel);
+
+    this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_ok);
+    this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_cancel);
+
+    this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_ok);
+    this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_cancel);
+
+    this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_ok);
+    this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_cancel);
+
+    // Color mixer window
+    this.setColorMixerRGBElementEvent(this.ID.colorMixer_red, 0);
+    this.setColorMixerRGBElementEvent(this.ID.colorMixer_green, 1);
+    this.setColorMixerRGBElementEvent(this.ID.colorMixer_blue, 2);
+    this.setColorMixerRGBElementEvent(this.ID.colorMixer_alpha, 3);
+
+    this.setColorMixerHSVElementEvent(this.ID.colorMixer_hue);
+    this.setColorMixerHSVElementEvent(this.ID.colorMixer_sat);
+    this.setColorMixerHSVElementEvent(this.ID.colorMixer_val);
+
+    // Palette modal
+
+    this.getElement(this.ID.paletteColorModal_currentColor).addEventListener('change', () => {
+
+      this.onPaletteColorModal_CurrentColorChanged();
+    });
+
+    this.getElement(this.ID.paletteColorModal_currentAlpha).addEventListener('change', () => {
+
+      this.onPaletteColorModal_CurrentColorChanged();
+    });
+
+    for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
+
+      {
+        let id = this.ID.paletteColorModal_colorValue + paletteColorIndex;
+        let colorButton = <HTMLInputElement>this.getElement(id);
+
+        colorButton.addEventListener('change', () => {
+
+          this.onPaletteColorModal_ColorChanged(paletteColorIndex);
+        });
+      }
+
+      {
+        let id = this.ID.paletteColorModal_colorIndex + paletteColorIndex;
+        let radioButton = <HTMLInputElement>this.getElement(id);
+
+        radioButton.addEventListener('click', () => {
+
+          this.onPaletteColorModal_ColorIndexChanged();
+        });
+      }
+    }
+  }
+
+  protected setCanvasWindowMouseEvent(eventCanvasWindow: CanvasWindow, drawCanvasWindew: ToolBaseWindow, mousedown: Function, mousemove: Function, mouseup: Function, mousewheel: Function, isModal: boolean) {
+
+    if (mousedown != null) {
+
+      eventCanvasWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+
+        if (this.isEventDisabled() && !isModal) {
+          return;
         }
 
-        if (key == 'b') {
+        this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
+        mousedown.call(this);
+        e.preventDefault();
+      });
+    }
 
-            if (env.isDrawMode()) {
+    if (mousemove != null) {
 
-                this.setCurrentMainTool(MainToolID.drawLine);
-                this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
+      eventCanvasWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
 
-                this.updateFooterMessage();
-                env.setRedrawMainWindowEditorWindow();
-                env.setRedrawLayerWindow();
-                env.setRedrawSubtoolWindow();
-            }
-
-            return;
+        if (this.isEventDisabled() && !isModal) {
+          return;
         }
 
-        if (key == 'e') {
+        this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
+        mousemove.call(this);
+        e.preventDefault();
+      });
+    }
 
-            if (env.isDrawMode()) {
+    if (mouseup != null) {
 
-                this.setCurrentMainTool(MainToolID.drawLine);
-                if (context.subToolIndex != <int>DrawLineToolSubToolID.deletePointBrush) {
+      eventCanvasWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
 
-                    this.setCurrentSubTool(<int>DrawLineToolSubToolID.deletePointBrush);
-                }
-                else {
-
-                    this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
-                }
-
-                this.updateFooterMessage();
-                env.setRedrawMainWindowEditorWindow();
-                env.setRedrawLayerWindow();
-                env.setRedrawSubtoolWindow();
-            }
-
-            return;
+        if (this.isEventDisabled() && !isModal) {
+          return;
         }
 
-        if (key == 'p') {
+        this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, true, drawCanvasWindew);
+        mouseup.call(this);
+        e.preventDefault();
+      });
+    }
 
-            return;
+    if (mousedown != null) {
+
+      eventCanvasWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+
+        if (this.isEventDisabled() && !isModal) {
+          return;
         }
 
-        if (key == 'z') {
+        this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, true, false, drawCanvasWindew);
+        mousedown.call(this);
+        e.preventDefault();
+      });
+    }
 
-            this.toolContext.commandHistory.undo(env);
+    if (mousemove != null) {
 
-            this.activateCurrentTool();
+      eventCanvasWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
 
-            env.setRedrawMainWindowEditorWindow();
-
-            return;
+        if (this.isEventDisabled() && !isModal) {
+          return;
         }
 
-        if (key == 'y') {
+        this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, false, false, drawCanvasWindew);
+        mousemove.call(this);
+        e.preventDefault();
+      });
+    }
 
-            this.toolContext.commandHistory.redo(env);
+    if (mouseup != null) {
 
-            this.activateCurrentTool();
+      eventCanvasWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
 
-            env.setRedrawMainWindowEditorWindow();
-
-            return;
+        if (this.isEventDisabled() && !isModal) {
+          return;
         }
 
-        if (key == 'Delete' || key == 'x') {
+        this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, false, true, drawCanvasWindew);
+        mouseup.call(this);
+        e.preventDefault();
+      });
+    }
 
-            if (env.isEditMode()) {
+    if (mousewheel != null) {
 
-                if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
+      eventCanvasWindow.canvas.addEventListener('wheel', (e: MouseEvent) => {
 
-                    let withCut = (key == 'x' && env.isCtrlKeyPressing());
-
-                    let command = new Command_DeleteSelectedPoints();
-                    if (command.prepareEditTargets(env)) {
-
-                        if (withCut) {
-
-                            let command = new Command_CopyGeometry();
-                            if (command.prepareEditData(env)) {
-
-                                command.executeCommand(env);
-                            }
-                        }
-
-                        command.executeCommand(env);
-                        this.toolContext.commandHistory.addCommand(command);
-
-                        env.setRedrawMainWindow();
-                    }
-                }
-            }
-
-            return;
+        if (this.isEventDisabled() && !isModal) {
+          return;
         }
 
-        if (env.isCtrlKeyPressing() && key == 'c') {
+        this.getWheelInfo(drawCanvasWindew.toolMouseEvent, e);
+        this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
 
-            if (env.isEditMode()) {
+        mousewheel.call(this);
+        e.preventDefault();
+      });
+    }
+  }
 
-                if (this.toolContext.currentVectorGroup != null) {
+  protected setEvents_ModalCloseButton(id: string) {
 
-                    let command = new Command_CopyGeometry();
-                    if (command.prepareEditData(env)) {
+    this.getElement(id).addEventListener('click', (e: Event) => {
 
-                        command.executeCommand(env);
-                    }
-                }
-            }
+      this.currentModalDialogResult = id;
 
-            return;
+      this.closeModal();
+
+      e.preventDefault();
+    });
+  }
+
+  protected document_keydown(e: KeyboardEvent) {
+
+    var env = this.toolEnv;
+    let context = this.toolContext;
+    let key = e.key;
+    if (key.length == 1) {
+      key = key.toLowerCase();
+    }
+
+    e.preventDefault();
+
+    this.toolContext.shiftKey = e.shiftKey;
+    this.toolContext.altKey = e.altKey;
+    this.toolContext.ctrlKey = e.ctrlKey;
+
+    env.updateContext();
+
+    if (this.activeCanvasWindow == this.timeLineWindow) {
+
+      if (this.document_keydown_timeLineWindow(key)) {
+
+        return;
+      }
+    }
+
+    if (key == '.' && env.needsDrawOperatorCursor()) {
+
+      this.setOperatorCursorLocationToMouse();
+    }
+
+    if (this.isModalToolRunning()) {
+
+      this.document_keydown_modalTool(key, e);
+
+      return;
+    }
+    else if (env.isEditMode()) {
+
+      if (this.currentTool.keydown(e, env)) {
+        return;
+      }
+    }
+
+    if (key == 'Tab') {
+
+      // Change mode
+      if (env.isDrawMode()) {
+
+        this.setCurrentEditMode(EditModeID.editMode);
+      }
+      else {
+
+        this.setCurrentEditMode(EditModeID.drawMode);
+      }
+
+      env.setRedrawLayerWindow();
+      env.setRedrawSubtoolWindow();
+
+      return;
+    }
+
+    if (key == 'n' && env.isCtrlKeyPressing()) {
+
+      this.resetDocument();
+
+      return;
+    }
+
+    if (key == 'b') {
+
+      if (env.isDrawMode()) {
+
+        this.setCurrentMainTool(MainToolID.drawLine);
+        this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
+
+        this.updateFooterMessage();
+        env.setRedrawMainWindowEditorWindow();
+        env.setRedrawLayerWindow();
+        env.setRedrawSubtoolWindow();
+      }
+
+      return;
+    }
+
+    if (key == 'e') {
+
+      if (env.isDrawMode()) {
+
+        this.setCurrentMainTool(MainToolID.drawLine);
+        if (context.subToolIndex != <int>DrawLineToolSubToolID.deletePointBrush) {
+
+          this.setCurrentSubTool(<int>DrawLineToolSubToolID.deletePointBrush);
+        }
+        else {
+
+          this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
         }
 
-        if (env.isCtrlKeyPressing() && key == 'v') {
+        this.updateFooterMessage();
+        env.setRedrawMainWindowEditorWindow();
+        env.setRedrawLayerWindow();
+        env.setRedrawSubtoolWindow();
+      }
 
-            if (this.toolContext.currentVectorGroup != null) {
+      return;
+    }
 
-                let command = new Command_PasteGeometry();
-                if (command.prepareEditData(env)) {
+    if (key == 'p') {
 
-                    this.tool_SelectAllPoints.executeClearSelectAll(env);
+      return;
+    }
 
-                    command.executeCommand(env);
-                    this.toolContext.commandHistory.addCommand(command);
-                }
+    if (key == 'z') {
 
-                env.setRedrawCurrentLayer();
+      this.toolContext.commandHistory.undo(env);
+
+      this.activateCurrentTool();
+
+      env.setRedrawMainWindowEditorWindow();
+
+      return;
+    }
+
+    if (key == 'y') {
+
+      this.toolContext.commandHistory.redo(env);
+
+      this.activateCurrentTool();
+
+      env.setRedrawMainWindowEditorWindow();
+
+      return;
+    }
+
+    if (key == 'Delete' || key == 'x') {
+
+      if (env.isEditMode()) {
+
+        if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
+
+          let withCut = (key == 'x' && env.isCtrlKeyPressing());
+
+          let command = new Command_DeleteSelectedPoints();
+          if (command.prepareEditTargets(env)) {
+
+            if (withCut) {
+
+              let command = new Command_CopyGeometry();
+              if (command.prepareEditData(env)) {
+
+                command.executeCommand(env);
+              }
             }
 
-            return;
-        }
+            command.executeCommand(env);
+            this.toolContext.commandHistory.addCommand(command);
 
-        if (key == 'Home' || key == 'q') {
-
-            if (env.isShiftKeyPressing()) {
-
-                this.mainWindow.viewLocation[0] = 0.0;
-                this.mainWindow.viewLocation[1] = 0.0;
-                vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
-                this.mainWindow.viewScale = context.document.defaultViewScale;
-                this.mainWindow.viewRotation = 0.0;
-                this.mainWindow.mirrorX = false;
-                this.mainWindow.mirrorY = false;
-                this.isViewLocationMoved = false;
-            }
-            else if (this.isViewLocationMoved) {
-
-                vec3.copy(this.mainWindow.viewLocation, this.homeViewLocation);
-                this.mainWindow.viewScale = context.document.defaultViewScale;
-                this.mainWindow.viewRotation = 0.0;
-                this.isViewLocationMoved = false;
-            }
-            else {
-
-                vec3.copy(this.mainWindow.viewLocation, this.lastViewLocation);
-                this.mainWindow.viewScale = this.lastViewScale;
-                this.mainWindow.viewRotation = this.lastViewRotation;
-                this.isViewLocationMoved = true;
-            }
-
-            env.setRedrawMainWindowEditorWindow();
-
-            return;
-        }
-
-        if (key == 't' || key == 'r') {
-
-            if (env.isDrawMode()) {
-
-                let rot = 10.0;
-                if (key == 't') {
-                    rot = -rot;
-                }
-                if (this.mainWindow.mirrorX) {
-                    rot = -rot;
-                }
-
-                this.mainWindow.viewRotation += rot;
-                this.updateViewRotation();
-                return;
-            }
-        }
-
-        if (key == 'm') {
-
-            this.mainWindow.mirrorX = !this.mainWindow.mirrorX;
-            env.setRedrawMainWindowEditorWindow();
-            return;
-        }
-
-        if (key == 'f' || key == 'd') {
-
-            let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate;
-            if (key == 'd') {
-                addScale = 1 / addScale;
-            }
-
-            this.addViewScale(addScale);
-
-            return;
-        }
-
-        if (env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight' || key == 'ArrowUp' || key == 'ArrowDown')) {
-
-            let x = 0.0;
-            let y = 0.0;
-            if (key == 'ArrowLeft') {
-                x = -10.0;
-            }
-            if (key == 'ArrowRight') {
-                x = 10.0;
-            }
-            if (key == 'ArrowUp') {
-                y = -10.0;
-            }
-            if (key == 'ArrowDown') {
-                y = 10.0;
-            }
-
-            this.mainWindow.calculateViewUnitMatrix(this.view2DMatrix);
-            mat4.invert(this.invView2DMatrix, this.view2DMatrix);
-            vec3.set(this.tempVec3, x, y, 0.0);
-            vec3.transformMat4(this.tempVec3, this.tempVec3, this.invView2DMatrix);
-
-            vec3.add(this.mainWindow.viewLocation, this.mainWindow.viewLocation, this.tempVec3);
-
-            let leftLimit = this.mainWindow.width * (-0.5);
-            let rightLimit = this.mainWindow.width * 1.5
-            let topLimit = this.mainWindow.height * (-0.5);
-            let bottomLimit = this.mainWindow.height * 1.5
-
-            if (this.mainWindow.viewLocation[0] < leftLimit) {
-                this.mainWindow.viewLocation[0] = leftLimit;
-            }
-            if (this.mainWindow.viewLocation[0] > rightLimit) {
-                this.mainWindow.viewLocation[0] = rightLimit;
-            }
-            if (this.mainWindow.viewLocation[1] < topLimit) {
-                this.mainWindow.viewLocation[1] = topLimit;
-            }
-            if (this.mainWindow.viewLocation[1] > bottomLimit) {
-                this.mainWindow.viewLocation[1] = bottomLimit;
-            }
-
-            env.setRedrawMainWindowEditorWindow();
-
-            return;
-        }
-
-        if (!env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight')) {
-
-            let addFrame = 1;
-            if (key == 'ArrowLeft') {
-                addFrame = -addFrame;
-            }
-
-            this.setCurrentFrame(context.document.animationSettingData.currentTimeFrame + addFrame);
-
-            env.setRedrawMainWindowEditorWindow();
-            env.setRedrawTimeLineWindow();
-        }
-
-        if (!env.isCtrlKeyPressing() && (key == 'c' || key == 'v')) {
-
-            let addFrame = 1;
-            if (key == 'c') {
-                addFrame = -addFrame;
-            }
-
-            let frame = this.findNextViewKeyframeFrame(context.document.animationSettingData.currentTimeFrame, addFrame);
-
-            this.setCurrentFrame(frame);
-
-            env.setRedrawMainWindowEditorWindow();
-            env.setRedrawTimeLineWindow();
-        }
-
-        if (key == 'i') {
-
-            return;
-        }
-
-        if (key == ' ') {
-
-            if (this.activeCanvasWindow == this.mainWindow) {
-
-                this.mainWindow_MouseViewOperationStart();
-            }
-            else if (this.activeCanvasWindow == this.layerWindow) {
-
-                this.layerWindow.startMouseDragging();
-            }
-            //else if (this.activeCanvasWindow == this.subtoolWindow) {
-
-            //    this.subtoolWindow.startMouseDragging();
-            //}
-
-            return;
-        }
-
-        if (key == 'a') {
-
-            if (env.isEditMode()) {
-
-                this.tool_SelectAllPoints.executeToggleSelection(env);
-                this.activateCurrentTool();
-            }
-            else {
-
-                this.selectNextOrPreviousLayer(false);
-                this.startShowingCurrentLayer();
-                env.setRedrawLayerWindow();
-                env.setRedrawSubtoolWindow();
-            }
-
-            return;
-        }
-
-        if (key == 'h') {
-
-            if (env.isEditMode()) {
-
-            }
-            else {
-
-
-                this.setCurrentMainTool(MainToolID.drawLine);
-                this.setCurrentSubTool(<int>DrawLineToolSubToolID.extrudeLine);
-                this.currentTool.keydown(e, env);
-                env.setRedrawMainWindowEditorWindow();
-                env.setRedrawSubtoolWindow();
-            }
-
-            return;
-        }
-
-        if (key == 'w') {
-
-            let pickedLayer: Layer = null;
-            for (let pickingPosition of this.layerPickingPositions) {
-
-                let pickX = this.mainWindow.toolMouseEvent.offsetX + pickingPosition[0];
-                let pickY = this.mainWindow.toolMouseEvent.offsetY + pickingPosition[1];
-
-                pickedLayer = this.pickLayer(this.mainWindow, this.currentViewKeyframe, pickX, pickY);
-
-                if (pickedLayer != null) {
-                    break;
-                }
-            }
-
-            if (pickedLayer != null) {
-
-                this.setCurrentLayer(pickedLayer);
-                env.setRedrawLayerWindow();
-                env.setRedrawSubtoolWindow();
-                this.startShowingCurrentLayer();
-            }
-            else {
-
-                env.setRedrawMainWindowEditorWindow();
-            }
-
-            return;
-        }
-
-        if (key == 'l') {
-        }
-
-        if (key == 'o') {
-
-            if (env.isCtrlKeyPressing()) {
-
-                this.startReloadDocument();
-            }
-            else {
-
-                this.currentTool.keydown(e, env);
-            }
-
-            return;
-        }
-
-        if (key == 'g' || key == 'r' || key == 's') {
-
-            if (key == 's' && env.isCtrlKeyPressing()) {
-
-                this.saveDocument();
-                return;
-            }
-
-            if (env.isDrawMode()) {
-
-                if (this.currentTool.keydown(e, env)) {
-
-                    // Switch to scratch line tool
-                }
-                else if (key == 'g') {
-
-                    this.setCurrentMainTool(MainToolID.drawLine);
-                    this.setCurrentSubTool(<int>DrawLineToolSubToolID.scratchLine);
-                    this.currentTool.keydown(e, env);
-                    env.setRedrawMainWindowEditorWindow();
-                    env.setRedrawSubtoolWindow();
-                }
-                else if (key == 's') {
-
-                    this.selectNextOrPreviousLayer(true);
-                    this.startShowingCurrentLayer();
-                    env.setRedrawLayerWindow();
-                    env.setRedrawSubtoolWindow();
-                }
-
-                return;
-            }
-
-            if (env.isEditMode()) {
-
-                let modalToolID = ModalToolID.grabMove;
-
-                if (key == 'r') {
-
-                    modalToolID = ModalToolID.rotate;
-                }
-                else if (key == 's') {
-
-                    modalToolID = ModalToolID.scale;
-                }
-
-                if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
-
-                    this.startVectorLayerModalTool(modalToolID);
-                }
-                else if (env.isCurrentLayerImageFileReferenceLayer()) {
-
-                    this.startImageFileReferenceLayerModalTool(modalToolID);
-                }
-
-                return;
-            }
-        }
-
-        if (key == 'Enter') {
-
-            this.currentTool.keydown(e, env);
-        }
-
-        if (key == '1') {
-
-            let layerItem = this.layerWindow_FindCurrentItem();
-            this.openLayerPropertyModal(layerItem.layer);
-        }
-
-        /*
-        if (key == '2') {
-
-            let layerItem = this.findCurrentLayerLayerWindowItem();
-            this.openPaletteColorModal(
-                OpenPaletteColorModalMode.LineColor, this.toolContext.document, layerItem.layer);
-        }
-
-        if (key == '3') {
-
-            let layerItem = this.findCurrentLayerLayerWindowItem();
-            this.openPaletteColorModal(
-                OpenPaletteColorModalMode.FillColor, this.toolContext.document, layerItem.layer);
-        }
-        */
-
-        if (key == '4') {
-
-            this.openDocumentSettingModal();
-        }
-
-        if (key == '5') {
-
-            this.openNewLayerCommandOptionModal();
-        }
-
-        if (key == '^') {
-
-            this.openOperationOptionModal();
-        }
-
-        if (key == '\\') {
-
-            this.openExportImageFileModal();
-        }
-
-        if (key == '-') {
-
-            context.drawCPUOnly = !this.toolContext.drawCPUOnly;
             env.setRedrawMainWindow();
+          }
         }
+      }
+
+      return;
     }
 
-    protected document_keyup(e: KeyboardEvent) {
+    if (env.isCtrlKeyPressing() && key == 'c') {
 
-        this.toolContext.shiftKey = e.shiftKey;
-        this.toolContext.altKey = e.altKey;
-        this.toolContext.ctrlKey = e.ctrlKey;
+      if (env.isEditMode()) {
 
-        if (e.key == ' ') {
+        if (this.toolContext.currentVectorGroup != null) {
 
-            if (this.activeCanvasWindow == this.mainWindow) {
+          let command = new Command_CopyGeometry();
+          if (command.prepareEditData(env)) {
 
-                this.mainWindow_MouseViewOperationEnd();
-            }
-            else if (this.activeCanvasWindow == this.layerWindow) {
-
-                this.layerWindow.endMouseDragging();
-            }
-            //else if (this.activeCanvasWindow == this.subtoolWindow) {
-
-            //    this.subtoolWindow.endMouseDragging();
-            //}
+            command.executeCommand(env);
+          }
         }
+      }
+
+      return;
     }
 
-    protected document_keydown_modalTool(key: string, e: KeyboardEvent) {
+    if (env.isCtrlKeyPressing() && key == 'v') {
 
-        var env = this.toolEnv;
+      if (this.toolContext.currentVectorGroup != null) {
 
-        if (key == 'Escape') {
+        let command = new Command_PasteGeometry();
+        if (command.prepareEditData(env)) {
 
-            this.cancelModalTool();
+          this.tool_SelectAllPoints.executeClearSelectAll(env);
+
+          command.executeCommand(env);
+          this.toolContext.commandHistory.addCommand(command);
         }
-        else {
 
-            this.currentTool.keydown(e, env);
-        }
+        env.setRedrawCurrentLayer();
+      }
+
+      return;
     }
 
-    protected document_keydown_timeLineWindow(key: string): boolean {
+    if (key == 'Home' || key == 'q') {
 
-        var env = this.toolEnv;
-        let context = this.toolContext;
-        let aniSetting = context.document.animationSettingData;
+      if (env.isShiftKeyPressing()) {
 
-        if (key == 'i') {
-            this.openNewKeyframeModal();
-            return true;
-        }
+        this.mainWindow.viewLocation[0] = 0.0;
+        this.mainWindow.viewLocation[1] = 0.0;
+        vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
+        this.mainWindow.viewScale = context.document.defaultViewScale;
+        this.mainWindow.viewRotation = 0.0;
+        this.mainWindow.mirrorX = false;
+        this.mainWindow.mirrorY = false;
+        this.isViewLocationMoved = false;
+      }
+      else if (this.isViewLocationMoved) {
 
-        if (key == 'Delete' || key == 'x') {
-            this.openDeleteKeyframeModal();
-            return true;
-        }
+        vec3.copy(this.mainWindow.viewLocation, this.homeViewLocation);
+        this.mainWindow.viewScale = context.document.defaultViewScale;
+        this.mainWindow.viewRotation = 0.0;
+        this.isViewLocationMoved = false;
+      }
+      else {
 
-        if (key == 'k' || key == 'l') {
+        vec3.copy(this.mainWindow.viewLocation, this.lastViewLocation);
+        this.mainWindow.viewScale = this.lastViewScale;
+        this.mainWindow.viewRotation = this.lastViewRotation;
+        this.isViewLocationMoved = true;
+      }
 
-            if (this.currentViewKeyframe != null) {
+      env.setRedrawMainWindowEditorWindow();
 
-                var add_FrameTime = 1;
-                if (key == 'k') {
-                    add_FrameTime = -1;
-                }
-
-                var newFrame = this.currentViewKeyframe.frame + add_FrameTime;
-
-                if (newFrame < 0) {
-
-                    newFrame = 0;
-                }
-
-                if (add_FrameTime > 0
-                    && this.nextKeyframe != null
-                    && newFrame >= this.nextKeyframe.frame) {
-
-                    newFrame = this.nextKeyframe.frame - 1;
-                }
-
-                if (add_FrameTime < 0
-                    && this.previousKeyframe != null
-                    && newFrame <= this.previousKeyframe.frame) {
-
-                    newFrame = this.previousKeyframe.frame + 1;
-                }
-
-                if (this.currentViewKeyframe.frame != newFrame) {
-
-                    for (let viewKeyFrameLayer of this.currentViewKeyframe.layers) {
-
-                        if (viewKeyFrameLayer.hasKeyframe()) {
-
-                            viewKeyFrameLayer.vectorLayerKeyframe.frame = newFrame;
-                        }
-                    }
-
-                    this.currentViewKeyframe.frame = newFrame;
-
-                    env.setRedrawMainWindowEditorWindow();
-                    env.setRedrawTimeLineWindow();
-                }
-            }
-
-            return true;
-        }
-
-        if (key == 'o' || key == 'p') {
-
-            var add_FrameTime = 1;
-            if (key == 'o') {
-                add_FrameTime = -1;
-            }
-
-            if (env.isShiftKeyPressing()) {
-
-                aniSetting.loopEndFrame += add_FrameTime;
-                if (aniSetting.loopEndFrame < 0) {
-                    aniSetting.loopEndFrame = 0;
-                }
-            }
-            else if (env.isCtrlKeyPressing()) {
-
-                aniSetting.loopStartFrame += add_FrameTime;
-                if (aniSetting.loopStartFrame < 0) {
-                    aniSetting.loopStartFrame = 0;
-                }
-            }
-            else {
-
-                aniSetting.maxFrame += add_FrameTime;
-                if (aniSetting.maxFrame < 0) {
-                    aniSetting.maxFrame = 0;
-                }
-            }
-
-            env.setRedrawMainWindowEditorWindow();
-            env.setRedrawTimeLineWindow();
-
-            return true;
-        }
-
-        return false;
+      return;
     }
 
-    protected document_drop(e: DragEvent) {
+    if (key == 't' || key == 'r') {
 
-        e.preventDefault();
+      if (env.isDrawMode()) {
 
-        // Check file exists
-        if (e.dataTransfer.files.length == 0) {
-
-            console.log('error: no dropped files.');
-            return;
+        let rot = 10.0;
+        if (key == 't') {
+          rot = -rot;
+        }
+        if (this.mainWindow.mirrorX) {
+          rot = -rot;
         }
 
-        // Get file path or name
-        let file = e.dataTransfer.files[0];
-
-        let filePath = '';
-        if ('path' in file) {
-            filePath = file['path'];
-        }
-        else {
-            filePath = file.name;
-        }
-
-        if (StringIsNullOrEmpty(filePath)) {
-
-            console.log('error: cannot get file path.');
-            return;
-        }
-
-        // Start loading document
-        this.startReloadDocumentFromFile(file, filePath);
+        this.mainWindow.viewRotation += rot;
+        this.updateViewRotation();
+        return;
+      }
     }
 
-    protected htmlWindow_resize() {
+    if (key == 'm') {
 
-        this.setDefferedWindowResize();
+      this.mainWindow.mirrorX = !this.mainWindow.mirrorX;
+      env.setRedrawMainWindowEditorWindow();
+      return;
     }
 
-    protected htmlWindow_contextmenu(e): boolean {
+    if (key == 'f' || key == 'd') {
 
-        if (e.preventDefault) {
-            e.preventDefault();
-        }
-        else if (e.returnValue) {
-            e.returnValue = false;
-        }
+      let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate;
+      if (key == 'd') {
+        addScale = 1 / addScale;
+      }
 
-        return false;
+      this.addViewScale(addScale);
+
+      return;
     }
 
-    protected mainWindow_mousedown() {
+    if (env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight' || key == 'ArrowUp' || key == 'ArrowDown')) {
 
-        let wnd = this.mainWindow;
-        let env = this.toolEnv;
-        let e = wnd.toolMouseEvent;
+      let x = 0.0;
+      let y = 0.0;
+      if (key == 'ArrowLeft') {
+        x = -10.0;
+      }
+      if (key == 'ArrowRight') {
+        x = 10.0;
+      }
+      if (key == 'ArrowUp') {
+        y = -10.0;
+      }
+      if (key == 'ArrowDown') {
+        y = 10.0;
+      }
 
-        env.updateContext();
+      this.mainWindow.calculateViewUnitMatrix(this.view2DMatrix);
+      mat4.invert(this.invView2DMatrix, this.view2DMatrix);
+      vec3.set(this.tempVec3, x, y, 0.0);
+      vec3.transformMat4(this.tempVec3, this.tempVec3, this.invView2DMatrix);
 
-        // Execute current tool
-        if (this.isModalToolRunning()) {
+      vec3.add(this.mainWindow.viewLocation, this.mainWindow.viewLocation, this.tempVec3);
 
-            if (this.currentTool.isAvailable(env)) {
+      let leftLimit = this.mainWindow.width * (-0.5);
+      let rightLimit = this.mainWindow.width * 1.5
+      let topLimit = this.mainWindow.height * (-0.5);
+      let bottomLimit = this.mainWindow.height * 1.5
 
-                this.currentTool.mouseDown(e, this.toolEnv);
-            }
-        }
-        else {
+      if (this.mainWindow.viewLocation[0] < leftLimit) {
+        this.mainWindow.viewLocation[0] = leftLimit;
+      }
+      if (this.mainWindow.viewLocation[0] > rightLimit) {
+        this.mainWindow.viewLocation[0] = rightLimit;
+      }
+      if (this.mainWindow.viewLocation[1] < topLimit) {
+        this.mainWindow.viewLocation[1] = topLimit;
+      }
+      if (this.mainWindow.viewLocation[1] > bottomLimit) {
+        this.mainWindow.viewLocation[1] = bottomLimit;
+      }
 
-            if (this.currentTool.isAvailable(env)) {
+      env.setRedrawMainWindowEditorWindow();
 
-                this.currentTool.mouseDown(e, this.toolEnv);
-            }
-        }
-
-        // View operation
-        if (e.isRightButtonPressing() && this.toolEnv.isShiftKeyPressing()) {
-
-            this.setOperatorCursorLocationToMouse();
-        }
-        else if (e.isRightButtonPressing() || e.isCenterButtonPressing()) {
-
-            this.mainWindow_MouseViewOperationStart();
-        }
-        else {
-
-            this.mainWindow_MouseViewOperationEnd();
-        }
+      return;
     }
 
-    protected mainWindow_MouseViewOperationStart() {
+    if (!env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight')) {
 
-        let wnd = this.mainWindow;
-        let e = wnd.toolMouseEvent;
+      let addFrame = 1;
+      if (key == 'ArrowLeft') {
+        addFrame = -addFrame;
+      }
 
-        e.startMouseDragging();
+      this.setCurrentFrame(context.document.animationSettingData.currentTimeFrame + addFrame);
 
-        mat4.copy(wnd.dragBeforeTransformMatrix, this.invView2DMatrix);
-        vec3.copy(wnd.dragBeforeViewLocation, wnd.viewLocation);
+      env.setRedrawMainWindowEditorWindow();
+      env.setRedrawTimeLineWindow();
     }
 
-    protected mainWindow_MouseViewOperationEnd() {
+    if (!env.isCtrlKeyPressing() && (key == 'c' || key == 'v')) {
 
-        let e = this.mainWindow.toolMouseEvent;
+      let addFrame = 1;
+      if (key == 'c') {
+        addFrame = -addFrame;
+      }
 
-        e.endMouseDragging();
+      let frame = this.findNextViewKeyframeFrame(context.document.animationSettingData.currentTimeFrame, addFrame);
+
+      this.setCurrentFrame(frame);
+
+      env.setRedrawMainWindowEditorWindow();
+      env.setRedrawTimeLineWindow();
     }
 
-    protected mainWindow_mousemove() {
+    if (key == 'i') {
 
-        let wnd = this.mainWindow;
-        let env = this.toolEnv;
-        let e = wnd.toolMouseEvent;
-
-        this.toolEnv.updateContext();
-
-        // Execute current tool
-        if (this.isModalToolRunning()) {
-
-            if (!e.isMouseDragging) {
-
-                if (this.currentTool.isAvailable(env)) {
-
-                    this.currentTool.mouseMove(e, env);
-                }
-            }
-        }
-        else if (this.toolEnv.isDrawMode()) {
-
-            this.currentTool.mouseMove(e, this.toolEnv);
-        }
-        else if (this.toolEnv.isEditMode()) {
-
-            let isHitChanged = this.mousemoveHittest(e.location, this.toolEnv.mouseCursorViewRadius);
-            if (isHitChanged) {
-                this.toolEnv.setRedrawCurrentLayer();
-            }
-
-            this.currentTool.mouseMove(e, this.toolEnv);
-        }
-
-        // View operation
-        if (e.isMouseDragging) {
-
-            vec3.set(this.tempVec3, e.offsetX, e.offsetY, 0.0);
-            vec3.transformMat4(this.tempVec3, this.tempVec3, wnd.dragBeforeTransformMatrix);
-
-            vec3.subtract(e.mouseMovedVector, e.mouseDownLocation, this.tempVec3);
-
-            vec3.add(this.mainWindow.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedVector);
-
-            if (!this.isViewLocationMoved) {
-
-                vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
-            }
-            else {
-
-                vec3.copy(this.lastViewLocation, this.mainWindow.viewLocation);
-            }
-
-            this.toolEnv.setRedrawMainWindowEditorWindow();
-            this.toolEnv.setRedrawWebGLWindow();
-        }
+      return;
     }
 
-    protected mousemoveHittest(location: Vec3, minDistance: float): boolean {
+    if (key == ' ') {
 
-        if (this.toolEnv.currentVectorGeometry == null) {
+      if (this.activeCanvasWindow == this.mainWindow) {
 
-            return false;
-        }
+        this.mainWindow_MouseViewOperationStart();
+      }
+      else if (this.activeCanvasWindow == this.layerWindow) {
 
-        this.hittest_Line_IsCloseTo.startProcess();
+        this.layerWindow.startMouseDragging();
+      }
+      //else if (this.activeCanvasWindow == this.subtoolWindow) {
 
-        this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
+      //    this.subtoolWindow.startMouseDragging();
+      //}
 
-        this.hittest_Line_IsCloseTo.endProcess();
-
-        return this.hittest_Line_IsCloseTo.isChanged;
+      return;
     }
 
-    protected mainWindow_mouseup() {
+    if (key == 'a') {
 
-        let wnd = this.mainWindow;
-        let e = wnd.toolMouseEvent;
+      if (env.isEditMode()) {
 
-        this.toolEnv.updateContext();
+        this.tool_SelectAllPoints.executeToggleSelection(env);
+        this.activateCurrentTool();
+      }
+      else {
 
-        this.currentTool.mouseUp(e, this.toolEnv);
+        this.selectNextOrPreviousLayer(false);
+        this.startShowingCurrentLayer();
+        env.setRedrawLayerWindow();
+        env.setRedrawSubtoolWindow();
+      }
 
-        this.mainWindow_MouseViewOperationEnd();
+      return;
     }
 
-    protected mainWindow_mousewheel() {
+    if (key == 'h') {
 
-        let wnd = this.mainWindow;
-        let e = wnd.toolMouseEvent;
+      if (env.isEditMode()) {
 
-        // View operation
-        if (e.wheelDelta != 0.0
-            && !e.isMouseDragging) {
+      }
+      else {
 
-            let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate * 0.5;
-            if (e.wheelDelta < 0.0) {
-                addScale = 1.0 / addScale;
-            }
 
-            this.addViewScale(addScale);
-        }
+        this.setCurrentMainTool(MainToolID.drawLine);
+        this.setCurrentSubTool(<int>DrawLineToolSubToolID.extrudeLine);
+        this.currentTool.keydown(e, env);
+        env.setRedrawMainWindowEditorWindow();
+        env.setRedrawSubtoolWindow();
+      }
 
-        this.calculateTransfomredMouseParams(e, wnd);
+      return;
     }
 
-    protected layerWindow_mousedown() {
+    if (key == 'w') {
 
-        let wnd = this.layerWindow;
-        let e = wnd.toolMouseEvent;
+      let pickedLayer: Layer = null;
+      for (let pickingPosition of this.layerPickingPositions) {
 
-        this.toolEnv.updateContext();
+        let pickX = this.mainWindow.toolMouseEvent.offsetX + pickingPosition[0];
+        let pickY = this.mainWindow.toolMouseEvent.offsetY + pickingPosition[1];
 
-        let doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
+        pickedLayer = this.pickLayer(this.mainWindow, this.currentViewKeyframe, pickX, pickY);
 
-        let clickedX = e.location[0];
-        let clickedY = e.location[1];
-
-        if (e.isLeftButtonPressing()) {
-
-            if (e.location[1] <= wnd.layerItemButtonButtom) {
-
-                // Layer window button click
-                this.layerWindow_mousedown_LayerCommandButton(clickedX, clickedY);
-            }
-            else if (e.location[1] < wnd.layerItemsBottom) {
-
-                // Layer window item click
-                this.layerWindow_mousedown_LayerItem(clickedX, clickedY, doubleClicked);
-            }
+        if (pickedLayer != null) {
+          break;
         }
-        else if (e.isCenterButtonPressing() || e.isRightButtonPressing()) {
+      }
 
-            wnd.startMouseDragging();
-        }
-    }
+      if (pickedLayer != null) {
 
-    protected layerWindow_mousemove() {
-
-        let wnd = this.layerWindow;
-        let e = wnd.toolMouseEvent;
-
-        // View operation
-        if (e.isMouseDragging) {
-
-            vec3.add(wnd.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedOffset);
-            wnd.viewLocation[0] = 0.0;
-
-            if (wnd.viewLocation[1] < 0.0) {
-                wnd.viewLocation[1] = 0.0;
-            }
-
-            if (wnd.viewLocation[1] > wnd.layerItemsBottom - wnd.layerItemHeight) {
-                wnd.viewLocation[1] = wnd.layerItemsBottom - wnd.layerItemHeight;
-            }
-
-            this.toolEnv.setRedrawLayerWindow();
-        }
-    }
-
-    protected layerWindow_mouseup() {
-
-        this.layerWindow.endMouseDragging();
-    }
-
-    protected layerWindow_mousedown_LayerCommandButton(clickedX: float, clickedY: float) {
-
-        let wnd = this.layerWindow;
-
-        let hitedButton = this.hitTestLayout(wnd.layerWindowCommandButtons, clickedX, clickedY);
-
-        if (hitedButton != null) {
-
-            // Select command
-            let layerCommand: Command_Layer_CommandBase = null;
-
-            if (hitedButton.index == <int>LayerWindowButtonID.addLayer) {
-
-                this.openNewLayerCommandOptionModal();
-            }
-            else if (hitedButton.index == <int>LayerWindowButtonID.deleteLayer) {
-
-                layerCommand = new Command_Layer_Delete();
-            }
-            else if (hitedButton.index == <int>LayerWindowButtonID.moveUp) {
-
-                layerCommand = new Command_Layer_MoveUp();
-            }
-            else if (hitedButton.index == <int>LayerWindowButtonID.moveDown) {
-
-                layerCommand = new Command_Layer_MoveDown();
-            }
-
-            if (layerCommand == null) {
-
-                return;
-            }
-
-            // Execute command
-            this.executeLayerCommand(layerCommand);
-        }
-    }
-
-    protected layerWindow_mousedown_LayerItem(clickedX: float, clickedY: float, doubleClicked: boolean) {
-
-        let wnd = this.layerWindow;
-
-        if (wnd.layerWindowItems.length == 0) {
-            return;
-        }
-
-        let firstItem = wnd.layerWindowItems[0];
-        let selectedIndex = Math.floor((clickedY - firstItem.top) / firstItem.getHeight());
-
-        if (selectedIndex >= 0 && selectedIndex < wnd.layerWindowItems.length) {
-
-            let selectedItem = wnd.layerWindowItems[selectedIndex];
-            let selectedLayer = selectedItem.layer;
-
-            if (clickedX <= selectedItem.textLeft) {
-
-                this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
-                Layer.updateHierarchicalStatesRecursive(this.toolEnv.document.rootLayer);
-                this.activateCurrentTool();
-
-                this.toolEnv.setRedrawMainWindowEditorWindow();
-            }
-            else {
-
-                if (doubleClicked) {
-
-                    // Layer property
-
-                    this.openLayerPropertyModal(selectedLayer);
-                }
-                else {
-
-                    // Select layer content
-
-                    if (this.toolEnv.isShiftKeyPressing()) {
-
-                        this.setLayerSelection(selectedLayer, !selectedLayer.isSelected);
-                        this.activateCurrentTool();
-                        this.startShowingLayerItem(selectedItem);
-                    }
-                    else {
-
-                        this.setCurrentLayer(selectedLayer);
-                        this.startShowingCurrentLayer();
-                    }
-
-                    Layer.updateHierarchicalStatesRecursive(selectedLayer);
-
-                    this.toolEnv.setRedrawMainWindowEditorWindow();
-                }
-            }
-        }
-
-        this.toolEnv.setRedrawLayerWindow();
-        this.toolEnv.setRedrawSubtoolWindow();
-    }
-
-    protected subtoolWindow_Item_Click(item: SubToolViewItem) {
-
-        this.subtoolWindow_selectItem(item);
-    }
-
-    protected subtoolWindow_Button_Click(item: SubToolViewItem) {
-
-        let tool = item.tool;
-        let env = this.toolEnv;
-
-        if (!tool.isAvailable(env)) {
-            return;
-        }
-
-        let buttonIndex = 0; // TODO: �����{�^�����K�v������
-        let inpuSideID = tool.getOptionButtonState(buttonIndex, env);
-
-        if (tool.setOptionButtonState(buttonIndex, inpuSideID, env)) {
-
-            item.buttonStateID = tool.getOptionButtonState(buttonIndex, env);
-
-            env.setRedrawMainWindowEditorWindow();
-            env.setRedrawSubtoolWindow();
-
-            this.updateUISubToolWindow();
-        }
-    }
-
-    protected subtoolWindow_selectItem(item: SubToolViewItem) {
-
-        let tool = item.tool;
-        let env = this.toolEnv;
-
-        if (!tool.isAvailable(env)) {
-            return;
-        }
-
-        // Change current sub tool
-        this.setCurrentSubTool(item.subToolIndex);
+        this.setCurrentLayer(pickedLayer);
+        env.setRedrawLayerWindow();
+        env.setRedrawSubtoolWindow();
+        this.startShowingCurrentLayer();
+      }
+      else {
 
         env.setRedrawMainWindowEditorWindow();
+      }
 
-        // Tool event
+      return;
+    }
+
+    if (key == 'l') {
+    }
+
+    if (key == 'o') {
+
+      if (env.isCtrlKeyPressing()) {
+
+        this.startReloadDocument();
+      }
+      else {
+
+        this.currentTool.keydown(e, env);
+      }
+
+      return;
+    }
+
+    if (key == 'g' || key == 'r' || key == 's') {
+
+      if (key == 's' && env.isCtrlKeyPressing()) {
+
+        this.saveDocument();
+        return;
+      }
+
+      if (env.isDrawMode()) {
+
+        if (this.currentTool.keydown(e, env)) {
+
+          // Switch to scratch line tool
+        }
+        else if (key == 'g') {
+
+          this.setCurrentMainTool(MainToolID.drawLine);
+          this.setCurrentSubTool(<int>DrawLineToolSubToolID.scratchLine);
+          this.currentTool.keydown(e, env);
+          env.setRedrawMainWindowEditorWindow();
+          env.setRedrawSubtoolWindow();
+        }
+        else if (key == 's') {
+
+          this.selectNextOrPreviousLayer(true);
+          this.startShowingCurrentLayer();
+          env.setRedrawLayerWindow();
+          env.setRedrawSubtoolWindow();
+        }
+
+        return;
+      }
+
+      if (env.isEditMode()) {
+
+        let modalToolID = ModalToolID.grabMove;
+
+        if (key == 'r') {
+
+          modalToolID = ModalToolID.rotate;
+        }
+        else if (key == 's') {
+
+          modalToolID = ModalToolID.scale;
+        }
+
+        if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
+
+          this.startVectorLayerModalTool(modalToolID);
+        }
+        else if (env.isCurrentLayerImageFileReferenceLayer()) {
+
+          this.startImageFileReferenceLayerModalTool(modalToolID);
+        }
+
+        return;
+      }
+    }
+
+    if (key == 'Enter') {
+
+      this.currentTool.keydown(e, env);
+    }
+
+    if (key == '1') {
+
+      let layerItem = this.layerWindow_FindCurrentItem();
+      this.openLayerPropertyModal(layerItem.layer);
+    }
+
+    /*
+    if (key == '2') {
+
+        let layerItem = this.findCurrentLayerLayerWindowItem();
+        this.openPaletteColorModal(
+            OpenPaletteColorModalMode.LineColor, this.toolContext.document, layerItem.layer);
+    }
+
+    if (key == '3') {
+
+        let layerItem = this.findCurrentLayerLayerWindowItem();
+        this.openPaletteColorModal(
+            OpenPaletteColorModalMode.FillColor, this.toolContext.document, layerItem.layer);
+    }
+    */
+
+    if (key == '4') {
+
+      this.openDocumentSettingModal();
+    }
+
+    if (key == '5') {
+
+      this.openNewLayerCommandOptionModal();
+    }
+
+    if (key == '^') {
+
+      this.openOperationOptionModal();
+    }
+
+    if (key == '\\') {
+
+      this.openExportImageFileModal();
+    }
+
+    if (key == '-') {
+
+      context.drawCPUOnly = !this.toolContext.drawCPUOnly;
+      env.setRedrawMainWindow();
+    }
+  }
+
+  protected document_keyup(e: KeyboardEvent) {
+
+    this.toolContext.shiftKey = e.shiftKey;
+    this.toolContext.altKey = e.altKey;
+    this.toolContext.ctrlKey = e.ctrlKey;
+
+    if (e.key == ' ') {
+
+      if (this.activeCanvasWindow == this.mainWindow) {
+
+        this.mainWindow_MouseViewOperationEnd();
+      }
+      else if (this.activeCanvasWindow == this.layerWindow) {
+
+        this.layerWindow.endMouseDragging();
+      }
+      //else if (this.activeCanvasWindow == this.subtoolWindow) {
+
+      //    this.subtoolWindow.endMouseDragging();
+      //}
+    }
+  }
+
+  protected document_keydown_modalTool(key: string, e: KeyboardEvent) {
+
+    var env = this.toolEnv;
+
+    if (key == 'Escape') {
+
+      this.cancelModalTool();
+    }
+    else {
+
+      this.currentTool.keydown(e, env);
+    }
+  }
+
+  protected document_keydown_timeLineWindow(key: string): boolean {
+
+    var env = this.toolEnv;
+    let context = this.toolContext;
+    let aniSetting = context.document.animationSettingData;
+
+    if (key == 'i') {
+      this.openNewKeyframeModal();
+      return true;
+    }
+
+    if (key == 'Delete' || key == 'x') {
+      this.openDeleteKeyframeModal();
+      return true;
+    }
+
+    if (key == 'k' || key == 'l') {
+
+      if (this.currentViewKeyframe != null) {
+
+        var add_FrameTime = 1;
+        if (key == 'k') {
+          add_FrameTime = -1;
+        }
+
+        var newFrame = this.currentViewKeyframe.frame + add_FrameTime;
+
+        if (newFrame < 0) {
+
+          newFrame = 0;
+        }
+
+        if (add_FrameTime > 0
+          && this.nextKeyframe != null
+          && newFrame >= this.nextKeyframe.frame) {
+
+          newFrame = this.nextKeyframe.frame - 1;
+        }
+
+        if (add_FrameTime < 0
+          && this.previousKeyframe != null
+          && newFrame <= this.previousKeyframe.frame) {
+
+          newFrame = this.previousKeyframe.frame + 1;
+        }
+
+        if (this.currentViewKeyframe.frame != newFrame) {
+
+          for (let viewKeyFrameLayer of this.currentViewKeyframe.layers) {
+
+            if (viewKeyFrameLayer.hasKeyframe()) {
+
+              viewKeyFrameLayer.vectorLayerKeyframe.frame = newFrame;
+            }
+          }
+
+          this.currentViewKeyframe.frame = newFrame;
+
+          env.setRedrawMainWindowEditorWindow();
+          env.setRedrawTimeLineWindow();
+        }
+      }
+
+      return true;
+    }
+
+    if (key == 'o' || key == 'p') {
+
+      var add_FrameTime = 1;
+      if (key == 'o') {
+        add_FrameTime = -1;
+      }
+
+      if (env.isShiftKeyPressing()) {
+
+        aniSetting.loopEndFrame += add_FrameTime;
+        if (aniSetting.loopEndFrame < 0) {
+          aniSetting.loopEndFrame = 0;
+        }
+      }
+      else if (env.isCtrlKeyPressing()) {
+
+        aniSetting.loopStartFrame += add_FrameTime;
+        if (aniSetting.loopStartFrame < 0) {
+          aniSetting.loopStartFrame = 0;
+        }
+      }
+      else {
+
+        aniSetting.maxFrame += add_FrameTime;
+        if (aniSetting.maxFrame < 0) {
+          aniSetting.maxFrame = 0;
+        }
+      }
+
+      env.setRedrawMainWindowEditorWindow();
+      env.setRedrawTimeLineWindow();
+
+      return true;
+    }
+
+    return false;
+  }
+
+  protected document_drop(e: DragEvent) {
+
+    e.preventDefault();
+
+    // Check file exists
+    if (e.dataTransfer.files.length == 0) {
+
+      console.log('error: no dropped files.');
+      return;
+    }
+
+    // Get file path or name
+    let file = e.dataTransfer.files[0];
+
+    let filePath = '';
+    if ('path' in file) {
+      filePath = file['path'];
+    }
+    else {
+      filePath = file.name;
+    }
+
+    if (StringIsNullOrEmpty(filePath)) {
+
+      console.log('error: cannot get file path.');
+      return;
+    }
+
+    // Start loading document
+    this.startReloadDocumentFromFile(file, filePath);
+  }
+
+  protected htmlWindow_resize() {
+
+    this.setDefferedWindowResize();
+  }
+
+  protected htmlWindow_contextmenu(e): boolean {
+
+    if (e.preventDefault) {
+      e.preventDefault();
+    }
+    else if (e.returnValue) {
+      e.returnValue = false;
+    }
+
+    return false;
+  }
+
+  protected mainWindow_mousedown() {
+
+    let wnd = this.mainWindow;
+    let env = this.toolEnv;
+    let e = wnd.toolMouseEvent;
+
+    env.updateContext();
+
+    // Execute current tool
+    if (this.isModalToolRunning()) {
+
+      if (this.currentTool.isAvailable(env)) {
+
+        this.currentTool.mouseDown(e, this.toolEnv);
+      }
+    }
+    else {
+
+      if (this.currentTool.isAvailable(env)) {
+
+        this.currentTool.mouseDown(e, this.toolEnv);
+      }
+    }
+
+    // View operation
+    if (e.isRightButtonPressing() && this.toolEnv.isShiftKeyPressing()) {
+
+      this.setOperatorCursorLocationToMouse();
+    }
+    else if (e.isRightButtonPressing() || e.isCenterButtonPressing()) {
+
+      this.mainWindow_MouseViewOperationStart();
+    }
+    else {
+
+      this.mainWindow_MouseViewOperationEnd();
+    }
+  }
+
+  protected mainWindow_MouseViewOperationStart() {
+
+    let wnd = this.mainWindow;
+    let e = wnd.toolMouseEvent;
+
+    e.startMouseDragging();
+
+    mat4.copy(wnd.dragBeforeTransformMatrix, this.invView2DMatrix);
+    vec3.copy(wnd.dragBeforeViewLocation, wnd.viewLocation);
+  }
+
+  protected mainWindow_MouseViewOperationEnd() {
+
+    let e = this.mainWindow.toolMouseEvent;
+
+    e.endMouseDragging();
+  }
+
+  protected mainWindow_mousemove() {
+
+    let wnd = this.mainWindow;
+    let env = this.toolEnv;
+    let e = wnd.toolMouseEvent;
+
+    this.toolEnv.updateContext();
+
+    // Execute current tool
+    if (this.isModalToolRunning()) {
+
+      if (!e.isMouseDragging) {
+
+        if (this.currentTool.isAvailable(env)) {
+
+          this.currentTool.mouseMove(e, env);
+        }
+      }
+    }
+    else if (this.toolEnv.isDrawMode()) {
+
+      this.currentTool.mouseMove(e, this.toolEnv);
+    }
+    else if (this.toolEnv.isEditMode()) {
+
+      let isHitChanged = this.mousemoveHittest(e.location, this.toolEnv.mouseCursorViewRadius);
+      if (isHitChanged) {
+        this.toolEnv.setRedrawCurrentLayer();
+      }
+
+      this.currentTool.mouseMove(e, this.toolEnv);
+    }
+
+    // View operation
+    if (e.isMouseDragging) {
+
+      vec3.set(this.tempVec3, e.offsetX, e.offsetY, 0.0);
+      vec3.transformMat4(this.tempVec3, this.tempVec3, wnd.dragBeforeTransformMatrix);
+
+      vec3.subtract(e.mouseMovedVector, e.mouseDownLocation, this.tempVec3);
+
+      vec3.add(this.mainWindow.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedVector);
+
+      if (!this.isViewLocationMoved) {
+
+        vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
+      }
+      else {
+
+        vec3.copy(this.lastViewLocation, this.mainWindow.viewLocation);
+      }
+
+      this.toolEnv.setRedrawMainWindowEditorWindow();
+      this.toolEnv.setRedrawWebGLWindow();
+    }
+  }
+
+  protected mousemoveHittest(location: Vec3, minDistance: float): boolean {
+
+    if (this.toolEnv.currentVectorGeometry == null) {
+
+      return false;
+    }
+
+    this.hittest_Line_IsCloseTo.startProcess();
+
+    this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
+
+    this.hittest_Line_IsCloseTo.endProcess();
+
+    return this.hittest_Line_IsCloseTo.isChanged;
+  }
+
+  protected mainWindow_mouseup() {
+
+    let wnd = this.mainWindow;
+    let e = wnd.toolMouseEvent;
+
+    this.toolEnv.updateContext();
+
+    this.currentTool.mouseUp(e, this.toolEnv);
+
+    this.mainWindow_MouseViewOperationEnd();
+  }
+
+  protected mainWindow_mousewheel() {
+
+    let wnd = this.mainWindow;
+    let e = wnd.toolMouseEvent;
+
+    // View operation
+    if (e.wheelDelta != 0.0
+      && !e.isMouseDragging) {
+
+      let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate * 0.5;
+      if (e.wheelDelta < 0.0) {
+        addScale = 1.0 / addScale;
+      }
+
+      this.addViewScale(addScale);
+    }
+
+    this.calculateTransfomredMouseParams(e, wnd);
+  }
+
+  protected layerWindow_mousedown() {
+
+    let wnd = this.layerWindow;
+    let e = wnd.toolMouseEvent;
+
+    this.toolEnv.updateContext();
+
+    let doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
+
+    let clickedX = e.location[0];
+    let clickedY = e.location[1];
+
+    if (e.isLeftButtonPressing()) {
+
+      if (e.location[1] <= wnd.layerCommandButtonButtom) {
+
+        // Layer window button click
+        // this.layerWindow_mousedown_LayerCommandButton(clickedX, clickedY);
+      }
+      else if (e.location[1] < wnd.layerItemsBottom) {
+
+        // Layer window item click
+        this.layerWindow_mousedown_LayerItem(clickedX, clickedY, doubleClicked);
+      }
+    }
+    else if (e.isCenterButtonPressing() || e.isRightButtonPressing()) {
+
+      wnd.startMouseDragging();
+    }
+  }
+
+  protected layerWindow_mousemove() {
+
+    let wnd = this.layerWindow;
+    let e = wnd.toolMouseEvent;
+
+    // View operation
+    if (e.isMouseDragging) {
+
+      vec3.add(wnd.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedOffset);
+      wnd.viewLocation[0] = 0.0;
+
+      if (wnd.viewLocation[1] < 0.0) {
+        wnd.viewLocation[1] = 0.0;
+      }
+
+      if (wnd.viewLocation[1] > wnd.layerItemsBottom - wnd.layerItemHeight) {
+        wnd.viewLocation[1] = wnd.layerItemsBottom - wnd.layerItemHeight;
+      }
+
+      this.toolEnv.setRedrawLayerWindow();
+    }
+  }
+
+  protected layerWindow_mouseup() {
+
+    this.layerWindow.endMouseDragging();
+  }
+
+  protected layerWindow_mousedown_LayerCommandButton(hitedButton: UI_CommandButtonsItem) {
+
+    if (hitedButton == null) {
+      return;
+    }
+
+    // Select command
+    let layerCommand: Command_Layer_CommandBase = null;
+
+    if (hitedButton.index == <int>LayerWindowButtonID.addLayer) {
+
+      this.openNewLayerCommandOptionModal();
+    }
+    else if (hitedButton.index == <int>LayerWindowButtonID.deleteLayer) {
+
+      layerCommand = new Command_Layer_Delete();
+    }
+    else if (hitedButton.index == <int>LayerWindowButtonID.moveUp) {
+
+      layerCommand = new Command_Layer_MoveUp();
+    }
+    else if (hitedButton.index == <int>LayerWindowButtonID.moveDown) {
+
+      layerCommand = new Command_Layer_MoveDown();
+    }
+
+    if (layerCommand == null) {
+
+      return;
+    }
+
+    // Execute command
+    this.executeLayerCommand(layerCommand);
+  }
+
+  protected layerWindow_mousedown_LayerItem(clickedX: float, clickedY: float, doubleClicked: boolean) {
+
+    let wnd = this.layerWindow;
+
+    if (wnd.layerWindowItems.length == 0) {
+      return;
+    }
+
+    let firstItem = wnd.layerWindowItems[0];
+    let selectedIndex = Math.floor((clickedY - firstItem.top) / firstItem.getHeight());
+
+    if (selectedIndex >= 0 && selectedIndex < wnd.layerWindowItems.length) {
+
+      let selectedItem = wnd.layerWindowItems[selectedIndex];
+      let selectedLayer = selectedItem.layer;
+
+      if (clickedX <= selectedItem.textLeft) {
+
+        this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
+        Layer.updateHierarchicalStatesRecursive(this.toolEnv.document.rootLayer);
         this.activateCurrentTool();
-        this.currentTool.toolWindowItemClick(env);
-    }
 
-    protected paletteSelectorWindow_mousedown() {
+        this.toolEnv.setRedrawMainWindowEditorWindow();
+      }
+      else {
 
-        let context = this.toolContext;
-        let wnd = this.paletteSelectorWindow;
-        let e = wnd.toolMouseEvent;
-        let env = this.toolEnv;
-        let documentData = context.document;
+        if (doubleClicked) {
 
-        if (e.isLeftButtonPressing()) {
+          // Layer property
 
-            if (env.currentVectorLayer != null) {
-
-                let button_LayoutArea = this.hitTestLayout(wnd.commandButtonAreas, e.location[0], e.location[1]);
-
-                if (button_LayoutArea != null) {
-
-                    wnd.currentTargetID = button_LayoutArea.index;
-
-                    env.setRedrawColorSelectorWindow();
-                    env.setRedrawColorMixerWindow();
-                }
-
-                let palette_LayoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
-
-                if (palette_LayoutArea != null) {
-
-                    let paletteColorIndex = palette_LayoutArea.index;
-                    let color = documentData.paletteColors[paletteColorIndex];
-
-                    let destColor = this.getPaletteSelectorWindow_SelectedColor();
-                    vec4.copy(destColor, color.color);
-
-                    if (wnd.currentTargetID == PaletteSelectorWindowButtonID.lineColor) {
-
-                        env.currentVectorLayer.line_PaletteColorIndex = paletteColorIndex;
-                    }
-                    else if (wnd.currentTargetID == PaletteSelectorWindowButtonID.fillColor) {
-
-                        env.currentVectorLayer.fill_PaletteColorIndex = paletteColorIndex;
-                    }
-
-                    env.setRedrawLayerWindow();
-                    env.setRedrawMainWindowEditorWindow();
-                }
-            }
-        }
-    }
-
-    protected setColorMixerRGBElementEvent(id: string, elementID: int) {
-
-        this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', () => {
-
-            let numberValue = this.getInputElementNumber(id + this.ID.colorMixer_id_number, 0.0);
-
-            let color = this.getPaletteSelectorWindow_CurrentColor();
-
-            if (color != null) {
-
-                color[elementID] = numberValue;
-            }
-
-            this.toolEnv.setRedrawMainWindow();
-            this.toolEnv.setRedrawColorSelectorWindow();
-            this.toolEnv.setRedrawColorMixerWindow();
-        });
-
-        this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', () => {
-
-            let rangeValue = this.getInputElementRangeValue(id + this.ID.colorMixer_id_range, 1.0, 1.0);
-
-            let color = this.getPaletteSelectorWindow_CurrentColor();
-
-            if (color != null) {
-
-                color[elementID] = rangeValue;
-            }
-
-            this.toolEnv.setRedrawMainWindow();
-            this.toolEnv.setRedrawColorSelectorWindow();
-            this.toolEnv.setRedrawColorMixerWindow();
-        });
-    }
-
-    protected setColorMixerHSVElementEvent(id: string) {
-
-        this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', () => {
-
-            let hueValue = this.getInputElementNumber(this.ID.colorMixer_hue + this.ID.colorMixer_id_number, 0.0);
-            let satValue = this.getInputElementNumber(this.ID.colorMixer_sat + this.ID.colorMixer_id_number, 0.0);
-            let valValue = this.getInputElementNumber(this.ID.colorMixer_val + this.ID.colorMixer_id_number, 0.0);
-
-            let color = this.getPaletteSelectorWindow_CurrentColor();
-
-            if (color != null) {
-
-                ColorLogic.hsvToRGB(color, hueValue, satValue, valValue);
-
-                this.toolEnv.setRedrawMainWindow();
-                this.toolEnv.setRedrawColorSelectorWindow();
-                this.toolEnv.setRedrawColorMixerWindow();
-            }
-        });
-
-        this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', () => {
-
-            let hueValue = this.getInputElementRangeValue(this.ID.colorMixer_hue + this.ID.colorMixer_id_range, 1.0, 1.0);
-            let satValue = this.getInputElementRangeValue(this.ID.colorMixer_sat + this.ID.colorMixer_id_range, 1.0, 1.0);
-            let valValue = this.getInputElementRangeValue(this.ID.colorMixer_val + this.ID.colorMixer_id_range, 1.0, 1.0);
-
-            let color = this.getPaletteSelectorWindow_CurrentColor();
-
-            if (color != null) {
-
-                ColorLogic.hsvToRGB(color, hueValue, satValue, valValue);
-
-                this.toolEnv.setRedrawMainWindow();
-                this.toolEnv.setRedrawColorSelectorWindow();
-                this.toolEnv.setRedrawColorMixerWindow();
-            }
-        });
-    }
-
-    protected colorMixerWindow_colorCanvas_mousedown() {
-
-        let wnd = this.colorMixerWindow_colorCanvas;
-        let e = wnd.toolMouseEvent;
-
-        if (!e.isLeftButtonPressing()) {
-            return;
-        }
-
-
-        this.canvasRender.setContext(wnd);
-        this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
-
-        let color = this.getPaletteSelectorWindow_CurrentColor();
-
-        if (color != null) {
-
-            color[0] = this.tempColor4[0];
-            color[1] = this.tempColor4[1];
-            color[2] = this.tempColor4[2];
-
-            this.toolEnv.setRedrawMainWindow();
-            this.toolEnv.setRedrawColorSelectorWindow();
-            this.toolEnv.setRedrawColorMixerWindow();
-        }
-    }
-
-    protected timeLineWindow_mousedown() {
-
-        let wnd = this.timeLineWindow;
-        let e = wnd.toolMouseEvent;
-
-        let context = this.toolContext;
-
-        let left = wnd.getTimeLineLeft();
-
-        if (e.offsetX < left) {
-
-            this.timeLineWindow_OnPlayPauseButton();
+          this.openLayerPropertyModal(selectedLayer);
         }
         else {
 
-            this.timeLineWindow_ProcessFrameInput();
+          // Select layer content
+
+          if (this.toolEnv.isShiftKeyPressing()) {
+
+            this.setLayerSelection(selectedLayer, !selectedLayer.isSelected);
+            this.activateCurrentTool();
+            this.startShowingLayerItem(selectedItem);
+          }
+          else {
+
+            this.setCurrentLayer(selectedLayer);
+            this.startShowingCurrentLayer();
+          }
+
+          Layer.updateHierarchicalStatesRecursive(selectedLayer);
+
+          this.toolEnv.setRedrawMainWindowEditorWindow();
         }
+      }
     }
 
-    protected timeLineWindow_OnPlayPauseButton() {
+    this.toolEnv.setRedrawLayerWindow();
+    this.toolEnv.setRedrawSubtoolWindow();
+  }
 
-        let wnd = this.timeLineWindow;
+  protected subtoolWindow_Item_Click(item: SubToolViewItem) {
 
-        let context = this.toolContext;
-        let env = this.toolEnv;
-        let aniSetting = context.document.animationSettingData;
+    this.subtoolWindow_selectItem(item);
+  }
 
-        if (context.animationPlaying) {
+  protected subtoolWindow_Button_Click(item: SubToolViewItem) {
 
-            context.animationPlaying = false;
+    let tool = item.tool;
+    let env = this.toolEnv;
 
-            env.setRedrawTimeLineWindow();
-        }
-        else {
-
-            context.animationPlaying = true;
-            context.animationPlayingFPS = aniSetting.animationFrameParSecond;
-        }
+    if (!tool.isAvailable(env)) {
+      return;
     }
 
-    protected timeLineWindow_ProcessFrameInput() {
+    let buttonIndex = 0; // TODO: �����{�^�����K�v������
+    let inpuSideID = tool.getOptionButtonState(buttonIndex, env);
 
-        let wnd = this.timeLineWindow;
-        let e = wnd.toolMouseEvent;
+    if (tool.setOptionButtonState(buttonIndex, inpuSideID, env)) {
 
-        let context = this.toolContext;
-        let env = this.toolEnv;
-        let aniSetting = context.document.animationSettingData;
+      item.buttonStateID = tool.getOptionButtonState(buttonIndex, env);
 
-        let clickedFrame = wnd.getFrameByLocation(e.offsetX, aniSetting);
+      env.setRedrawMainWindowEditorWindow();
+      env.setRedrawSubtoolWindow();
 
-        if (clickedFrame != -1) {
+      this.updateUISubToolWindow();
+    }
+  }
 
-            this.setCurrentFrame(clickedFrame);
-            env.setRedrawMainWindowEditorWindow();
-            env.setRedrawTimeLineWindow();
-        }
+  protected subtoolWindow_selectItem(item: SubToolViewItem) {
+
+    let tool = item.tool;
+    let env = this.toolEnv;
+
+    if (!tool.isAvailable(env)) {
+      return;
     }
 
-    protected timeLineWindow_mousemove() {
+    // Change current sub tool
+    this.setCurrentSubTool(item.subToolIndex);
 
-        let wnd = this.timeLineWindow;
-        let e = wnd.toolMouseEvent;
+    env.setRedrawMainWindowEditorWindow();
 
+    // Tool event
+    this.activateCurrentTool();
+    this.currentTool.toolWindowItemClick(env);
+  }
 
-        if (e.isLeftButtonPressing()) {
+  protected paletteSelectorWindow_mousedown() {
 
-            this.timeLineWindow_ProcessFrameInput();
+    let context = this.toolContext;
+    let wnd = this.paletteSelectorWindow;
+    let e = wnd.toolMouseEvent;
+    let env = this.toolEnv;
+    let documentData = context.document;
+
+    if (e.isLeftButtonPressing()) {
+
+      if (env.currentVectorLayer != null) {
+
+        let button_LayoutArea = this.hitTestLayout(wnd.commandButtonAreas, e.location[0], e.location[1]);
+
+        if (button_LayoutArea != null) {
+
+          wnd.currentTargetID = button_LayoutArea.index;
+
+          env.setRedrawColorSelectorWindow();
+          env.setRedrawColorMixerWindow();
         }
+
+        let palette_LayoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
+
+        if (palette_LayoutArea != null) {
+
+          let paletteColorIndex = palette_LayoutArea.index;
+          let color = documentData.paletteColors[paletteColorIndex];
+
+          let destColor = this.getPaletteSelectorWindow_SelectedColor();
+          vec4.copy(destColor, color.color);
+
+          if (wnd.currentTargetID == PaletteSelectorWindowButtonID.lineColor) {
+
+            env.currentVectorLayer.line_PaletteColorIndex = paletteColorIndex;
+          }
+          else if (wnd.currentTargetID == PaletteSelectorWindowButtonID.fillColor) {
+
+            env.currentVectorLayer.fill_PaletteColorIndex = paletteColorIndex;
+          }
+
+          env.setRedrawLayerWindow();
+          env.setRedrawMainWindowEditorWindow();
+        }
+      }
     }
+  }
 
-    protected timeLineWindow_mouseup() {
+  protected setColorMixerRGBElementEvent(id: string, elementID: int) {
 
-        let wnd = this.timeLineWindow;
+    this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', () => {
 
+      let numberValue = this.getInputElementNumber(id + this.ID.colorMixer_id_number, 0.0);
 
-        wnd.endMouseDragging();
-    }
+      let color = this.getPaletteSelectorWindow_CurrentColor();
 
-    protected timeLineWindow_mousewheel() {
+      if (color != null) {
 
-        let wnd = this.timeLineWindow;
-        let e = wnd.toolMouseEvent;
+        color[elementID] = numberValue;
+      }
 
-        let context = this.toolContext;
-        let env = this.toolEnv;
-        let aniSetting = context.document.animationSettingData;
+      this.toolEnv.setRedrawMainWindow();
+      this.toolEnv.setRedrawColorSelectorWindow();
+      this.toolEnv.setRedrawColorMixerWindow();
+    });
 
-        if (env.isCtrlKeyPressing()) {
+    this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', () => {
 
-            let addScale = 0.2;
+      let rangeValue = this.getInputElementRangeValue(id + this.ID.colorMixer_id_range, 1.0, 1.0);
 
-            if (e.wheelDelta > 0) {
+      let color = this.getPaletteSelectorWindow_CurrentColor();
 
-                aniSetting.timeLineWindowScale += addScale;
-            }
-            else {
+      if (color != null) {
 
-                aniSetting.timeLineWindowScale -= addScale;
-            }
+        color[elementID] = rangeValue;
+      }
 
-            if (aniSetting.timeLineWindowScale < 1.0) {
+      this.toolEnv.setRedrawMainWindow();
+      this.toolEnv.setRedrawColorSelectorWindow();
+      this.toolEnv.setRedrawColorMixerWindow();
+    });
+  }
 
-                aniSetting.timeLineWindowScale = 1.0;
-            }
+  protected setColorMixerHSVElementEvent(id: string) {
 
-            if (aniSetting.timeLineWindowScale > aniSetting.timeLineWindowScaleMax) {
+    this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', () => {
 
-                aniSetting.timeLineWindowScale = aniSetting.timeLineWindowScaleMax;
-            }
+      let hueValue = this.getInputElementNumber(this.ID.colorMixer_hue + this.ID.colorMixer_id_number, 0.0);
+      let satValue = this.getInputElementNumber(this.ID.colorMixer_sat + this.ID.colorMixer_id_number, 0.0);
+      let valValue = this.getInputElementNumber(this.ID.colorMixer_val + this.ID.colorMixer_id_number, 0.0);
 
-            env.setRedrawTimeLineWindow();
-        }
-    }
+      let color = this.getPaletteSelectorWindow_CurrentColor();
 
-    protected onPaletteColorModal_ColorIndexChanged() {
+      if (color != null) {
 
-        if (this.paletteColorWindow_EditLayer == null) {
-            return;
-        }
-
-        let documentData = this.currentModalDialog_DocumentData;
-        let vectorLayer = this.paletteColorWindow_EditLayer;
-
-        let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);;
-
-        if (this.paletteColorWindow_Mode == OpenPaletteColorModalMode.LineColor) {
-
-            vectorLayer.line_PaletteColorIndex = paletteColorIndex;
-        }
-        else {
-
-            vectorLayer.fill_PaletteColorIndex = paletteColorIndex;
-        }
-
-        //let paletteColor = documentData.paletteColos[paletteColorIndex];
-        //this.setInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
-        //this.setInputElementRangeValue(this.ID.paletteColorModal_currentAlpha, paletteColor.color[3], 0.0, 1.0);
-
-        this.displayPaletteColorModalColors(documentData, vectorLayer);
+        ColorLogic.hsvToRGB(color, hueValue, satValue, valValue);
 
         this.toolEnv.setRedrawMainWindow();
-    }
+        this.toolEnv.setRedrawColorSelectorWindow();
+        this.toolEnv.setRedrawColorMixerWindow();
+      }
+    });
 
-    protected onPaletteColorModal_CurrentColorChanged() {
+    this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', () => {
 
-        if (this.paletteColorWindow_EditLayer == null) {
-            return;
-        }
+      let hueValue = this.getInputElementRangeValue(this.ID.colorMixer_hue + this.ID.colorMixer_id_range, 1.0, 1.0);
+      let satValue = this.getInputElementRangeValue(this.ID.colorMixer_sat + this.ID.colorMixer_id_range, 1.0, 1.0);
+      let valValue = this.getInputElementRangeValue(this.ID.colorMixer_val + this.ID.colorMixer_id_range, 1.0, 1.0);
 
-        let documentData = this.currentModalDialog_DocumentData;
-        let vectorLayer = this.paletteColorWindow_EditLayer;
-        let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);
-        let paletteColor = documentData.paletteColors[paletteColorIndex];
+      let color = this.getPaletteSelectorWindow_CurrentColor();
 
-        this.getInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
-        paletteColor.color[3] = this.getInputElementRangeValue(this.ID.paletteColorModal_currentAlpha, 1.0, 1.0);
+      if (color != null) {
 
-        this.displayPaletteColorModalColors(documentData, vectorLayer);
-
-        this.toolEnv.setRedrawMainWindow();
-    }
-
-    protected onPaletteColorModal_ColorChanged(paletteColorIndex: int) {
-
-        if (this.paletteColorWindow_EditLayer == null) {
-
-            return;
-        }
-
-        let documentData = this.currentModalDialog_DocumentData;
-        let vectorLayer = this.paletteColorWindow_EditLayer;
-        let paletteColor = documentData.paletteColors[paletteColorIndex];
-
-        this.getInputElementColor(this.ID.paletteColorModal_colorValue + paletteColorIndex, paletteColor.color);
-
-        this.displayPaletteColorModalColors(documentData, vectorLayer);
+        ColorLogic.hsvToRGB(color, hueValue, satValue, valValue);
 
         this.toolEnv.setRedrawMainWindow();
+        this.toolEnv.setRedrawColorSelectorWindow();
+        this.toolEnv.setRedrawColorMixerWindow();
+      }
+    });
+  }
+
+  protected colorMixerWindow_colorCanvas_mousedown() {
+
+    let wnd = this.colorMixerWindow_colorCanvas;
+    let e = wnd.toolMouseEvent;
+
+    if (!e.isLeftButtonPressing()) {
+      return;
     }
 
-    protected onPaletteColorModal_ColorCanvas_mousedown() {
 
-        if (this.paletteColorWindow_EditLayer == null) {
-            return;
-        }
+    this.canvasRender.setContext(wnd);
+    this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
 
-        let wnd = this.paletteColorModal_colorCanvas;
-        let e = wnd.toolMouseEvent;
+    let color = this.getPaletteSelectorWindow_CurrentColor();
 
-        this.canvasRender.setContext(wnd);
-        this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
+    if (color != null) {
 
-        let documentData = this.currentModalDialog_DocumentData;
-        let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);
-        let paletteColor = documentData.paletteColors[paletteColorIndex];
+      color[0] = this.tempColor4[0];
+      color[1] = this.tempColor4[1];
+      color[2] = this.tempColor4[2];
 
-        paletteColor.color[0] = this.tempColor4[0];
-        paletteColor.color[1] = this.tempColor4[1];
-        paletteColor.color[2] = this.tempColor4[2];
+      this.toolEnv.setRedrawMainWindow();
+      this.toolEnv.setRedrawColorSelectorWindow();
+      this.toolEnv.setRedrawColorMixerWindow();
+    }
+  }
 
-        this.setColorPaletteElementValue(paletteColorIndex, paletteColor.color);
+  protected timeLineWindow_mousedown() {
 
-        this.setInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
+    let wnd = this.timeLineWindow;
+    let e = wnd.toolMouseEvent;
 
-        this.toolEnv.setRedrawMainWindow();
+    let context = this.toolContext;
+
+    let left = wnd.getTimeLineLeft();
+
+    if (e.offsetX < left) {
+
+      this.timeLineWindow_OnPlayPauseButton();
+    }
+    else {
+
+      this.timeLineWindow_ProcessFrameInput();
+    }
+  }
+
+  protected timeLineWindow_OnPlayPauseButton() {
+
+    let wnd = this.timeLineWindow;
+
+    let context = this.toolContext;
+    let env = this.toolEnv;
+    let aniSetting = context.document.animationSettingData;
+
+    if (context.animationPlaying) {
+
+      context.animationPlaying = false;
+
+      env.setRedrawTimeLineWindow();
+    }
+    else {
+
+      context.animationPlaying = true;
+      context.animationPlayingFPS = aniSetting.animationFrameParSecond;
+    }
+  }
+
+  protected timeLineWindow_ProcessFrameInput() {
+
+    let wnd = this.timeLineWindow;
+    let e = wnd.toolMouseEvent;
+
+    let context = this.toolContext;
+    let env = this.toolEnv;
+    let aniSetting = context.document.animationSettingData;
+
+    let clickedFrame = wnd.getFrameByLocation(e.offsetX, aniSetting);
+
+    if (clickedFrame != -1) {
+
+      this.setCurrentFrame(clickedFrame);
+      env.setRedrawMainWindowEditorWindow();
+      env.setRedrawTimeLineWindow();
+    }
+  }
+
+  protected timeLineWindow_mousemove() {
+
+    let wnd = this.timeLineWindow;
+    let e = wnd.toolMouseEvent;
+
+
+    if (e.isLeftButtonPressing()) {
+
+      this.timeLineWindow_ProcessFrameInput();
+    }
+  }
+
+  protected timeLineWindow_mouseup() {
+
+    let wnd = this.timeLineWindow;
+
+
+    wnd.endMouseDragging();
+  }
+
+  protected timeLineWindow_mousewheel() {
+
+    let wnd = this.timeLineWindow;
+    let e = wnd.toolMouseEvent;
+
+    let context = this.toolContext;
+    let env = this.toolEnv;
+    let aniSetting = context.document.animationSettingData;
+
+    if (env.isCtrlKeyPressing()) {
+
+      let addScale = 0.2;
+
+      if (e.wheelDelta > 0) {
+
+        aniSetting.timeLineWindowScale += addScale;
+      }
+      else {
+
+        aniSetting.timeLineWindowScale -= addScale;
+      }
+
+      if (aniSetting.timeLineWindowScale < 1.0) {
+
+        aniSetting.timeLineWindowScale = 1.0;
+      }
+
+      if (aniSetting.timeLineWindowScale > aniSetting.timeLineWindowScaleMax) {
+
+        aniSetting.timeLineWindowScale = aniSetting.timeLineWindowScaleMax;
+      }
+
+      env.setRedrawTimeLineWindow();
+    }
+  }
+
+  protected onPaletteColorModal_ColorIndexChanged() {
+
+    if (this.paletteColorWindow_EditLayer == null) {
+      return;
     }
 
-    protected setOperatorCursorLocationToMouse() {
+    let documentData = this.currentModalDialog_DocumentData;
+    let vectorLayer = this.paletteColorWindow_EditLayer;
 
-        vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
-        this.toolEnv.setRedrawEditorWindow();
+    let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);;
+
+    if (this.paletteColorWindow_Mode == OpenPaletteColorModalMode.LineColor) {
+
+      vectorLayer.line_PaletteColorIndex = paletteColorIndex;
     }
+    else {
+
+      vectorLayer.fill_PaletteColorIndex = paletteColorIndex;
+    }
+
+    //let paletteColor = documentData.paletteColos[paletteColorIndex];
+    //this.setInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
+    //this.setInputElementRangeValue(this.ID.paletteColorModal_currentAlpha, paletteColor.color[3], 0.0, 1.0);
+
+    this.displayPaletteColorModalColors(documentData, vectorLayer);
+
+    this.toolEnv.setRedrawMainWindow();
+  }
+
+  protected onPaletteColorModal_CurrentColorChanged() {
+
+    if (this.paletteColorWindow_EditLayer == null) {
+      return;
+    }
+
+    let documentData = this.currentModalDialog_DocumentData;
+    let vectorLayer = this.paletteColorWindow_EditLayer;
+    let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);
+    let paletteColor = documentData.paletteColors[paletteColorIndex];
+
+    this.getInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
+    paletteColor.color[3] = this.getInputElementRangeValue(this.ID.paletteColorModal_currentAlpha, 1.0, 1.0);
+
+    this.displayPaletteColorModalColors(documentData, vectorLayer);
+
+    this.toolEnv.setRedrawMainWindow();
+  }
+
+  protected onPaletteColorModal_ColorChanged(paletteColorIndex: int) {
+
+    if (this.paletteColorWindow_EditLayer == null) {
+
+      return;
+    }
+
+    let documentData = this.currentModalDialog_DocumentData;
+    let vectorLayer = this.paletteColorWindow_EditLayer;
+    let paletteColor = documentData.paletteColors[paletteColorIndex];
+
+    this.getInputElementColor(this.ID.paletteColorModal_colorValue + paletteColorIndex, paletteColor.color);
+
+    this.displayPaletteColorModalColors(documentData, vectorLayer);
+
+    this.toolEnv.setRedrawMainWindow();
+  }
+
+  protected onPaletteColorModal_ColorCanvas_mousedown() {
+
+    if (this.paletteColorWindow_EditLayer == null) {
+      return;
+    }
+
+    let wnd = this.paletteColorModal_colorCanvas;
+    let e = wnd.toolMouseEvent;
+
+    this.canvasRender.setContext(wnd);
+    this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
+
+    let documentData = this.currentModalDialog_DocumentData;
+    let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);
+    let paletteColor = documentData.paletteColors[paletteColorIndex];
+
+    paletteColor.color[0] = this.tempColor4[0];
+    paletteColor.color[1] = this.tempColor4[1];
+    paletteColor.color[2] = this.tempColor4[2];
+
+    this.setColorPaletteElementValue(paletteColorIndex, paletteColor.color);
+
+    this.setInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
+
+    this.toolEnv.setRedrawMainWindow();
+  }
+
+  protected setOperatorCursorLocationToMouse() {
+
+    vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
+    this.toolEnv.setRedrawEditorWindow();
+  }
 }
