@@ -10,6 +10,7 @@ import { UI_MenuButtons } from 'ui/menu_buttons';
 import { UI_ScrollView } from 'ui/scroll_view';
 import { UI_SubToolWindow } from 'ui/subtool_window';
 import { UI_CommandButtons } from 'ui/command_buttons';
+import { UI_LayerWindow } from 'ui/layer_window';
 
 // 大改修計画
 // ・レイヤーウィンドウをアウトライナーウィンドウにして、レイヤー以外の情報も表示できるようにする
@@ -216,7 +217,7 @@ window.onload = () => {
   _Main.mainWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.mainCanvas);
   _Main.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.editorCanvas);
   _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.webglCanvas);
-  _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
+  // _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
   //_Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
   _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
   _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
@@ -239,8 +240,13 @@ window.onload = () => {
   );
 
   ReactDOM.render(
-    React.createElement(UI_CommandButtons, { uiRef: _Main.uiCommandButtonsRef })
-    , document.getElementById("command-test-window")
+    React.createElement(UI_CommandButtons, { uiRef: _Main.uiLayerwindow_CommandButtonsRef })
+    , document.getElementById("layerWindowButtons")
+  );
+
+  ReactDOM.render(
+    React.createElement(UI_LayerWindow, { uiRef: _Main.uiLayerwindowRef })
+    , document.getElementById("layerWindow")
   );
 
   var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);

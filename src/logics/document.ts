@@ -92,6 +92,9 @@ export class DocumentLogic {
 
     static fixLoadedDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
 
+      layer.hashID = Layer.getHashID();
+      layer.bufferCanvasWindow = null;
+
         if (layer.isRenderTarget == undefined) {
             layer.isRenderTarget = true;
         }
@@ -102,8 +105,6 @@ export class DocumentLogic {
         if (layer.isMaskedByBelowLayer == undefined) {
             layer.isMaskedByBelowLayer = false;
         }
-
-        layer.bufferCanvasWindow = null;
 
         if (layer.type == LayerTypeID.vectorLayer) {
 
@@ -303,6 +304,7 @@ export class DocumentLogic {
 
     static fixSaveDocumentData_FixLayer_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
 
+        delete layer.hashID;
         delete layer.bufferCanvasWindow;
 
         layer.layerColor = this.vec4ToArray(layer.layerColor);

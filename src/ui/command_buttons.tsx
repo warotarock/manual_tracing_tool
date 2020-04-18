@@ -24,7 +24,7 @@ export interface UI_CommandButtonsParam {
 export function UI_CommandButtons({ uiRef }: UI_CommandButtonsParam) {
 
   return (
-    <React.Fragment>
+    <div className='command-buttons-container'>
       {
         uiRef.items.map(item => (
           <div key={item.index}>
@@ -37,6 +37,6 @@ export function UI_CommandButtons({ uiRef }: UI_CommandButtonsParam) {
           </div>
         ))
       }
-    </React.Fragment>
+    </div>
   );
 }

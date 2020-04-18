@@ -689,8 +689,10 @@ export class App_Main extends App_Event implements MainEditor {
 
         if (this.toolContext.redrawLayerWindow) {
 
-            this.clearWindow(this.layerWindow);
+            // this.clearWindow(this.layerWindow);
             this.drawLayerWindow(this.layerWindow);
+
+            this.uiLayerwindowRef.update(this.layerWindow.layerWindowItems);
 
             this.toolContext.redrawLayerWindow = false;
         }

@@ -1,6 +1,7 @@
 ﻿
 $activeBackground: #ddf;
-$hoverBackground: #eef;
+$hoverBackground: #f0f0ff;
+$selectedBackground: #eef;
 $buttonCornerRadius: 3px;
 
 .image-splite-system {
@@ -9,6 +10,10 @@ $buttonCornerRadius: 3px;
 
 .image-splite-layerbar {
     background-image: url(./res/layerbar_image01.png);
+}
+
+.image-splite-document {
+    background-image: url(./res/toolbar_image01.png);
 }
 
 .image-splite-subtool {
@@ -230,43 +235,43 @@ input[type=number] {
 }
 
 .subtool-window {
-    flex: 1;
-    border: solid 1px #000;
-    margin-top: 4px;
-    height: 1px;
+  flex: 1;
+  border: solid 1px #000;
+  margin-top: 4px;
+  height: 1px;
 
-    .list-item {
-        display: flex;
-        box-sizing: border-box;
-        height: 64px;
-        padding-left: 6px;
-        line-height: 64px;
-        vertical-align: middle;
-        background-color: #fff;
-        background-size: 128px;
-        background-repeat: no-repeat;
-        border-bottom: 1px solid #eee;
-        /*&:nth-child(odd) {
-                background-color: #eeeeee;
-            }*/
-        &:hover {
-            background-color: $hoverBackground;
-        }
-
-        &.active {
-            background-color: $activeBackground;
-        }
-
-        .spacer {
-            width: 120px;
-        }
-
-        .command-button {
-            width: 64px;
-            height: 64px;
-            background-size: 256px;
-        }
+  .list-item {
+    display: flex;
+    box-sizing: border-box;
+    height: 64px;
+    padding-left: 6px;
+    line-height: 64px;
+    vertical-align: middle;
+    background-color: #fff;
+    background-size: 128px;
+    background-repeat: no-repeat;
+    border-bottom: 1px solid #eee;
+    /*&:nth-child(odd) {
+            background-color: #eeeeee;
+        }*/
+    &:hover {
+      background-color: $hoverBackground;
     }
+
+    &.active {
+      background-color: $activeBackground;
+    }
+
+    .spacer {
+      width: 120px;
+    }
+
+    .command-button {
+      width: 64px;
+      height: 64px;
+      background-size: 256px;
+    }
+  }
 }
 
 .palette-window {
@@ -555,34 +560,88 @@ input[type=number] {
     }
 }
 
-.command-test-window {
-    display: flex;
-    // margin-top: 4px;
-    // border: 1px solid #000;
+.command-buttons-container {
+  display: flex;
+  width: 100%;
+  // margin-top: 4px;
+  // border: 1px solid #000;
 
-    div {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        // padding: 3px 2px 3px 2px;
-        background-color: #fff;
+  div {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    // padding: 3px 2px 3px 2px;
+    background-color: #fff;
 
-        &:hover {
-            background-color: $hoverBackground;
-        }
-
-        button {
-            width: 100%;
-            height: 100%;
-            // border: 1px solid #000;
-            // border-radius: 3px;
-            border: none;
-            outline:none;
-
-            line-height: 24px;
-
-            background-size: 32px;
-            background-color: transparent;
-        }
+    &:hover {
+      background-color: $hoverBackground;
     }
+
+    button {
+      width: 100%;
+      height: 100%;
+      // border: 1px solid #000;
+      // border-radius: 3px;
+      border: none;
+      outline:none;
+
+      line-height: 24px;
+
+      background-size: 32px;
+      background-color: transparent;
+    }
+  }
+}
+
+.layer-window-items-container {
+  margin-top: 4px;
+  // border: 1px solid #000;
+
+  .row {
+    display: flex;
+    // border: 1px solid #eee;
+    cursor: default;
+    user-select: none;
+    height: 30px;
+
+    &:hover {
+      background-color: $hoverBackground;
+    }
+
+    &.current {
+      background-color: $activeBackground;
+    }
+
+    &.selected {
+      background-color: $selectedBackground;
+    }
+
+    .visibility-icon-container {
+      padding-left: 3px;;
+      padding-top: 4px;
+      width: 24px;
+
+      .visibility-icon {
+        $srcSize: 64px;
+        $iconSize: 22px;
+        $scale: $iconSize / $srcSize;
+        background-size: 512px * $scale;
+        background-position-y: -128px * $scale;
+        width: $iconSize;
+        height: $iconSize;
+      }
+    }
+
+    .layer-name {
+      flex: 1;
+      font-size: 14.0px;
+      line-height: 30px;
+      vertical-align: middle;
+    }
+  }
+}
+
+.test-window {
+  margin-top: 4px;
+  border: 1px solid #000;
 }

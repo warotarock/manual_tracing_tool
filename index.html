@@ -46,8 +46,8 @@
   <main>
     <div class="side-panel1">
       <div id="sideWindow1" class="layer-window">
-        <div class="command-test-window" id="command-test-window"></div>
-        <canvas id="layerCanvas"></canvas>
+        <div id="layerWindowButtons"></div>
+        <div id="layerWindow"></div>
       </div>
       <!--<div id="sideWindow2" class="subtool-window">
                 <canvas id="subtoolCanvas"></canvas>
@@ -128,6 +128,9 @@
           </div>
         </div>
       </div>
+      <div id="test-window" class="test-window">
+        <!-- <canvas id="layerCanvas"></canvas> -->
+      </div>
     </div>
   </main>
   <footer id="footer">
@@ -164,7 +167,7 @@
     </div>
     <div>
       <label>
-        レイヤー色　
+        レイヤー色
         <input type="color" id="layerPropertyModal_layerColor">
       </label>
       <input type="range" id="layerPropertyModal_layerAlpha" min="0" max="500">
@@ -377,7 +380,7 @@
       <br />
     </div>
     <div>
-      背景　　　
+      背景
       <label>
         <input type="radio" name="exportImageFileModal_backGroundType" value="1" checked>
         最後のパレットの色

@@ -10,7 +10,7 @@ import { Command_DeleteSelectedPoints } from 'commands/delete_points';
 import { Command_CopyGeometry, Command_PasteGeometry } from 'commands/edit_copy';
 import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown } from 'commands/edit_layer';
 
-import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, OpenPaletteColorModalMode, RectangleLayoutArea } from 'app/view.class';
+import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, OpenPaletteColorModalMode, RectangleLayoutArea, LayerWindowItem } from 'app/view.class';
 import { App_Document } from 'app/document';
 import { UI_CommandButtonsItem } from '../ui/command_buttons';
 
@@ -53,15 +53,15 @@ export class App_Event extends App_Document {
       , false
     );
 
-    this.setCanvasWindowMouseEvent(this.layerWindow, this.layerWindow
-      , this.layerWindow_mousedown
-      , this.layerWindow_mousemove
-      , this.layerWindow_mouseup
-      , null
-      , false
-    );
+    // this.setCanvasWindowMouseEvent(this.layerWindow, this.layerWindow
+    //   , this.layerWindow_mousedown
+    //   , this.layerWindow_mousemove
+    //   , this.layerWindow_mouseup
+    //   , null
+    //   , false
+    // );
 
-    this.uiCommandButtonsRef.onClick = ((item) => this.layerWindow_mousedown_LayerCommandButton(item));
+    this.uiLayerwindow_CommandButtonsRef.onClick = ((item) => this.layerWindow_mousedown_LayerCommandButton(item));
 
     //this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
     //    , this.subtoolWindow_mousedown
@@ -317,6 +317,16 @@ export class App_Event extends App_Document {
     this.uiSubToolWindowRef.itemButton_Click = (item: SubToolViewItem) => {
 
       this.subtoolWindow_Button_Click(item);
+    }
+
+    this.uiLayerwindowRef.item_Click = (item: LayerWindowItem) => {
+
+      this.layerWindow_Item_Click(item);
+    }
+
+    this.uiLayerwindowRef.visibility_Click = (item: LayerWindowItem) => {
+
+      this.layerWindow_Visibility_Click(item);
     }
 
     // Modal window
@@ -1538,11 +1548,7 @@ export class App_Event extends App_Document {
 
       if (clickedX <= selectedItem.textLeft) {
 
-        this.setLayerVisiblity(selectedItem.layer, !selectedItem.layer.isVisible);
-        Layer.updateHierarchicalStatesRecursive(this.toolEnv.document.rootLayer);
-        this.activateCurrentTool();
-
-        this.toolEnv.setRedrawMainWindowEditorWindow();
+        this.layerWindow_Visibility_Click(selectedItem);
       }
       else {
 
@@ -1556,25 +1562,50 @@ export class App_Event extends App_Document {
 
           // Select layer content
 
-          if (this.toolEnv.isShiftKeyPressing()) {
-
-            this.setLayerSelection(selectedLayer, !selectedLayer.isSelected);
-            this.activateCurrentTool();
-            this.startShowingLayerItem(selectedItem);
-          }
-          else {
-
-            this.setCurrentLayer(selectedLayer);
-            this.startShowingCurrentLayer();
-          }
-
-          Layer.updateHierarchicalStatesRecursive(selectedLayer);
-
-          this.toolEnv.setRedrawMainWindowEditorWindow();
+          this.layerWindow_Item_Click(selectedItem);
         }
       }
     }
 
+    this.toolEnv.setRedrawLayerWindow();
+    this.toolEnv.setRedrawSubtoolWindow();
+  }
+
+  protected layerWindow_Item_Click(item: LayerWindowItem) {
+
+    let env = this.toolEnv;
+    let selectedLayer = item.layer;
+
+    if (this.toolEnv.isShiftKeyPressing()) {
+
+      this.setLayerSelection(selectedLayer, !selectedLayer.isSelected);
+      this.activateCurrentTool();
+      this.startShowingLayerItem(item);
+    }
+    else {
+
+      this.setCurrentLayer(selectedLayer);
+      this.startShowingCurrentLayer();
+    }
+
+    Layer.updateHierarchicalStatesRecursive(selectedLayer);
+
+    this.toolEnv.setRedrawMainWindowEditorWindow();
+    this.toolEnv.setRedrawLayerWindow();
+    this.toolEnv.setRedrawSubtoolWindow();
+  }
+
+  protected layerWindow_Visibility_Click(item: LayerWindowItem) {
+
+    let env = this.toolEnv;
+
+    this.setLayerVisiblity(item.layer, !item.layer.isVisible);
+
+    Layer.updateHierarchicalStatesRecursive(this.toolEnv.document.rootLayer);
+
+    this.activateCurrentTool();
+
+    this.toolEnv.setRedrawMainWindowEditorWindow();
     this.toolEnv.setRedrawLayerWindow();
     this.toolEnv.setRedrawSubtoolWindow();
   }
@@ -1594,9 +1625,8 @@ export class App_Event extends App_Document {
     }
 
     let buttonIndex = 0; // TODO: �����{�^�����K�v������
-    let inpuSideID = tool.getOptionButtonState(buttonIndex, env);
 
-    if (tool.setOptionButtonState(buttonIndex, inpuSideID, env)) {
+    if (tool.optionButton_Click(buttonIndex, env)) {
 
       item.buttonStateID = tool.getOptionButtonState(buttonIndex, env);
 
