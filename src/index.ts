@@ -11,6 +11,7 @@ import { UI_ScrollView } from 'ui/scroll_view';
 import { UI_SubToolWindow } from 'ui/subtool_window';
 import { UI_CommandButtons } from 'ui/command_buttons';
 import { UI_LayerWindow } from 'ui/layer_window';
+import { UI_PaletteSelectorWindow } from 'ui/palette_selector_window';
 
 // 大改修計画
 // ・レイヤーウィンドウをアウトライナーウィンドウにして、レイヤー以外の情報も表示できるようにする
@@ -67,6 +68,7 @@ import { UI_LayerWindow } from 'ui/layer_window';
 //   ・ImageResourceがPoing3Dに依存しているのをどうにかしたい
 //   ・複数レイヤー選択、グループレイヤー選択時の全てのツールの動作確認修正
 // ・Render2DのtrnasformMatrixの更新やコピーのタイミングが分かりづらすぎる。というかRender2Dも3Dも描画関係はもうわけわからん…なんとかしる！
+// ・enumを<int>でキャストしているところは厳密といえばそうだがどうなのか
 
 // 既知のバグ (remaining bugs)
 // ・グループレイヤー
@@ -220,7 +222,7 @@ window.onload = () => {
   // _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
   //_Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
   _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
-  _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
+  // _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
   _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
   _Main.drawGPUWindow.createCanvas();
   _Main.foreLayerRenderWindow.createCanvas();
@@ -249,6 +251,11 @@ window.onload = () => {
     , document.getElementById("layerWindow")
   );
 
+
+  ReactDOM.render(
+    React.createElement(UI_PaletteSelectorWindow, { uiRef: _Main.uiPaletteSelectorWindowRef })
+    , document.getElementById("palette-selector-window")
+  );
   var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
   for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
 

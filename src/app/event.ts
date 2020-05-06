@@ -1,5 +1,5 @@
 import { float, StringIsNullOrEmpty, int } from 'base/conversion';
-import { Layer, DocumentData } from 'base/data';
+import { Layer, DocumentData, PaletteColor } from 'base/data';
 import { EditModeID, MainToolID, ToolBaseWindow, DrawLineToolSubToolID, ModalToolID } from 'base/tool';
 
 import { ColorLogic } from 'logics/color';
@@ -61,7 +61,7 @@ export class App_Event extends App_Document {
     //   , false
     // );
 
-    this.uiLayerwindow_CommandButtonsRef.onClick = ((item) => this.layerWindow_mousedown_LayerCommandButton(item));
+    this.uiLayerwindow_CommandButtonsRef.commandButton_Click = ((item) => this.layerWindow_mousedown_LayerCommandButton(item));
 
     //this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
     //    , this.subtoolWindow_mousedown
@@ -71,13 +71,16 @@ export class App_Event extends App_Document {
     //    , false
     //);
 
-    this.setCanvasWindowMouseEvent(this.paletteSelectorWindow, this.paletteSelectorWindow
-      , this.paletteSelectorWindow_mousedown
-      , null
-      , null
-      , null
-      , false
-    );
+    // this.setCanvasWindowMouseEvent(this.paletteSelectorWindow, this.paletteSelectorWindow
+    //   , this.paletteSelectorWindow_mousedown
+    //   , null
+    //   , null
+    //   , null
+    //   , false
+    // );
+
+    this.uiPaletteSelectorWindowRef.commandButton_Click = ((item) => this.paletteSelectorWindow_CommandButton_Click(item));
+    this.uiPaletteSelectorWindowRef.item_Click = ((paletteColorIndex, item) => this.paletteSelectorWindow_Item_Click(paletteColorIndex, item));
 
     this.setCanvasWindowMouseEvent(this.timeLineWindow, this.timeLineWindow
       , this.timeLineWindow_mousedown
@@ -1656,52 +1659,73 @@ export class App_Event extends App_Document {
     this.currentTool.toolWindowItemClick(env);
   }
 
-  protected paletteSelectorWindow_mousedown() {
+  // protected paletteSelectorWindow_mousedown() {
 
-    let context = this.toolContext;
+  //   let context = this.toolContext;
+  //   let wnd = this.paletteSelectorWindow;
+  //   let e = wnd.toolMouseEvent;
+  //   let env = this.toolEnv;
+  //   let documentData = context.document;
+
+  //   if (e.isLeftButtonPressing()) {
+
+  //     let button_LayoutArea = this.hitTestLayout(wnd.commandButtonAreas, e.location[0], e.location[1]);
+
+  //     if (button_LayoutArea != null) {
+
+  //       wnd.currentTargetID = button_LayoutArea.index;
+
+  //       env.setRedrawColorSelectorWindow();
+  //       env.setRedrawColorMixerWindow();
+  //     }
+
+  //     let palette_LayoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
+
+  //     if (palette_LayoutArea != null) {
+
+  //       let paletteColorIndex = palette_LayoutArea.index;
+  //       let color = documentData.paletteColors[paletteColorIndex];
+
+  //       this.paletteSelectorWindow_Item_Click(paletteColorIndex, color);
+  //       }
+  //   }
+  // }
+
+  paletteSelectorWindow_CommandButton_Click(item: UI_CommandButtonsItem) {
+
     let wnd = this.paletteSelectorWindow;
-    let e = wnd.toolMouseEvent;
     let env = this.toolEnv;
-    let documentData = context.document;
 
-    if (e.isLeftButtonPressing()) {
+    wnd.currentTargetID = item.index;
 
-      if (env.currentVectorLayer != null) {
+    env.setRedrawColorSelectorWindow();
+    env.setRedrawColorMixerWindow();
+  }
 
-        let button_LayoutArea = this.hitTestLayout(wnd.commandButtonAreas, e.location[0], e.location[1]);
+  paletteSelectorWindow_Item_Click(paletteColorIndex: int, color: PaletteColor) {
 
-        if (button_LayoutArea != null) {
+    let wnd = this.paletteSelectorWindow;
+    let env = this.toolEnv;
 
-          wnd.currentTargetID = button_LayoutArea.index;
-
-          env.setRedrawColorSelectorWindow();
-          env.setRedrawColorMixerWindow();
-        }
-
-        let palette_LayoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
-
-        if (palette_LayoutArea != null) {
-
-          let paletteColorIndex = palette_LayoutArea.index;
-          let color = documentData.paletteColors[paletteColorIndex];
-
-          let destColor = this.getPaletteSelectorWindow_SelectedColor();
-          vec4.copy(destColor, color.color);
-
-          if (wnd.currentTargetID == PaletteSelectorWindowButtonID.lineColor) {
-
-            env.currentVectorLayer.line_PaletteColorIndex = paletteColorIndex;
-          }
-          else if (wnd.currentTargetID == PaletteSelectorWindowButtonID.fillColor) {
-
-            env.currentVectorLayer.fill_PaletteColorIndex = paletteColorIndex;
-          }
-
-          env.setRedrawLayerWindow();
-          env.setRedrawMainWindowEditorWindow();
-        }
-      }
+    if (env.currentVectorLayer == null) {
+      return;
     }
+
+    let destColor = this.getPaletteSelectorWindow_SelectedColor();
+    vec4.copy(destColor, color.color);
+
+    if (wnd.currentTargetID == PaletteSelectorWindowButtonID.lineColor) {
+
+      env.currentVectorLayer.line_PaletteColorIndex = paletteColorIndex;
+    }
+    else if (wnd.currentTargetID == PaletteSelectorWindowButtonID.fillColor) {
+
+      env.currentVectorLayer.fill_PaletteColorIndex = paletteColorIndex;
+    }
+
+    env.setRedrawLayerWindow();
+    env.setRedrawMainWindowEditorWindow();
+
   }
 
   protected setColorMixerRGBElementEvent(id: string, elementID: int) {

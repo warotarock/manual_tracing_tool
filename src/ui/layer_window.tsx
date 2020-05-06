@@ -1,7 +1,5 @@
 import * as React from 'react';
 
-import { int } from 'base/conversion';
-import { Layer } from 'base/data';
 import { LayerWindowItem } from 'app/view.class';
 
 export interface UI_LayerWindowRef {
@@ -38,9 +36,7 @@ export function UI_LayerWindow({ uiRef }: UI_LayerWindowParam) {
     <div className='layer-window-items-container'>
       {
         items.map(item => (
-          <React.Fragment key={ item.index }>
-            <UI_LayerWindowRow item={ item } uiRef={ uiRef } />
-          </React.Fragment>
+          <UI_LayerWindowRow key={ item.index } item={ item } uiRef={ uiRef } />
         ))
       }
     </div>
@@ -62,7 +58,7 @@ function UI_LayerWindowRow({ item, uiRef }: { item: LayerWindowItem, uiRef: UI_L
       </div>
       <div className='layer-name'
         style={{ paddingLeft: `${5 + item.hierarchyDepth * 10}px` }}
-        onClick={() => { uiRef.item_Click(item); }}
+        onMouseDown={() => { uiRef.item_Click(item); }}
       >
         { item.layer.name }
       </div>

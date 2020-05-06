@@ -707,8 +707,10 @@ export class App_Main extends App_Event implements MainEditor {
 
         if (this.toolContext.redrawPaletteSelectorWindow) {
 
-            this.clearWindow(this.paletteSelectorWindow);
+            // this.clearWindow(this.paletteSelectorWindow);
             this.drawPaletteSelectorWindow();
+
+            this.uiPaletteSelectorWindowRef.update(this.toolContext.document.paletteColors);
 
             this.toolContext.redrawPaletteSelectorWindow = false;
         }

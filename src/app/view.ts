@@ -40,7 +40,8 @@ import {
 import { UI_SubToolWindowRef } from 'ui/subtool_window';
 import { UI_MenuButtonsRef } from 'ui/menu_buttons';
 import { UI_CommandButtonsRef } from 'ui/command_buttons';
-import { UI_LayerWindowRef } from '../ui/layer_window';
+import { UI_LayerWindowRef } from 'ui/layer_window';
+import { UI_PaletteSelectorWindowRef } from 'ui/palette_selector_window';
 
 declare var Custombox: any;
 
@@ -63,13 +64,15 @@ export class App_View {
   uiMenuButtonsRef: UI_MenuButtonsRef = {};
   uiLayerwindow_CommandButtonsRef: UI_CommandButtonsRef = {
     items: [
-      { index: <int>LayerWindowButtonID.addLayer, iconIndex: 1 },
-      { index: <int>LayerWindowButtonID.deleteLayer, iconIndex: 2 },
-      { index: <int>LayerWindowButtonID.moveUp, iconIndex: 3 },
-      { index: <int>LayerWindowButtonID.moveDown, iconIndex: 4 },
+      { index: LayerWindowButtonID.addLayer, iconIndex: 1 },
+      { index: LayerWindowButtonID.deleteLayer, iconIndex: 2 },
+      { index: LayerWindowButtonID.moveUp, iconIndex: 3 },
+      { index: LayerWindowButtonID.moveDown, iconIndex: 4 },
     ]
   };
   uiLayerwindowRef: UI_LayerWindowRef = {
+  };
+  uiPaletteSelectorWindowRef: UI_PaletteSelectorWindowRef = {
   };
 
   // Drawing variables
@@ -165,7 +168,7 @@ export class App_View {
     // this.layerWindow.initializeContext();
     // this.subtoolWindow.initializeContext();
 
-    this.paletteSelectorWindow.initializeContext();
+    // this.paletteSelectorWindow.initializeContext();
     this.colorMixerWindow_colorCanvas.initializeContext();
 
     this.timeLineWindow.initializeContext();
@@ -202,7 +205,7 @@ export class App_View {
 
     // this.resizeCanvasToCurrent(this.layerWindow);
     // this.resizeCanvasToCurrent(this.subtoolWindow);
-    this.resizeCanvasToCurrent(this.paletteSelectorWindow);
+    // this.resizeCanvasToCurrent(this.paletteSelectorWindow);
     this.resizeCanvasToCurrent(this.timeLineWindow);
   }
 
@@ -664,8 +667,8 @@ export class App_View {
 
     this.paletteSelectorWindow.commandButtonAreas = new List<RectangleLayoutArea>();
 
-    this.paletteSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PaletteSelectorWindowButtonID.lineColor).setIcon(5));
-    this.paletteSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(<int>PaletteSelectorWindowButtonID.fillColor).setIcon(6));
+    this.paletteSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(PaletteSelectorWindowButtonID.lineColor).setIcon(5));
+    this.paletteSelectorWindow.commandButtonAreas.push((new RectangleLayoutArea()).setIndex(PaletteSelectorWindowButtonID.fillColor).setIcon(6));
   }
 
   protected paletteSelector_SetCurrentModeForCurrentLayer() {
