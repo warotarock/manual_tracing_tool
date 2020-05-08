@@ -234,19 +234,6 @@ input[type=number] {
   }
 }
 
-.palette-window {
-  overflow: hidden;
-  height: 238px;
-  margin-bottom: 5px;
-  border: 1px solid;
-
-  canvas {
-    border: none;
-    width: 100%;
-    height: 100%;
-  }
-}
-
 .time-line-window {
   overflow: hidden;
   height: 46px;
@@ -306,6 +293,210 @@ input[type=number] {
     }
   }
 }
+
+// Sub windows
+
+.command-buttons-container {
+  display: flex;
+  width: 100%;
+  // margin-top: 4px;
+  // border: 1px solid #000;
+
+  div {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    // padding: 3px 2px 3px 2px;
+
+    &:hover {
+      background-color: $hoverBackground;
+    }
+
+    button {
+      width: 100%;
+      height: 100%;
+      // border: 1px solid #000;
+      // border-radius: 3px;
+      border: none;
+      outline: none;
+
+      line-height: 24px;
+
+      background-size: 32px;
+      background-color: transparent;
+
+      &.selected {
+        background-color: $activeBackground;
+      }
+    }
+  }
+}
+
+.subtool-window {
+  flex: 1;
+  height: 1px;
+  border: solid 1px $windowBorder;
+  background-color: $windowBackground;
+
+  .item {
+    display: flex;
+    box-sizing: border-box;
+    height: 64px;
+    padding-left: 6px;
+    line-height: 64px;
+    vertical-align: middle;
+    background-size: 128px;
+    background-repeat: no-repeat;
+    border-bottom: 1px solid darken($systemBackground, 1);
+
+    /*&:nth-child(odd) {
+            background-color: #eeeeee;
+        }*/
+    &:hover {
+      background-color: $hoverBackground;
+    }
+
+    &.active {
+      background-color: $activeBackground;
+    }
+
+    .spacer {
+      width: 120px;
+    }
+
+    .command-button {
+      width: 64px;
+      height: 64px;
+      background-size: 256px;
+    }
+  }
+}
+
+.layer-window {
+  overflow: hidden;
+  flex: 1;
+  border: solid 1px $windowBorder;
+  background-color: $windowBackground;
+
+  .layer-window-items {
+    // margin-top: 4px;
+    // border: 1px solid #000;
+
+    .item {
+      display: flex;
+      // border: 1px solid #eee;
+      cursor: default;
+      user-select: none;
+      height: 30px;
+
+      &:hover {
+        background-color: $hoverBackground;
+      }
+
+      &.current {
+        background-color: $activeBackground;
+      }
+
+      &.selected {
+        background-color: $selectedBackground;
+      }
+
+      .visibility-icon-container {
+        padding-left: 3px;
+        ;
+        padding-top: 4px;
+        width: 24px;
+
+        .visibility-icon {
+          $srcSize: 64px;
+          $iconSize: 22px;
+          $scale: $iconSize / $srcSize;
+          background-size: 512px * $scale;
+          background-position-y: -128px * $scale;
+          width: $iconSize;
+          height: $iconSize;
+        }
+      }
+
+      .layer-name {
+        flex: 1;
+        font-size: 14.0px;
+        line-height: 30px;
+        vertical-align: middle;
+      }
+    }
+  }
+}
+
+.palette-selector-window {
+  padding: 2px;
+  border: solid 1px $windowBorder;
+  background-color: $windowBackground;
+
+  .palette-selector-window-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    // column-gap: 1px;
+    // row-gap: 1px;
+    // background-color: #000;
+    border-color: #000;
+    border-left: solid 1px;
+    border-top: solid 1px;
+
+    .item-container {
+      margin: 0px;
+
+      &:hover {
+
+        .item:not(.selected) {
+
+          &::after {
+            position: absolute;
+            content: ' ';
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            bottom: 0px;
+            border: solid 3px $activeBackground;
+            z-index: 5;
+          }
+        }
+      }
+
+      .item {
+        box-sizing: border-box;
+        height: 17px;
+        position: relative;
+        border-color: #000;
+        border-right: solid 1px;
+        border-bottom: solid 1px;
+
+        &.selected {
+          // box-shadow: 0 0 0 3px #99f;
+          // border: solid 3px #99f;
+
+          &::after {
+            position: absolute;
+            content: ' ';
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: solid 3px #99f;
+            z-index: 5;
+          }
+        }
+      }
+    }
+  }
+}
+
+.test-window {
+  margin-top: 4px;
+  border: 1px solid #000;
+}
+
+// modal windows
 
 .modalDialogWindow {
   background-color: #fff;
@@ -520,204 +711,4 @@ input[type=number] {
     margin-left: 15px;
     margin-top: 15px;
   }
-}
-
-.command-buttons-container {
-  display: flex;
-  width: 100%;
-  // margin-top: 4px;
-  // border: 1px solid #000;
-
-  div {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    // padding: 3px 2px 3px 2px;
-
-    &:hover {
-      background-color: $hoverBackground;
-    }
-
-    button {
-      width: 100%;
-      height: 100%;
-      // border: 1px solid #000;
-      // border-radius: 3px;
-      border: none;
-      outline: none;
-
-      line-height: 24px;
-
-      background-size: 32px;
-      background-color: transparent;
-
-      &.selected {
-        background-color: $activeBackground;
-      }
-    }
-  }
-}
-
-.subtool-window {
-  flex: 1;
-  height: 1px;
-  border: solid 1px $windowBorder;
-  background-color: $windowBackground;
-
-  .list-item {
-    display: flex;
-    box-sizing: border-box;
-    height: 64px;
-    padding-left: 6px;
-    line-height: 64px;
-    vertical-align: middle;
-    background-size: 128px;
-    background-repeat: no-repeat;
-    border-bottom: 1px solid darken($systemBackground, 1);
-
-    /*&:nth-child(odd) {
-            background-color: #eeeeee;
-        }*/
-    &:hover {
-      background-color: $hoverBackground;
-    }
-
-    &.active {
-      background-color: $activeBackground;
-    }
-
-    .spacer {
-      width: 120px;
-    }
-
-    .command-button {
-      width: 64px;
-      height: 64px;
-      background-size: 256px;
-    }
-  }
-}
-
-.layer-window {
-  overflow: hidden;
-  flex: 1;
-  border: solid 1px $windowBorder;
-  background-color: $windowBackground;
-
-  .layer-window-items-container {
-    margin-top: 4px;
-    // border: 1px solid #000;
-
-    .row {
-      display: flex;
-      // border: 1px solid #eee;
-      cursor: default;
-      user-select: none;
-      height: 30px;
-
-      &:hover {
-        background-color: $hoverBackground;
-      }
-
-      &.current {
-        background-color: $activeBackground;
-      }
-
-      &.selected {
-        background-color: $selectedBackground;
-      }
-
-      .visibility-icon-container {
-        padding-left: 3px;
-        ;
-        padding-top: 4px;
-        width: 24px;
-
-        .visibility-icon {
-          $srcSize: 64px;
-          $iconSize: 22px;
-          $scale: $iconSize / $srcSize;
-          background-size: 512px * $scale;
-          background-position-y: -128px * $scale;
-          width: $iconSize;
-          height: $iconSize;
-        }
-      }
-
-      .layer-name {
-        flex: 1;
-        font-size: 14.0px;
-        line-height: 30px;
-        vertical-align: middle;
-      }
-    }
-  }
-}
-
-.palette-selector-window {
-  padding: 2px;
-  border: solid 1px $windowBorder;
-  background-color: $windowBackground;
-
-  .palette-selector-window-items {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-    // column-gap: 1px;
-    // row-gap: 1px;
-    // background-color: #000;
-    border-color: #000;
-    border-left: solid 1px;
-    border-top: solid 1px;
-
-    .item-container {
-      margin: 0px;
-
-      &:hover {
-
-        .item:not(.selected) {
-
-          &::after {
-            position: absolute;
-            content: ' ';
-            top: 0px;
-            left: 0px;
-            right: 0px;
-            bottom: 0px;
-            border: solid 3px $activeBackground;
-            z-index: 5;
-          }
-        }
-      }
-
-      .item {
-        box-sizing: border-box;
-        height: 17px;
-        position: relative;
-        border-color: #000;
-        border-right: solid 1px;
-        border-bottom: solid 1px;
-
-        &.selected {
-          // box-shadow: 0 0 0 3px #99f;
-          // border: solid 3px #99f;
-
-          &::after {
-            position: absolute;
-            content: ' ';
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            border: solid 3px #99f;
-            z-index: 5;
-          }
-        }
-      }
-    }
-  }
-}
-
-.test-window {
-  margin-top: 4px;
-  border: 1px solid #000;
 }

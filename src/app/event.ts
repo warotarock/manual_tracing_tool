@@ -61,7 +61,7 @@ export class App_Event extends App_Document {
     //   , false
     // );
 
-    this.uiLayerwindow_CommandButtonsRef.commandButton_Click = ((item) => this.layerWindow_mousedown_LayerCommandButton(item));
+    // this.uiLayerwindow_CommandButtonsRef.commandButton_Click = ((item) => this.layerWindow_mousedown_LayerCommandButton(item));
 
     //this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
     //    , this.subtoolWindow_mousedown
@@ -312,22 +312,27 @@ export class App_Event extends App_Document {
 
     // React conponents
 
-    this.uiSubToolWindowRef.item_Click = (item: SubToolViewItem) => {
+    this.uiSubToolWindowRef.item_Click = (item) => {
 
       this.subtoolWindow_Item_Click(item);
     }
 
-    this.uiSubToolWindowRef.itemButton_Click = (item: SubToolViewItem) => {
+    this.uiSubToolWindowRef.itemButton_Click = (item) => {
 
       this.subtoolWindow_Button_Click(item);
     }
 
-    this.uiLayerwindowRef.item_Click = (item: LayerWindowItem) => {
+    this.uiLayerwindowRef.commandButton_Click = ((item) => {
+
+      this.layerWindow_mousedown_LayerCommandButton(item);
+    });
+
+    this.uiLayerwindowRef.item_Click = (item) => {
 
       this.layerWindow_Item_Click(item);
     }
 
-    this.uiLayerwindowRef.visibility_Click = (item: LayerWindowItem) => {
+    this.uiLayerwindowRef.visibility_Click = (item) => {
 
       this.layerWindow_Visibility_Click(item);
     }

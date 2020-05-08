@@ -237,13 +237,8 @@ window.onload = () => {
   );
 
   ReactDOM.render(
-    React.createElement(UI_ScrollView, { content: UI_SubToolWindow, uiRef: _Main.uiSubToolWindowRef, wheelScrollY: 32 })
+    React.createElement(UI_SubToolWindow, { uiRef: _Main.uiSubToolWindowRef })
     , document.getElementById(_Main.ID.subtoolWindow)
-  );
-
-  ReactDOM.render(
-    React.createElement(UI_CommandButtons, { uiRef: _Main.uiLayerwindow_CommandButtonsRef })
-    , document.getElementById("layerWindowButtons")
   );
 
   ReactDOM.render(
@@ -251,11 +246,11 @@ window.onload = () => {
     , document.getElementById("layerWindow")
   );
 
-
   ReactDOM.render(
     React.createElement(UI_PaletteSelectorWindow, { uiRef: _Main.uiPaletteSelectorWindowRef })
     , document.getElementById("palette-selector-window")
   );
+
   var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
   for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
 

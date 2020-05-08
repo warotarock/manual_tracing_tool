@@ -62,18 +62,8 @@ export class App_View {
 
   uiSubToolWindowRef: UI_SubToolWindowRef = {};
   uiMenuButtonsRef: UI_MenuButtonsRef = {};
-  uiLayerwindow_CommandButtonsRef: UI_CommandButtonsRef = {
-    items: [
-      { index: LayerWindowButtonID.addLayer, iconIndex: 1 },
-      { index: LayerWindowButtonID.deleteLayer, iconIndex: 2 },
-      { index: LayerWindowButtonID.moveUp, iconIndex: 3 },
-      { index: LayerWindowButtonID.moveDown, iconIndex: 4 },
-    ]
-  };
-  uiLayerwindowRef: UI_LayerWindowRef = {
-  };
-  uiPaletteSelectorWindowRef: UI_PaletteSelectorWindowRef = {
-  };
+  uiLayerwindowRef: UI_LayerWindowRef = {};
+  uiPaletteSelectorWindowRef: UI_PaletteSelectorWindowRef = {};
 
   // Drawing variables
 

@@ -2,6 +2,8 @@ import * as React from 'react';
 
 import { SubToolViewItem } from 'app/view.class';
 
+import { UI_ScrollView } from 'ui/scroll_view';
+
 export interface UI_SubToolWindowRef {
 
   update?(items: SubToolViewItem[], subToolIndex_: number): void;
@@ -36,25 +38,27 @@ export function UI_SubToolWindow({ uiRef }: UI_SubToolWindowParam) {
   });
 
   return (
-    <div>
-      {
-        items.map(item => (
-          <div key={item.subToolIndex}
-            className={`list-item ${item.tool.toolBarImage.cssImageClassName} ${active_SubToolIndex == item.subToolIndex ? 'active' : ''}`}
-            style={{ backgroundPosition: `0 -${item.tool.toolBarImageIndex * 64}px`, opacity: (item.isAvailable ? 1.0 : 0.5) }}
-            onClick={() => { uiRef.item_Click(item); }}
-          >
-            <div className='spacer'></div>
-            {item.buttons.length > 0 &&
-              <div className='command-button image-splite-system'
-                style={{ backgroundPosition: `-${(item.buttonStateID - 1) * 64}px 0` }}
-                onClick={() => { uiRef.itemButton_Click(item); }}
-              >
-              </div>
-            }
-          </div>
-        ))
-      }
-    </div>
+    <UI_ScrollView wheelScrollY={32}>
+      <div>
+        {
+          items.map(item => (
+            <div key={item.subToolIndex}
+              className={`item ${item.tool.toolBarImage.cssImageClassName} ${active_SubToolIndex == item.subToolIndex ? 'active' : ''}`}
+              style={{ backgroundPosition: `0 -${item.tool.toolBarImageIndex * 64}px`, opacity: (item.isAvailable ? 1.0 : 0.5) }}
+              onMouseDown={(e) => { if (e.button == 0) { uiRef.item_Click(item); } }}
+            >
+              <div className='spacer'></div>
+              {item.buttons.length > 0 &&
+                <div className='command-button image-splite-system'
+                  style={{ backgroundPosition: `-${(item.buttonStateID - 1) * 64}px 0` }}
+                  onMouseDown={(e) => { if (e.button == 0) { uiRef.itemButton_Click(item); } } }
+                >
+                </div>
+              }
+            </div>
+          ))
+        }
+      </div>
+    </UI_ScrollView>
   );
 }

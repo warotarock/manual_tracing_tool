@@ -76,7 +76,7 @@ function UI_PaletteSelectorItem({ item, index, uiRef }: { item: PaletteColor, in
 
   return (
     <div className='item-container'
-      onMouseDown={() => { uiRef.item_Click(index, item); }}
+    onMouseDown={(e) => { if (e.button == 0) { uiRef.item_Click(index, item); } }}
     >
       <div className={`item ${item.isSelected ? 'selected' : ''}`}
         style={{ backgroundColor: `rgb(${item.color[0] * 255}, ${item.color[1] * 255}, ${item.color[2] * 255})` }}
