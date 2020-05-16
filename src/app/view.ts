@@ -39,9 +39,9 @@ import {
 
 import { UI_SubToolWindowRef } from 'ui/subtool_window';
 import { UI_MenuButtonsRef } from 'ui/menu_buttons';
-import { UI_CommandButtonsRef } from 'ui/command_buttons';
 import { UI_LayerWindowRef } from 'ui/layer_window';
 import { UI_PaletteSelectorWindowRef } from 'ui/palette_selector_window';
+import { UI_ColorMixerWindowRef } from 'ui/color_mixer_window';
 
 declare var Custombox: any;
 
@@ -64,6 +64,7 @@ export class App_View {
   uiMenuButtonsRef: UI_MenuButtonsRef = {};
   uiLayerwindowRef: UI_LayerWindowRef = {};
   uiPaletteSelectorWindowRef: UI_PaletteSelectorWindowRef = {};
+  uiColorMixerWindowRef: UI_ColorMixerWindowRef = {};
 
   // Drawing variables
 

@@ -367,14 +367,19 @@ export class App_Event extends App_Document {
     this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_cancel);
 
     // Color mixer window
-    this.setColorMixerRGBElementEvent(this.ID.colorMixer_red, 0);
-    this.setColorMixerRGBElementEvent(this.ID.colorMixer_green, 1);
-    this.setColorMixerRGBElementEvent(this.ID.colorMixer_blue, 2);
-    this.setColorMixerRGBElementEvent(this.ID.colorMixer_alpha, 3);
+    // this.setColorMixerRGBElementEvent(this.ID.colorMixer_red, 0);
+    // this.setColorMixerRGBElementEvent(this.ID.colorMixer_green, 1);
+    // this.setColorMixerRGBElementEvent(this.ID.colorMixer_blue, 2);
+    // this.setColorMixerRGBElementEvent(this.ID.colorMixer_alpha, 3);
 
-    this.setColorMixerHSVElementEvent(this.ID.colorMixer_hue);
-    this.setColorMixerHSVElementEvent(this.ID.colorMixer_sat);
-    this.setColorMixerHSVElementEvent(this.ID.colorMixer_val);
+    // this.setColorMixerHSVElementEvent(this.ID.colorMixer_hue);
+    // this.setColorMixerHSVElementEvent(this.ID.colorMixer_sat);
+    // this.setColorMixerHSVElementEvent(this.ID.colorMixer_val);
+
+    this.uiColorMixerWindowRef.color_Change = (newColor: Vec4) => {
+
+      this.colorMixerWindow_changeColor(newColor);
+    };
 
     // Palette modal
 
@@ -1832,6 +1837,20 @@ export class App_Event extends App_Document {
       this.toolEnv.setRedrawColorSelectorWindow();
       this.toolEnv.setRedrawColorMixerWindow();
     }
+  }
+
+  protected colorMixerWindow_changeColor(newColor: Vec4) {
+
+    let color = this.getPaletteSelectorWindow_CurrentColor();
+
+    if (color != null) {
+
+      vec4.copy(color, newColor);
+
+      this.toolEnv.setRedrawMainWindow();
+      this.toolEnv.setRedrawColorSelectorWindow();
+    }
+
   }
 
   protected timeLineWindow_mousedown() {

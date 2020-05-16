@@ -1524,37 +1524,44 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
   protected drawColorMixerWindow_SetInputControls() {
 
-    let wnd = this.paletteSelectorWindow;
-    let context = this.toolContext;
-    let env = this.toolEnv;
-    let documentData = context.document;
-
     let color = this.getPaletteSelectorWindow_CurrentColor();
 
     if (color != null) {
 
-      this.setColorMixerValue(this.ID.colorMixer_red, color[0]);
-      this.setColorMixerValue(this.ID.colorMixer_green, color[1]);
-      this.setColorMixerValue(this.ID.colorMixer_blue, color[2]);
-      this.setColorMixerValue(this.ID.colorMixer_alpha, color[3]);
-
-      ColorLogic.rgbToHSVv(this.hsv, color)
-
-      this.setColorMixerValue(this.ID.colorMixer_hue, this.hsv[0]);
-      this.setColorMixerValue(this.ID.colorMixer_sat, this.hsv[1]);
-      this.setColorMixerValue(this.ID.colorMixer_val, this.hsv[2]);
+      this.uiColorMixerWindowRef.update(color);
     }
-    else {
 
-      this.setColorMixerValue(this.ID.colorMixer_red, 0.0);
-      this.setColorMixerValue(this.ID.colorMixer_green, 0.0);
-      this.setColorMixerValue(this.ID.colorMixer_blue, 0.0);
-      this.setColorMixerValue(this.ID.colorMixer_alpha, 0.0);
+    // let wnd = this.paletteSelectorWindow;
+    // let context = this.toolContext;
+    // let env = this.toolEnv;
+    // let documentData = context.document;
 
-      this.setColorMixerValue(this.ID.colorMixer_hue, 0.0);
-      this.setColorMixerValue(this.ID.colorMixer_sat, 0.0);
-      this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
-    }
+    // let color = this.getPaletteSelectorWindow_CurrentColor();
+
+    // if (color != null) {
+
+    //   this.setColorMixerValue(this.ID.colorMixer_red, color[0]);
+    //   this.setColorMixerValue(this.ID.colorMixer_green, color[1]);
+    //   this.setColorMixerValue(this.ID.colorMixer_blue, color[2]);
+    //   this.setColorMixerValue(this.ID.colorMixer_alpha, color[3]);
+
+    //   ColorLogic.rgbToHSVv(this.hsv, color)
+
+    //   this.setColorMixerValue(this.ID.colorMixer_hue, this.hsv[0]);
+    //   this.setColorMixerValue(this.ID.colorMixer_sat, this.hsv[1]);
+    //   this.setColorMixerValue(this.ID.colorMixer_val, this.hsv[2]);
+    // }
+    // else {
+
+    //   this.setColorMixerValue(this.ID.colorMixer_red, 0.0);
+    //   this.setColorMixerValue(this.ID.colorMixer_green, 0.0);
+    //   this.setColorMixerValue(this.ID.colorMixer_blue, 0.0);
+    //   this.setColorMixerValue(this.ID.colorMixer_alpha, 0.0);
+
+    //   this.setColorMixerValue(this.ID.colorMixer_hue, 0.0);
+    //   this.setColorMixerValue(this.ID.colorMixer_sat, 0.0);
+    //   this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
+    // }
   }
 
   // Palette modal drawing

@@ -37,7 +37,7 @@ export function UI_PaletteSelectorWindow({ uiRef }: UI_PaletteSelectorWindowPara
 
         uiRef.commandButton_Click(item);
       }
-    } as UI_CommandButtonsRef
+    } as UI_CommandButtonsRef;
   });
 
   React.useEffect(() => {

@@ -12,6 +12,7 @@ import { UI_SubToolWindow } from 'ui/subtool_window';
 import { UI_CommandButtons } from 'ui/command_buttons';
 import { UI_LayerWindow } from 'ui/layer_window';
 import { UI_PaletteSelectorWindow } from 'ui/palette_selector_window';
+import { UI_ColorMixerWindow } from 'ui/color_mixer_window';
 
 // 大改修計画
 // ・レイヤーウィンドウをアウトライナーウィンドウにして、レイヤー以外の情報も表示できるようにする
@@ -223,7 +224,6 @@ window.onload = () => {
   //_Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
   _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
   // _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
-  _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
   _Main.drawGPUWindow.createCanvas();
   _Main.foreLayerRenderWindow.createCanvas();
   _Main.backLayerRenderWindow.createCanvas();
@@ -250,6 +250,13 @@ window.onload = () => {
     React.createElement(UI_PaletteSelectorWindow, { uiRef: _Main.uiPaletteSelectorWindowRef })
     , document.getElementById("palette-selector-window")
   );
+
+  ReactDOM.render(
+    React.createElement(UI_ColorMixerWindow, { uiRef: _Main.uiColorMixerWindowRef })
+    , document.getElementById("color-mixer-window")
+  );
+
+  _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
 
   var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
   for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
