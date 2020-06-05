@@ -5,7 +5,7 @@ import Slider from 'rc-slider';
 import { int, float } from 'base/conversion';
 import { ColorLogic } from 'logics/color';
 
-import { RCLib } from 'ui/rc_lib';
+import { UILib } from '../ui/ui_lib';
 
 export interface UI_ColorMixerWindowRef {
 
@@ -51,6 +51,8 @@ export function UI_ColorMixerWindow({ uiRef }: UI_PaletteSelectorWindowParam) {
 
     setRGBAValue(newRGBA);
     setHSVValue(newHSV);
+
+    return newRGBA;
   }
 
   function setValueFromHSV(newHSV: Vec4) {
@@ -60,6 +62,8 @@ export function UI_ColorMixerWindow({ uiRef }: UI_PaletteSelectorWindowParam) {
 
     setRGBAValue(newRGBA);
     setHSVValue(newHSV);
+
+    return newRGBA;
   }
 
   function onChangeARGB(index: int, value: float) {
@@ -67,14 +71,14 @@ export function UI_ColorMixerWindow({ uiRef }: UI_PaletteSelectorWindowParam) {
     const newRGBA = vec4.clone(rgbaValue);
     newRGBA[index] = value;
 
-    setValueFromRGBA(newRGBA);
+    const newRGBAValue = setValueFromRGBA(newRGBA);
 
     if (uiRef.color_Change) {
 
-      uiRef.color_Change(rgbaValue);
+      uiRef.color_Change(newRGBAValue);
     }
 
-    // console.log('onChangeARGB', index, value);
+    console.log('onChangeARGB', index, newRGBAValue);
   }
 
   function onChangeHSV(index: int, value: float) {
@@ -82,14 +86,14 @@ export function UI_ColorMixerWindow({ uiRef }: UI_PaletteSelectorWindowParam) {
     const newHSV = vec4.clone(hsvValue);
     newHSV[index] = value;
 
-    setValueFromHSV(newHSV);
+    const newRGBAValue = setValueFromHSV(newHSV);
 
     if (uiRef.color_Change) {
 
-      uiRef.color_Change(rgbaValue);
+      uiRef.color_Change(newRGBAValue);
     }
 
-    // console.log('onChangeHSV', value);
+    console.log('onChangeHSV', index, newRGBAValue);
   }
 
   return (
@@ -116,7 +120,9 @@ function ColorSlider({label, railColor, trackColor, index, value, onChange=undef
       return;
     }
 
-    const value = RCLib.getInputElementNumber(input_Ref.current, 0.0);
+    const value = UILib.getInputElementNumber(input_Ref.current, 0.0);
+
+    // console.log('inputChanged', value);
 
     onChange(index, value);
   }
@@ -126,6 +132,8 @@ function ColorSlider({label, railColor, trackColor, index, value, onChange=undef
     if (!onChange) {
       return;
     }
+
+    // console.log('sliderChanged', value);
 
     onChange(index, value);
   }

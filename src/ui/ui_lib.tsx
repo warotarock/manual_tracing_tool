@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { float } from 'base/conversion';
 
-export class RCLib {
+export class UILib {
 
   static getInputElementNumber(element: HTMLInputElement, defaultValue: float): float {
 
