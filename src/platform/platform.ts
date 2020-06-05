@@ -83,7 +83,7 @@ export module Platform {
 
             this.data[key] = value;
 
-            fs.writeFileSync('settings.json', JSON.stringify(this.data));
+            fs.writeFileSync('./test/settings.json', JSON.stringify(this.data));
         }
 
         getItem(key: string): any {
