@@ -98,7 +98,7 @@ export function UI_ColorMixerWindow({ uiRef }: UI_PaletteSelectorWindowParam) {
 
   return (
     <React.Fragment>
-      <canvas id="colorMixer_colorCanvas"></canvas>
+      <canvas className="colorCanvas" id="colorMixer_colorCanvas"></canvas>
       <ColorSlider label="A" railColor="#eee" trackColor="#888" index={3} value={rgbaValue[3]} onChange={onChangeARGB} />
       <ColorSlider label="R" railColor="#eee" trackColor="#f55" index={0} value={rgbaValue[0]} onChange={onChangeARGB} />
       <ColorSlider label="G" railColor="#eee" trackColor="#0d0" index={1} value={rgbaValue[1]} onChange={onChangeARGB} />

@@ -140,7 +140,7 @@
                     xml.async = false;
                     xml.loadXML(text);
                 }
-                
+
                 var img = xml.getElementsByTagName('image')[0];
                 that.width = img.getAttribute('w');
                 that.height = img.getAttribute('h');
@@ -364,7 +364,7 @@
             worker.postMessage(nextBatch);
         }
 
-        worker = new Worker(obj.ora.scriptsPath + 'blender.js');
+        worker = new Worker(obj.ora.scriptsPath + 'ora-blending.js');
         worker.onmessage = onTaskDone;
 
         var initData = {

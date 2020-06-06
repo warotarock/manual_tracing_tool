@@ -8,8 +8,7 @@ It runs on [github page](https://warotarock.github.io/manual_tracing_tool/Manual
 
 Feel free to see it!
 
-
 ---
 Credits:
 
-- This program is useing some of [Icons8](https://icons8.com/) icons.
+- This program is using some of [Icons8](https://icons8.com/) icons.

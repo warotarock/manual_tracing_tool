@@ -292,4 +292,4 @@ __pycache__/
 
 # This application
 test/settings.json
-/res/
+res/

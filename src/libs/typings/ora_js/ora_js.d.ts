@@ -3,6 +3,8 @@
 declare namespace ora {
 
     var scriptsPath: string;
+    var blending: boolean;
+    var enableWorkers: boolean;
 
     class OraLayer {
 
