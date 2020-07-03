@@ -10,6 +10,8 @@
 
   <title>Manual tracing tool</title>
 
+  <link rel="stylesheet" href="./dist/index.min.css" type="text/css" />
+
   <script src="./libs/glmatrix/gl-matrix-min.js"></script>
 
   <link href="./libs/custombox/custombox.min.css" rel="stylesheet">
@@ -22,8 +24,6 @@
   <script src="./libs/ora_js/inflate.js"></script>
   <script src="./libs/ora_js/ora.js"></script>
   <script src="./libs/ora_js/ora-blending.js"></script>
-
-  <link rel="stylesheet" href="./dist/index.min.css" type="text/css" />
   <script src="./dist/bundle.js"></script>
 </head>
 
@@ -283,31 +283,37 @@
     <div>
       レイヤーの種類<br />
       <label>
-        <input type="radio" name="newLayerCommandOptionModal_layerType" value="2" checked>
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="1" checked>
         ベクター（線）
       </label>
       <label>
-        <input type="radio" name="newLayerCommandOptionModal_layerType" value="3">
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="2">
         ベクター（塗り）
       </label>
       <br />
       <label>
-        <input type="radio" name="newLayerCommandOptionModal_layerType" value="7">
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="4">
         ベクター参照
       </label>
+      <br />
+      <!-- <label>
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="3">
+        自動塗りつぶし
+      </label>
+      <br /> -->
       <label>
         <input type="radio" name="newLayerCommandOptionModal_layerType" value="5">
         画像ファイル
       </label>
       <br />
       <label>
-        <input type="radio" name="newLayerCommandOptionModal_layerType" value="6">
-        ３Dポーズ
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="7">
+        グループ
       </label>
       <br />
       <label>
-        <input type="radio" name="newLayerCommandOptionModal_layerType" value="4">
-        グループ
+        <input type="radio" name="newLayerCommandOptionModal_layerType" value="6">
+        ３Dポーズ
       </label>
       <br />
       <div class="OKCalcelButtons">
