@@ -17,25 +17,24 @@ export class ImageResource {
 
     loaded = false;
 
-    file(fileName: string): ImageResource {
+    set({fileName, cssImageClassName, isGLTexture}: { fileName?: string, cssImageClassName?: string, isGLTexture?: boolean }) {
+
+      if (fileName) {
 
         this.fileName = fileName;
+      }
 
-        return this;
-    }
+      if (cssImageClassName) {
 
-    cssImage(className: string): ImageResource {
+        this.cssImageClassName = cssImageClassName;
+      }
 
-        this.cssImageClassName = className;
-
-        return this;
-    }
-
-    tex(isGLTexture: boolean): ImageResource {
+      if (isGLTexture) {
 
         this.isGLTexture = isGLTexture;
+      }
 
-        return this;
+      return this;
     }
 }
 

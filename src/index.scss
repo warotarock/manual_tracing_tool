@@ -153,14 +153,19 @@ header {
 }
 
 main {
-  display: flex;
   flex: 1;
-  padding: 0 20px 0 20px;
+  padding: 0;
+  position: relative;
 
   .side-panel1 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 200px;
     display: flex;
     flex-direction: column;
-    width: 200px;
+    padding: 0 0 0 5px;
 
     >div:not(:first-child) {
       margin-top: 4px;
@@ -168,16 +173,25 @@ main {
   }
 
   .center-panel {
+    position: absolute;
+    top: 0;
+    left: 210px;
+    right: 210px;
+    bottom: 0;
     display: flex;
     flex-direction: column;
-    flex: 1;
     padding: 0 5px 0 5px;
   }
 
   .side-panel2 {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 202px;
     display: flex;
     flex-direction: column;
-    width: 202px;
+    padding: 0 5px 0 0;
 
     >div:not(:first-child) {
       margin-top: 4px;
@@ -290,6 +304,7 @@ input[type=number] {
 }
 
 .subtool-window {
+  overflow: hidden;
   flex: 1;
   height: 1px;
   border: solid 1px $windowBorder;
@@ -334,6 +349,13 @@ input[type=number] {
   flex: 1;
   border: solid 1px $windowBorder;
   background-color: $windowBackground;
+  display: flex;
+  flex-direction: column;
+
+  .ui-scroll-view-container {
+    flex: 1;
+    height: unset;
+  }
 
   .layer-window-items {
     // margin-top: 4px;
@@ -644,7 +666,7 @@ input[type=number] {
 
 .newLayerCommandOptionModal {
   width: 400px;
-  height: 200px;
+  height: 250px;
 
   input {
     margin-left: 15px;

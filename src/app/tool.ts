@@ -2,7 +2,8 @@ import { List, int } from 'base/conversion';
 
 import {
     Layer, LayerTypeID, VectorLayer, ImageFileReferenceLayer,
-    PosingLayer
+    PosingLayer,
+    GroupLayer
 } from 'base/data';
 
 import {
@@ -28,9 +29,10 @@ import { Tool_EditDocumentFrame } from 'tools/edit_document_frame';
 import { Tool_Select_BrushSelect_LinePoint, Tool_Select_BrushSelect_LineSegment, Tool_Select_BrushSelect_Line } from 'tools/select_brush_select';
 import { Tool_Select_All_LinePoint } from 'tools/select_points_all';
 import { Tool_EditImageFileReference, Tool_Transform_ReferenceImage_GrabMove, Tool_Transform_ReferenceImage_Rotate, Tool_Transform_ReferenceImage_Scale } from 'tools/edit_image_file_ref';
-import { Tool_Transform_Lattice_GrabMove, Tool_Transform_Lattice_Rotate, Tool_Transform_Lattice_Scale } from 'tools/tool_transform_line_point';
+import { Tool_Transform_Lattice_GrabMove, Tool_Transform_Lattice_Rotate, Tool_Transform_Lattice_Scale } from '../tools/transform_line_point';
 import { Tool_EditModeMain } from 'tools/edit_mode_main';
 import { Tool_DrawLine } from 'tools/draw_line';
+import { Tool_DrawAutoFill } from 'tools/draw_auto_fill';
 import { Tool_ScratchLine } from 'tools/scratch_line';
 import { Tool_ScratchLineDraw } from 'tools/scratch_line_draw';
 import { Tool_OverWriteLineWidth, Tool_ScratchLineWidth } from 'tools/scratch_line_width';
@@ -101,6 +103,7 @@ export class App_Tool extends App_Drawing {
     //tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
     tool_DeletePoints_DivideLine = new Tool_DeletePoints_DivideLine();
     tool_EditLinePointWidth_BrushSelect = new Tool_HideLinePoint_BrushSelect();
+    tool_DrawAutoFill = new Tool_DrawAutoFill();
 
     hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
 
@@ -130,12 +133,12 @@ export class App_Tool extends App_Drawing {
 
         this.modelFile.file('models.json');
 
-        this.imageResurces.push(new ImageResource().file('texture01.png').tex(true));
-        this.imageResurces.push(new ImageResource().file('system_image01.png').cssImage('image-splite-system'));
-        this.imageResurces.push(new ImageResource().file('toolbar_image01.png').cssImage('image-splite-document'));
-        this.imageResurces.push(new ImageResource().file('toolbar_image02.png').cssImage('image-splite-subtool'));
-        this.imageResurces.push(new ImageResource().file('toolbar_image03.png').cssImage('image-splite-posing3d'));
-        this.imageResurces.push(new ImageResource().file('layerbar_image01.png'));
+        this.imageResurces.push(new ImageResource().set({ fileName: 'texture01.png', isGLTexture: true }));
+        this.imageResurces.push(new ImageResource().set({ fileName: 'system_image01.png', cssImageClassName: 'image-splite-system' }));
+        this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image01.png', cssImageClassName: 'image-splite-document' }));
+        this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image02.png', cssImageClassName: 'image-splite-subtool' }));
+        this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image03.png', cssImageClassName: 'image-splite-posing3d' }));
+        this.imageResurces.push(new ImageResource().set({ fileName: 'layerbar_image01.png' }));
 
         this.systemImage = this.imageResurces[1];
 
@@ -165,6 +168,14 @@ export class App_Tool extends App_Drawing {
                 .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
                 .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
                 .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
+                .subTool(this.tool_DrawAutoFill, this.subToolImages[1], 0)
+        );
+
+        this.mainTools.push(
+            new MainTool().id(MainToolID.fill)
+                .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
+                .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
+                .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
         );
 
         this.mainTools.push(
@@ -317,6 +328,11 @@ export class App_Tool extends App_Drawing {
                 this.setCurrentMainTool(MainToolID.drawLine);
 
             }
+            else if (env.isCurrentLayerFillLayer()) {
+
+                this.setCurrentMainTool(MainToolID.fill);
+
+            }
             else if (env.isCurrentLayerPosingLayer()) {
 
                 this.setCurrentMainTool(MainToolID.posing);
@@ -410,7 +426,7 @@ export class App_Tool extends App_Drawing {
 
         this.toolContext.currentVectorLine = null;
 
-        if (currentLayer != null && VectorLayer.isVectorLayer(currentLayer) && viewKeyframe != null) {
+        if (VectorLayer.isVectorLayer(currentLayer) && viewKeyframe != null) {
 
             let viewKeyframeLayer = ViewKeyframe.findViewKeyframeLayer(viewKeyframe, currentLayer);
             let geometry = viewKeyframeLayer.vectorLayerKeyframe.geometry;
@@ -426,7 +442,7 @@ export class App_Tool extends App_Drawing {
             this.toolContext.currentVectorGroup = null;
         }
 
-        if (currentLayer != null && currentLayer.type == LayerTypeID.posingLayer) {
+        if (PosingLayer.isPosingLayer(currentLayer)) {
 
             let posingLayer = <PosingLayer>currentLayer;
 
@@ -441,7 +457,7 @@ export class App_Tool extends App_Drawing {
             this.toolContext.currentPosingModel = null;
         }
 
-        if (currentLayer != null && currentLayer.type == LayerTypeID.imageFileReferenceLayer) {
+        if (ImageFileReferenceLayer.isImageFileReferenceLayer(currentLayer)) {
 
             let imageFileReferenceLayer = <ImageFileReferenceLayer>currentLayer;
 
@@ -645,7 +661,7 @@ export class App_Tool extends App_Drawing {
 
         let previousLayer: Layer = null;
         let previousLayerParent: Layer = null;
-        if (currentLayerWindowItem.layer.type == LayerTypeID.groupLayer) {
+        if (GroupLayer.isGroupLayer(currentLayerWindowItem.layer)) {
 
             if (currentLayerWindowItem.previousSiblingItem != null) {
 
@@ -664,7 +680,7 @@ export class App_Tool extends App_Drawing {
 
         let nextLayer: Layer = null;
         let nextLayerParent: Layer = null;
-        if (currentLayerWindowItem.layer.type == LayerTypeID.groupLayer) {
+        if (GroupLayer.isGroupLayer(currentLayerWindowItem.layer)) {
 
             if (currentLayerWindowItem.nextSiblingItem != null) {
 

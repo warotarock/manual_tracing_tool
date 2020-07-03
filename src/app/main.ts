@@ -1,10 +1,12 @@
 import { StringIsNullOrEmpty, int, long, List } from 'base/conversion';
+
 import {
   DocumentData, DocumentBackGroundTypeID, DocumentFileType,
   Layer, LayerTypeID,
   VectorLayer, FillAreaTypeID, DrawLineTypeID,
   ImageFileReferenceLayer,
   PosingModel,
+  GroupLayer,
 } from 'base/data';
 
 import {
@@ -30,7 +32,8 @@ import {
   Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition,
   Command_Layer_AddGroupLayerToCurrentPosition,
   Command_Layer_AddPosingLayerToCurrentPosition,
-  Command_Layer_AddImageFileReferenceLayerToCurrentPosition
+  Command_Layer_AddImageFileReferenceLayerToCurrentPosition,
+  Command_Layer_AddAutoFillLayerToCurrentPosition
 } from 'commands/edit_layer';
 
 import {
@@ -344,7 +347,7 @@ export class App_Main extends App_Event implements MainEditor {
 
   private startLoadingDocumentResourcesRecursive(layer: Layer, loadingDocumentImageResources: List<ImageResource>) {
 
-    if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+    if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
       // Create an image resource
 
@@ -877,7 +880,7 @@ export class App_Main extends App_Event implements MainEditor {
       let vLayer = vLayers[i];
 
       if (vLayer.type == TempVirtualLayerTypeID.virtualGroup
-        || vLayer.layer.type == LayerTypeID.groupLayer) {
+        || GroupLayer.isGroupLayer(vLayer.layer)) {
 
         // Insert a step to begin buffering
         {
@@ -1742,25 +1745,6 @@ export class App_Main extends App_Event implements MainEditor {
       this.drawOperatorCursor();
     }
 
-    if (this.toolEnv.isDrawMode()) {
-
-      if (this.currentTool == this.tool_DrawLine) {
-
-        if (this.tool_DrawLine.editLine != null) {
-
-          this.drawEditLineStroke(this.tool_DrawLine.editLine);
-        }
-      }
-      else if (context.mainToolID == MainToolID.posing) {
-
-        if (this.currentTool == this.tool_Posing3d_LocateHead
-          && this.tool_Posing3d_LocateHead.editLine != null) {
-
-          this.drawEditLineStroke(this.tool_Posing3d_LocateHead.editLine);
-        }
-      }
-    }
-
     if (this.currentTool != null) {
 
       this.toolEnv.updateContext();
@@ -2002,6 +1986,12 @@ export class App_Main extends App_Event implements MainEditor {
 
       let command = new Command_Layer_AddVectorLayerToCurrentPosition();
       command.createForFillColor = true;
+
+      layerCommand = command;
+    }
+    else if (newLayerType == NewLayerTypeID.autoFill) {
+
+      let command = new Command_Layer_AddAutoFillLayerToCurrentPosition();
 
       layerCommand = command;
     }

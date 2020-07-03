@@ -1,28 +1,14 @@
 ﻿import { List, ListRemoveAt } from 'base/conversion';
-
-import {
-    LinePoint,
-    VectorLine,
-    VectorGroup,
-    Layer,
-} from 'base/data';
-
-import {
-    ToolEnvironment, ToolMouseEvent,
-    ToolBase,
-    ToolDrawingEnvironment,
-} from 'base/tool';
-
+import { LinePoint, VectorLine, VectorGroup, Layer, } from 'base/data';
+import { ToolEnvironment, ToolMouseEvent, ToolBase, } from 'base/tool';
 import { CommandBase } from 'base/command';
 import { Logic_Edit_Points, Logic_Edit_Line } from 'logics/edit_vector_layer';
 
+export class Tool_DrawAutoFill extends ToolBase {
 
-export class Tool_DrawLine extends ToolBase {
-
-    helpText = '線を追加します。Shiftキーで直前の線から続けて塗りつぶします。';
+    helpText = '塗りつぶしを追加します。指定した位置から最も近い線の内側を塗りつぶします。';
 
     editLine: VectorLine = null;
-    continuousFill = false;
 
     isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -32,34 +18,11 @@ export class Tool_DrawLine extends ToolBase {
         );
     }
 
-    onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
-
-        if (this.editLine != null) {
-
-            drawEnv.editorDrawer.drawEditorEditLineStroke(this.editLine);
-        }
-    }
-
     mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
         if (!e.isLeftButtonPressing()) {
             return;
         }
-
-        this.continuousFill = env.isShiftKeyPressing();
-
-        this.editLine = new VectorLine();
-
-        this.addPointToEditLine(e, env);
-    }
-
-    private addPointToEditLine(e: ToolMouseEvent, env: ToolEnvironment) {
-
-        let point = new LinePoint();
-        vec3.copy(point.location, e.location);
-        point.lineWidth = env.drawLineBaseWidth;
-
-        this.editLine.points.push(point);
     }
 
     mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
@@ -67,8 +30,6 @@ export class Tool_DrawLine extends ToolBase {
         if (this.editLine == null) {
             return;
         }
-
-        this.addPointToEditLine(e, env);
 
         env.setRedrawEditorWindow();
     }
@@ -85,8 +46,6 @@ export class Tool_DrawLine extends ToolBase {
             env.setRedrawEditorWindow();
             return;
         }
-
-        this.continuousFill = (this.continuousFill || env.isShiftKeyPressing());
 
         this.executeCommand(env);
 
@@ -118,42 +77,9 @@ export class Tool_DrawLine extends ToolBase {
         let previousConnectedLine: VectorLine = null;
         let previousConnectedLine_continuousFill = false;
 
-        if (this.continuousFill && targetGroup.lines.length >= 1) {
-
-            let connectLine = targetGroup.lines[targetGroup.lines.length - 1];
-
-            if (connectLine.points.length >= 2) {
-
-                let lastPoint = connectLine.points[connectLine.points.length - 1];
-
-                let point1 = resampledLine.points[0];
-                let point2 = resampledLine.points[resampledLine.points.length - 1];
-
-                let distance1 = vec3.squaredDistance(lastPoint.location, point1.location);
-                let distance2 = vec3.squaredDistance(lastPoint.location, point2.location);
-
-                if (distance2 < distance1) {
-
-                    let revercedList = new List<LinePoint>();
-                    for (let i = resampledLine.points.length - 1; i >= 0; i--) {
-
-                        revercedList.push(resampledLine.points[i]);
-                    }
-
-                    resampledLine.points = revercedList;
-                }
-
-                previousConnectedLine = targetGroup.lines[targetGroup.lines.length - 1];
-                previousConnectedLine_continuousFill = previousConnectedLine.continuousFill;
-            }
-        }
-
         let command = new Command_AddLine();
         command.prepareEditTargets(env.currentVectorGroup, resampledLine);
-        command.setContiuousStates(this.continuousFill, previousConnectedLine, previousConnectedLine_continuousFill);
-
         command.useGroup(env.currentVectorGroup);
-
         command.executeCommand(env);
 
         env.commandHistory.addCommand(command);
@@ -177,13 +103,6 @@ export class Command_AddLine extends CommandBase {
         this.line = line;
 
         this.useGroup(group);
-    }
-
-    setContiuousStates(continuousFill: boolean, previousConnectedLine: VectorLine, previousConnectedLine_continuousFill: boolean) {
-
-        this.continuousFill = continuousFill;
-        this.previousConnectedLine = previousConnectedLine;
-        this.previousConnectedLine_continuousFill = previousConnectedLine_continuousFill;
     }
 
     protected execute(env: ToolEnvironment) { // @override

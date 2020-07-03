@@ -263,7 +263,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
       this.drawForeground_VectorLayer(vectorLayer, geometry, documentData, isExporting, isModalToolRunning);
     }
-    else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+    else if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
       let ifrLayer = <ImageFileReferenceLayer>layer;
 
@@ -372,7 +372,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
       let vectorLayer = <VectorLayer>layer;
       this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData, isExporting, isModalToolRunning);
     }
-    else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+    else if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
       let ifrLayer = <ImageFileReferenceLayer>layer;
       this.drawForeground_ImageFileReferenceLayer(ifrLayer, isModalToolRunning);
@@ -1025,7 +1025,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     for (let item of layerWindowItems) {
 
-      if (item.layer.type != LayerTypeID.posingLayer) {
+      if (!PosingLayer.isPosingLayer(item.layer)) {
         continue;
       }
 
@@ -1046,7 +1046,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
       let item = layerWindowItems[index];
 
-      if (item.layer.type != LayerTypeID.posingLayer) {
+      if (!PosingLayer.isPosingLayer(item.layer)) {
         continue;
       }
 

@@ -1,4 +1,4 @@
-﻿import { Tool_Transform_Lattice_LinePoint } from 'tools/tool_transform_line_point';
+﻿import { Tool_Transform_Lattice_LinePoint } from '../tools/transform_line_point';
 
 
 export class Tool_EditModeMain extends Tool_Transform_Lattice_LinePoint {

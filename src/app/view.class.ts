@@ -241,13 +241,13 @@ export enum OpenPaletteColorModalMode {
 export enum NewLayerTypeID {
 
   none = 0,
-  rootLayer = 1,
-  vectorLayer = 2,
-  vectorLayer_Fill = 3,
-  groupLayer = 4,
+  vectorLayer = 1,
+  vectorLayer_Fill = 2,
+  autoFill = 3,
+  vectorLayerReferenceLayer = 4,
   imageFileReferenceLayer = 5,
   posingLayer = 6,
-  vectorLayerReferenceLayer = 7,
+  groupLayer = 7,
 }
 
 export class HTMLElementID {

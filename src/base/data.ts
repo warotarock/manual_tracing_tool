@@ -1,5 +1,4 @@
-﻿
-import { int, float, List, Dictionary, DictionaryContainsKey, StringIsNullOrEmpty, StringLastIndexOf, StringSubstring } from 'base/conversion';
+﻿import { int, float, List, Dictionary, DictionaryContainsKey, StringIsNullOrEmpty, StringLastIndexOf, StringSubstring } from 'base/conversion';
 import { CanvasWindow } from 'renders/render2d';
 import { GPUVertexBuffer } from 'logics/gpu_data';
 import { ImageResource, ModelResource, ModelFile } from 'posing3d/posing3d_view';
@@ -37,6 +36,7 @@ export enum LayerTypeID {
   imageFileReferenceLayer = 4,
   posingLayer = 5,
   vectorLayerReferenceLayer = 6,
+  autoFillLayer = 7,
 }
 
 export class Layer {
@@ -110,6 +110,14 @@ export class Layer {
   static isVisible(layer: Layer): boolean {
 
     return (layer.isVisible && layer.isHierarchicalVisible);
+  }
+
+  static isRootLayer(layer: Layer): boolean {
+
+    return (
+      layer != null
+      && layer.type == LayerTypeID.rootLayer
+    );
   }
 }
 
@@ -261,10 +269,21 @@ export class VectorLayer extends Layer {
 
   static isVectorLayer(layer: Layer): boolean {
 
-    return (layer != null
-      && (
-        (layer.type == LayerTypeID.vectorLayer
-          || layer.type == LayerTypeID.vectorLayerReferenceLayer)
+    return (
+      layer != null
+      && (layer.type == LayerTypeID.vectorLayer
+          || layer.type == LayerTypeID.vectorLayerReferenceLayer
+          || layer.type == LayerTypeID.autoFillLayer
+      )
+    );
+  }
+
+  static isVectorLayerWithOwnData(layer: Layer): boolean {
+
+    return (
+      layer != null
+      && (layer.type == LayerTypeID.vectorLayer
+          || layer.type == LayerTypeID.autoFillLayer
       )
     );
   }
@@ -310,6 +329,29 @@ export class VectorLayerReferenceLayer extends VectorLayer {
 
   // file only
   referenceLayerID: int;
+
+  static isVectorLayerReferenceLayer(layer: Layer): boolean {
+
+    return (
+      layer != null
+      && (layer.type == LayerTypeID.vectorLayerReferenceLayer
+      )
+    );
+  }
+}
+
+export class AutoFillLayer extends VectorLayer {
+
+  type = LayerTypeID.autoFillLayer;
+
+  static isAutoFillLayer(layer: Layer): boolean {
+
+    return (
+      layer != null
+      && (layer.type == LayerTypeID.autoFillLayer
+      )
+    );
+  }
 }
 
 // Group layer
@@ -317,6 +359,15 @@ export class VectorLayerReferenceLayer extends VectorLayer {
 export class GroupLayer extends Layer {
 
   type = LayerTypeID.groupLayer;
+
+  static isGroupLayer(layer: Layer): boolean {
+
+    return (
+      layer != null
+      && (layer.type == LayerTypeID.groupLayer
+      )
+    );
+  }
 }
 
 // Image file reference layer
@@ -339,6 +390,14 @@ export class ImageFileReferenceLayer extends Layer {
   adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
   adjustingRotation = vec3.fromValues(0.0, 0.0, 0.0);
   adjustingScale = vec3.fromValues(1.0, 1.0, 1.0);
+
+  static isImageFileReferenceLayer(layer: Layer): boolean {
+
+    return (
+      layer != null
+      && layer.type == LayerTypeID.imageFileReferenceLayer
+    );
+  }
 
   static isLoaded(layer: ImageFileReferenceLayer): boolean {
 
@@ -554,6 +613,14 @@ export class PosingLayer extends Layer {
 
   // runtime
   drawingUnits: List<JointPartDrawingUnit> = null;
+
+  static isPosingLayer(layer: Layer): boolean {
+
+    return (
+      layer != null
+      && layer.type == LayerTypeID.posingLayer
+    );
+  }
 }
 
 // Animation

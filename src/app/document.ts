@@ -20,14 +20,13 @@ import { DocumentLogic } from 'logics/document';
 import { Platform } from 'platform/platform';
 import { App_Tool } from 'app/tool';
 
-
 export class App_Document extends App_Tool {
 
     localSetting = new LocalSetting();
     localStorage_SettingKey = 'setting';
     localStrageSaveDataKey = 'Manual tracing tool save data';
     activeSettingName = 'activeSettingName';
-    oraScriptPath = './libs/ora_js/';
+    oraScriptsPath = './libs/ora_js/';
     oraVectorFileName = 'mttf.json';
 
     // Backward interface implementations
@@ -172,7 +171,7 @@ export class App_Document extends App_Tool {
     protected startLoadDocumentOraFile(documentData: DocumentData, file: File, filePath: string) {
 
         var zipfs = new zip.fs.FS();
-        zip.workerScriptsPath = this.oraScriptPath;
+        zip.workerScriptsPath = this.oraScriptsPath;
 
         zipfs.importBlob(file, () => {
 
@@ -403,7 +402,7 @@ export class App_Document extends App_Tool {
 
     protected finishLayerLoading_Recursive(layer: Layer) {
 
-        if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+        if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
             let ifrLayer = <ImageFileReferenceLayer>layer;
 
@@ -472,7 +471,9 @@ export class App_Document extends App_Tool {
 
         let canvas = this.createExportImage(documentData, 1.0, backGroundType);
 
-        ora.scriptsPath = this.oraScriptPath;
+        ora.scriptsPath = this.oraScriptsPath;
+        // ora.blending = false;
+        ora.enableWorkers = false; // TODO: ElectronのあるバージョンからWebWorkerが挙動が変わったのかなんなのか動作しないので、そのうち自作するしかないかと思っています。WebAssemblyとか？
 
         let oraFile = new ora.Ora(canvas.width, canvas.height);
 

@@ -118,7 +118,7 @@ export class DocumentLogic {
       layer.isMaskedByBelowLayer = false;
     }
 
-    if (layer.type == LayerTypeID.vectorLayer) {
+    if (VectorLayer.isVectorLayerWithOwnData(layer)) {
 
       let vectorLayer = <VectorLayer>layer;
 
@@ -206,7 +206,7 @@ export class DocumentLogic {
         }
       }
     }
-    else if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
+    else if (VectorLayerReferenceLayer.isVectorLayerReferenceLayer(layer)) {
 
       let vRefLayer = <VectorLayerReferenceLayer>layer;
 
@@ -215,7 +215,7 @@ export class DocumentLogic {
 
       delete vRefLayer.referenceLayerID;
     }
-    else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+    else if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
       let ifrLayer = <ImageFileReferenceLayer>layer;
 
@@ -236,7 +236,7 @@ export class DocumentLogic {
       vec3.copy(ifrLayer.adjustingRotation, ifrLayer.rotation);
       vec3.copy(ifrLayer.adjustingScale, ifrLayer.scale);
     }
-    else if (layer.type == LayerTypeID.posingLayer) {
+    else if (PosingLayer.isPosingLayer(layer)) {
 
       let posingLayer = <PosingLayer>layer;
 
@@ -301,7 +301,7 @@ export class DocumentLogic {
 
   static fixSaveDocumentData_CopyID_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
 
-    if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
+    if (VectorLayerReferenceLayer.isVectorLayerReferenceLayer(layer)) {
 
       let vRefLayer = <VectorLayerReferenceLayer>layer;
 
@@ -321,7 +321,7 @@ export class DocumentLogic {
 
     layer.layerColor = this.vec4ToArray(layer.layerColor);
 
-    if (layer.type == LayerTypeID.vectorLayer) {
+    if (VectorLayer.isVectorLayerWithOwnData(layer)) {
 
       let vectorLayer = <VectorLayer>layer;
 
@@ -356,14 +356,14 @@ export class DocumentLogic {
         }
       }
     }
-    else if (layer.type == LayerTypeID.vectorLayerReferenceLayer) {
+    else if (VectorLayerReferenceLayer.isVectorLayerReferenceLayer(layer)) {
 
       let vRefLayer = <VectorLayerReferenceLayer>layer;
 
       delete vRefLayer.keyframes;
       delete vRefLayer.referenceLayer;
     }
-    else if (layer.type == LayerTypeID.imageFileReferenceLayer) {
+    else if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
       let ifrLayer = <ImageFileReferenceLayer>layer;
 
@@ -377,7 +377,7 @@ export class DocumentLogic {
       delete ifrLayer.adjustingRotation;
       delete ifrLayer.adjustingScale;
     }
-    else if (layer.type == LayerTypeID.posingLayer) {
+    else if (PosingLayer.isPosingLayer(layer)) {
 
       let posingLayer = <PosingLayer>layer;
 
@@ -404,7 +404,7 @@ export class DocumentLogic {
     delete layer.isHierarchicalVisible;
     delete layer.isHierarchicalSelected;
 
-    if (layer.type == LayerTypeID.vectorLayer) {
+    if (VectorLayer.isVectorLayerWithOwnData(layer)) {
 
       let vectorLayer = <VectorLayer>layer;
 

@@ -7,9 +7,9 @@ import {
     VectorLayerReferenceLayer,
     GroupLayer,
     ImageFileReferenceLayer,
-    PosingLayer
+    PosingLayer,
+    AutoFillLayer
 } from "base/data";
-
 
 export class Command_Layer_CommandBase extends CommandBase {
 
@@ -75,8 +75,7 @@ export class Command_Layer_CommandBase extends CommandBase {
 
     protected isContainerLayer(layer: Layer): boolean {
 
-        return (layer.type == LayerTypeID.rootLayer
-            || layer.type == LayerTypeID.groupLayer);
+        return (Layer.isRootLayer(layer) || GroupLayer.isGroupLayer(layer));
     }
 
     protected executeLayerSwap(parentLayer: Layer, swapIndex1: int, swapIndex2: int, env: ToolEnvironment) {
@@ -100,7 +99,7 @@ export class Command_Layer_CommandBase extends CommandBase {
 
         let parentLayer: Layer;
         let insertIndex: int;
-        if (this.currentLayer.type == LayerTypeID.groupLayer) {
+        if (GroupLayer.isGroupLayer(this.currentLayer)) {
 
             parentLayer = this.currentLayer;
             insertIndex = 0;
@@ -220,11 +219,6 @@ export class Command_Layer_AddVectorLayerToCurrentPosition extends Command_Layer
 
     isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (this.currentLayerParent == null) {
-
-            return false;
-        }
-
         if (!this.isContainerLayer(this.currentLayerParent)) {
 
             return false;
@@ -267,17 +261,12 @@ export class Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition extends
 
     isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (this.currentLayerParent == null) {
-
-            return false;
-        }
-
         if (!this.isContainerLayer(this.currentLayerParent)) {
 
             return false;
         }
 
-        if (this.currentLayer == null || this.currentLayer.type != LayerTypeID.vectorLayer) {
+        if (!VectorLayer.isVectorLayerWithOwnData(this.currentLayer)) {
 
             return false;
         }
@@ -297,16 +286,44 @@ export class Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition extends
     }
 }
 
+export class Command_Layer_AddAutoFillLayerToCurrentPosition extends Command_Layer_CommandBase {
+
+    newLayer: VectorLayer = null;
+
+    isAvailable(env: ToolEnvironment): boolean { // @override
+
+        if (!this.isContainerLayer(this.currentLayerParent)) {
+
+            return false;
+        }
+
+        return true;
+    }
+
+    execute(env: ToolEnvironment) { // @override
+
+        this.newLayer = new AutoFillLayer();
+
+        this.newLayer.name = 'new auto fill layer';
+        this.newLayer.drawLineType = DrawLineTypeID.paletteColor;
+        this.newLayer.fillAreaType = FillAreaTypeID.none;
+
+        let keyFrame = new VectorLayerKeyframe();
+        keyFrame.geometry = new VectorLayerGeometry();
+        this.newLayer.keyframes.push(keyFrame);
+
+        let group = new VectorGroup();
+        keyFrame.geometry.groups.push(group);
+
+        this.executeLayerInsertToCurrent(this.newLayer, env);
+    }
+}
+
 export class Command_Layer_AddGroupLayerToCurrentPosition extends Command_Layer_CommandBase {
 
     newLayer: GroupLayer = null;
 
     isAvailable(env: ToolEnvironment): boolean { // @override
-
-        if (this.currentLayerParent == null) {
-
-            return false;
-        }
 
         if (!this.isContainerLayer(this.currentLayerParent)) {
 
@@ -331,11 +348,6 @@ export class Command_Layer_AddImageFileReferenceLayerToCurrentPosition extends C
 
     isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (this.currentLayerParent == null) {
-
-            return false;
-        }
-
         if (!this.isContainerLayer(this.currentLayerParent)) {
 
             return false;
@@ -358,11 +370,6 @@ export class Command_Layer_AddPosingLayerToCurrentPosition extends Command_Layer
     newLayer: PosingLayer = null;
 
     isAvailable(env: ToolEnvironment): boolean { // @override
-
-        if (this.currentLayerParent == null) {
-
-            return false;
-        }
 
         if (!this.isContainerLayer(this.currentLayerParent)) {
 
@@ -387,12 +394,7 @@ export class Command_Layer_Delete extends Command_Layer_CommandBase {
 
     isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (this.currentLayerParent == null) {
-
-            return false;
-        }
-
-        if (this.currentLayerParent.type == LayerTypeID.rootLayer && this.currentLayerParent.childLayers.length == 1) {
+        if (Layer.isRootLayer(this.currentLayerParent) && this.currentLayerParent.childLayers.length == 1) {
 
             return false;
         }
@@ -419,11 +421,6 @@ export class Command_Layer_MoveUp extends Command_Layer_CommandBase {
 
     isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (this.currentLayerParent == null) {
-
-            return false;
-        }
-
         if (!this.isContainerLayer(this.currentLayerParent)) {
 
             return false;
@@ -439,7 +436,7 @@ export class Command_Layer_MoveUp extends Command_Layer_CommandBase {
 
     execute(env: ToolEnvironment) { // @override
 
-        if (this.previousLayer.type == LayerTypeID.groupLayer) {
+        if (GroupLayer.isGroupLayer(this.previousLayer)) {
 
             if (this.previousLayer == this.currentLayerParent) {
 
@@ -469,11 +466,6 @@ export class Command_Layer_MoveDown extends Command_Layer_MoveUp {
 
     isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (this.currentLayerParent == null) {
-
-            return false;
-        }
-
         if (!this.isContainerLayer(this.currentLayerParent)) {
 
             return false;
@@ -489,7 +481,7 @@ export class Command_Layer_MoveDown extends Command_Layer_MoveUp {
 
     execute(env: ToolEnvironment) { // @override
 
-        if (this.nextLayer.type == LayerTypeID.groupLayer) {
+        if (GroupLayer.isGroupLayer(this.nextLayer)) {
 
             this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
             this.executeLayerInsert(this.nextLayer, 0, this.currentLayer, env);

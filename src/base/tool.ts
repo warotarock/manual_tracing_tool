@@ -1,12 +1,12 @@
 ﻿import { int, float, List } from 'base/conversion';
 import {
   DocumentData,
-  Layer,
-  PosingModel, VectorLine, LinePoint, VectorLayerKeyframe,
-  VectorGroup, VectorLayerGeometry, VectorLayer, PosingLayer, PosingData,
-  ImageFileReferenceLayer, VectorLineModifyFlagID,
-  LayerTypeID, DrawLineTypeID, FillAreaTypeID,
-  InputSideID
+  Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
+  GroupLayer,
+  VectorLayer, VectorLayerGeometry, VectorGroup, VectorLine, LinePoint, VectorLayerKeyframe, VectorLineModifyFlagID,
+  ImageFileReferenceLayer,
+  AutoFillLayer,
+  PosingLayer, PosingData, PosingModel, InputSideID
 } from 'base/data';
 import { CommandHistory } from 'base/command';
 
@@ -19,10 +19,11 @@ export enum MainToolID {
 
   none = 0,
   drawLine = 1,
-  posing = 2,
-  imageReferenceLayer = 3,
-  misc = 4,
-  edit = 5
+  fill = 2,
+  posing = 3,
+  imageReferenceLayer = 4,
+  misc = 5,
+  edit = 6
 }
 
 export enum DrawLineToolSubToolID {
@@ -728,22 +729,27 @@ export class ToolEnvironment {
 
   isCurrentLayerVectorLayer(): boolean {
 
-    return (this.currentVectorLayer != null);
+    return VectorLayer.isVectorLayer(this.currentLayer);
+  }
+
+  isCurrentLayerFillLayer(): boolean {
+
+    return AutoFillLayer.isAutoFillLayer(this.currentLayer);
   }
 
   isCurrentLayerPosingLayer(): boolean {
 
-    return (this.currentPosingLayer != null);
+    return PosingLayer.isPosingLayer(this.currentLayer);
   }
 
   isCurrentLayerImageFileReferenceLayer(): boolean {
 
-    return (this.currentImageFileReferenceLayer != null);
+    return ImageFileReferenceLayer.isImageFileReferenceLayer(this.currentLayer);
   }
 
   isCurrentLayerContainerLayer(): boolean {
 
-    return (this.currentLayer.type == LayerTypeID.groupLayer);
+    return GroupLayer.isGroupLayer(this.currentLayer);
   }
 
   needsDrawOperatorCursor(): boolean {

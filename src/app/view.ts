@@ -84,7 +84,8 @@ export class App_View {
     'グループ レイヤー',
     '画像ファイル レイヤー',
     '３Dポーズ レイヤー',
-    'ベクター参照 レイヤー'
+    'ベクター参照 レイヤー',
+    '自動塗りつぶし レイヤー'
   ];
 
   // UI states
@@ -1238,8 +1239,7 @@ export class App_View {
 
     if (targetID == OpenFileDialogTargetID.imageFileReferenceLayerFilePath) {
 
-      if (this.toolContext.currentLayer != null
-        && this.toolContext.currentLayer.type == LayerTypeID.imageFileReferenceLayer) {
+      if (ImageFileReferenceLayer.isImageFileReferenceLayer(this.toolContext.currentLayer)) {
 
         let ifrLayer = <ImageFileReferenceLayer>(this.toolContext.currentLayer);
         let filePath = ifrLayer.imageFilePath;

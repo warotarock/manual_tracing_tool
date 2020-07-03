@@ -26,7 +26,7 @@ export class Command_Animation_InsertKeyframeAllLayer extends CommandBase {
 
         for (let layer of layers) {
 
-            if (layer.type != LayerTypeID.vectorLayer) {
+            if (!VectorLayer.isVectorLayerWithOwnData(layer)) {
                 continue;
             }
 
@@ -124,7 +124,7 @@ export class Command_Animation_DeleteKeyframeAllLayer extends CommandBase {
 
         for (let layer of layers) {
 
-            if (layer.type != LayerTypeID.vectorLayer) {
+            if (!VectorLayer.isVectorLayerWithOwnData(layer)) {
                 continue;
             }
 
