@@ -18,21 +18,24 @@ import { UI_ColorMixerWindow } from 'ui/color_mixer_window';
 // ・塗りつぶし機能の拡充
 //   ・描画グループを単位として描画するようにする
 // 　　・データ構造の変更
-// 　　　・DrawingGroup
-// 　　　・StrokeGroup
-// 　　　・Line → Stroke
-// 　　　・StrokeFillType - fill, holeFill
+// 　　　VectorLayerGeometry → VectorGeometry
+// 　　　                    → VectorDrawingUnit
+// 　　　VectorGroup         → VectorStrokeGroup
+// 　　　VectorLine          → VectorStroke
+// 　　　LinePoint           → VectorPoint
+// 　　　StrokeFillType: fill, holeFill
 // 　　・データのコンバート処理を作る
-// 　　　・連結描画しないLine、連結描画するLineをそれぞれまとめてStrokeGroupに入れ、それをDrawingGroupに入れる（一つのDrawingGroupに一つのStrokeGroupが入った状態になる）
-// 　　・DrawingGroupごとに描画するようにする
-//   ・DrawingGroup、StrokeGroupの編集処理
-// 　　・DrawingGroup、StrokeGroupをEditモードで可視化する
-// 　　・DrawingGroupを編集処理のループの中に足す
+// 　　　・連結描画しないLine、連結描画するLineをそれぞれまとめてStrokeGroupに入れ、それをDrawingUnitに入れる（一つのDrawingUnitに一つのStrokeGroupが入った状態になる）
+// 　　・DrawingUnitごとに描画するようにする
+//   ・DrawingUnit、StrokeGroupの編集処理
+// 　　・DrawingUnit、StrokeGroupをEditモードで可視化する
+// 　　・DrawingUnitを編集処理のループの中に足す
 //   ・StrokeGroupの頂点や線の削除をしても正しくなるようにする
-//   　・StrokeGroupの中で最も近い位置のStokeが連結描画されるように再構築する処理を実装する
+//   　・StrokeGroupの中で最も近い位置のStrokeが連結描画されるように再構築する処理を実装する
 //   ・holeFillを描画できるようにする
 //   　・Strokeのがfillのときは右回り、holeFillのときは左回りになるように自動的に再構築する処理を実装する
 //   ・ブラシ塗りの実装
+// ・線描画ツールで角度がきついところで自動的に線を分割する機能の追加
 // ・文字入れ機能の追加
 //   ・それぞれの文字入れをプロパティパネルとして表示する
 // ・プロパティウィンドウを実装する
@@ -46,6 +49,7 @@ import { UI_ColorMixerWindow } from 'ui/color_mixer_window';
 //   ・ドキュメントをルートに表示し、それを選択しているときにドキュメントフレームなどドキュメント設定を編集できるメインツールにする
 
 // どこかでやる必要があること (nearest future tasks)
+// ・ = new List<T> を = [] にする
 // ・ファイル管理
 //   ・デフォルトの線の太さ設定の保存
 //   ・デフォルトのエクスポート倍率設定の保存

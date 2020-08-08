@@ -1,5 +1,5 @@
 ﻿import { float, List, int } from "base/conversion";
-import { VectorGroup, LinePoint } from "base/data";
+import { VectorStrokeGroup, VectorPoint } from "base/data";
 import { GPULine, GPULinePoint, GPUVertexBuffer } from "./gpu_data";
 
 
@@ -61,7 +61,7 @@ export class Logic_GPULine {
 
     minimumSegmentDistance = 0.001;
 
-    copyGroupPointDataToBuffer(group: VectorGroup, lineWidthBiasRate: float, useAdjustingLocation: boolean) {
+    copyGroupPointDataToBuffer(group: VectorStrokeGroup, lineWidthBiasRate: float, useAdjustingLocation: boolean) {
 
         let vertexBuffer = group.buffer;
 
@@ -73,7 +73,7 @@ export class Logic_GPULine {
 
             let gpuLine = new GPULine();
 
-            let lastLinePoint: LinePoint = null;
+            let lastLinePoint: VectorPoint = null;
 
             for (let linePoint of line.points) {
 

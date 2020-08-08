@@ -132,7 +132,7 @@ export enum LinePointModifyFlagID {
   edit = 4,
 }
 
-export class LinePoint {
+export class VectorPoint {
 
   location = vec3.fromValues(0.0, 0.0, 0.0);
   lineWidth = 1.0;
@@ -148,9 +148,9 @@ export class LinePoint {
   totalLength = 0.0;
   curvature = 0.0;
 
-  static clone(srcPoint: LinePoint): LinePoint {
+  static clone(srcPoint: VectorPoint): VectorPoint {
 
-    let point = new LinePoint();
+    let point = new VectorPoint();
 
     vec3.copy(point.location, srcPoint.location);
     point.lineWidth = srcPoint.lineWidth;
@@ -169,15 +169,15 @@ export enum VectorLineModifyFlagID {
   unselectedToSelected = 2,
   delete = 3,
   deletePoints = 4,
-  deleteLine = 5, // delete the line with all points
+  deleteLine = 5, // delete the line without operations per point
   edit = 6,
   transform = 7,
   resampling = 8
 }
 
-export class VectorLine {
+export class VectorStroke {
 
-  points = new List<LinePoint>();
+  points = new List<VectorPoint>();
   continuousFill = false;
   isSelected = false;
 
@@ -204,9 +204,9 @@ export enum VectorGroupModifyFlagID {
   edit = 4,
 }
 
-export class VectorGroup {
+export class VectorStrokeGroup {
 
-  lines = new List<VectorLine>();
+  lines = new List<VectorStroke>();
   isSelected = false;
 
   // runtime
@@ -214,29 +214,34 @@ export class VectorGroup {
   linePointModifyFlag = VectorGroupModifyFlagID.none;
   buffer = new GPUVertexBuffer();
 
-  static setUpdated(group: VectorGroup) {
+  static setUpdated(group: VectorStrokeGroup) {
 
     group.buffer.isStored = false;
   }
 
-  static setGroupsUpdated(groups: List<VectorGroup>) {
+  static setGroupsUpdated(groups: List<VectorStrokeGroup>) {
 
     for (let group of groups) {
 
-      VectorGroup.setUpdated(group);
+      VectorStrokeGroup.setUpdated(group);
     }
   }
 }
 
-export class VectorLayerGeometry {
+export class VectorDrawingUnit {
 
-  groups = new List<VectorGroup>();
+  groups: VectorStrokeGroup[] = [];
 }
 
-export class VectorLayerKeyframe {
+export class VectorGeometry {
+
+  units: VectorDrawingUnit[] = [];
+}
+
+export class VectorKeyframe {
 
   frame = 0;
-  geometry: VectorLayerGeometry = null;
+  geometry: VectorGeometry = null;
 }
 
 export enum DrawLineTypeID {
@@ -257,7 +262,7 @@ export class VectorLayer extends Layer {
 
   type = LayerTypeID.vectorLayer;
 
-  keyframes = new List<VectorLayerKeyframe>();
+  keyframes = new List<VectorKeyframe>();
 
   drawLineType = DrawLineTypeID.paletteColor;
 
@@ -314,9 +319,9 @@ export class VectorLayer extends Layer {
   constructor() {
     super();
 
-    let key = new VectorLayerKeyframe();
+    let key = new VectorKeyframe();
     key.frame = 0;
-    key.geometry = new VectorLayerGeometry();
+    key.geometry = new VectorGeometry();
     this.keyframes.push(key);
   }
 }
@@ -479,7 +484,7 @@ export class HeadLocationInputData extends PosingInputData {
 
   center = vec3.fromValues(0.0, 0.0, 0.0);
   radius = 0.0;
-  editLine: VectorLine = null;
+  editLine: VectorStroke = null;
 
   matrix = mat4.create();
 
@@ -677,6 +682,9 @@ export enum DocumentFileType {
 export class DocumentData {
 
   static maxPaletteColors = 50;
+  static versionString = '0.1.1';
+
+  version = DocumentData.versionString;
 
   rootLayer = new Layer();
 

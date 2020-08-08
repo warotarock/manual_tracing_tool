@@ -1,7 +1,7 @@
 ﻿import {
-    LinePoint,
-    VectorLine,
-    VectorGroup,
+    VectorPoint,
+    VectorStroke,
+    VectorStrokeGroup,
     Layer,
 } from 'base/data';
 
@@ -16,7 +16,7 @@ import { Tool_BrushSelectLinePointBase } from 'tools/select_brush_select';
 
 export class Selector_DeleteLinePoint_BrushSelect extends Selector_LinePoint_BrushSelect {
 
-    protected onPointHited(group: VectorGroup, line: VectorLine, point: LinePoint) { // @override
+    protected onPointHited(group: VectorStrokeGroup, line: VectorStroke, point: VectorPoint) { // @override
 
         this.selectionInfo.deletePoint(point);
     }

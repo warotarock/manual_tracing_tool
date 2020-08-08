@@ -2,9 +2,9 @@
 
 import {
     VectorLayer,
-    LinePoint,
-    VectorLine,
-    VectorGroup,
+    VectorPoint,
+    VectorStroke,
+    VectorStrokeGroup,
 } from 'base/data';
 
 import {
@@ -21,8 +21,8 @@ import { Logic_Edit_Points, Logic_Edit_Line } from 'logics/edit_vector_layer';
 
 class Tool_Transform_Lattice_EditPoint {
 
-    targetPoint: LinePoint = null;
-    targetLine: VectorLine = null;
+    targetPoint: VectorPoint = null;
+    targetLine: VectorStroke = null;
 
     relativeLocation = vec3.fromValues(0.0, 0.0, 0.0);
     newLocation = vec3.fromValues(0.0, 0.0, 0.0);
@@ -35,8 +35,8 @@ export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
     lerpLocation2 = vec3.create();
     lerpLocation3 = vec3.create();
 
-    targetGroups: List<VectorGroup> = null;
-    targetLines: List<VectorLine> = null;
+    targetGroups: List<VectorStrokeGroup> = null;
+    targetLines: List<VectorStroke> = null;
     editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
     protected clearEditData() { // @override
@@ -61,7 +61,7 @@ export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
 
         let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             for (let line of group.lines) {
 
@@ -76,13 +76,13 @@ export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
 
     protected prepareEditData(env: ToolEnvironment) { // @override
 
-        let targetGroups = new List<VectorGroup>();
-        let targetLines = new List<VectorLine>();
+        let targetGroups = new List<VectorStrokeGroup>();
+        let targetLines = new List<VectorStroke>();
         let editPoints = new List<Tool_Transform_Lattice_EditPoint>();
 
         let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-        ViewKeyframeLayer.forEachLayerAndGroup(viewKeyframeLayers, (layer: VectorLayer, group: VectorGroup) => {
+        ViewKeyframeLayer.forEachLayerAndGroup(viewKeyframeLayers, (layer: VectorLayer, group: VectorStrokeGroup) => {
 
             let existsInGroup = false;
 
@@ -211,7 +211,7 @@ export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
 
 export class Command_TransformLattice_LinePoint extends CommandBase {
 
-    targetLines: List<VectorLine> = null;
+    targetLines: List<VectorStroke> = null;
     editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
     protected execute(env: ToolEnvironment) { // @override

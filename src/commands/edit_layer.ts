@@ -3,12 +3,13 @@ import { CommandBase } from "base/command";
 import { ToolEnvironment } from "base/tool";
 import {
     Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
-    VectorLayer, VectorLayerKeyframe, VectorLayerGeometry, VectorGroup,
+    VectorLayer, VectorKeyframe, VectorGeometry, VectorStrokeGroup,
     VectorLayerReferenceLayer,
     GroupLayer,
     ImageFileReferenceLayer,
     PosingLayer,
-    AutoFillLayer
+    AutoFillLayer,
+    VectorDrawingUnit
 } from "base/data";
 
 export class Command_Layer_CommandBase extends CommandBase {
@@ -244,12 +245,14 @@ export class Command_Layer_AddVectorLayerToCurrentPosition extends Command_Layer
             this.newLayer.fillAreaType = FillAreaTypeID.paletteColor;
         }
 
-        let keyFrame = new VectorLayerKeyframe();
-        keyFrame.geometry = new VectorLayerGeometry();
+        let keyFrame = new VectorKeyframe();
+        keyFrame.geometry = new VectorGeometry();
         this.newLayer.keyframes.push(keyFrame);
 
-        let group = new VectorGroup();
-        keyFrame.geometry.groups.push(group);
+        const unit = new VectorDrawingUnit();
+        unit.groups.push(new VectorStrokeGroup());
+
+        keyFrame.geometry.units.push(unit);
 
         this.executeLayerInsertToCurrent(this.newLayer, env);
     }
@@ -308,12 +311,14 @@ export class Command_Layer_AddAutoFillLayerToCurrentPosition extends Command_Lay
         this.newLayer.drawLineType = DrawLineTypeID.paletteColor;
         this.newLayer.fillAreaType = FillAreaTypeID.none;
 
-        let keyFrame = new VectorLayerKeyframe();
-        keyFrame.geometry = new VectorLayerGeometry();
+        let keyFrame = new VectorKeyframe();
+        keyFrame.geometry = new VectorGeometry();
         this.newLayer.keyframes.push(keyFrame);
 
-        let group = new VectorGroup();
-        keyFrame.geometry.groups.push(group);
+        const unit = new VectorDrawingUnit();
+        unit.groups.push(new VectorStrokeGroup());
+
+        keyFrame.geometry.units.push(unit);
 
         this.executeLayerInsertToCurrent(this.newLayer, env);
     }

@@ -1,5 +1,5 @@
 ﻿import { List } from 'base/conversion';
-import { VectorGroup, } from 'base/data';
+import { VectorStrokeGroup, } from 'base/data';
 import { ToolEnvironment, ToolBase, ViewKeyframeLayer, } from 'base/tool';
 
 import { VectorLayerEditorSelectionInfo, SelectionEditMode } from 'logics/selector';
@@ -65,7 +65,7 @@ export class Tool_Select_All_LinePoint extends ToolBase {
 
         let isSelected = false;
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             for (let line of group.lines) {
 
@@ -93,7 +93,7 @@ export class Tool_Select_All_LinePoint extends ToolBase {
 
         let selectionInfo = new VectorLayerEditorSelectionInfo();
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             for (let line of group.lines) {
 
@@ -114,7 +114,7 @@ export class Tool_Select_All_LinePoint extends ToolBase {
 
         let selectionInfo = new VectorLayerEditorSelectionInfo();
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             for (let line of group.lines) {
 

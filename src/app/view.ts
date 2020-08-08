@@ -4,7 +4,7 @@ import {
 } from 'base/conversion';
 
 import {
-  DocumentData, Layer, LayerTypeID, FillAreaTypeID, VectorLayerKeyframe,
+  DocumentData, Layer, LayerTypeID, FillAreaTypeID, VectorKeyframe,
   VectorLayer,
   ImageFileReferenceLayer,
   DrawLineTypeID,
@@ -477,7 +477,7 @@ export class App_View {
 
           let vectorLayer = <VectorLayer>layer;
 
-          let max_KeyFrame: VectorLayerKeyframe = null;
+          let max_KeyFrame: VectorKeyframe = null;
           for (let keyframe of vectorLayer.keyframes) {
 
             if (keyframe.frame > viewKeyframe.frame) {

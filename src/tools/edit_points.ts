@@ -1,7 +1,7 @@
 ﻿import { List } from 'base/conversion';
 
 import {
-    VectorGroup, VectorLine, LinePoint, LinePointModifyFlagID,
+    VectorStrokeGroup, VectorStroke, VectorPoint, LinePointModifyFlagID,
 } from 'base/data';
 
 import {
@@ -18,7 +18,7 @@ export class Selector_HideLinePoint_BrushSelect extends Selector_LinePoint_Brush
 
     lineWidth = 0.0;
 
-    protected onPointHited(group: VectorGroup, line: VectorLine, point: LinePoint) { // @override
+    protected onPointHited(group: VectorStrokeGroup, line: VectorStroke, point: VectorPoint) { // @override
 
         if (point.modifyFlag == LinePointModifyFlagID.none) {
 
@@ -82,7 +82,7 @@ export class Tool_HideLinePoint_BrushSelect extends Tool_BrushSelectLinePointBas
 
 class Tool_EditLineWidth_EditPoint {
 
-    targetPoint: LinePoint = null;
+    targetPoint: VectorPoint = null;
 
     newLineWidth = 0.0;
     oldLineWidth = 0.0;

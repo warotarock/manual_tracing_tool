@@ -1,9 +1,9 @@
 ﻿import { List, ListRemoveAt } from 'base/conversion';
 
 import {
-    LinePoint,
-    VectorLine,
-    VectorGroup,
+    VectorPoint,
+    VectorStroke,
+    VectorStrokeGroup,
     Layer,
 } from 'base/data';
 
@@ -21,7 +21,7 @@ export class Tool_DrawLine extends ToolBase {
 
     helpText = '線を追加します。Shiftキーで直前の線から続けて塗りつぶします。';
 
-    editLine: VectorLine = null;
+    editLine: VectorStroke = null;
     continuousFill = false;
 
     isAvailable(env: ToolEnvironment): boolean { // @override
@@ -48,14 +48,14 @@ export class Tool_DrawLine extends ToolBase {
 
         this.continuousFill = env.isShiftKeyPressing();
 
-        this.editLine = new VectorLine();
+        this.editLine = new VectorStroke();
 
         this.addPointToEditLine(e, env);
     }
 
     private addPointToEditLine(e: ToolMouseEvent, env: ToolEnvironment) {
 
-        let point = new LinePoint();
+        let point = new VectorPoint();
         vec3.copy(point.location, e.location);
         point.lineWidth = env.drawLineBaseWidth;
 
@@ -115,7 +115,7 @@ export class Tool_DrawLine extends ToolBase {
         }
 
         // Collect continuous filling info
-        let previousConnectedLine: VectorLine = null;
+        let previousConnectedLine: VectorStroke = null;
         let previousConnectedLine_continuousFill = false;
 
         if (this.continuousFill && targetGroup.lines.length >= 1) {
@@ -134,7 +134,7 @@ export class Tool_DrawLine extends ToolBase {
 
                 if (distance2 < distance1) {
 
-                    let revercedList = new List<LinePoint>();
+                    let revercedList = new List<VectorPoint>();
                     for (let i = resampledLine.points.length - 1; i >= 0; i--) {
 
                         revercedList.push(resampledLine.points[i]);
@@ -164,14 +164,14 @@ export class Tool_DrawLine extends ToolBase {
 
 export class Command_AddLine extends CommandBase {
 
-    protected group: VectorGroup = null;
-    protected line: VectorLine = null;
+    protected group: VectorStrokeGroup = null;
+    protected line: VectorStroke = null;
     protected continuousFill = false;
 
-    previousConnectedLine: VectorLine = null;
+    previousConnectedLine: VectorStroke = null;
     previousConnectedLine_continuousFill = false;
 
-    prepareEditTargets(group: VectorGroup, line: VectorLine) {
+    prepareEditTargets(group: VectorStrokeGroup, line: VectorStroke) {
 
         this.group = group;
         this.line = line;
@@ -179,7 +179,7 @@ export class Command_AddLine extends CommandBase {
         this.useGroup(group);
     }
 
-    setContiuousStates(continuousFill: boolean, previousConnectedLine: VectorLine, previousConnectedLine_continuousFill: boolean) {
+    setContiuousStates(continuousFill: boolean, previousConnectedLine: VectorStroke, previousConnectedLine_continuousFill: boolean) {
 
         this.continuousFill = continuousFill;
         this.previousConnectedLine = previousConnectedLine;

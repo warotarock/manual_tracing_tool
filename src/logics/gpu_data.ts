@@ -1,5 +1,5 @@
 ﻿import { float, List } from 'base/conversion';
-import { LinePoint } from 'base/data';
+import { VectorPoint } from 'base/data';
 
 
 export class GPULinePoint {
@@ -29,7 +29,7 @@ export class GPULinePoint {
     pointMat = mat4.create();
     invMat = mat4.create();
 
-    copyFrom(linePoint: LinePoint, lineWidthBiasRate: float, useAdjustingLocation: boolean) {
+    copyFrom(linePoint: VectorPoint, lineWidthBiasRate: float, useAdjustingLocation: boolean) {
 
         if (useAdjustingLocation) {
 

@@ -1,9 +1,9 @@
 ﻿import { List, float } from 'base/conversion';
 
 import {
-    LinePoint,
-    VectorLine,
-    VectorGroup,
+    VectorPoint,
+    VectorStroke,
+    VectorStrokeGroup,
     VectorLineModifyFlagID,
 } from 'base/data';
 
@@ -21,10 +21,10 @@ import { Tool_BrushSelectLinePointBase } from './select_brush_select';
 
 class DivideLine_EditGroup {
 
-    targetGroup: VectorGroup = null;
+    targetGroup: VectorStrokeGroup = null;
 
-    newLines = new List<VectorLine>();
-    oldLines: List<VectorLine> = null;
+    newLines = new List<VectorStroke>();
+    oldLines: List<VectorStroke> = null;
 
     editLines = new List<DivideLine_EditLine>();
 }
@@ -36,7 +36,7 @@ class DivideLine_EditLine {
 
 class DivideLine_EditPoint {
 
-    targetPoint: LinePoint = null;
+    targetPoint: VectorPoint = null;
 
     newLengthTo = 0.0;
     newLengthFrom = 0.0;
@@ -51,12 +51,12 @@ export class Selector_DeleteLinePoint_DivideLine extends Selector_LineSegment_Br
     private normalVec = vec3.create();
     private localLocation = vec3.create();
 
-    protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
+    protected onLineSegmentHited(group: VectorStrokeGroup, line: VectorStroke, point1: VectorPoint, point2: VectorPoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
         this.createEditPoint(group, line, point1, point2, location, minDistanceSQ);
     }
 
-    private createEditPoint(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float) {
+    private createEditPoint(group: VectorStrokeGroup, line: VectorStroke, point1: VectorPoint, point2: VectorPoint, location: Vec3, minDistanceSQ: float) {
 
         let edited = false;
 
@@ -206,7 +206,7 @@ export class Command_DeletePoints_DivideLine extends CommandBase {
 
                 line.modifyFlag = VectorLineModifyFlagID.none;
 
-                let newLine: VectorLine = null;
+                let newLine: VectorStroke = null;
 
                 let strokeStarted = false;
                 let drawingRemaining = false;
@@ -228,7 +228,7 @@ export class Command_DeletePoints_DivideLine extends CommandBase {
 
                         if (!strokeStarted) {
 
-                            newLine = new VectorLine();
+                            newLine = new VectorStroke();
                             newLine.points.push(fromPoint);
                         }
 
@@ -243,13 +243,13 @@ export class Command_DeletePoints_DivideLine extends CommandBase {
 
                             if (!strokeStarted) {
 
-                                newLine = new VectorLine();
+                                newLine = new VectorStroke();
                                 newLine.points.push(fromPoint);
                             }
 
                             vec3.lerp(this.toLocation, fromLocation, toLocation, lengthFrom);
 
-                            let newPoint = new LinePoint();
+                            let newPoint = new VectorPoint();
 
                             vec3.copy(newPoint.location, this.toLocation);
                             vec3.copy(newPoint.adjustingLocation, newPoint.location);
@@ -275,9 +275,9 @@ export class Command_DeletePoints_DivideLine extends CommandBase {
 
                             vec3.lerp(this.fromLocation, fromLocation, toLocation, lengthTo);
 
-                            newLine = new VectorLine();
+                            newLine = new VectorStroke();
 
-                            let newPoint = new LinePoint();
+                            let newPoint = new VectorPoint();
 
                             vec3.copy(newPoint.location, this.fromLocation);
                             vec3.copy(newPoint.adjustingLocation, newPoint.location);

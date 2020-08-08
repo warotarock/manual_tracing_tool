@@ -2,9 +2,9 @@
 import {
     VectorLineModifyFlagID,
     LinePointModifyFlagID,
-    VectorGroup,
-    VectorLine,
-    LinePoint,
+    VectorStrokeGroup,
+    VectorStroke,
+    VectorPoint,
     VectorGroupModifyFlagID,
 } from 'base/data';
 
@@ -20,19 +20,19 @@ export enum SelectionEditMode {
 
 export class GroupSelectionInfo {
 
-    group: VectorGroup = null;
+    group: VectorStrokeGroup = null;
 }
 
 export class LineSelectionInfo {
 
-    line: VectorLine = null;
+    line: VectorStroke = null;
     selectStateAfter = false;
     selectStateBefore = false;
 }
 
 export class PointSelectionInfo {
 
-    point: LinePoint = null;
+    point: VectorPoint = null;
     selectStateAfter = false;
     selectStateBefore = false;
 }
@@ -55,22 +55,22 @@ export class VectorLayerEditorSelectionInfo {
         this.selectedPoints = new List<PointSelectionInfo>();
     }
 
-    isGroupDone(group: VectorGroup) {
+    isGroupDone(group: VectorStrokeGroup) {
 
         return (group.modifyFlag != VectorGroupModifyFlagID.none);
     }
 
-    isLineDone(line: VectorLine) {
+    isLineDone(line: VectorStroke) {
 
         return (line.modifyFlag != VectorLineModifyFlagID.none);
     }
 
-    isPointDone(point: LinePoint) {
+    isPointDone(point: VectorPoint) {
 
         return (point.modifyFlag != LinePointModifyFlagID.none);
     }
 
-    selectPoint(line: VectorLine, point: LinePoint, editMode: SelectionEditMode) {
+    selectPoint(line: VectorStroke, point: VectorPoint, editMode: SelectionEditMode) {
 
         if (this.isPointDone(point)) {
             return;
@@ -115,7 +115,7 @@ export class VectorLayerEditorSelectionInfo {
         }
     }
 
-    selectLinePoints(line: VectorLine, editMode: SelectionEditMode) {
+    selectLinePoints(line: VectorStroke, editMode: SelectionEditMode) {
 
         for (let point of line.points) {
 
@@ -123,7 +123,7 @@ export class VectorLayerEditorSelectionInfo {
         }
     }
 
-    selectLine(line: VectorLine, editMode: SelectionEditMode) {
+    selectLine(line: VectorStroke, editMode: SelectionEditMode) {
 
         if (this.isLineDone(line)) {
             return;
@@ -173,7 +173,7 @@ export class VectorLayerEditorSelectionInfo {
         }
     }
 
-    editGroup(group: VectorGroup) {
+    editGroup(group: VectorStrokeGroup) {
 
         if (this.isGroupDone(group)) {
             return;
@@ -186,7 +186,7 @@ export class VectorLayerEditorSelectionInfo {
         group.modifyFlag = VectorGroupModifyFlagID.edit;
     }
 
-    editLine(line: VectorLine) {
+    editLine(line: VectorStroke) {
 
         if (this.isLineDone(line)) {
             return;
@@ -199,7 +199,7 @@ export class VectorLayerEditorSelectionInfo {
         line.modifyFlag = VectorLineModifyFlagID.edit;
     }
 
-    editPoint(point: LinePoint) {
+    editPoint(point: VectorPoint) {
 
         if (this.isPointDone(point)) {
             return;
@@ -212,7 +212,7 @@ export class VectorLayerEditorSelectionInfo {
         point.modifyFlag = LinePointModifyFlagID.edit;
     }
 
-    deletePoint(point: LinePoint) {
+    deletePoint(point: VectorPoint) {
 
         if (this.isPointDone(point)) {
             return;
@@ -280,7 +280,7 @@ export class Selector_LinePoint_BrushSelect extends HitTest_LinePoint_PointToPoi
         this.selectionInfo.clear();
     }
 
-    protected onPointHited(group: VectorGroup, line: VectorLine, point: LinePoint) { // @override
+    protected onPointHited(group: VectorStrokeGroup, line: VectorStroke, point: VectorPoint) { // @override
 
         this.selectionInfo.selectPoint(line, point, this.editMode);
     }
@@ -309,7 +309,7 @@ export class Selector_Line_BrushSelect extends HitTest_Line_PointToLineByDistanc
         this.selectionInfo.clear();
     }
 
-    protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
+    protected onLineSegmentHited(group: VectorStrokeGroup, line: VectorStroke, point1: VectorPoint, point2: VectorPoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
         this.selectionInfo.selectLine(line, this.editMode);
 
@@ -337,7 +337,7 @@ export class Selector_LineSegment_BrushSelect extends HitTest_Line_PointToLineBy
         this.selectionInfo.clear();
     }
 
-    protected onLineSegmentHited(group: VectorGroup, line: VectorLine, point1: LinePoint, point2: LinePoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
+    protected onLineSegmentHited(group: VectorStrokeGroup, line: VectorStroke, point1: VectorPoint, point2: VectorPoint, location: Vec3, minDistanceSQ: float, distanceSQ: float) { // @override
 
         this.selectionInfo.selectPoint(line, point1, this.editMode);
         this.selectionInfo.selectPoint(line, point2, this.editMode);

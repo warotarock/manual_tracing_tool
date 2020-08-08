@@ -2,7 +2,7 @@
 import {
   DocumentData, DocumentDataSaveInfo,
   DocumentBackGroundTypeID,
-  Layer, LayerTypeID, FillAreaTypeID, VectorLayerKeyframe,
+  Layer, LayerTypeID, FillAreaTypeID, VectorKeyframe,
   VectorLayer,
   ImageFileReferenceLayer,
   VectorLayerReferenceLayer,
@@ -14,11 +14,13 @@ import {
   PosingData,
   PosingLayer,
   LocalSetting,
+  VectorDrawingUnit,
+  VectorStrokeGroup,
+  VectorStroke,
 } from 'base/data';
 
 import { GPUVertexBuffer } from 'logics/gpu_data';
 import { Logic_Edit_Line } from 'logics/edit_vector_layer';
-
 
 export class DocumentLogic {
 
@@ -90,6 +92,12 @@ export class DocumentLogic {
     }
 
     this.fixLoadedDocumentData_FixLayer_Recursive(documentData.rootLayer, info);
+
+    // version
+    if (documentData.version == undefined) {
+
+      documentData.version = DocumentData.versionString;
+    }
   }
 
   static fixLoadedDocumentData_CollectLayers_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
@@ -146,11 +154,11 @@ export class DocumentLogic {
 
       if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {
 
-        vectorLayer.keyframes = new List<VectorLayerKeyframe>();
-        let key = new VectorLayerKeyframe();
-        key.frame = 0;
-        key.geometry = vectorLayer['geometry'];
-        vectorLayer.keyframes.push(key);
+        vectorLayer.keyframes = new List<VectorKeyframe>();
+        let keyframe = new VectorKeyframe();
+        keyframe.frame = 0;
+        keyframe.geometry = vectorLayer['geometry'];
+        vectorLayer.keyframes.push(keyframe);
       }
 
       if (vectorLayer['geometry'] != undefined) {
@@ -161,50 +169,9 @@ export class DocumentLogic {
         delete vectorLayer['groups'];
       }
 
-      for (let keyframe of vectorLayer.keyframes) {
+      DocumentLogic.fixLoadedDocumentData_FixVectorLayerStrokeGroups(vectorLayer);
 
-        for (let group of keyframe.geometry.groups) {
-
-          group.buffer = new GPUVertexBuffer();
-
-          for (let line of group.lines) {
-
-            line.modifyFlag = VectorLineModifyFlagID.none;
-            line.isCloseToMouse = false;
-
-            if (line['strokeWidth'] != undefined) {
-              delete line['strokeWidth'];
-            }
-
-            for (let point of line.points) {
-
-              point.modifyFlag = LinePointModifyFlagID.none;
-
-              point.location[2] = 0.0;
-
-              point.adjustingLocation = vec3.create();
-              vec3.copy(point.adjustingLocation, point.location);
-
-              point.tempLocation = vec3.create();
-
-              point.adjustingLineWidth = point.lineWidth;
-
-              if (point.lineWidth == undefined) {
-                point.lineWidth = 1.0;
-              }
-
-              point.adjustingLengthFrom = 1.0;
-              point.adjustingLengthTo = 0.0;
-
-              if (point['adjustedLocation'] != undefined) {
-                delete point['adjustedLocation'];
-              }
-            }
-
-            Logic_Edit_Line.calculateParameters(line);
-          }
-        }
-      }
+      DocumentLogic.fixLoadedDocumentData_VectorLayer_SetRuntimeProperties(vectorLayer);
     }
     else if (VectorLayerReferenceLayer.isVectorLayerReferenceLayer(layer)) {
 
@@ -264,6 +231,95 @@ export class DocumentLogic {
     for (let childLayer of layer.childLayers) {
 
       this.fixLoadedDocumentData_FixLayer_Recursive(childLayer, info);
+    }
+  }
+
+  static fixLoadedDocumentData_FixVectorLayerStrokeGroups(layer: VectorLayer) {
+
+    for (let keyframe of layer.keyframes) {
+
+      if (keyframe.geometry['units'] == undefined && keyframe.geometry['groups'] != undefined) {
+
+        const new_units: VectorDrawingUnit[] = [];
+
+        for (const group of keyframe.geometry['groups']) {
+
+          const old_lines: VectorStroke[] = group['lines'];
+
+          let new_unit = new VectorDrawingUnit();
+          let new_group = new VectorStrokeGroup();
+
+          for (const line of old_lines) {
+
+            if (line['strokeWidth'] != undefined) {
+
+              delete line['strokeWidth'];
+            }
+
+            new_group.lines.push(line);
+
+            if (!line.continuousFill) {
+
+              new_unit.groups.push(new_group);
+              new_units.push(new_unit);
+
+              new_unit = new VectorDrawingUnit();
+              new_group = new VectorStrokeGroup();
+            }
+          }
+        }
+
+        keyframe.geometry.units = new_units;
+
+        delete keyframe.geometry['groups'];
+      }
+    }
+  }
+
+  static fixLoadedDocumentData_VectorLayer_SetRuntimeProperties(layer: VectorLayer) {
+
+    for (let keyframe of layer.keyframes) {
+
+      for (let unit of keyframe.geometry.units) {
+
+        for (let group of unit.groups) {
+
+          group.buffer = new GPUVertexBuffer();
+
+          for (let line of group.lines) {
+
+            line.modifyFlag = VectorLineModifyFlagID.none;
+            line.isCloseToMouse = false;
+
+            for (let point of line.points) {
+
+              point.modifyFlag = LinePointModifyFlagID.none;
+
+              point.location[2] = 0.0;
+
+              point.adjustingLocation = vec3.create();
+              vec3.copy(point.adjustingLocation, point.location);
+
+              point.tempLocation = vec3.create();
+
+              point.adjustingLineWidth = point.lineWidth;
+
+              if (point.lineWidth == undefined) {
+                point.lineWidth = 1.0;
+              }
+
+              point.adjustingLengthFrom = 1.0;
+              point.adjustingLengthTo = 0.0;
+
+              if (point['adjustedLocation'] != undefined) {
+                delete point['adjustedLocation'];
+              }
+            }
+
+            Logic_Edit_Line.calculateParameters(line);
+          }
+        }
+      }
     }
   }
 
@@ -329,28 +385,31 @@ export class DocumentLogic {
 
       for (let keyframe of vectorLayer.keyframes) {
 
-        for (let group of keyframe.geometry.groups) {
+        for (let unit of keyframe.geometry.units) {
 
-          delete group.buffer;
+          for (let group of unit.groups) {
 
-          for (let line of group.lines) {
+            delete group.buffer;
 
-            delete line.modifyFlag;
-            delete line.isCloseToMouse;
-            delete line.left;
-            delete line.top;
-            delete line.right;
-            delete line.bottom;
-            delete line.range;
-            delete line.totalLength;
+            for (let line of group.lines) {
 
-            for (let point of line.points) {
+              delete line.modifyFlag;
+              delete line.isCloseToMouse;
+              delete line.left;
+              delete line.top;
+              delete line.right;
+              delete line.bottom;
+              delete line.range;
+              delete line.totalLength;
 
-              point.location = DocumentLogic.vec3ToArray(point.location);
+              for (let point of line.points) {
 
-              delete point.adjustingLocation;
-              delete point.tempLocation;
-              delete point.adjustingLineWidth;
+                point.location = DocumentLogic.vec3ToArray(point.location);
+
+                delete point.adjustingLocation;
+                delete point.tempLocation;
+                delete point.adjustingLineWidth;
+              }
             }
           }
         }
@@ -410,12 +469,15 @@ export class DocumentLogic {
 
       for (let keyframe of vectorLayer.keyframes) {
 
-        for (let group of keyframe.geometry.groups) {
+        for (let unit of keyframe.geometry.units) {
 
-          if (group.buffer.buffer != null) {
+          for (let group of unit.groups) {
 
-            gl.deleteBuffer(group.buffer.buffer);
-            group.buffer.buffer = null;
+            if (group.buffer.buffer != null) {
+
+              gl.deleteBuffer(group.buffer.buffer);
+              group.buffer.buffer = null;
+            }
           }
         }
       }

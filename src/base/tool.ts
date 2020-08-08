@@ -3,7 +3,7 @@ import {
   DocumentData,
   Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
   GroupLayer,
-  VectorLayer, VectorLayerGeometry, VectorGroup, VectorLine, LinePoint, VectorLayerKeyframe, VectorLineModifyFlagID,
+  VectorLayer, VectorGeometry, VectorStrokeGroup, VectorStroke, VectorPoint, VectorKeyframe, VectorLineModifyFlagID,
   ImageFileReferenceLayer,
   AutoFillLayer,
   PosingLayer, PosingData, PosingModel, InputSideID
@@ -121,11 +121,11 @@ export interface MainEditorDrawer {
 
   drawMouseCursor();
   drawMouseCursorCircle(radius: float);
-  drawEditorEditLineStroke(line: VectorLine);
-  drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean);
-  drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean);
-  drawEditorVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean);
-  drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean);
+  drawEditorEditLineStroke(line: VectorStroke);
+  drawEditorVectorLineStroke(line: VectorStroke, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean);
+  drawEditorVectorLinePoints(line: VectorStroke, color: Vec4, useAdjustingLocation: boolean);
+  drawEditorVectorLinePoint(point: VectorPoint, color: Vec4, useAdjustingLocation: boolean);
+  drawEditorVectorLineSegment(line: VectorStroke, startIndex: int, endIndex: int, useAdjustingLocation: boolean);
 }
 
 export class ToolBaseWindow extends CanvasWindow {
@@ -171,14 +171,14 @@ export class LatticePoint {
 export class ViewKeyframeLayer {
 
   layer: Layer = null;
-  vectorLayerKeyframe: VectorLayerKeyframe = null;
+  vectorLayerKeyframe: VectorKeyframe = null;
 
   hasKeyframe(): boolean {
 
     return (this.vectorLayerKeyframe != null);
   }
 
-  static forEachGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (group: VectorGroup) => void) {
+  static forEachGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (group: VectorStrokeGroup) => void) {
 
     for (let viewKeyframeLayer of viewKeyframeLayers) {
 
@@ -186,14 +186,17 @@ export class ViewKeyframeLayer {
         continue;
       }
 
-      for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+      for (let unit of viewKeyframeLayer.vectorLayerKeyframe.geometry.units) {
 
-        loopBodyFunction(group);
+        for (let group of unit.groups) {
+
+          loopBodyFunction(group);
+        }
       }
     }
   }
 
-  static forEachGeometry(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (geometry: VectorLayerGeometry) => void) {
+  static forEachGeometry(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (geometry: VectorGeometry) => void) {
 
     for (let viewKeyframeLayer of viewKeyframeLayers) {
 
@@ -205,7 +208,7 @@ export class ViewKeyframeLayer {
     }
   }
 
-  static forEachLayerAndGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (layer: VectorLayer, group: VectorGroup) => void) {
+  static forEachLayerAndGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (layer: VectorLayer, group: VectorStrokeGroup) => void) {
 
     for (let viewKeyframeLayer of viewKeyframeLayers) {
 
@@ -213,9 +216,12 @@ export class ViewKeyframeLayer {
         continue;
       }
 
-      for (let group of viewKeyframeLayer.vectorLayerKeyframe.geometry.groups) {
+      for (let unit of viewKeyframeLayer.vectorLayerKeyframe.geometry.units) {
 
-        loopBodyFunction(<VectorLayer>viewKeyframeLayer.layer, group);
+        for (let group of unit.groups) {
+
+          loopBodyFunction(<VectorLayer>viewKeyframeLayer.layer, group);
+        }
       }
     }
   }
@@ -430,7 +436,7 @@ export class DrawPathContext {
 
 export class ToolClipboard {
 
-  copy_VectorGroup: VectorGroup = null;
+  copy_VectorGroup: VectorStrokeGroup = null;
 }
 
 export class ToolContext {
@@ -465,9 +471,9 @@ export class ToolContext {
   currentLayer: Layer = null;
 
   currentVectorLayer: VectorLayer = null;
-  currentVectorGeometry: VectorLayerGeometry = null;
-  currentVectorGroup: VectorGroup = null;
-  currentVectorLine: VectorLine = null;
+  currentVectorGeometry: VectorGeometry = null;
+  currentVectorGroup: VectorStrokeGroup = null;
+  currentVectorLine: VectorStroke = null;
 
   currentPosingLayer: PosingLayer = null;
   currentPosingModel: PosingModel = null;
@@ -527,9 +533,9 @@ export class ToolEnvironment {
   currentLayer: Layer = null;
 
   currentVectorLayer: VectorLayer = null;
-  currentVectorGeometry: VectorLayerGeometry = null;
-  currentVectorGroup: VectorGroup = null;
-  currentVectorLine: VectorLine = null;
+  currentVectorGeometry: VectorGeometry = null;
+  currentVectorGroup: VectorStrokeGroup = null;
+  currentVectorLine: VectorStroke = null;
 
   currentPosingLayer: PosingLayer = null;
   currentPosingModel: PosingModel = null;
@@ -767,7 +773,7 @@ export class ToolEnvironment {
     this.toolContext.mainEditor.setCurrentLayer(layer);
   }
 
-  setCurrentVectorLine(line: VectorLine, group: VectorGroup) {
+  setCurrentVectorLine(line: VectorStroke, group: VectorStrokeGroup) {
 
     this.toolContext.currentVectorLine = line;
     this.currentVectorLine = line;

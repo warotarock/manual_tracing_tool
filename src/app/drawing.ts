@@ -13,7 +13,7 @@ import {
 import {
   DocumentData,
   Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
-  VectorLayer, VectorLayerGeometry, VectorLine, LinePoint, VectorLineModifyFlagID, LinePointModifyFlagID,
+  VectorLayer, VectorGeometry, VectorStroke, VectorPoint, VectorLineModifyFlagID, LinePointModifyFlagID,
   ImageFileReferenceLayer,
   PosingLayer
 } from 'base/data';
@@ -222,27 +222,27 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     this.canvasRender.stroke();
   }
 
-  drawEditorEditLineStroke(line: VectorLine) { // @implements MainEditorDrawer
+  drawEditorEditLineStroke(line: VectorStroke) { // @implements MainEditorDrawer
 
     this.drawEditLineStroke(line);
   }
 
-  drawEditorVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+  drawEditorVectorLineStroke(line: VectorStroke, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
     this.drawVectorLineStroke(line, color, 1.0, strokeWidthBolding, useAdjustingLocation, false);
   }
 
-  drawEditorVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+  drawEditorVectorLinePoints(line: VectorStroke, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
     this.drawVectorLinePoints(line, color, useAdjustingLocation);
   }
 
-  drawEditorVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+  drawEditorVectorLinePoint(point: VectorPoint, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
     this.drawVectorLinePoint(point, color, useAdjustingLocation);
   }
 
-  drawEditorVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+  drawEditorVectorLineSegment(line: VectorStroke, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
     this.drawVectorLineSegment(line, startIndex, endIndex, 1.0, 0.0, useAdjustingLocation);
   }
@@ -271,7 +271,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     }
   }
 
-  private drawForeground_VectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+  private drawForeground_VectorLayer(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
 
     let env = this.toolEnv;
     let useAdjustingLocation = isModalToolRunning;
@@ -279,13 +279,16 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     let widthRate = documentData.lineWidthBiasRate;
     let lineColor = this.getLineColor(layer, documentData, env, true);
 
-    for (let group of geometry.groups) {
+    for (let unit of geometry.units) {
 
-      if (layer.drawLineType != DrawLineTypeID.none) {
+      for (let group of unit.groups) {
 
-        for (let line of group.lines) {
+        if (layer.drawLineType != DrawLineTypeID.none) {
 
-          this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
+          for (let line of group.lines) {
+
+            this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
+          }
         }
       }
     }
@@ -339,7 +342,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     }
   }
 
-  private drawBackground_VectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+  private drawBackground_VectorLayer(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
 
     let env = this.toolEnv;
     let useAdjustingLocation = isModalToolRunning;
@@ -348,16 +351,19 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     let fillColor = this.getFillColor(layer, documentData, env, !isSelectedLayer);
 
-    for (let group of geometry.groups) {
+    for (let unit of geometry.units) {
 
-      let continuousFill = false;
-      for (let line of group.lines) {
+      for (let group of unit.groups) {
 
-        if (layer.fillAreaType != FillAreaTypeID.none) {
+        let continuousFill = false;
+        for (let line of group.lines) {
 
-          this.drawVectorLineFill(line, fillColor, useAdjustingLocation, continuousFill);
+          if (layer.fillAreaType != FillAreaTypeID.none) {
 
-          continuousFill = line.continuousFill;
+            this.drawVectorLineFill(line, fillColor, useAdjustingLocation, continuousFill);
+
+            continuousFill = line.continuousFill;
+          }
         }
       }
     }
@@ -383,7 +389,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     }
   }
 
-  protected drawVectorLayer(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+  protected drawVectorLayer(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
 
     let context = this.toolContext;
     let env = this.toolEnv;
@@ -410,33 +416,39 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     let useAdjustingLocation = isModalToolRunning;
 
-    for (let group of geometry.groups) {
+    for (let unit of geometry.units) {
 
-      let continuousFill = false;
-      for (let line of group.lines) {
+      for (let group of unit.groups) {
 
-        if (layer.fillAreaType != FillAreaTypeID.none) {
+        let continuousFill = false;
+        for (let line of group.lines) {
 
-          this.drawVectorLineFill(line, fillColor, useAdjustingLocation, continuousFill);
+          if (layer.fillAreaType != FillAreaTypeID.none) {
 
-          continuousFill = line.continuousFill;
+            this.drawVectorLineFill(line, fillColor, useAdjustingLocation, continuousFill);
+
+            continuousFill = line.continuousFill;
+          }
         }
       }
     }
 
-    for (let group of geometry.groups) {
+    for (let unit of geometry.units) {
 
-      if (layer.drawLineType != DrawLineTypeID.none) {
+      for (let group of unit.groups) {
 
-        for (let line of group.lines) {
+        if (layer.drawLineType != DrawLineTypeID.none) {
 
-          this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
+          for (let line of group.lines) {
+
+            this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
+          }
         }
       }
     }
   }
 
-  protected drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorLayerGeometry, documentData: DocumentData, drawStrokes: boolean, drawPoints: boolean, isModalToolRunning: boolean) {
+  protected drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, drawStrokes: boolean, drawPoints: boolean, isModalToolRunning: boolean) {
 
     let context = this.toolContext;
     let env = this.toolEnv;
@@ -452,50 +464,53 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     let useAdjustingLocation = isModalToolRunning;
 
-    for (let group of geometry.groups) {
+    for (let unit of geometry.units) {
 
-      for (let line of group.lines) {
+      for (let group of unit.groups) {
 
-        if (!isSelectedLayer) {
+        for (let line of group.lines) {
 
-          if (layer.drawLineType != DrawLineTypeID.none) {
+          if (!isSelectedLayer) {
 
-            this.drawVectorLineStroke(line, this.editOtherLayerLineColor, widthRate, 0.0, useAdjustingLocation, false);
-          }
-        }
-        else {
+            if (layer.drawLineType != DrawLineTypeID.none) {
 
-          if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
-
-            if (drawStrokes) {
-
-              this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, false);
-            }
-
-            if (drawPoints) {
-
-              this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
+              this.drawVectorLineStroke(line, this.editOtherLayerLineColor, widthRate, 0.0, useAdjustingLocation, false);
             }
           }
-          else if (this.toolContext.operationUnitID == OperationUnitID.line
-            || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
+          else {
 
-            if (drawStrokes) {
+            if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
 
-              let color: Vec3;
-              if ((line.isSelected && line.modifyFlag != VectorLineModifyFlagID.selectedToUnselected)
-                || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
+              if (drawStrokes) {
 
-                color = this.drawStyle.selectedVectorLineColor;
-              }
-              else {
-
-                color = lineColor;
+                this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, false);
               }
 
-              let lineWidthBolding = (line.isCloseToMouse ? 2.0 : 0.0);
+              if (drawPoints) {
 
-              this.drawVectorLineStroke(line, color, widthRate, lineWidthBolding, useAdjustingLocation, false);
+                this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
+              }
+            }
+            else if (this.toolContext.operationUnitID == OperationUnitID.line
+              || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
+
+              if (drawStrokes) {
+
+                let color: Vec3;
+                if ((line.isSelected && line.modifyFlag != VectorLineModifyFlagID.selectedToUnselected)
+                  || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
+
+                  color = this.drawStyle.selectedVectorLineColor;
+                }
+                else {
+
+                  color = lineColor;
+                }
+
+                let lineWidthBolding = (line.isCloseToMouse ? 2.0 : 0.0);
+
+                this.drawVectorLineStroke(line, color, widthRate, lineWidthBolding, useAdjustingLocation, false);
+              }
             }
           }
         }
@@ -503,7 +518,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     }
   }
 
-  protected drawVectorLineStroke(line: VectorLine, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean, isExporting: boolean) {
+  protected drawVectorLineStroke(line: VectorStroke, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean, isExporting: boolean) {
 
     if (line.points.length == 0) {
       return;
@@ -521,7 +536,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     this.drawVectorLineSegment(line, 0, line.points.length - 1, strokeWidthBiasRate, strokeWidthBolding, useAdjustingLocation);
   }
 
-  protected drawVectorLinePoints(line: VectorLine, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+  protected drawVectorLinePoints(line: VectorStroke, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
     if (line.points.length == 0) {
       return;
@@ -555,7 +570,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     return width;
   }
 
-  protected drawVectorLineFill(line: VectorLine, color: Vec4, useAdjustingLocation: boolean, isFillContinuing: boolean) {
+  protected drawVectorLineFill(line: VectorStroke, color: Vec4, useAdjustingLocation: boolean, isFillContinuing: boolean) {
 
     if (line.points.length <= 1) {
       return;
@@ -623,7 +638,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     }
   }
 
-  protected drawVectorLineSegment(line: VectorLine, startIndex: int, endIndex: int, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+  protected drawVectorLineSegment(line: VectorStroke, startIndex: int, endIndex: int, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
     if (line.points.length < 2) {
       return;
@@ -728,7 +743,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     }
   }
 
-  protected drawVectorLinePoint(point: LinePoint, color: Vec4, useAdjustingLocation: boolean) {
+  protected drawVectorLinePoint(point: VectorPoint, color: Vec4, useAdjustingLocation: boolean) {
 
     let viewScale = this.canvasRender.getViewScale();
 
@@ -760,12 +775,12 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     this.canvasRender.fill();
   }
 
-  protected drawEditLineStroke(line: VectorLine) {
+  protected drawEditLineStroke(line: VectorStroke) {
 
     this.drawVectorLineStroke(line, this.drawStyle.editingLineColor, 1.0, 2.0, false, false);
   }
 
-  protected drawEditLinePoints(canvasWindow: CanvasWindow, line: VectorLine, color: Vec4) {
+  protected drawEditLinePoints(canvasWindow: CanvasWindow, line: VectorStroke, color: Vec4) {
 
     this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
 
@@ -976,38 +991,41 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     //    lineColor = this.editOtherLayerLineColor;
     //}
 
-    for (let group of keyframe.geometry.groups) {
+    for (let unit of keyframe.geometry.units) {
 
-      // Calculate line point buffer data
+      for (let group of unit.groups) {
 
-      if (!group.buffer.isStored) {
+        // Calculate line point buffer data
 
-        console.log(`Calculate line point buffer data`);
+        if (!group.buffer.isStored) {
 
-        this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
+          console.log(`Calculate line point buffer data`);
 
-        let vertexUnitSize = shader.getVertexUnitSize();
-        let vertexCount = shader.getVertexCount(group.buffer.pointCount, group.buffer.lines.length); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
+          this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
 
-        this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
+          let vertexUnitSize = shader.getVertexUnitSize();
+          let vertexCount = shader.getVertexCount(group.buffer.pointCount, group.buffer.lines.length); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
 
-        shader.calculateBufferData(group.buffer, this.logic_GPULine);
+          this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
 
-        if (group.buffer.usedDataArraySize > 0) {
+          shader.calculateBufferData(group.buffer, this.logic_GPULine);
 
-          this.logic_GPULine.bufferData(group.buffer, render.gl);
+          if (group.buffer.usedDataArraySize > 0) {
+
+            this.logic_GPULine.bufferData(group.buffer, render.gl);
+          }
         }
-      }
 
-      // Draw lines
+        // Draw lines
 
-      if (group.buffer.isStored) {
+        if (group.buffer.isStored) {
 
-        this.lineShader.setBuffers(group.buffer.buffer, lineColor);
+          this.lineShader.setBuffers(group.buffer.buffer, lineColor);
 
-        let drawCount = this.lineShader.getDrawArrayTryanglesCount(group.buffer.usedDataArraySize);
+          let drawCount = this.lineShader.getDrawArrayTryanglesCount(group.buffer.usedDataArraySize);
 
-        render.drawArrayTryangles(drawCount);
+          render.drawArrayTryangles(drawCount);
+        }
       }
     }
   }

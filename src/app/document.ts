@@ -10,9 +10,10 @@ import {
     DocumentData,
     DocumentFileType,
     DocumentDataSaveInfo,
-    VectorGroup,
+    VectorStrokeGroup,
     PosingModel,
-    DocumentBackGroundTypeID
+    DocumentBackGroundTypeID,
+    VectorDrawingUnit
 } from 'base/data';
 
 import { DocumentLogic } from 'logics/document';
@@ -266,8 +267,11 @@ export class App_Document extends App_Tool {
             let layer1 = new VectorLayer();
             layer1.name = 'layer1'
             rootLayer.childLayers.push(layer1);
-            let group1 = new VectorGroup();
-            layer1.keyframes[0].geometry.groups.push(group1);
+
+            const unit = new VectorDrawingUnit();
+            unit.groups.push(new VectorStrokeGroup());
+
+            layer1.keyframes[0].geometry.units.push(unit);
         }
 
         //{

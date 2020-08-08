@@ -1,5 +1,5 @@
 ﻿import { List, int } from "base/conversion";
-import { VectorGroup, VectorLine, LinePoint, VectorLineModifyFlagID, LinePointModifyFlagID, VectorGroupModifyFlagID } from "base/data";
+import { VectorStrokeGroup, VectorStroke, VectorPoint, VectorLineModifyFlagID, LinePointModifyFlagID, VectorGroupModifyFlagID } from "base/data";
 import { CommandBase } from "base/command";
 import { ToolEnvironment, ViewKeyframeLayer } from "base/tool";
 import { Logic_Edit_Line } from "logics/edit_vector_layer";
@@ -7,16 +7,16 @@ import { Logic_Edit_Line } from "logics/edit_vector_layer";
 
 class Command_DeletePoints_EditGroup {
 
-    group: VectorGroup = null;
-    oldLineList: List<VectorLine> = null;
-    newLineList: List<VectorLine> = null;
+    group: VectorStrokeGroup = null;
+    oldLineList: List<VectorStroke> = null;
+    newLineList: List<VectorStroke> = null;
 }
 
 class Command_DeletePoints_EditLine {
 
-    targetLine: VectorLine = null;
-    oldPointList: List<LinePoint> = null;
-    newPointList: List<LinePoint> = null;
+    targetLine: VectorStroke = null;
+    oldPointList: List<VectorPoint> = null;
+    newPointList: List<VectorPoint> = null;
 }
 
 export class Command_DeletePoints extends CommandBase {
@@ -24,8 +24,8 @@ export class Command_DeletePoints extends CommandBase {
     editGroups: List<Command_DeletePoints_EditGroup> = null;
     editLines: List<Command_DeletePoints_EditLine> = null;
 
-    deletedLines: List<VectorLine> = null;
-    deletedPoints: List<LinePoint> = null;
+    deletedLines: List<VectorStroke> = null;
+    deletedPoints: List<VectorPoint> = null;
 
     prepareEditTargets(env: ToolEnvironment): boolean {
 
@@ -107,7 +107,7 @@ export class Command_DeletePoints extends CommandBase {
 
         let modifiedGroupCount = 0;
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             let deleteLineCount = 0;
             let modifiedLineCount = 0;
@@ -182,9 +182,9 @@ export class Command_DeletePoints extends CommandBase {
 
         // Collect informations for modified lines and deleted points
         let editLines = new List<Command_DeletePoints_EditLine>();
-        let deletedPoints = new List<LinePoint>();
+        let deletedPoints = new List<VectorPoint>();
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             if (group.linePointModifyFlag == VectorGroupModifyFlagID.none) {
                 return;
@@ -202,7 +202,7 @@ export class Command_DeletePoints extends CommandBase {
                 else if (line.modifyFlag == VectorLineModifyFlagID.deletePoints) {
 
                     // Delete points by creating new list
-                    let newPointList = new List<LinePoint>();
+                    let newPointList = new List<VectorPoint>();
 
                     for (let point of line.points) {
 
@@ -228,9 +228,9 @@ export class Command_DeletePoints extends CommandBase {
 
         // Collect informations for modified groups and deleted lines
         let editGroups = new List<Command_DeletePoints_EditGroup>();
-        let deletedLines = new List<VectorLine>();
+        let deletedLines = new List<VectorStroke>();
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             if (group.linePointModifyFlag == VectorGroupModifyFlagID.none) {
                 return;
@@ -238,9 +238,9 @@ export class Command_DeletePoints extends CommandBase {
 
             if (group.modifyFlag == VectorGroupModifyFlagID.deleteLines) {
 
-                let newLineList: List<VectorLine> = null;
+                let newLineList: List<VectorStroke> = null;
 
-                newLineList = new List<VectorLine>();
+                newLineList = new List<VectorStroke>();
 
                 for (let line of group.lines) {
 
@@ -283,7 +283,7 @@ export class Command_DeleteSelectedPoints extends Command_DeletePoints {
 
         let deletePointCount = 0;
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             for (let line of group.lines) {
 
@@ -309,7 +309,7 @@ export class Command_DeleteFlaggedPoints extends Command_DeletePoints {
 
         let deletePointCount = 0;
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             for (let line of group.lines) {
 

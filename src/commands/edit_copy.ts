@@ -1,5 +1,5 @@
 ﻿import { List, ListClone, ListAddRange } from "base/conversion";
-import { VectorGroup, VectorLine, LinePoint } from "base/data";
+import { VectorStrokeGroup, VectorStroke, VectorPoint } from "base/data";
 import { CommandBase } from "base/command";
 import { ToolEnvironment, ViewKeyframeLayer } from "base/tool";
 import { Logic_Edit_Line } from "logics/edit_vector_layer";
@@ -15,9 +15,9 @@ interface Clipboard {
 
 class Command_EditGeometry_EditData {
 
-    targetGroup: VectorGroup = null;
-    oldLines: List<VectorLine> = null;
-    newLines: List<VectorLine> = null;
+    targetGroup: VectorStrokeGroup = null;
+    oldLines: List<VectorStroke> = null;
+    newLines: List<VectorStroke> = null;
 }
 
 export class Command_FilterGeometry extends CommandBase {
@@ -32,9 +32,9 @@ export class Command_FilterGeometry extends CommandBase {
 
         let editDatas = new List<Command_EditGeometry_EditData>();
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
-            let newLines = List<VectorLine>();
+            let newLines = List<VectorStroke>();
 
             for (let line of group.lines) {
 
@@ -42,7 +42,7 @@ export class Command_FilterGeometry extends CommandBase {
                     continue;
                 }
 
-                let newLine = new VectorLine();
+                let newLine = new VectorStroke();
 
                 for (let point of line.points) {
 
@@ -50,7 +50,7 @@ export class Command_FilterGeometry extends CommandBase {
                         continue;
                     }
 
-                    newLine.points.push(LinePoint.clone(point));
+                    newLine.points.push(VectorPoint.clone(point));
                 }
 
                 if (newLine.points.length > 0) {
@@ -112,15 +112,15 @@ export class Command_FilterGeometry extends CommandBase {
 
 export class Command_CopyGeometry extends CommandBase {
 
-    copy_VectorGroup: VectorGroup = null;
+    copy_VectorGroup: VectorStrokeGroup = null;
 
     prepareEditData(env: ToolEnvironment): boolean {
 
         let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-        let copy_GroupData = new VectorGroup();
+        let copy_GroupData = new VectorStrokeGroup();
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             for (let line of group.lines) {
 
@@ -128,7 +128,7 @@ export class Command_CopyGeometry extends CommandBase {
                     continue;
                 }
 
-                let newLine = new VectorLine();
+                let newLine = new VectorStroke();
 
                 for (let point of line.points) {
 
@@ -136,7 +136,7 @@ export class Command_CopyGeometry extends CommandBase {
                         continue;
                     }
 
-                    newLine.points.push(LinePoint.clone(point));
+                    newLine.points.push(VectorPoint.clone(point));
                 }
 
                 if (newLine.points.length > 0) {
@@ -175,7 +175,7 @@ export class Command_CopyGeometry extends CommandBase {
 export class Command_PasteGeometry extends CommandBase {
 
     editData: Command_EditGeometry_EditData = null;
-    copy_Lines: List<VectorLine> = null;
+    copy_Lines: List<VectorStroke> = null;
 
     prepareEditData(env: ToolEnvironment): boolean {
 

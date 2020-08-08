@@ -1,5 +1,5 @@
 ﻿import { List, ListRemoveAt } from 'base/conversion';
-import { VectorGroup } from 'base/data';
+import { VectorStrokeGroup } from 'base/data';
 import { ToolEnvironment } from 'base/tool';
 
 export class CommandBase {
@@ -12,7 +12,7 @@ export class CommandBase {
 
         if (this.targetGroups != null) {
 
-            VectorGroup.setGroupsUpdated(this.targetGroups);
+            VectorStrokeGroup.setGroupsUpdated(this.targetGroups);
 
             env.setLazyRedraw();
         }
@@ -30,9 +30,9 @@ export class CommandBase {
 
     }
 
-    targetGroups: List<VectorGroup> = null;
+    targetGroups: List<VectorStrokeGroup> = null;
 
-    useGroup(group: VectorGroup) {
+    useGroup(group: VectorStrokeGroup) {
 
         if (!this.targetGroups) {
 
@@ -42,7 +42,7 @@ export class CommandBase {
         this.targetGroups.push(group);
     }
 
-    useGroups(targetGroups?: List<VectorGroup>) {
+    useGroups(targetGroups?: List<VectorStrokeGroup>) {
 
         if (targetGroups) {
 
@@ -50,7 +50,7 @@ export class CommandBase {
         }
         else {
 
-            this.targetGroups = new List<VectorGroup>();
+            this.targetGroups = new List<VectorStrokeGroup>();
         }
     }
 }
@@ -110,7 +110,7 @@ export class CommandHistory {
 
             if (command.targetGroups != null) {
 
-                VectorGroup.setGroupsUpdated(command.targetGroups);
+                VectorStrokeGroup.setGroupsUpdated(command.targetGroups);
 
                 env.setLazyRedraw();
             }
@@ -137,7 +137,7 @@ export class CommandHistory {
 
             if (command.targetGroups != null) {
 
-                VectorGroup.setGroupsUpdated(command.targetGroups);
+                VectorStrokeGroup.setGroupsUpdated(command.targetGroups);
 
                 env.setLazyRedraw();
             }

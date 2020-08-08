@@ -433,7 +433,7 @@ export class App_Tool extends App_Drawing {
 
             this.toolContext.currentVectorLayer = <VectorLayer>currentLayer;
             this.toolContext.currentVectorGeometry = geometry;
-            this.toolContext.currentVectorGroup = geometry.groups[0];
+            this.toolContext.currentVectorGroup = geometry.units[0].groups[0];
         }
         else {
 

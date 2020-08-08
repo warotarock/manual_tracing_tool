@@ -3,7 +3,7 @@
 } from 'base/conversion';
 
 import {
-    Layer, VectorGroup, VectorLine, LinePoint, VectorLayerGeometry, LinePointModifyFlagID,
+    Layer, VectorStrokeGroup, VectorStroke, VectorPoint, VectorGeometry, LinePointModifyFlagID,
 } from 'base/data';
 
 import {
@@ -22,8 +22,8 @@ import { Maths } from 'logics/math';
 
 export class Tool_ScratchLine_CandidatePair {
 
-    targetPoint: LinePoint = null;
-    candidatePoint: LinePoint = null;
+    targetPoint: VectorPoint = null;
+    candidatePoint: VectorPoint = null;
 
     normPosition = 0.0;
     totalLength = 0.0;
@@ -45,11 +45,11 @@ export class Tool_ScratchLine extends ToolBase {
     enableScratchEdit = true;
     enableExtrude = false;
 
-    editLine: VectorLine = null;
-    resampledLine: VectorLine = null;
-    candidateLine: VectorLine = null;
+    editLine: VectorStroke = null;
+    resampledLine: VectorStroke = null;
+    candidateLine: VectorStroke = null;
     forwardExtrude = false;
-    extrudeLine: VectorLine = null;
+    extrudeLine: VectorStroke = null;
 
     nearestPointLocation = vec3.fromValues(0.0, 0.0, 0.0);
     samplePoint = vec3.fromValues(0.0, 0.0, 0.0);
@@ -89,7 +89,7 @@ export class Tool_ScratchLine extends ToolBase {
 
         if (e.isLeftButtonPressing()) {
 
-            this.editLine = new VectorLine();
+            this.editLine = new VectorStroke();
             this.resampledLine = null;
             this.candidateLine = null;
             this.isLeftButtonEdit = true;
@@ -122,7 +122,7 @@ export class Tool_ScratchLine extends ToolBase {
 
         if (this.isLeftButtonEdit && e.isLeftButtonPressing()) {
 
-            let point = new LinePoint();
+            let point = new VectorPoint();
             vec3.copy(point.location, e.location);
             vec3.copy(point.adjustingLocation, e.location);
             //point.lineWidth = env.mouseCursorViewRadius * 2.0;
@@ -257,10 +257,10 @@ export class Tool_ScratchLine extends ToolBase {
 
         let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-        let hitedLine: VectorLine = null;
-        let hitedGroup: VectorGroup = null;
+        let hitedLine: VectorStroke = null;
+        let hitedGroup: VectorStrokeGroup = null;
 
-        ViewKeyframeLayer.forEachGeometry(viewKeyframeLayers, (geometry: VectorLayerGeometry) => {
+        ViewKeyframeLayer.forEachGeometry(viewKeyframeLayers, (geometry: VectorGeometry) => {
 
             if (hitedLine == null) {
 
@@ -317,7 +317,7 @@ export class Tool_ScratchLine extends ToolBase {
 
     // Adjusting edit line
 
-    protected cutoutLine(result: VectorLine): VectorLine {
+    protected cutoutLine(result: VectorStroke): VectorStroke {
 
         let startIndex = this.searchCutoutIndex(result, false);
         let endIndex = this.searchCutoutIndex(result, true);
@@ -330,7 +330,7 @@ export class Tool_ScratchLine extends ToolBase {
         return result;
     }
 
-    private searchCutoutIndex(editorLine: VectorLine, isForward: boolean): int {
+    private searchCutoutIndex(editorLine: VectorStroke, isForward: boolean): int {
 
         let scanDirection = isForward ? 1 : -1;
 
@@ -372,7 +372,7 @@ export class Tool_ScratchLine extends ToolBase {
         return cutoutIndex;
     }
 
-    protected generateCutoutedResampledLine(editorLine: VectorLine, env: ToolEnvironment): VectorLine {
+    protected generateCutoutedResampledLine(editorLine: VectorStroke, env: ToolEnvironment): VectorStroke {
 
         let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
         let divisionCount = Logic_Edit_Points.clalculateSamplingDivisionCount(editorLine.totalLength, resamplingUnitLength);
@@ -391,7 +391,7 @@ export class Tool_ScratchLine extends ToolBase {
 
     // Extruding edit
 
-    protected executeExtrudeLine(targetLine: VectorLine, targetGroup: VectorGroup, resampledLine: VectorLine, env: ToolEnvironment): boolean {
+    protected executeExtrudeLine(targetLine: VectorStroke, targetGroup: VectorStrokeGroup, resampledLine: VectorStroke, env: ToolEnvironment): boolean {
 
         // Create extrude points
 
@@ -441,9 +441,9 @@ export class Tool_ScratchLine extends ToolBase {
         }
     }
 
-    protected generateExtrudePoints(fromTargetLineTop: boolean, targetLine: VectorLine, sampleLine: VectorLine, editExtrudeMinRadius: float, editExtrudeMaxRadius: float): VectorLine {
+    protected generateExtrudePoints(fromTargetLineTop: boolean, targetLine: VectorStroke, sampleLine: VectorStroke, editExtrudeMinRadius: float, editExtrudeMaxRadius: float): VectorStroke {
 
-        let startPoint: LinePoint;
+        let startPoint: VectorPoint;
         if (fromTargetLineTop) {
 
             startPoint = targetLine.points[0];
@@ -482,13 +482,13 @@ export class Tool_ScratchLine extends ToolBase {
             return null;
         }
 
-        let extrudeLine = new VectorLine();
+        let extrudeLine = new VectorStroke();
         extrudeLine.points = extrudePoints;
 
         return extrudeLine;
     }
 
-    protected getExtrudePoints(targetLine: VectorLine, sampleLine: VectorLine, searchStartIndex: int, forwardSearch: boolean, limitMinDistance: float, limitMaxDistance: float): List<LinePoint> {
+    protected getExtrudePoints(targetLine: VectorStroke, sampleLine: VectorStroke, searchStartIndex: int, forwardSearch: boolean, limitMinDistance: float, limitMaxDistance: float): List<VectorPoint> {
 
         let scanDirection = (forwardSearch ? 1 : -1);
 
@@ -518,7 +518,7 @@ export class Tool_ScratchLine extends ToolBase {
             return null;
         }
 
-        let result = new List<LinePoint>();
+        let result = new List<VectorPoint>();
         if (forwardSearch) {
 
             for (let i = startIndex; i < sampleLine.points.length; i++) {
@@ -539,7 +539,7 @@ export class Tool_ScratchLine extends ToolBase {
 
     // Scratching edit
 
-    protected executeScratchingLine(targetLine: VectorLine, targetGroup: VectorGroup, resampledLine: VectorLine, isExtrudeDone: boolean, env: ToolEnvironment): boolean {
+    protected executeScratchingLine(targetLine: VectorStroke, targetGroup: VectorStrokeGroup, resampledLine: VectorStroke, isExtrudeDone: boolean, env: ToolEnvironment): boolean {
 
         // Get scratching candidate points
 
@@ -556,7 +556,7 @@ export class Tool_ScratchLine extends ToolBase {
         );
 
         // For display
-        this.candidateLine = new VectorLine();
+        this.candidateLine = new VectorStroke();
         for (let pair of candidatePointPairs) {
 
             this.candidateLine.points.push(pair.candidatePoint);
@@ -591,7 +591,7 @@ export class Tool_ScratchLine extends ToolBase {
         }
     }
 
-    protected ganerateScratchingCandidatePoints(target_Line: VectorLine, editorLine: VectorLine, editFalloffRadiusMin: float, editFalloffRadiusMax: float, containsPointLineWidth: boolean): List<Tool_ScratchLine_CandidatePair> {
+    protected ganerateScratchingCandidatePoints(target_Line: VectorStroke, editorLine: VectorStroke, editFalloffRadiusMin: float, editFalloffRadiusMax: float, containsPointLineWidth: boolean): List<Tool_ScratchLine_CandidatePair> {
 
         let result = new List<Tool_ScratchLine_CandidatePair>();
 
@@ -683,7 +683,7 @@ export class Tool_ScratchLine extends ToolBase {
                 if (influence > 0.0) {
 
                     // Create edit data
-                    let candidatePoint = new LinePoint();
+                    let candidatePoint = new VectorPoint();
                     vec3.copy(candidatePoint.location, this.nearestPointLocation);
                     vec3.copy(candidatePoint.adjustingLocation, candidatePoint.location);
                     candidatePoint.lineWidth = Maths.lerp(normPositionInEditorLineSegment, nearestLinePoint1.lineWidth, nearestLinePoint2.lineWidth);
@@ -741,7 +741,7 @@ export class Tool_ScratchLine extends ToolBase {
 
     // Delete duplication edit
 
-    protected deleteDuplications(targetLine: VectorLine, targetGroup: VectorGroup, env: ToolEnvironment) {
+    protected deleteDuplications(targetLine: VectorStroke, targetGroup: VectorStrokeGroup, env: ToolEnvironment) {
 
         // Search edited index range of points
 
@@ -813,7 +813,7 @@ export class Tool_ScratchLine extends ToolBase {
 
     // Common functions
 
-    protected findNearestPointIndex_LineSegmentToPoint(line: VectorLine, point1: LinePoint, point2: LinePoint, limitMinDistance: float, limitMaxDistance: float, includeInnerSide: boolean, includeOuterSide: boolean): int {
+    protected findNearestPointIndex_LineSegmentToPoint(line: VectorStroke, point1: VectorPoint, point2: VectorPoint, limitMinDistance: float, limitMaxDistance: float, includeInnerSide: boolean, includeOuterSide: boolean): int {
 
         let minDistance = 99999.0;
         let nearestPointIndex = -1;
@@ -843,7 +843,7 @@ export class Tool_ScratchLine extends ToolBase {
         return nearestPointIndex;
     }
 
-    protected findNearestPointIndex_PointToPoint(line: VectorLine, point: LinePoint, limitMinDistance: float, limitMaxDistance: float): int {
+    protected findNearestPointIndex_PointToPoint(line: VectorStroke, point: VectorPoint, limitMinDistance: float, limitMaxDistance: float): int {
 
         let minDistance = 99999.0;
         let nearestPointIndex = -1;
@@ -865,7 +865,7 @@ export class Tool_ScratchLine extends ToolBase {
         return nearestPointIndex;
     }
 
-    protected getNearPointCount(targetLine: VectorLine, sampleLine: VectorLine, searchStartIndex: int, forwardSearch: boolean, limitMaxDistance: float): int {
+    protected getNearPointCount(targetLine: VectorStroke, sampleLine: VectorStroke, searchStartIndex: int, forwardSearch: boolean, limitMaxDistance: float): int {
 
         let nearPointCcount = 0;
 
@@ -908,14 +908,14 @@ export class Tool_ExtrudeLine extends Tool_ScratchLine {
 
 export class Command_ExtrudeLine extends CommandBase {
 
-    targetGroups: List<VectorGroup> = null;
-    targetLine: VectorLine = null;
+    targetGroups: List<VectorStrokeGroup> = null;
+    targetLine: VectorStroke = null;
 
     forwardExtrude = false;
-    extrudeLine: VectorLine = null;
+    extrudeLine: VectorStroke = null;
 
-    oldPointList: List<LinePoint> = null;
-    newPointList: List<LinePoint> = null;
+    oldPointList: List<VectorPoint> = null;
+    newPointList: List<VectorPoint> = null;
 
     protected execute(env: ToolEnvironment) { // @override
 
@@ -935,7 +935,7 @@ export class Command_ExtrudeLine extends CommandBase {
         }
         else {
 
-            this.newPointList = List<LinePoint>();
+            this.newPointList = List<VectorPoint>();
 
             for (let i = this.extrudeLine.points.length - 1; i >= 0; i--) {
 
@@ -959,7 +959,7 @@ export class Command_ExtrudeLine extends CommandBase {
 
 export class Command_ScratchLine extends CommandBase {
 
-    targetLine: VectorLine = null;
+    targetLine: VectorStroke = null;
     editPoints = new List<Tool_ScratchLine_EditPoint>();
 
     protected execute(env: ToolEnvironment) { // @override
@@ -1018,10 +1018,10 @@ export class Command_ScratchLine extends CommandBase {
 
 export class Command_DeleteDuplicationInLine extends CommandBase {
 
-    targetLine: VectorLine = null;
+    targetLine: VectorStroke = null;
 
-    oldPoints: List<LinePoint> = null;
-    newPoints: List<LinePoint> = null;
+    oldPoints: List<VectorPoint> = null;
+    newPoints: List<VectorPoint> = null;
 
     protected execute(env: ToolEnvironment) { // @override
 

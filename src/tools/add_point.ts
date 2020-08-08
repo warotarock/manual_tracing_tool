@@ -1,9 +1,9 @@
 ﻿import { float, ListRemoveAt } from 'base/conversion';
 
 import {
-    LinePoint,
-    VectorLine,
-    VectorGroup,
+    VectorPoint,
+    VectorStroke,
+    VectorStrokeGroup,
 } from 'base/data';
 
 import {
@@ -18,7 +18,7 @@ import { Logic_Edit_Line } from 'logics/edit_vector_layer';
 
 export class Tool_AddPoint extends ToolBase {
 
-    edit_Line: VectorLine = null;
+    edit_Line: VectorStroke = null;
 
     mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
@@ -33,7 +33,7 @@ export class Tool_AddPoint extends ToolBase {
         let addLine = false;
 
         if (this.edit_Line == null) {
-            this.edit_Line = new VectorLine();
+            this.edit_Line = new VectorStroke();
             addLine = true;
         }
 
@@ -55,7 +55,7 @@ export class Tool_AddPoint extends ToolBase {
         let command = new Command_AddPoint();
         command.group = env.currentVectorGroup;
         command.line = this.edit_Line;
-        command.point = new LinePoint();
+        command.point = new VectorPoint();
         command.addLine = addLine;
         vec3.set(command.point.location, x, y, 0.0);
 
@@ -69,9 +69,9 @@ export class Tool_AddPoint extends ToolBase {
 
 export class Command_AddPoint extends CommandBase {
 
-    group: VectorGroup = null;
-    line: VectorLine = null;
-    point: LinePoint = null;
+    group: VectorStrokeGroup = null;
+    line: VectorStroke = null;
+    point: VectorPoint = null;
     addLine = false;
 
     protected execute(env: ToolEnvironment) { // @override

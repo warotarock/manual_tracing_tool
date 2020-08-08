@@ -1,14 +1,14 @@
 ﻿import { List, ListClone, ListInsertAt, ListRemoveAt } from "base/conversion";
 import { CommandBase } from "base/command";
 import { ToolEnvironment } from "base/tool";
-import { VectorLayer, VectorLayerKeyframe, Layer, LayerTypeID, VectorLayerGeometry } from "base/data";
+import { VectorLayer, VectorKeyframe, Layer, LayerTypeID, VectorGeometry } from "base/data";
 
 
 class Command_Animation_KeyframeListEditData {
 
     layer: VectorLayer = null;
-    oldKeyFrames: List<VectorLayerKeyframe> = null;
-    newKeyFrames: List<VectorLayerKeyframe> = null;
+    oldKeyFrames: List<VectorKeyframe> = null;
+    newKeyFrames: List<VectorKeyframe> = null;
 }
 
 export class Command_Animation_InsertKeyframeAllLayer extends CommandBase {
@@ -46,7 +46,7 @@ export class Command_Animation_InsertKeyframeAllLayer extends CommandBase {
             }
 
             // Create keyframe and insert
-            let newKeyframe = new VectorLayerKeyframe();
+            let newKeyframe = new VectorKeyframe();
             newKeyframe.frame = targetFrame;
             if (last_KeyFrame != null) {
 
@@ -54,7 +54,7 @@ export class Command_Animation_InsertKeyframeAllLayer extends CommandBase {
             }
             else {
 
-                newKeyframe.geometry = new VectorLayerGeometry();
+                newKeyframe.geometry = new VectorGeometry();
             }
 
             let newKeyFrames = ListClone(vectorLayer.keyframes);

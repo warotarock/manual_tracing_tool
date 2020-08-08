@@ -1,7 +1,7 @@
 ﻿import { int, float } from 'base/conversion';
 import {
-  Layer, LinePoint,
-  VectorLine,
+  Layer, VectorPoint,
+  VectorStroke,
   InputSideID,
   DirectionInputData,
 } from 'base/data';
@@ -19,8 +19,8 @@ export class Tool_Posing3d_ToolBase extends ModalToolBase {
 
   inputOptionButtonCount = 1;
 
-  editPoint: LinePoint = null;
-  editLine: VectorLine = null;
+  editPoint: VectorPoint = null;
+  editLine: VectorStroke = null;
 
   getOptionButtonState(buttonIndex: int, env: ToolEnvironment): InputSideID { // @virtual
 
@@ -36,7 +36,7 @@ export class Tool_Posing3d_ToolBase extends ModalToolBase {
 
     if (this.editPoint == null) {
 
-      this.editPoint = new LinePoint();
+      this.editPoint = new VectorPoint();
     }
 
     vec3.copy(this.editPoint.location, e.location);
@@ -46,10 +46,10 @@ export class Tool_Posing3d_ToolBase extends ModalToolBase {
 
     if (this.editLine == null) {
 
-      this.editLine = new VectorLine();
+      this.editLine = new VectorStroke();
     }
 
-    let point = new LinePoint();
+    let point = new VectorPoint();
     vec3.copy(point.location, e.location);
     vec3.copy(point.adjustingLocation, e.location);
 
@@ -167,7 +167,7 @@ export class Tool_Posing3d_LineInputToolBase extends Tool_Posing3d_ToolBase {
 
     if (e.isLeftButtonPressing()) {
 
-      this.editLine = new VectorLine();
+      this.editLine = new VectorStroke();
 
       this.copyInputLocationToLine(e);
 

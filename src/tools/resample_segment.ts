@@ -1,7 +1,7 @@
 ﻿import { List, float } from 'base/conversion';
 
 import {
-    Layer, VectorGroup, VectorLine, LinePoint,
+    Layer, VectorStrokeGroup, VectorStroke, VectorPoint,
 } from 'base/data';
 
 import {
@@ -16,17 +16,17 @@ import { Logic_Edit_Points, Logic_Edit_Line } from 'logics/edit_vector_layer';
 
 class Tool_Resample_Segment_EditLine {
 
-    targetLine: VectorLine = null;
+    targetLine: VectorStroke = null;
 
-    oldPoints: List<LinePoint> = null;
-    newPoints: List<LinePoint> = null;
+    oldPoints: List<VectorPoint> = null;
+    newPoints: List<VectorPoint> = null;
 }
 
 export class Tool_Resample_Segment extends ToolBase {
 
     helpText = 'エンターキーで選択中の頂点の間を画面の拡大率に合わせて再分割します。';
 
-    targetGroups: List<VectorGroup> = null;
+    targetGroups: List<VectorStrokeGroup> = null;
     editLines: List<Tool_Resample_Segment_EditLine> = null;
 
     isAvailable(env: ToolEnvironment): boolean { // @override
@@ -77,12 +77,12 @@ export class Tool_Resample_Segment extends ToolBase {
 
         let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-        let targetGroups = new List<VectorGroup>();
+        let targetGroups = new List<VectorStrokeGroup>();
         let editLines = new List<Tool_Resample_Segment_EditLine>();
 
         let resamplingUnitLength = env.getViewScaledDrawLineUnitLength();
 
-        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             let existsInGroup = false;
 
@@ -113,7 +113,7 @@ export class Tool_Resample_Segment extends ToolBase {
         return (editLines.length > 0);
     }
 
-    private existsSelectedSegment(line: VectorLine): boolean {
+    private existsSelectedSegment(line: VectorStroke): boolean {
 
         let selectedPointCount = 0;
 
@@ -137,13 +137,13 @@ export class Tool_Resample_Segment extends ToolBase {
         return (selectedPointCount >= 2);
     }
 
-    private createResampledPoints(line: VectorLine, resamplingUnitLength: float): List<LinePoint> {
+    private createResampledPoints(line: VectorStroke, resamplingUnitLength: float): List<VectorPoint> {
 
         let currentIndex = 0;
         let segmentStartIndex = -1;
         let segmentEndIndex = -1;
 
-        let newPoints = new List<LinePoint>();
+        let newPoints = new List<VectorPoint>();
 
         while (currentIndex < line.points.length) {
 

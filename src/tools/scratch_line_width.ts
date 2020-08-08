@@ -1,5 +1,5 @@
 ﻿import { List } from 'base/conversion';
-import { VectorLine, } from 'base/data';
+import { VectorStroke, } from 'base/data';
 import { ToolEnvironment, } from 'base/tool';
 import { CommandBase } from 'base/command';
 
@@ -202,7 +202,7 @@ export class Tool_ScratchLineWidth extends Tool_OverWriteLineWidth {
 
 export class Command_ScratchLineWidth extends CommandBase {
 
-    targetLine: VectorLine = null;
+    targetLine: VectorStroke = null;
     editPoints = new List<Tool_ScratchLineWidth_EditPoint>();
 
     protected execute(env: ToolEnvironment) { // @override

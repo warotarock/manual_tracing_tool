@@ -1,5 +1,5 @@
 ﻿import { List, ListRemoveAt } from 'base/conversion';
-import { LinePoint, VectorLine, VectorGroup, Layer, } from 'base/data';
+import { VectorPoint, VectorStroke, VectorStrokeGroup, Layer, } from 'base/data';
 import { ToolEnvironment, ToolMouseEvent, ToolBase, } from 'base/tool';
 import { CommandBase } from 'base/command';
 import { Logic_Edit_Points, Logic_Edit_Line } from 'logics/edit_vector_layer';
@@ -8,7 +8,7 @@ export class Tool_DrawAutoFill extends ToolBase {
 
     helpText = '塗りつぶしを追加します。指定した位置から最も近い線の内側を塗りつぶします。';
 
-    editLine: VectorLine = null;
+    editLine: VectorStroke = null;
 
     isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -74,7 +74,7 @@ export class Tool_DrawAutoFill extends ToolBase {
         }
 
         // Collect continuous filling info
-        let previousConnectedLine: VectorLine = null;
+        let previousConnectedLine: VectorStroke = null;
         let previousConnectedLine_continuousFill = false;
 
         let command = new Command_AddLine();
@@ -90,14 +90,14 @@ export class Tool_DrawAutoFill extends ToolBase {
 
 export class Command_AddLine extends CommandBase {
 
-    protected group: VectorGroup = null;
-    protected line: VectorLine = null;
+    protected group: VectorStrokeGroup = null;
+    protected line: VectorStroke = null;
     protected continuousFill = false;
 
-    previousConnectedLine: VectorLine = null;
+    previousConnectedLine: VectorStroke = null;
     previousConnectedLine_continuousFill = false;
 
-    prepareEditTargets(group: VectorGroup, line: VectorLine) {
+    prepareEditTargets(group: VectorStrokeGroup, line: VectorStroke) {
 
         this.group = group;
         this.line = line;
