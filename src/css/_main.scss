@@ -1,0 +1,213 @@
+﻿@import "base";
+
+html {
+  margin: 0;
+  padding: 0;
+  left: 100%;
+  height: 100%;
+  background-color: $systemBackground;
+}
+
+body {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+
+  canvas#debug {
+    width: 500px;
+    height: 500px;
+  }
+
+  .screen-main {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .screen-sub {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+
+    &.hidden {
+      display: none;
+    }
+
+    .default-container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      padding: 10px;
+
+      &:focus {
+        outline: none;
+      }
+    }
+  }
+}
+
+header {
+  display: flex;
+  height: 40px;
+  padding: 5px 20px 0 20px;
+
+  .fileCommandButton {
+    width: 33px;
+    height: 33px;
+    border: none;
+    margin-left: 5px;
+    cursor: default;
+    text-align: center;
+    border-radius: $buttonCornerRadius;
+    user-select: none;
+
+    &:hover {
+      background-color: $hoverBackground;
+    }
+  }
+
+  .fileNameText {
+    flex: 1;
+    border: none;
+    border-width: 1px;
+    padding-top: 6px;
+    padding-left: 5px;
+    text-align: left;
+    margin-left: 10px;
+    margin-right: 10px;
+
+    input {
+      width: 100%;
+      height: 18px;
+      border: none;
+      padding-left: 5px;
+      border-bottom: solid 1px $windowBorder;
+      background-color: $systemBackground;
+    }
+  }
+
+  .mainToolButtons {
+    display: flex;
+    user-select: none;
+
+    >div {
+      width: 120px;
+      height: 26px;
+      border: solid;
+      border-width: 1px;
+      margin-left: 5px;
+      text-align: center;
+      padding-top: 5px;
+      cursor: default;
+
+      &.selectedMainButton {
+        color: #fff;
+        background: #333;
+
+        &:hover {
+          color: $hoverBackground;
+        }
+      }
+
+      &.unselectedMainButton {
+        color: #333;
+        background-color: $windowBackground;
+
+        &:hover {
+          background-color: $hoverBackground;
+        }
+      }
+    }
+  }
+
+  .mainMenuButton {
+    width: 33px;
+    height: 33px;
+    border: none;
+    margin-left: 5px;
+    cursor: default;
+    text-align: center;
+    border-radius: $buttonCornerRadius;
+
+    &:hover {
+      background-color: $hoverBackground;
+    }
+  }
+
+  img {
+    margin-top: 4px;
+    width: 27px;
+    height: 27px;
+    user-select: none;
+  }
+}
+
+main {
+  flex: 1;
+  padding: 0;
+  position: relative;
+
+  .side-panel1 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 0 5px;
+
+    >div:not(:first-child) {
+      margin-top: 4px;
+    }
+  }
+
+  .center-panel {
+    position: absolute;
+    top: 0;
+    left: 210px;
+    right: 210px;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0 5px 0 5px;
+  }
+
+  .side-panel2 {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 202px;
+    display: flex;
+    flex-direction: column;
+    padding: 0 5px 0 0;
+
+    >div:not(:first-child) {
+      margin-top: 4px;
+    }
+  }
+}
+
+footer {
+  width: 100%;
+  height: 60px;
+  text-align: center;
+}
+
+.nameInputTextBox {
+  width: 250px;
+  padding-left: 5px;
+}

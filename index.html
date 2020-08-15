@@ -10,7 +10,7 @@
 
   <title>Manual tracing tool</title>
 
-  <link rel="stylesheet" href="./dist/index.min.css" type="text/css" />
+  <link rel="stylesheet" href="./dist/index.css" type="text/css" />
 
   <script src="./libs/glmatrix/gl-matrix-min.js"></script>
 
@@ -28,106 +28,100 @@
 </head>
 
 <body>
-  <header>
-    <div class="fileCommandButton" id="menu_btnOpen"><img class="mainMenuButtonImage" src="./dist/res/icons8-opened-folder-100.png" /></div>
-    <div class="fileCommandButton" id="menu_btnSave"><img class="mainMenuButtonImage" src="./dist/res/icons8-save-filled-100.png" /></div>
-    <div class="fileCommandButton" id="menu_btnExport"><img class="mainMenuButtonImage" src="./dist/res/icons8-export-96.png" /></div>
-    <div class="fileCommandButton" id="menu_btnProperty"><img class="mainMenuButtonImage" src="./dist/res/icons8-settings-100.png" /></div>
-    <div class="fileNameText" id="menu_btnSystem"><input type="text" id="fileName" /></div>
-    <div class="mainMenuButton" id="menu_btnOperationOption"><img class="mainMenuButtonImage"
-        src="./dist/res/icons8-settings-100.png" /></div>
-    <div id="mainToolButtons" class="mainToolButtons"></div>
-    <!--<div class="mainToolButton" id="menu_btnDrawTool">Draw</div>
-        <div class="mainToolButton" id="menu_btnEditTool">Edit</div>
-        <div class="mainToolButton" id="menu_btnMiscTool">Setting</div>-->
-    <!--
-    <div class="mainMenuButton" id="menu_btnPalette2"><img class="mainMenuButtonImage" src="./res/icons8-paint-palette-96.png" /></div>
-    <div class="mainMenuButton" id="menu_btnPalette1"><img class="mainMenuButtonImage" src="./res/icons8-paint-palette-96.png" /></div>
-    -->
-  </header>
-  <main>
-    <div class="side-panel1">
-      <div id="layerWindow" class="layer-window"></div>
-      <div id="subtoolWindow" class="subtool-window"></div>
-    </div>
+  <div class="screen-main">
+    <header>
+      <div class="fileCommandButton" id="menu_btnOpen"><img class="mainMenuButtonImage" src="./dist/res/icons8-opened-folder-100.png" /></div>
+      <div class="fileCommandButton" id="menu_btnSave"><img class="mainMenuButtonImage" src="./dist/res/icons8-save-filled-100.png" /></div>
+      <div class="fileCommandButton" id="menu_btnExport"><img class="mainMenuButtonImage" src="./dist/res/icons8-export-96.png" /></div>
+      <div class="fileCommandButton" id="menu_btnProperty"><img class="mainMenuButtonImage" src="./dist/res/icons8-settings-100.png" /></div>
+      <div class="fileNameText" id="menu_btnSystem"><input type="text" id="fileName" /></div>
+      <div class="mainMenuButton" id="menu_btnOperationOption"><img class="mainMenuButtonImage" src="./dist/res/icons8-settings-100.png" /></div>
+      <div id="mainToolButtons" class="mainToolButtons"></div>
+    </header>
+    <main>
+      <div class="side-panel1">
+        <div id="layerWindow" class="layer-window"></div>
+        <div id="subtoolWindow" class="subtool-window"></div>
+      </div>
 
-    <div class="center-panel">
-      <div class="main-canvas-window">
-        <canvas id="webglCanvas" class="webgl-canvas"></canvas>
-        <canvas id="mainCanvas" class="main-canvas"></canvas>
-        <canvas id="editorCanvas" class="editor-canvas"></canvas>
+      <div class="center-panel">
+        <div class="main-canvas-window">
+          <canvas id="webglCanvas" class="webgl-canvas"></canvas>
+          <canvas id="mainCanvas" class="main-canvas"></canvas>
+          <canvas id="editorCanvas" class="editor-canvas"></canvas>
+        </div>
+        <div class="time-line-window">
+          <canvas id="timeLineCanvas"></canvas>
+        </div>
       </div>
-      <div class="time-line-window">
-        <canvas id="timeLineCanvas"></canvas>
-      </div>
-    </div>
 
-    <div class="side-panel2">
-      <div id="palette-selector-window" class="palette-selector-window">
+      <div class="side-panel2">
+        <div id="palette-selector-window" class="palette-selector-window">
+        </div>
+        <div id="color-mixer-window" class="color-mixer-window">
+          <div class="colorMixerValueSlide">
+            <div class="label">A</div>
+            <input type="number" id="colorMixer_alpha_number" step="0.01" min="0.0" max="1.0" />
+            <div class="range">
+              <input type="range" id="colorMixer_alpha_range" min="0" max="255">
+            </div>
+          </div>
+          <div class="colorMixerValueSlide">
+            <div class="label">R</div>
+            <input type="number" id="colorMixer_red_number" step="0.01" min="0.0" max="1.0"
+              style="background-color: #ffa0a0" />
+            <div class="range">
+              <input type="range" id="colorMixer_red_range" min="0" max="255">
+            </div>
+          </div>
+          <div class="colorMixerValueSlide">
+            <div class="label">G</div>
+            <input type="number" id="colorMixer_green_number" step="0.01" min="0.0" max="1.0"
+              style="background-color: #a0ffa0" />
+            <div class="range">
+              <input type="range" id="colorMixer_green_range" min="0" max="255">
+            </div>
+          </div>
+          <div class="colorMixerValueSlide">
+            <div class="label">B</div>
+            <input type="number" id="colorMixer_blue_number" step="0.01" min="0.0" max="1.0"
+              style="background-color: #a0a0ff" />
+            <div class="range">
+              <input type="range" id="colorMixer_blue_range" min="0" max="255">
+            </div>
+          </div>
+          <div class="colorMixerValueSlide">
+            <div class="label">H</div>
+            <input type="number" id="colorMixer_hue_number" step="0.01" min="0.0" max="1.0"
+              style="background-color: #ffffa0" />
+            <div class="range">
+              <input type="range" id="colorMixer_hue_range" min="0" max="255">
+            </div>
+          </div>
+          <div class="colorMixerValueSlide">
+            <div class="label">S</div>
+            <input type="number" id="colorMixer_sat_number" step="0.01" min="0.0" max="1.0"
+              style="background-color: #a0ffff" />
+            <div class="range">
+              <input type="range" id="colorMixer_sat_range" min="0" max="255">
+            </div>
+          </div>
+          <div class="colorMixerValueSlide">
+            <div class="label">V</div>
+            <input type="number" id="colorMixer_val_number" step="0.01" min="0.0" max="1.0"
+              style="background-color: #ffa0ff" />
+            <div class="range">
+              <input type="range" id="colorMixer_val_range" min="0" max="255">
+            </div>
+          </div>
+        </div>
+        <div id="test-window" class="test-window">
+        </div>
       </div>
-      <div id="color-mixer-window" class="color-mixer-window">
-        <div class="colorMixerValueSlide">
-          <div class="label">A</div>
-          <input type="number" id="colorMixer_alpha_number" step="0.01" min="0.0" max="1.0" />
-          <div class="range">
-            <input type="range" id="colorMixer_alpha_range" min="0" max="255">
-          </div>
-        </div>
-        <div class="colorMixerValueSlide">
-          <div class="label">R</div>
-          <input type="number" id="colorMixer_red_number" step="0.01" min="0.0" max="1.0"
-            style="background-color: #ffa0a0" />
-          <div class="range">
-            <input type="range" id="colorMixer_red_range" min="0" max="255">
-          </div>
-        </div>
-        <div class="colorMixerValueSlide">
-          <div class="label">G</div>
-          <input type="number" id="colorMixer_green_number" step="0.01" min="0.0" max="1.0"
-            style="background-color: #a0ffa0" />
-          <div class="range">
-            <input type="range" id="colorMixer_green_range" min="0" max="255">
-          </div>
-        </div>
-        <div class="colorMixerValueSlide">
-          <div class="label">B</div>
-          <input type="number" id="colorMixer_blue_number" step="0.01" min="0.0" max="1.0"
-            style="background-color: #a0a0ff" />
-          <div class="range">
-            <input type="range" id="colorMixer_blue_range" min="0" max="255">
-          </div>
-        </div>
-        <div class="colorMixerValueSlide">
-          <div class="label">H</div>
-          <input type="number" id="colorMixer_hue_number" step="0.01" min="0.0" max="1.0"
-            style="background-color: #ffffa0" />
-          <div class="range">
-            <input type="range" id="colorMixer_hue_range" min="0" max="255">
-          </div>
-        </div>
-        <div class="colorMixerValueSlide">
-          <div class="label">S</div>
-          <input type="number" id="colorMixer_sat_number" step="0.01" min="0.0" max="1.0"
-            style="background-color: #a0ffff" />
-          <div class="range">
-            <input type="range" id="colorMixer_sat_range" min="0" max="255">
-          </div>
-        </div>
-        <div class="colorMixerValueSlide">
-          <div class="label">V</div>
-          <input type="number" id="colorMixer_val_number" step="0.01" min="0.0" max="1.0"
-            style="background-color: #ffa0ff" />
-          <div class="range">
-            <input type="range" id="colorMixer_val_range" min="0" max="255">
-          </div>
-        </div>
-      </div>
-      <div id="test-window" class="test-window">
-      </div>
-    </div>
-  </main>
-  <footer id="footer">
-  </footer>
+    </main>
+    <footer id="footer">
+    </footer>
+  </div>
 
   <div id="messageDialogModal" class="modalDialogWindow messageDialogModal">
     <div id="messageDialogModal_message">
@@ -444,6 +438,9 @@
       <input type="button" id="deleteKeyframeModal_ok" value="ＯＫ">
       <input type="button" id="deleteKeyframeModal_cancel" value="キャンセル">
     </div>
+  </div>
+
+  <div id="file-open-modal" class="screen-sub hidden">
   </div>
 </body>
 

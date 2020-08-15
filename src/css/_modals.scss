@@ -1,0 +1,216 @@
+﻿@import "base";
+
+.modalDialogWindow {
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  display: none;
+  padding: 20px;
+}
+
+.layerPropertyModal {
+  width: 400px;
+  height: 380px;
+  position: absolute;
+  bottom: 100px;
+
+  div {
+    margin-top: 15px;
+  }
+
+  input {
+    margin-left: 10px;
+  }
+
+  input[type=radio] {
+    margin-left: 15px;
+  }
+
+  input[type=checkbox] {
+    margin-left: 0px;
+  }
+
+  #layerPropertyModal_layerAlpha {
+    width: 200px;
+  }
+
+  #layerPropertyModal_fillColorAlpha {
+    width: 200px;
+  }
+}
+
+.messageDialogModal {
+  min-width: 400px;
+  height: 100px;
+
+  #messageDialogModal_message {
+    text-align: center;
+    width: 400px;
+    padding: 15px;
+  }
+}
+
+.openFileDialogModal {
+  width: 400px;
+  height: 100px;
+
+  &.openFileDialogModal_file {
+    background-color: #ddd;
+    margin-left: 5px;
+    margin-top: 5px;
+    width: 100%;
+  }
+}
+
+.paletteColorModal {
+  width: 660px;
+  height: 280px;
+  position: absolute;
+  bottom: 100px;
+
+  input {
+    margin-left: 15px;
+    margin-top: 15px;
+  }
+
+  #paletteColorModal_colors {
+    margin-top: 10px;
+    width: 460px;
+    float: left;
+
+    div.colorItem {
+      width: 80px;
+      height: 30px;
+      margin-left: 10px;
+      margin-top: 10px;
+      float: left;
+      /*border-style: solid;*/
+    }
+
+    div.colorItem input[type="radio"] {
+      margin-left: 0px;
+      margin-top: 0px;
+      width: 30px;
+      height: 20px;
+    }
+
+    div.colorItem input[type="color"] {
+      margin-left: 0px;
+      margin-top: 0px;
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  #paletteColorModal_colorMixer {
+    margin-top: 10px;
+    width: 200px;
+    height: 200px;
+    float: left;
+
+    canvas {
+      margin-top: 10px;
+      width: 200px;
+      height: 200px;
+    }
+  }
+}
+
+.operationOptionModal {
+  width: 400px;
+  height: 115px;
+
+  input {
+    margin-left: 15px;
+    margin-top: 10px;
+  }
+
+  div {
+    margin-bottom: 15px;
+  }
+
+  div label input.lineWidthMin {
+    width: 50px;
+    margin-left: 5px;
+    margin-right: 8px;
+  }
+
+  div label input.lineWidthMax {
+    width: 50px;
+    margin-left: 5px;
+  }
+}
+
+.newLayerCommandOptionModal {
+  width: 400px;
+  height: 250px;
+
+  input {
+    margin-left: 15px;
+    margin-top: 10px;
+  }
+
+  div {
+    margin-bottom: 15px;
+  }
+}
+
+.documentSettingModal {
+  width: 400px;
+  height: 230px;
+
+  div {
+    margin-bottom: 10px;
+  }
+
+  div label {
+    margin-left: 10px;
+  }
+
+  div label input.lineWidthMax {
+    width: 50px;
+    margin-left: 5px;
+  }
+
+  input {
+    margin-left: 15px;
+    margin-top: 10px;
+  }
+
+  div label input.location {
+    width: 60px;
+  }
+}
+
+.exportImageFileModal {
+  width: 400px;
+  height: 220px;
+
+  div {
+    margin-bottom: 15px;
+  }
+
+  div label input.scale {
+    width: 50px;
+  }
+}
+
+.newKeyframeModal {
+  width: 400px;
+  height: 230px;
+
+  div label input {
+    margin-left: 15px;
+    margin-top: 15px;
+  }
+}
+
+.deleteKeyframeModal {
+  width: 400px;
+  height: 140px;
+
+  div label input {
+    margin-left: 15px;
+    margin-top: 15px;
+  }
+}

@@ -1,0 +1,99 @@
+﻿
+// CSSスプライト
+.image-splite-system {
+  background-image: url(./res/system_image01.png);
+}
+
+.image-splite-layerbar {
+  background-image: url(./res/layerbar_image01.png);
+}
+
+.image-splite-document {
+  background-image: url(./res/toolbar_image01.png);
+}
+
+.image-splite-subtool {
+  background-image: url(./res/toolbar_image02.png);
+}
+
+.image-splite-posing3d {
+  background-image: url(./res/toolbar_image03.png);
+}
+
+// アイコンフォント
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url(./res/materialIcons-regular.woff2) format('woff2');
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  // -moz-font-feature-settings: 'liga';
+  // -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+// ボタン
+
+.app-button {
+  min-width: 120px;
+  margin-left: 5px;
+  padding: 0;
+  font-size: $fontSizeNormal;
+  text-align: center;
+  line-height: $fontSizeNormal * 2.0;
+  border: solid 1px $windowBorder;
+  border-radius: 3px;
+  user-select: none;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.app-button-primary {
+  @extend .app-button;
+  $backGround: #88f;
+
+  background-color: $backGround;
+  color: #fff;
+
+  &:hover {
+    background-color: lighten($backGround, 10%);
+  }
+}
+
+.app-button-cancel {
+  @extend .app-button;
+  $backGround: #eee;
+
+  background-color: $backGround;
+
+  &:hover {
+    background-color: lighten($backGround, 5%);
+  }
+}
+
+.OKCalcelButtons {
+  text-align: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+// テキスト入力
+
+input[type=number] {
+  text-align: right;
+}
