@@ -263,6 +263,10 @@
   display: flex;
   background-color: $systemBackground;
 
+  .input-file {
+    display: none;
+  }
+
   .sections-container {
     width: 230px;
     margin-right: 8px;
@@ -285,9 +289,14 @@
 
         &:hover {
           background-color: $hoverBackground;
+
+          .section-item-inner .button {
+            opacity: 100%;
+          }
         }
 
         .section-item-inner {
+          display: flex;
           padding: 0 5px 0 8px;
           border-radius: 3px;
 
@@ -299,18 +308,31 @@
             }
           }
 
-          i {
-            margin-right: 4px;
-            font-size: $fontSizeNormalIconSize * 0.9;
-            line-height: $fontSizeNormal * 2.0;
-            vertical-align: sub;
+          $lineHeight: $fontSizeNormal * 2.2;
+
+          .name {
+            flex: 1;
+
+            i {
+              margin-right: 4px;
+              font-size: $fontSizeNormalIconSize;
+              line-height: $lineHeight;
+              vertical-align: sub;
+            }
+
+            span {
+              font-size: $fontSizeNormal;
+              line-height: $fontSizeNormal * 2.0;
+              min-height: $lineHeight;
+              vertical-align: middle;
+            }
           }
 
-          span {
-            font-size: $fontSizeNormal;
-            line-height: $fontSizeNormal * 2.0;
-            min-height: $fontSizeNormal * 2.0;
-            vertical-align: middle;
+          .button {
+            margin-inline-start: 4px;
+            font-size: $fontSizeNormalIconSize;
+            line-height: $lineHeight;
+            opacity: 0;
           }
         }
       }
@@ -336,12 +358,12 @@
       border: solid 1px $windowBorder;
       background-color: $windowBackground;
       user-select: none;
+      overflow-y: scroll;
 
       ul {
         height: 100%;
         margin: 0;
         padding: 0;
-        overflow-y: scroll;
 
         li {
           list-style: none;

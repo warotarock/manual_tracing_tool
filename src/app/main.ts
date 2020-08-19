@@ -221,13 +221,11 @@ export class App_Main extends App_Event implements MainEditor {
     this.loadingDocument = documentData;
   }
 
-  protected startReloadDocument() { // @override
+  protected startReloadDocument(filepath: string) { // @override
 
     let documentData = new DocumentData();
 
-    let fileName = this.getInputElementText(this.ID.fileName);
-
-    this.startLoadingDocumentURL(documentData, fileName);
+    this.startLoadingDocumentURL(documentData, filepath);
 
     this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, documentData);
   }

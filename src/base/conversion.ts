@@ -72,6 +72,10 @@ export function StringStartsWith(text: string, searchString: string): boolean {
     return (text.indexOf(searchString) == 0);
 }
 
+export function StringEndsWith(text: string, searchString: string): boolean {
+    return (text.indexOf(searchString) == (text.length - searchString.length));
+}
+
 export function StringContains(text: string, searchString: string): boolean {
     return (text.indexOf(searchString) != -1);
 }

@@ -42,6 +42,7 @@ import { UI_MenuButtonsRef } from 'ui/menu_buttons';
 import { UI_LayerWindowRef } from 'ui/layer_window';
 import { UI_PaletteSelectorWindowRef } from 'ui/palette_selector_window';
 import { UI_ColorMixerWindowRef } from 'ui/color_mixer_window';
+import { UI_FileOpenDialogRef } from '../ui/file_open_dialog';
 
 declare var Custombox: any;
 
@@ -65,6 +66,7 @@ export class App_View {
   uiLayerwindowRef: UI_LayerWindowRef = {};
   uiPaletteSelectorWindowRef: UI_PaletteSelectorWindowRef = {};
   uiColorMixerWindowRef: UI_ColorMixerWindowRef = {};
+  uiFileOpenDialogRef: UI_FileOpenDialogRef = {};
 
   // Drawing variables
 

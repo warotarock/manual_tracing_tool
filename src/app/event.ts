@@ -53,32 +53,6 @@ export class App_Event extends App_Document {
       , false
     );
 
-    // this.setCanvasWindowMouseEvent(this.layerWindow, this.layerWindow
-    //   , this.layerWindow_mousedown
-    //   , this.layerWindow_mousemove
-    //   , this.layerWindow_mouseup
-    //   , null
-    //   , false
-    // );
-
-    // this.uiLayerwindow_CommandButtonsRef.commandButton_Click = ((item) => this.layerWindow_mousedown_LayerCommandButton(item));
-
-    //this.setCanvasWindowMouseEvent(this.subtoolWindow, this.subtoolWindow
-    //    , this.subtoolWindow_mousedown
-    //    , this.subtoolWindow_mousemove
-    //    , this.subtoolWindow_mouseup
-    //    , null
-    //    , false
-    //);
-
-    // this.setCanvasWindowMouseEvent(this.paletteSelectorWindow, this.paletteSelectorWindow
-    //   , this.paletteSelectorWindow_mousedown
-    //   , null
-    //   , null
-    //   , null
-    //   , false
-    // );
-
     this.uiPaletteSelectorWindowRef.commandButton_Click = ((item) => this.paletteSelectorWindow_CommandButton_Click(item));
     this.uiPaletteSelectorWindowRef.item_Click = ((paletteColorIndex, item) => this.paletteSelectorWindow_Item_Click(paletteColorIndex, item));
 
@@ -88,14 +62,6 @@ export class App_Event extends App_Document {
       , this.timeLineWindow_mouseup
       , this.timeLineWindow_mousewheel
       , false
-    );
-
-    this.setCanvasWindowMouseEvent(this.paletteColorModal_colorCanvas, this.paletteColorModal_colorCanvas
-      , this.onPaletteColorModal_ColorCanvas_mousedown
-      , null
-      , null
-      , null
-      , true
     );
 
     this.setCanvasWindowMouseEvent(this.colorMixerWindow_colorCanvas, this.colorMixerWindow_colorCanvas
@@ -254,7 +220,10 @@ export class App_Event extends App_Document {
         return;
       }
 
-      this.startReloadDocument();
+      //this.startReloadDocument();
+
+      this.uiFileOpenDialogRef.show();
+
       e.preventDefault();
     });
 
@@ -287,28 +256,6 @@ export class App_Event extends App_Document {
       this.openDocumentSettingDialog();
       e.preventDefault();
     });
-
-    /*
-    this.getElement(this.ID.menu_btnPalette1).addEventListener('mousedown', (e: Event) => {
-
-        if (this.isEventDisabled()) {
-            return;
-        }
-
-        this.openPaletteColorModal(OpenPaletteColorModalMode.LineColor, this.toolContext.document, this.toolContext.currentLayer);
-        e.preventDefault();
-    });
-
-    this.getElement(this.ID.menu_btnPalette2).addEventListener('mousedown', (e: Event) => {
-
-        if (this.isEventDisabled()) {
-            return;
-        }
-
-        this.openPaletteColorModal(OpenPaletteColorModalMode.FillColor, this.toolContext.document, this.toolContext.currentLayer);
-        e.preventDefault();
-    });
-    */
 
     // React conponents
 
@@ -366,54 +313,14 @@ export class App_Event extends App_Document {
     this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_ok);
     this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_cancel);
 
-    // Color mixer window
-    // this.setColorMixerRGBElementEvent(this.ID.colorMixer_red, 0);
-    // this.setColorMixerRGBElementEvent(this.ID.colorMixer_green, 1);
-    // this.setColorMixerRGBElementEvent(this.ID.colorMixer_blue, 2);
-    // this.setColorMixerRGBElementEvent(this.ID.colorMixer_alpha, 3);
-
-    // this.setColorMixerHSVElementEvent(this.ID.colorMixer_hue);
-    // this.setColorMixerHSVElementEvent(this.ID.colorMixer_sat);
-    // this.setColorMixerHSVElementEvent(this.ID.colorMixer_val);
-
     this.uiColorMixerWindowRef.color_Change = (newColor: Vec4) => {
 
       this.colorMixerWindow_changeColor(newColor);
     };
 
-    // Palette modal
+    this.uiFileOpenDialogRef.value_Change = (filePath: string) => {
 
-    this.getElement(this.ID.paletteColorModal_currentColor).addEventListener('change', () => {
-
-      this.onPaletteColorModal_CurrentColorChanged();
-    });
-
-    this.getElement(this.ID.paletteColorModal_currentAlpha).addEventListener('change', () => {
-
-      this.onPaletteColorModal_CurrentColorChanged();
-    });
-
-    for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
-
-      {
-        let id = this.ID.paletteColorModal_colorValue + paletteColorIndex;
-        let colorButton = <HTMLInputElement>this.getElement(id);
-
-        colorButton.addEventListener('change', () => {
-
-          this.onPaletteColorModal_ColorChanged(paletteColorIndex);
-        });
-      }
-
-      {
-        let id = this.ID.paletteColorModal_colorIndex + paletteColorIndex;
-        let radioButton = <HTMLInputElement>this.getElement(id);
-
-        radioButton.addEventListener('click', () => {
-
-          this.onPaletteColorModal_ColorIndexChanged();
-        });
-      }
+      this.startReloadDocument(filePath);
     }
   }
 
@@ -974,7 +881,7 @@ export class App_Event extends App_Document {
 
       if (env.isCtrlKeyPressing()) {
 
-        this.startReloadDocument();
+        this.uiFileOpenDialogRef.show();
       }
       else {
 
@@ -1966,99 +1873,6 @@ export class App_Event extends App_Document {
 
       env.setRedrawTimeLineWindow();
     }
-  }
-
-  protected onPaletteColorModal_ColorIndexChanged() {
-
-    if (this.paletteColorWindow_EditLayer == null) {
-      return;
-    }
-
-    let documentData = this.currentModalDialog_DocumentData;
-    let vectorLayer = this.paletteColorWindow_EditLayer;
-
-    let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);;
-
-    if (this.paletteColorWindow_Mode == OpenPaletteColorModalMode.LineColor) {
-
-      vectorLayer.line_PaletteColorIndex = paletteColorIndex;
-    }
-    else {
-
-      vectorLayer.fill_PaletteColorIndex = paletteColorIndex;
-    }
-
-    //let paletteColor = documentData.paletteColos[paletteColorIndex];
-    //this.setInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
-    //this.setInputElementRangeValue(this.ID.paletteColorModal_currentAlpha, paletteColor.color[3], 0.0, 1.0);
-
-    this.displayPaletteColorModalColors(documentData, vectorLayer);
-
-    this.toolEnv.setRedrawMainWindow();
-  }
-
-  protected onPaletteColorModal_CurrentColorChanged() {
-
-    if (this.paletteColorWindow_EditLayer == null) {
-      return;
-    }
-
-    let documentData = this.currentModalDialog_DocumentData;
-    let vectorLayer = this.paletteColorWindow_EditLayer;
-    let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);
-    let paletteColor = documentData.paletteColors[paletteColorIndex];
-
-    this.getInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
-    paletteColor.color[3] = this.getInputElementRangeValue(this.ID.paletteColorModal_currentAlpha, 1.0, 1.0);
-
-    this.displayPaletteColorModalColors(documentData, vectorLayer);
-
-    this.toolEnv.setRedrawMainWindow();
-  }
-
-  protected onPaletteColorModal_ColorChanged(paletteColorIndex: int) {
-
-    if (this.paletteColorWindow_EditLayer == null) {
-
-      return;
-    }
-
-    let documentData = this.currentModalDialog_DocumentData;
-    let vectorLayer = this.paletteColorWindow_EditLayer;
-    let paletteColor = documentData.paletteColors[paletteColorIndex];
-
-    this.getInputElementColor(this.ID.paletteColorModal_colorValue + paletteColorIndex, paletteColor.color);
-
-    this.displayPaletteColorModalColors(documentData, vectorLayer);
-
-    this.toolEnv.setRedrawMainWindow();
-  }
-
-  protected onPaletteColorModal_ColorCanvas_mousedown() {
-
-    if (this.paletteColorWindow_EditLayer == null) {
-      return;
-    }
-
-    let wnd = this.paletteColorModal_colorCanvas;
-    let e = wnd.toolMouseEvent;
-
-    this.canvasRender.setContext(wnd);
-    this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
-
-    let documentData = this.currentModalDialog_DocumentData;
-    let paletteColorIndex = this.getRadioElementIntValue(this.ID.paletteColorModal_colorIndex, 0);
-    let paletteColor = documentData.paletteColors[paletteColorIndex];
-
-    paletteColor.color[0] = this.tempColor4[0];
-    paletteColor.color[1] = this.tempColor4[1];
-    paletteColor.color[2] = this.tempColor4[2];
-
-    this.setColorPaletteElementValue(paletteColorIndex, paletteColor.color);
-
-    this.setInputElementColor(this.ID.paletteColorModal_currentColor, paletteColor.color);
-
-    this.toolEnv.setRedrawMainWindow();
   }
 
   protected setOperatorCursorLocationToMouse() {

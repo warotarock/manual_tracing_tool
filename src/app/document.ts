@@ -45,7 +45,7 @@ export class App_Document extends App_Tool {
     protected saveDocument() { // @virtual
     }
 
-    protected startReloadDocument() { // @virtual
+    protected startReloadDocument(filepath: string) { // @virtual
 
         // To request reloading in App_Event
     }
@@ -82,28 +82,6 @@ export class App_Document extends App_Tool {
         Platform.settings.setItem(activeSettingName, this.localSetting);
     }
 
-    protected registerLastUsedFile(filePath: string) {
-
-        let paths = this.localSetting.lastUsedFilePaths;
-
-        for (let index = 0; index < paths.length; index++) {
-
-            if (paths[index] == filePath) {
-
-                ListRemoveAt(paths, index);
-            }
-        }
-
-        ListInsertAt(paths, 0, filePath);
-
-        if (paths.length > this.localSetting.maxLastUsedFilePaths) {
-
-            paths = ListGetRange(paths, 0, this.localSetting.maxLastUsedFilePaths);
-        }
-
-        this.localSetting.lastUsedFilePaths = paths;
-    }
-
     // Loading document resources
 
     protected startLoadingDocumentURL(documentData: DocumentData, url: string) {
@@ -115,6 +93,9 @@ export class App_Document extends App_Tool {
             console.log('error: not supported file type.');
             return;
         }
+
+        Platform.settings.registerLastUsedFile(url);
+
 
         let xhr = new XMLHttpRequest();
         xhr.open('GET', url);
@@ -183,8 +164,6 @@ export class App_Document extends App_Tool {
                 entry.getText((text: string) => {
 
                     this.startReloadDocumentFromText(documentData, text, filePath);
-
-                    this.registerLastUsedFile(filePath);
 
                     this.setHeaderDocumentFileName(filePath);
                 });
@@ -441,7 +420,7 @@ export class App_Document extends App_Tool {
 
         let save_DocumentData = this.createSaveDocumentData(documentData);
 
-        this.registerLastUsedFile(filePath);
+        Platform.settings.registerLastUsedFile(filePath);
 
         if (forceToLocalStrage) {
 
@@ -464,7 +443,7 @@ export class App_Document extends App_Tool {
 
     protected saveDocumentJsonFile(filePath: string, documentData: DocumentData) {
 
-        Platform.writeFileSync(filePath, JSON.stringify(documentData), 'utf8', function (error) {
+        Platform.fileSystem.writeFileSync(filePath, JSON.stringify(documentData), 'utf8', function (error) {
             if (error != null) {
                 this.showMessageBox('error : ' + error);
             }
@@ -491,7 +470,7 @@ export class App_Document extends App_Tool {
             , JSON.stringify(save_DocumentData)
             , (dataURL: string) => {
 
-                Platform.writeFileSync(filePath, dataURL, 'base64', (error) => {
+                Platform.fileSystem.writeFileSync(filePath, dataURL, 'base64', (error) => {
                     if (error) {
                         this.showMessageBox(error);
                     }
@@ -570,7 +549,7 @@ export class App_Document extends App_Tool {
 
         let dataURL = canvas.toDataURL(imageTypeText, 0.9);
 
-        Platform.writeFileSync(fileFullPath, dataURL, 'base64', (error) => {
+        Platform.fileSystem.writeFileSync(fileFullPath, dataURL, 'base64', (error) => {
             if (error) {
                 this.showMessageBox(error);
             }

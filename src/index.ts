@@ -7,14 +7,20 @@ import { DocumentData } from 'base/data';
 import { App_Main, MainProcessStateID } from 'app/main';
 
 import { UI_MenuButtons } from 'ui/menu_buttons';
-import { UI_ScrollView } from 'ui/scroll_view';
 import { UI_SubToolWindow } from 'ui/subtool_window';
-import { UI_CommandButtons } from 'ui/command_buttons';
 import { UI_LayerWindow } from 'ui/layer_window';
 import { UI_PaletteSelectorWindow } from 'ui/palette_selector_window';
 import { UI_ColorMixerWindow } from 'ui/color_mixer_window';
+import { UI_FileOpenDialog } from './ui/file_open_dialog';
 
 // 大改修計画
+// ・新規作成テンプレート、最近使ったファイル、ファイルを開く、保存する画面
+// 　・ソース、フォルダ、ファイルの３階層にする→デスクトップ、モバイルの両方に対応できる
+// 　・ソースにデフォルトで「最近使ったファイル」があるようにする。そこを最初に表示する。
+// 　・デスクトップでは実ディスクのファイルを参照できるようにする→ソールにはお気に入りを登録できるようにする
+// 　・モバイルでは仮想的な階層となる→ソースは単なる１階層目のフォルダ、２階層目にはファイルかフォルダを置ける、三階層目はファイルのみ
+// 　・リストを表示できるビューをコンポーネントにする
+// 　・サムネイルを表示できるビューをコンポーネントにする
 // ・塗りつぶし機能の拡充
 //   ・描画グループを単位として描画するようにする
 // 　　・データ構造の変更
@@ -28,7 +34,12 @@ import { UI_ColorMixerWindow } from 'ui/color_mixer_window';
 // 　　　・連結描画しないLine、連結描画するLineをそれぞれまとめてStrokeGroupに入れ、それをDrawingUnitに入れる（一つのDrawingUnitに一つのStrokeGroupが入った状態になる）
 // 　　・DrawingUnitごとに描画するようにする
 //   ・DrawingUnit、StrokeGroupの編集処理
-// 　　・DrawingUnit、StrokeGroupをEditモードで可視化する
+// 　　・DrawingUnit、StrokeGroupを可視化する
+// 　　　・Drawモードで選択可能にする。選択した瞬間だけ矩形と強調表示で示す。また、画面上部で選択中のユニットの可視化をON/OFF可能にする
+// 　　　・切り取り、貼り付けなどをしたときの処理を実装する
+// 　　　・編集単位を画面の上部で変更できるようにする。描画単位、ストロークグループ単位を追加
+// 　　　・Editモードで描画単位、ストロークグループの可視化
+// 　　　　・マウス移動時に近接する対象を強調表示する
 // 　　・DrawingUnitを編集処理のループの中に足す
 //   ・StrokeGroupの頂点や線の削除をしても正しくなるようにする
 //   　・StrokeGroupの中で最も近い位置のStrokeが連結描画されるように再構築する処理を実装する
@@ -268,6 +279,11 @@ window.onload = () => {
   ReactDOM.render(
     React.createElement(UI_ColorMixerWindow, { uiRef: _Main.uiColorMixerWindowRef })
     , document.getElementById("color-mixer-window")
+  );
+
+  ReactDOM.render(
+    React.createElement(UI_FileOpenDialog, { uiRef: _Main.uiFileOpenDialogRef })
+    , document.getElementById("file-open-dialog")
   );
 
   _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);

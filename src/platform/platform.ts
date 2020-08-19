@@ -1,114 +1,228 @@
-import { int } from 'base/conversion';
-import { LocalSetting } from 'base/data';
-
+import { int, ListRemoveAt, ListInsertAt, ListGetRange } from 'base/conversion';
+import { LocalSetting, LocalSettingFileSection } from 'base/data';
 
 var require = window['require'];
 
 export module Platform {
 
-    function supportsNative(): boolean {
+  export function supportsNative(): boolean {
 
-        return (typeof (require) != 'undefined');
+    return (typeof (require) != 'undefined');
+  }
+
+  export function getCurrentTime(): int {
+
+    return performance.now();
+  }
+
+  const fs = supportsNative() ? require('fs')
+  : {
+
+    readFileSync(fileName: string): string {
+
+      return window.localStorage.getItem(fileName);
+    },
+
+    writeFile(fileName: string, text: string) {
+
+      window.localStorage.setItem(fileName, text);
     }
+  };
 
-    export function getCurrentTime(): int {
+  class Settings {
 
-        return performance.now();
-    }
-
-    export let fs = supportsNative() ? require('fs') : {
-
-        readFileSync(fileName): string {
-            return window.localStorage.getItem(fileName);
-        },
-
-        writeFile(fileName, text) {
-            window.localStorage.setItem(fileName, text);
-        }
+    data = {
+      activeSettingName: "setting1",
+      setting1: {
+        currentDirectoryPath: "./",
+        referenceDirectoryPath: "./test",
+        exportPath: "./",
+        maxLastUsedFilePaths: 5,
+        lastUsedFilePaths: ['./test/test01_app_demo.json'],
+        fileSections: []
+      } as LocalSetting
     };
 
-    export function writeFileSync(fileName, data, format, callback) {
+    load() {
 
-        if (format == 'base64') {
+      let text = fs.readFileSync('./test/settings.json');
 
-            if (supportsNative()) {
+      if (text) {
 
-                let base64Data = data.substr(data.indexOf(',') + 1);
+        let json = JSON.parse(text);
 
-                fs.writeFileSync(fileName, base64Data, format, callback);
-            }
-            else {
+        if (json) {
 
-                let link = document.createElement("a");
-                link.download = fileName;
-                link.href = data;
-                link.click();
-            }
+          this.data = json;
+
+          if (this.data.setting1.fileSections == undefined) {
+
+            this.data.setting1.fileSections = [];
+          }
+        }
+      }
+    }
+
+    save() {
+
+      fs.writeFileSync('./test/settings.json', JSON.stringify(this.data));
+    }
+
+    setItem(key: string, value: object) {
+
+      this.data[key] = value;
+
+      this.save();
+    }
+
+    getItem(key: string): any {
+
+      return this.data[key];
+    }
+
+    getOpenFileEnvitonments() {
+
+      return {
+        fileSections: this.data.setting1.fileSections,
+        lastUsedFilePaths: this.data.setting1.lastUsedFilePaths
+      }
+    }
+
+    addFileSection(fileSection: LocalSettingFileSection) {
+
+      const new_FileSections = this.data.setting1.fileSections
+        .filter(section => section.path != fileSection.path);
+
+      new_FileSections.push(fileSection);
+
+      this.saveFileSections(new_FileSections);
+    }
+
+    removeFileSection(fileSection: LocalSettingFileSection) {
+
+      const new_FileSections = this.data.setting1.fileSections
+        .filter(section => section != fileSection);
+
+      this.saveFileSections(new_FileSections);
+    }
+
+    private saveFileSections(new_FileSections: LocalSettingFileSection[]) {
+
+      let index = 0;
+      new_FileSections.forEach(item => item.index = index++);
+
+      this.data.setting1.fileSections = new_FileSections;
+
+      this.save();
+    }
+
+    registerLastUsedFile(filePath: string) {
+
+      let paths = this.data.setting1.lastUsedFilePaths;
+
+      for (let index = 0; index < paths.length; index++) {
+
+          if (paths[index] == filePath) {
+
+              ListRemoveAt(paths, index);
+          }
+      }
+
+      ListInsertAt(paths, 0, filePath);
+
+      if (paths.length > this.data.setting1.maxLastUsedFilePaths) {
+
+          paths = ListGetRange(paths, 0, this.data.setting1.maxLastUsedFilePaths);
+      }
+
+      this.data.setting1.lastUsedFilePaths = paths;
+  }
+  };
+
+  export const settings = new Settings();
+
+  export const path = supportsNative() ? require('path')
+  : {
+
+    basename(path: string) {
+
+      return path;
+    }
+  };
+
+  const electron = supportsNative() ? require('electron') : null;
+
+  export const clipboard: any = electron ? electron.clipboard
+  : {
+
+    writeText(text: string, type: string) {
+
+      window.localStorage.setItem('clipboard', text);
+    },
+
+    readText(type: string): string {
+
+      return window.localStorage.getItem('clipboard');
+    },
+
+    availableFormats(type: string): string {
+
+      return window.localStorage.getItem('clipboard') ? 'clipboard' : null;
+    }
+  };
+
+  export const fileSystem = {
+
+    writeFileSync(fileName: string, data: any, format: 'base64' | 'utf8', callback: Function) {
+
+      if (format == 'base64') {
+
+        if (supportsNative()) {
+
+          let base64Data = data.substr(data.indexOf(',') + 1);
+
+          fs.writeFileSync(fileName, base64Data, format, callback);
         }
         else {
 
-            fs.writeFileSync(fileName, data, format, callback);
+          let link = document.createElement("a");
+          link.download = fileName;
+          link.href = data;
+          link.click();
         }
-    }
+      }
+      else {
 
-    class Settings {
+        fs.writeFileSync(fileName, data, format, callback);
+      }
+    },
 
-        data = {
-            "activeSettingName": "setting1",
-            "setting1": {
-                "currentDirectoryPath": "./",
-                "referenceDirectoryPath": "./test",
-                "exportPath": "./",
-                "maxLastUsedFilePaths": 5,
-                "lastUsedFilePaths": ['./test/test01_app_demo.json']
-            } as LocalSetting
-        };
+    getFilesSync(directoryPath: string) {
 
-        load() {
+      const dirents: any[] = fs.readdirSync(directoryPath, { withFileTypes: true });
 
-            let text = fs.readFileSync('./test/settings.json');
+      const files = dirents
+        .filter(dirent => dirent.isFile())
+        .map(dirent => ({
+          name: path.basename(dirent.name),
+          path: path.join(directoryPath, dirent.name)
+        }));
 
-            if (text) {
+      return files;
+    },
 
-                let json = JSON.parse(text);
+    async selectDirectory(defaultPath: string) {
 
-                if (json) {
+      const openDialogResult = await electron.ipcRenderer.invoke('select-file-place-folder', defaultPath);
 
-                    this.data = json;
-                }
-            }
-        }
+      if (openDialogResult.filePaths && openDialogResult.filePaths.length > 0) {
 
-        setItem(key: string, value: object) {
+        return openDialogResult.filePaths[0];
+      }
+      else {
 
-            this.data[key] = value;
-
-            fs.writeFileSync('./test/settings.json', JSON.stringify(this.data));
-        }
-
-        getItem(key: string): any {
-
-            return this.data[key];
-        }
-    };
-
-    export let settings = new Settings();
-
-    export let clipboard: any = supportsNative() ? require('electron').clipboard : {
-
-        writeText(text: string, type: string) {
-
-            window.localStorage.setItem('clipboard', text);
-        },
-
-        readText(type: string): string {
-
-            return window.localStorage.getItem('clipboard');
-        },
-
-        availableFormats(type: string): string {
-
-            return window.localStorage.getItem('clipboard') ? 'clipboard' : null;
-        }
-    };
+        return null;
+      }
+    },
+  };
 }

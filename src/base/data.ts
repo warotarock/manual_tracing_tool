@@ -13,6 +13,14 @@ export class LocalSetting {
   exportPath: string = null;
   lastUsedFilePaths: List<string> = [];
   maxLastUsedFilePaths = 5;
+  fileSections: LocalSettingFileSection[] = [];
+}
+
+export class LocalSettingFileSection {
+
+  index: int = 0;
+  name = '';
+  path = '';
 }
 
 // Color
