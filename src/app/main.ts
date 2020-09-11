@@ -454,7 +454,7 @@ export class App_Main extends App_Event implements MainEditor {
     this.initializeViewState();
 
     this.drawPaletteColorMixer(this.colorMixerWindow_colorCanvas);
-    this.drawPaletteColorMixer(this.paletteColorModal_colorCanvas);
+    // this.drawPaletteColorMixer(this.paletteColorModal_colorCanvas);
 
     this.updateLayerStructureInternal(true, true, false, false);
 

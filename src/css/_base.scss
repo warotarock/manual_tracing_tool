@@ -1,7 +1,10 @@
 ﻿$systemBackground: #f6f6f8;
 
 $windowBackground: #fdfdfd;
-$windowBorder: #888;
+$windowBorderColor: #888;
+$windowBorderWidth: 1px;
+$windowBorder: solid $windowBorderWidth $windowBorderColor;
+$windowBackgroundHalf: #f6f6f87e;
 $windowLabelColor: #eee;
 $windowLabelBackground: #888;
 
@@ -11,7 +14,8 @@ $listItemBackgroundOdd: #f8f8f8;
 $canvasBackground: #fff;
 $activeBackground: #ddf;
 $selectedBackground: #ddf;
-$hoverBackground: #f0f0ff;
+$hoverBackground: #e0e0ff;
+$buttonBackground: #f0f0f0;
 $buttonCornerRadius: 3px;
 
 $fontSizeSmall: 12px;
@@ -19,6 +23,10 @@ $fontSizeSmallLineHeight: 15px;
 $fontSizeNormal: 14px;
 $fontSizeNormalLineHeight: 24px;
 $fontSizeNormalIconSize: 22px;
+
+$zindex-screen-sub: 1000;
+$zindex-center-panel: 100;
+$zindex-side-panel: 200;
 
 // ボタン
 
@@ -29,7 +37,7 @@ $fontSizeNormalIconSize: 22px;
   font-size: $fontSizeNormal;
   text-align: center;
   line-height: $fontSizeNormal * 2.0;
-  border: solid 1px $windowBorder;
+  border: $windowBorder;
   border-radius: 3px;
   user-select: none;
 

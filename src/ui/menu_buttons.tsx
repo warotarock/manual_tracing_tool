@@ -31,19 +31,19 @@ export function UI_MenuButtons({ uiRef }: UI_MenuButtonsParam) {
 
         if (activeElementID == id) {
 
-            return 'selectedMainButton';
+            return 'button selected';
         }
         else {
 
-            return 'unselectedMainButton';
+            return 'button';
         }
     }
 
     return (
-        <React.Fragment>
+        <div className="mainToolButtons">
             <div id="menu_btnDrawTool" className={getClassName('menu_btnDrawTool')}>Draw</div>
             <div id="menu_btnEditTool" className={getClassName('menu_btnEditTool')}>Edit</div>
             <div id="menu_btnMiscTool" className={getClassName('menu_btnMiscTool')}>Setting</div>
-        </React.Fragment>
+        </div>
     );
 }

@@ -4,8 +4,8 @@
 .main-canvas-window {
   flex: 1;
   position: relative;
-  border: solid 1px $windowBorder;
-  margin-bottom: 5px;
+  // border: $windowBorder;
+  // margin-bottom: 5px;
   background-color: $canvasBackground;
 
   .main-canvas {
@@ -30,30 +30,256 @@
 
 .test-window {
   margin-top: 4px;
-  border: 1px solid #000;
+  border: 1px solid #eee;
+}
+
+$main-tool-width: 150px;
+$main-tool-height: 300px;
+$ribbon-height: 105px;
+$operation-ui-border: solid 1px $windowBorderColor;
+
+.footer-operation-ui {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  border: $operation-ui-border;
+  background-color: $windowBackground;
+  z-index: 300;
+  overflow: visible;
+
+  .main-operations {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: $main-tool-width;
+    height: $main-tool-height;
+
+    .inner-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+
+      .border-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        z-index: 1;
+
+        .top-part {
+          flex: 1;
+          border-right: $operation-ui-border;
+          border-top: $operation-ui-border;
+          background-color: $windowBackground;
+          border-top-right-radius: 30px;
+        }
+
+        .bottom-part {
+          background-color: $windowBackground;
+          height: $ribbon-height;
+        }
+      }
+
+      .controls {
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2;
+        box-sizing: border-box;
+        padding: 10px 10px 10px 5px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr 1fr;
+        row-gap: 5px;
+        column-gap: 5px;
+
+        button {
+          border: 1px solid #888;
+          border-radius: 5px;
+          width: 1.3em;
+          height: 1.3em;
+          padding: 0.15em 0 0 0.12em;
+          font-size: 50px;
+          overflow: hidden;
+          text-align: left;
+          background-color: $buttonBackground;
+
+          &:hover {
+            background-color: $hoverBackground;
+          }
+
+          &:focus {
+            outline: none;
+          }
+
+          i {
+            font-size: 1.0em;
+          }
+        }
+      }
+    }
+  }
+
+  .tool-ribbon {
+    position: absolute;
+    left: $main-tool-width;
+    right: 0;
+    bottom: 0;
+    height: $ribbon-height;
+    box-sizing: border-box;
+    border-top: $operation-ui-border;
+    padding: 5px 5px 0 0;
+    display: flex;
+    background-color: $windowBackground;
+
+    .sub-command-buttons {
+      width: 94px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+
+      button {
+        border: 1px solid #888;
+        border-radius: 5px;
+        width: 1.3em;
+        height: 1.3em;
+        padding: 0.15em 0 0 0.12em;
+        font-size: 32px;
+        overflow: hidden;
+        text-align: left;
+        background-color: $buttonBackground;
+
+        &:hover {
+          background-color: $hoverBackground;
+        }
+
+        &:focus {
+          outline: none;
+        }
+
+        i {
+          font-size: 1.0em;
+        }
+      }
+    }
+
+    .tool-buttons {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      .main-tool-buttons {
+        display: flex;
+      }
+    }
+  }
+
+  .mainToolButtons {
+    display: flex;
+    user-select: none;
+
+    div.button {
+      box-sizing: border-box;
+      min-width: 80px;
+      height: 35px;
+      border-left: solid;
+      border-top: solid;
+      border-color: #000;
+      border-width: 1px;
+      text-align: center;
+      font-size: 14px;
+      line-height: 34px;
+      vertical-align: middle;
+      cursor: default;
+      color: #000;
+      background-color: $windowBackground;
+
+      &:hover {
+        background-color: $hoverBackground;
+      }
+
+      $borderRadius: 5px;
+
+      &:first-child {
+        border-top-left-radius: $borderRadius;
+      }
+
+      &:last-child {
+        border-right: solid;
+        border-top-right-radius: $borderRadius;
+        border-width: 1px;
+      }
+
+      &.selected {
+        color: #fff;
+        background: #000;
+        border-color: #000;
+        border-width: 1px;
+
+        &:hover {
+          color: $hoverBackground;
+          border-color: #000;
+          background: #555;
+        }
+      }
+    }
+  }
+
+  .headerCommandButton {
+    margin-inline-start: 8px;
+    padding-top: 2px;
+
+    .mainMenuButtonImage {
+      width: 24px;
+      height: 24px;
+    }
+  }
 }
 
 .subtool-window {
-  overflow: hidden;
+  position: relative;
   flex: 1;
-  height: 1px;
-  border: solid 1px $windowBorder;
-  background-color: $windowBackground;
+
+  .ui-scroll-view-container {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0px;
+    bottom: 0;
+    border-left: $windowBorder;
+    border-right: $windowBorder;
+    border-top: $windowBorder;
+    padding: 3px;
+    white-space:nowrap;
+  }
+
+  $item-scale: 0.9;
 
   .item {
-    display: flex;
+    display: inline-block;
     box-sizing: border-box;
-    height: 64px;
-    padding-left: 6px;
-    line-height: 64px;
+    height: 64px * $item-scale;
+    line-height: 64px * $item-scale;
     vertical-align: middle;
-    background-size: 128px;
+    background-size: 128px * $item-scale;
     background-repeat: no-repeat;
     border-bottom: 1px solid darken($systemBackground, 1);
 
     /*&:nth-child(odd) {
-            background-color: #eeeeee;
-        }*/
+      background-color: #eeeeee;
+    }*/
+
+    // &:not(:first-child) {
+    //   padding-left: 6px;
+    // }
+
     &:hover {
       background-color: $hoverBackground;
     }
@@ -62,14 +288,19 @@
       background-color: $activeBackground;
     }
 
-    .spacer {
-      width: 120px;
-    }
+    .item-inner {
+      display: flex;
 
-    .command-button {
-      width: 64px;
-      height: 64px;
-      background-size: 256px;
+      .spacer {
+        width: 80px * $item-scale;
+        height: 64px * $item-scale;
+      }
+
+      .command-button {
+        width: 64px * $item-scale;
+        height: 64px * $item-scale;
+        background-size: 256px * $item-scale;
+      }
     }
   }
 }
@@ -77,10 +308,11 @@
 .layer-window {
   overflow: hidden;
   flex: 1;
-  border: solid 1px $windowBorder;
+  border: $windowBorder;
   background-color: $windowBackground;
   display: flex;
   flex-direction: column;
+  height: 300px;
 
   .ui-scroll-view-container {
     flex: 1;
@@ -141,61 +373,64 @@
 }
 
 .palette-selector-window {
-  padding: 2px;
-  border: solid 1px $windowBorder;
+  border: $windowBorder;
   background-color: $windowBackground;
 
-  .palette-selector-window-items {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-    // column-gap: 1px;
-    // row-gap: 1px;
-    // background-color: #000;
-    border-color: #000;
-    border-left: solid 1px;
-    border-top: solid 1px;
+  .items-container {
+    padding: 2px;
 
-    .item-container {
-      margin: 0px;
+    .items {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+      // column-gap: 1px;
+      // row-gap: 1px;
+      // background-color: #000;
+      border-color: #000;
+      border-left: solid 1px;
+      border-top: solid 1px;
 
-      &:hover {
+      .item-container {
+        margin: 0px;
 
-        .item:not(.selected) {
+        &:hover {
 
-          &::after {
-            position: absolute;
-            content: ' ';
-            top: 0px;
-            left: 0px;
-            right: 0px;
-            bottom: 0px;
-            border: solid 3px $activeBackground;
-            z-index: 5;
+          .item:not(.selected) {
+
+            &::after {
+              position: absolute;
+              content: ' ';
+              top: 0px;
+              left: 0px;
+              right: 0px;
+              bottom: 0px;
+              border: solid 3px $activeBackground;
+              z-index: 5;
+            }
           }
         }
-      }
 
-      .item {
-        box-sizing: border-box;
-        height: 17px;
-        position: relative;
-        border-color: #000;
-        border-right: solid 1px;
-        border-bottom: solid 1px;
+        .item {
+          box-sizing: border-box;
+          height: 17px;
+          position: relative;
+          border-color: #000;
+          border-right: solid 1px;
+          border-bottom: solid 1px;
 
-        &.selected {
-          // box-shadow: 0 0 0 3px #99f;
-          // border: solid 3px #99f;
+          &.selected {
+            // box-shadow: 0 0 0 3px #99f;
+            // border: solid 3px #99f;
 
-          &::after {
-            position: absolute;
-            content: ' ';
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            border: solid 3px #99f;
-            z-index: 5;
+            &::after {
+              position: absolute;
+              content: ' ';
+              top: -2px;
+              left: -2px;
+              right: -2px;
+              bottom: -2px;
+              border: solid 3px #99f;
+              z-index: 5;
+            }
           }
         }
       }
@@ -206,7 +441,7 @@
 .color-mixer-window {
   display: flex;
   flex-direction: column;
-  border: solid 1px $windowBorder;
+  border: $windowBorder;
   padding: 0px 0 8px 0;
   background-color: $windowBackground;
 
@@ -247,10 +482,15 @@
 }
 
 .time-line-window {
-  overflow: hidden;
+  position: absolute;
+  left: $main-tool-width + 5px;
+  right: 5px;
+  bottom: $ribbon-height + 5;
   height: 46px;
-  border: solid 1px $windowBorder;
+  overflow: hidden;
+  border: $windowBorder;
   background-color: $windowBackground;
+  z-index: 301;
 
   canvas {
     border: none;
@@ -279,7 +519,7 @@
     }
 
     .section-list {
-      border: solid 1px $windowBorder;
+      border: $windowBorder;
       background-color: $windowBackground;
       user-select: none;
 
@@ -297,7 +537,7 @@
 
         .section-item-inner {
           display: flex;
-          padding: 0 5px 0 8px;
+          padding: 2px 5px 2px 8px;
           border-radius: 3px;
 
           &.selected {
@@ -308,22 +548,20 @@
             }
           }
 
-          $lineHeight: $fontSizeNormal * 2.2;
+          $lineHeight: $fontSizeNormal * 2.0;
 
           .name {
             flex: 1;
+            line-height: $lineHeight;
 
             i {
               margin-right: 4px;
               font-size: $fontSizeNormalIconSize;
-              line-height: $lineHeight;
-              vertical-align: sub;
+              vertical-align: text-bottom;
             }
 
             span {
               font-size: $fontSizeNormal;
-              line-height: $fontSizeNormal * 2.0;
-              min-height: $lineHeight;
               vertical-align: middle;
             }
           }
@@ -331,8 +569,9 @@
           .button {
             margin-inline-start: 4px;
             font-size: $fontSizeNormalIconSize;
-            line-height: $lineHeight;
             opacity: 0;
+            line-height: $lineHeight;
+            vertical-align: text-bottom;
           }
         }
       }
@@ -345,17 +584,23 @@
     flex: 1;
 
     .section-info {
-      margin-bottom: 5px;
-      padding: 0px 2px 0px 8px;
-      border: solid 1px $windowBorder;
-      background-color: $windowBackground;
-      font-size: $fontSizeNormal;
-      line-height: $fontSizeNormal * 2.0;
+      padding: 5px 2px 5px 8px;
+
+      i {
+        margin-right: 4px;
+        font-size: $fontSizeNormalIconSize;
+        vertical-align: text-bottom;
+      }
+
+      span {
+        font-size: $fontSizeNormal;
+        vertical-align: text-bottom;
+      }
     }
 
     .file-list {
       flex: 1;
-      border: solid 1px $windowBorder;
+      border: $windowBorder;
       background-color: $windowBackground;
       user-select: none;
       overflow-y: scroll;
@@ -384,7 +629,7 @@
           }
 
           .file-item-inner {
-            padding: 0 5px 0 8px;
+            padding: 8px 5px 8px 12px;
             border-radius: 3px;
 
             &.selected {
@@ -395,26 +640,23 @@
               }
             }
 
-            .name {
-              font-size: $fontSizeNormal * 1.5;
-              line-height: $fontSizeNormal * 1.5 * 2.0;
-              vertical-align: sub;
-              min-width: 50%;
-            }
-
-            .path {
-              margin-left: 10px;
-              font-size: $fontSizeNormal;
-              line-height: $fontSizeNormal * 1.5 * 2.0;
-              vertical-align: sub;
-              color: #555;
-            }
-
             i {
               font-size: $fontSizeNormal * 1.5 * 1.5;
-              line-height: $fontSizeNormal * 1.5 * 2.0;
               vertical-align: middle;
-              margin-right: 8px;
+              margin-right: 12px;
+            }
+
+            span.name {
+              font-size: $fontSizeNormal * 1.5;
+              min-width: 50%;
+              vertical-align: middle;
+            }
+
+            span.path {
+              margin-left: 10px;
+              font-size: $fontSizeNormal;
+              color: #555;
+              vertical-align: middle;
             }
           }
         }
@@ -431,7 +673,7 @@
         background-color: $windowBackground;
         font-size: $fontSizeNormal;
         line-height: $fontSizeNormal * 2.0;
-        border: solid 1px $windowBorder;
+        border: $windowBorder;
       }
 
       button {

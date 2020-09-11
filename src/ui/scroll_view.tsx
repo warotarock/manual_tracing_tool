@@ -1,6 +1,8 @@
 import * as React from 'react';
 
-export function UI_ScrollView({ children, wheelScrollY = 16 }) {
+export function UI_ScrollView(
+  { children, wheelScrollY = 16, direction='vertical' }: { children, wheelScrollY?: number, direction: 'vertical' | 'horizontal' }
+) {
 
     const containerRef = React.useRef(null);
 
@@ -15,9 +17,16 @@ export function UI_ScrollView({ children, wheelScrollY = 16 }) {
 
     const scroll = React.useCallback(({ dx, dy }) => {
 
-        containerRef.current.scrollTop += dy;
+      if (direction == 'vertical') {
 
-    }, [containerRef.current?.scrollTop]);
+        containerRef.current.scrollTop += dy;
+      }
+      else {
+
+        containerRef.current.scrollLeft += dx;
+      }
+
+    }, [(direction == 'vertical' ? containerRef.current?.scrollTop : containerRef.current?.scrollLeft)]);
 
     const endScroll = () => {
 
@@ -136,12 +145,14 @@ export function UI_ScrollView({ children, wheelScrollY = 16 }) {
 
     const onWheel = (e: React.WheelEvent) => {
 
-        let dx = 0;
-        let dy = (e.deltaY > 0 ? wheelScrollY : -wheelScrollY);
+      let scrollDistance = (e.deltaY > 0 ? wheelScrollY : -wheelScrollY)
 
-        scroll({ dx, dy });
+      let dx = (direction == 'horizontal' ? scrollDistance : 0);
+      let dy = (direction == 'vertical' ? scrollDistance : 0);
 
-        // console.log('onMouseLeave');
+      scroll({ dx, dy });
+
+      // console.log('onMouseLeave');
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -186,7 +197,7 @@ export function UI_ScrollView({ children, wheelScrollY = 16 }) {
     });
 
     return (
-        <div ref={containerRef} className="ui-scroll-view-container"
+        <div ref={containerRef} className={`ui-scroll-view-container ${direction=='vertical' ? 'vertical' : 'horizontal'}`}
             onMouseDown={onMouseDown}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}

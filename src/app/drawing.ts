@@ -1591,10 +1591,10 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     let width = wnd.width;
     let height = wnd.height;
-    let left = 0.0;
-    let top = 0.0;
-    let right = width - 1.0;
-    let bottom = height - 1.0;
+    // let left = 0.0;
+    // let top = 0.0;
+    // let right = width - 1.0;
+    // let bottom = height - 1.0;
     //let minRadius = 10.0;
     //let maxRadius = width * 1.0;
 
@@ -1621,8 +1621,8 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
     let divisionW = 40.0;
     let divisionH = 25.0;
-    let unitWidth = Math.floor(width / divisionW);
-    let unitHeight = Math.floor(height / divisionH);
+    let unitWidth = width / divisionW;
+    let unitHeight = height / divisionH;
 
     let drawX = 0.0;
 
@@ -1648,7 +1648,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
         ColorLogic.hsvToRGB(this.tempColor4, h, s, v);
         this.tempColor4[3] = 1.0;
         this.canvasRender.setFillColorV(this.tempColor4);
-        this.canvasRender.fillRect(drawX, drawY, unitWidth, unitHeight);
+        this.canvasRender.fillRect(drawX, drawY, unitWidth + 1.0, unitHeight + 1.0);
 
         drawY += unitHeight;
       }

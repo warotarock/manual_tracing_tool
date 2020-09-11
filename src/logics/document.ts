@@ -36,7 +36,7 @@ export class DocumentLogic {
 
     this.fileNameCount++;
 
-    return localSetting.currentDirectoryPath + '\\' + fileName + '.ora';
+    return localSetting.currentDirectoryPath + '\\' + fileName + '.v.ora';
   }
 
   static fixLoadedDocumentData(documentData: DocumentData, info: DocumentDataSaveInfo) {

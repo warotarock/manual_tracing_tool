@@ -103,6 +103,18 @@ export class RectangleLayoutArea {
   }
 }
 
+export enum MainCommandButtonID {
+
+  none = 0,
+  open = 1,
+  save = 2,
+  export = 3,
+  settings = 4,
+  layerWindow = 5,
+  paletteWindow = 6,
+  timeLineWindow = 7,
+}
+
 export class TimeLineWindow extends ToolBaseWindow {
 
   leftPanelWidth = 100.0;
@@ -256,6 +268,7 @@ export class HTMLElementID {
 
   fileName = 'fileName';
 
+  header = 'header';
   footer = 'footer';
 
   subtoolWindow = "subtoolWindow";
@@ -274,10 +287,6 @@ export class HTMLElementID {
   menu_btnMiscTool = 'menu_btnMiscTool';
   menu_btnEditTool = 'menu_btnEditTool';
   menu_btnOperationOption = 'menu_btnOperationOption';
-  menu_btnOpen = 'menu_btnOpen';
-  menu_btnSave = 'menu_btnSave';
-  menu_btnExport = 'menu_btnExport';
-  menu_btnProperty = 'menu_btnProperty';
   menu_btnPalette1 = 'menu_btnPalette1';
   menu_btnPalette2 = 'menu_btnPalette2';
 

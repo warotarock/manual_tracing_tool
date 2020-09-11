@@ -11,7 +11,10 @@ import { UI_SubToolWindow } from 'ui/subtool_window';
 import { UI_LayerWindow } from 'ui/layer_window';
 import { UI_PaletteSelectorWindow } from 'ui/palette_selector_window';
 import { UI_ColorMixerWindow } from 'ui/color_mixer_window';
-import { UI_FileOpenDialog } from './ui/file_open_dialog';
+import { UI_FileOpenDialog } from 'ui/file_open_dialog';
+import { UI_HeaderWindow } from 'ui/header_window';
+import { UI_SideBarContainer } from './ui/side_bar_container';
+import { UI_FooterOperationPanel } from './ui/footer_operation_panel';
 
 // 大改修計画
 // ・新規作成テンプレート、最近使ったファイル、ファイルを開く、保存する画面
@@ -21,6 +24,11 @@ import { UI_FileOpenDialog } from './ui/file_open_dialog';
 // 　・モバイルでは仮想的な階層となる→ソースは単なる１階層目のフォルダ、２階層目にはファイルかフォルダを置ける、三階層目はファイルのみ
 // 　・リストを表示できるビューをコンポーネントにする
 // 　・サムネイルを表示できるビューをコンポーネントにする
+// 　・ファイルの保存、エクスポートはフォルダ指定やファイル名の指定という意味では保存と似ている同じだが、違う部分もある。
+// 　　初期表示の指定はそれぞれ持つほうがよいだろう。
+// 　　エクスポート先は最近使った場所とは別に記憶されていると便利。
+// 　　モバイル対応を考えるとファイル名の入力欄は画面の上のほうに置いた方がいい。
+// 　　エクスポートは毎回保存先の指定画面を出さなくていい。エクスポート画面でＯＫを押したら確認せずに保存していい。保存先の指定ボタンを用意する。
 // ・塗りつぶし機能の拡充
 //   ・描画グループを単位として描画するようにする
 // 　　・データ構造の変更
@@ -257,28 +265,43 @@ window.onload = () => {
   _Main.paletteColorModal_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteColorModal_colorCanvas);
 
   ReactDOM.render(
-    React.createElement(UI_MenuButtons, { uiRef: _Main.uiMenuButtonsRef })
-    , document.getElementById(_Main.ID.mainToolButtons)
+    React.createElement(UI_HeaderWindow, { uiRef: _Main.uiHeaderWindowRef })
+    , document.getElementById(_Main.ID.header)
   );
 
   ReactDOM.render(
-    React.createElement(UI_SubToolWindow, { uiRef: _Main.uiSubToolWindowRef })
-    , document.getElementById(_Main.ID.subtoolWindow)
+    React.createElement(UI_FooterOperationPanel, {
+      uiRef: _Main.uiFooterOperationpanelRef,
+      menuButtonsRef: _Main.uiMenuButtonsRef,
+      subToolWindowRef: _Main.uiSubToolWindowRef
+    })
+    , document.getElementById("footer-operation-ui")
   );
 
   ReactDOM.render(
-    React.createElement(UI_LayerWindow, { uiRef: _Main.uiLayerwindowRef })
-    , document.getElementById("layerWindow")
+    React.createElement(UI_SideBarContainer,
+      {
+        dockingTo: 'left',
+        contents: [
+          { key: 1, component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: true},
+          // { key: 2, component: UI_SubToolWindow, uiRef: _Main.uiSubToolWindowRef, icon: 'layers', isOpened: true}
+        ],
+        uiRef: _Main.uiSideBarContainerRef,
+      })
+    , document.getElementById("left-side-panel")
   );
 
   ReactDOM.render(
-    React.createElement(UI_PaletteSelectorWindow, { uiRef: _Main.uiPaletteSelectorWindowRef })
-    , document.getElementById("palette-selector-window")
-  );
-
-  ReactDOM.render(
-    React.createElement(UI_ColorMixerWindow, { uiRef: _Main.uiColorMixerWindowRef })
-    , document.getElementById("color-mixer-window")
+    React.createElement(UI_SideBarContainer,
+      {
+        dockingTo: 'right',
+        contents: [
+          { key: 1, component: UI_PaletteSelectorWindow, uiRef: _Main.uiPaletteSelectorWindowRef, icon: 'palette', isOpened: true},
+          { key: 2, component: UI_ColorMixerWindow, uiRef: _Main.uiColorMixerWindowRef, icon: 'palette', isOpened: true}
+        ],
+        uiRef: _Main.uiSideBarContainerRef,
+      })
+    , document.getElementById("right-side-panel")
   );
 
   ReactDOM.render(

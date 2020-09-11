@@ -6,7 +6,7 @@ import { RectangleLayoutArea } from 'app/view.class';
 export interface UI_CommandButtonsItem {
 
   index: int;
-  iconIndex: int;
+  icon: string;
   isSelected?: boolean;
 }
 
@@ -21,10 +21,11 @@ export interface UI_CommandButtonsRef {
 
 export interface UI_CommandButtonsParam {
 
+  noBorder?: boolean;
   uiRef: UI_CommandButtonsRef;
 }
 
-export function UI_CommandButtons({ uiRef }: UI_CommandButtonsParam) {
+export function UI_CommandButtons({ uiRef, noBorder }: UI_CommandButtonsParam) {
 
   React.useEffect(() => {
 
@@ -45,10 +46,19 @@ export function UI_CommandButtons({ uiRef }: UI_CommandButtonsParam) {
         uiRef.items.map(item => (
           <div key={item.index}>
             <button
-              className={`image-splite-layerbar ${item.isSelected ? 'selected' : ''}`}
-              onMouseDown={() => { uiRef.commandButton_Click && uiRef.commandButton_Click(item) }}
-              style={{ backgroundPosition: `0 -${(item.iconIndex - 1) * 32}px` }}
-            />
+              className={`${item.isSelected ? 'selected' : ''} ${noBorder ? 'no-border' : ''}`}
+              onMouseDown={(e) => {
+
+                if (uiRef.commandButton_Click) {
+
+                  uiRef.commandButton_Click(item);
+                }
+
+                  e.preventDefault();
+              }}
+            >
+              <i className='material-icons'>{item.icon}</i>
+            </button>
           </div>
         ))
       }

@@ -10,7 +10,7 @@ import { Command_DeleteSelectedPoints } from 'commands/delete_points';
 import { Command_CopyGeometry, Command_PasteGeometry } from 'commands/edit_copy';
 import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown } from 'commands/edit_layer';
 
-import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, OpenPaletteColorModalMode, RectangleLayoutArea, LayerWindowItem } from 'app/view.class';
+import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, OpenPaletteColorModalMode, RectangleLayoutArea, LayerWindowItem, MainCommandButtonID } from 'app/view.class';
 import { App_Document } from 'app/document';
 import { UI_CommandButtonsItem } from '../ui/command_buttons';
 
@@ -214,50 +214,13 @@ export class App_Event extends App_Document {
       e.preventDefault();
     });
 
-    this.getElement(this.ID.menu_btnOpen).addEventListener('mousedown', (e: Event) => {
-
-      if (this.isEventDisabled()) {
-        return;
-      }
-
-      //this.startReloadDocument();
-
-      this.uiFileOpenDialogRef.show();
-
-      e.preventDefault();
-    });
-
-    this.getElement(this.ID.menu_btnSave).addEventListener('mousedown', (e: Event) => {
-
-      if (this.isEventDisabled()) {
-        return;
-      }
-
-      this.saveDocument();
-      e.preventDefault();
-    });
-
-    this.getElement(this.ID.menu_btnExport).addEventListener('mousedown', (e: Event) => {
-
-      if (this.isEventDisabled()) {
-        return;
-      }
-
-      this.openExportImageFileModal();
-      e.preventDefault();
-    });
-
-    this.getElement(this.ID.menu_btnProperty).addEventListener('mousedown', (e: Event) => {
-
-      if (this.isEventDisabled()) {
-        return;
-      }
-
-      this.openDocumentSettingDialog();
-      e.preventDefault();
-    });
 
     // React conponents
+
+    this.uiHeaderWindowRef.commandButton_Click = (id) => {
+
+      this.menuButton_Click(id);
+    };
 
     this.uiSubToolWindowRef.item_Click = (item) => {
 
@@ -1354,6 +1317,41 @@ export class App_Event extends App_Document {
     }
 
     this.calculateTransfomredMouseParams(e, wnd);
+  }
+
+  protected menuButton_Click(id: MainCommandButtonID) {
+
+    if (this.isEventDisabled()) {
+      return;
+    }
+
+    switch (id) {
+
+      case MainCommandButtonID.open:
+        this.uiFileOpenDialogRef.show();
+        break;
+
+      case MainCommandButtonID.save:
+        this.saveDocument();
+        break;
+
+      case MainCommandButtonID.export:
+        this.openExportImageFileModal();
+        break;
+
+      case MainCommandButtonID.settings:
+        this.openDocumentSettingDialog();
+        break;
+
+      case MainCommandButtonID.layerWindow:
+        break;
+
+      case MainCommandButtonID.paletteWindow:
+        break;
+
+      case MainCommandButtonID.timeLineWindow:
+        break;
+    }
   }
 
   protected layerWindow_mousedown() {

@@ -43,6 +43,9 @@ import { UI_LayerWindowRef } from 'ui/layer_window';
 import { UI_PaletteSelectorWindowRef } from 'ui/palette_selector_window';
 import { UI_ColorMixerWindowRef } from 'ui/color_mixer_window';
 import { UI_FileOpenDialogRef } from '../ui/file_open_dialog';
+import { UI_HeaderWindowRef } from '../ui/header_window';
+import { UI_SideBarContainerRef } from '../ui/side_bar_container';
+import { UI_FooterOperationPanelRef } from '../ui/footer_operation_panel';
 
 declare var Custombox: any;
 
@@ -61,8 +64,11 @@ export class App_View {
   colorMixerWindow_colorCanvas = new ColorCanvasWindow();
   paletteColorModal_colorCanvas = new ColorCanvasWindow();
 
+  uiHeaderWindowRef: UI_HeaderWindowRef = {};
+  uiFooterOperationpanelRef: UI_FooterOperationPanelRef = {};
   uiSubToolWindowRef: UI_SubToolWindowRef = {};
   uiMenuButtonsRef: UI_MenuButtonsRef = {};
+  uiSideBarContainerRef: UI_SideBarContainerRef = {};
   uiLayerwindowRef: UI_LayerWindowRef = {};
   uiPaletteSelectorWindowRef: UI_PaletteSelectorWindowRef = {};
   uiColorMixerWindowRef: UI_ColorMixerWindowRef = {};

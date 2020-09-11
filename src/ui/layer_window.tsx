@@ -27,10 +27,10 @@ export function UI_LayerWindow({ uiRef }: UI_LayerWindowParam) {
 
     return {
       items: [
-        { index: LayerWindowButtonID.addLayer, iconIndex: 1 },
-        { index: LayerWindowButtonID.deleteLayer, iconIndex: 2 },
-        { index: LayerWindowButtonID.moveUp, iconIndex: 3 },
-        { index: LayerWindowButtonID.moveDown, iconIndex: 4 },
+        { index: LayerWindowButtonID.addLayer, icon: 'add' },
+        { index: LayerWindowButtonID.deleteLayer, icon: 'close' },
+        { index: LayerWindowButtonID.moveUp, icon: 'arrow_upward' },
+        { index: LayerWindowButtonID.moveDown, icon: 'arrow_downward' },
       ],
 
       commandButton_Click: (item: UI_CommandButtonsItem) => {
@@ -54,8 +54,8 @@ export function UI_LayerWindow({ uiRef }: UI_LayerWindowParam) {
   });
 
   return (
-    <React.Fragment>
-      <UI_CommandButtons uiRef={commandButtonsRef} />
+    <div className="layer-window">
+      <UI_CommandButtons uiRef={commandButtonsRef} noBorder={true}/>
       <UI_ScrollView wheelScrollY={15}>
       <div className='layer-window-items'>
         {
@@ -65,7 +65,7 @@ export function UI_LayerWindow({ uiRef }: UI_LayerWindowParam) {
         }
       </div>
       </UI_ScrollView>
-    </React.Fragment>
+    </div>
   );
 }
 

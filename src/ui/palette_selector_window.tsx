@@ -29,8 +29,8 @@ export function UI_PaletteSelectorWindow({ uiRef }: UI_PaletteSelectorWindowPara
 
     return {
       items: [
-        { index: PaletteSelectorWindowButtonID.lineColor, iconIndex: 5 },
-        { index: PaletteSelectorWindowButtonID.fillColor, iconIndex: 6 },
+        { index: PaletteSelectorWindowButtonID.lineColor, icon: 'edit' },
+        { index: PaletteSelectorWindowButtonID.fillColor, icon: 'palette' },
       ],
 
       commandButton_Click: (item: UI_CommandButtonsItem) => {
@@ -59,16 +59,18 @@ export function UI_PaletteSelectorWindow({ uiRef }: UI_PaletteSelectorWindowPara
   });
 
   return (
-    <React.Fragment>
+    <div className="palette-selector-window">
       <UI_CommandButtons uiRef={commandButtonsRef} />
-      <div className='palette-selector-window-items'>
-        {
-          items.map((item, index) => (
-            <UI_PaletteSelectorItem key={index} item={item} index={index} uiRef={uiRef} />
-          ))
-        }
+      <div className='items-container'>
+        <div className='items'>
+          {
+            items.map((item, index) => (
+              <UI_PaletteSelectorItem key={index} item={item} index={index} uiRef={uiRef} />
+            ))
+          }
+        </div>
       </div>
-    </React.Fragment>
+    </div>
   );
 }
 

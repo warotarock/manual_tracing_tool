@@ -91,7 +91,7 @@ export function UI_FileOpenDialog({ uiRef }: UI_FileOpenDialogParam) {
 
     fileSectionItems.push({
       key: keyCount++,
-      type: "last-used",
+      type: 'last-used',
       name: '最近使用したファイル',
       icon: 'history'
     });
@@ -110,7 +110,7 @@ export function UI_FileOpenDialog({ uiRef }: UI_FileOpenDialogParam) {
 
       fileSectionItems.push({
         key: keyCount++,
-        type: "add",
+        type: 'add',
         name: '場所の追加',
         icon: 'add'
       });
@@ -245,25 +245,25 @@ export function UI_FileOpenDialog({ uiRef }: UI_FileOpenDialogParam) {
   }
 
   return (
-    <UI_SubScreenContainer subScreenContainerRef={subScreenContainerRef} className="file-open-dialog-container">
+    <UI_SubScreenContainer subScreenContainerRef={subScreenContainerRef} className='file-open-dialog-container'>
 
-      <div className="sections-container">
-        <div className="section-label">ファイルの場所</div>
-        <div className="section-list">
+      <div className='sections-container'>
+        <div className='section-label'>ファイルの場所</div>
+        <div className='section-list'>
         {
           fileSectionItems.map(sectionItem => (
-            <div key={sectionItem.key} className="section-item">
+            <div key={sectionItem.key} className='section-item'>
 
               <div className={`section-item-inner ${sectionItem == currentSectionItem ? 'selected' : ''}`}
                 onMouseUp={() => { sectionItem_Click(sectionItem); } }
               >
-                <div className="name">
-                  <i className="material-icons">{sectionItem.icon}</i>
+                <div className='name'>
+                  <i className='material-icons'>{sectionItem.icon}</i>
                   <span>{sectionItem.name}</span>
                 </div>
                 {
                   sectionItem.type == 'folder' &&
-                  <i className="button material-icons" onMouseUp={(e) => { sectionItem_Delete_Click(e, sectionItem); }}>close</i>
+                  <i className='button material-icons' onMouseUp={(e) => { sectionItem_Delete_Click(e, sectionItem); }}>close</i>
                 }
               </div>
             </div>
@@ -272,11 +272,12 @@ export function UI_FileOpenDialog({ uiRef }: UI_FileOpenDialogParam) {
         </div>
       </div>
 
-      <div className="files-container">
-        <div className="section-info">
-          { currentSectionItem != null ? currentSectionItem.name : '' }
+      <div className='files-container'>
+        <div className='section-info'>
+          { currentSectionItem != null && <i className='material-icons'>{currentSectionItem.icon}</i>}
+          <span>{ currentSectionItem != null ? currentSectionItem.name : '' }</span>
         </div>
-        <div className="file-list">
+        <div className='file-list'>
           <ul>
           {
             fileItems.map(fileItem => (
@@ -284,19 +285,19 @@ export function UI_FileOpenDialog({ uiRef }: UI_FileOpenDialogParam) {
                 onMouseDown={() => { setCurrentFileItem(fileItem); } }
               >
                 <div className={`file-item-inner ${fileItem == currentFileItem ? 'selected' : ''}`}>
-                  <i className="material-icons">{fileItem.icon}</i>
-                  <span className="name">{fileItem.name}</span>
-                  <span className="path">{fileItem.path}</span>
+                  <i className='material-icons'>{fileItem.icon}</i>
+                  <span className='name'>{fileItem.name}</span>
+                  <span className='path'>{fileItem.path}</span>
                 </div>
               </li>
             ))
           }
           </ul>
         </div>
-        <div className="file-commands">
-          <div className="file-info">{ currentFileItem ? currentFileItem.name : '' }</div>
-          <button className="app-button-primary" onClick={ () => ok_Click() }>開く</button>
-          <button className="app-button-cancel" onClick={ () => uiRef.hide() }>キャンセル</button>
+        <div className='file-commands'>
+          <div className='file-info'>{ currentFileItem ? currentFileItem.name : '' }</div>
+          <button className='app-button-primary' onClick={ () => ok_Click() }>開く</button>
+          <button className='app-button-cancel' onClick={ () => uiRef.hide() }>キャンセル</button>
         </div>
       </div>
     </UI_SubScreenContainer>

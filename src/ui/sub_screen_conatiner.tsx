@@ -22,7 +22,10 @@ export function UI_SubScreenContainer(
       show: () => {
 
         containerRef.current.parentElement.classList.remove('hidden');
-        containerRef.current.focus();
+
+        window.setTimeout(() => {
+          containerRef.current.focus();
+        }, 100);
       },
 
       hide: () => {
