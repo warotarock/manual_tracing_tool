@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { UI_MenuButtons, UI_MenuButtonsRef } from './menu_buttons';
 import { UI_SubToolWindow, UI_SubToolWindowRef } from './subtool_window';
 
@@ -22,6 +23,31 @@ export function UI_FooterOperationPanel(
 
   return (
     <React.Fragment>
+      <div className="tool-ribbon">
+        <div className="sub-command-buttons">
+          <button className="button"><i className='material-icons'>content_copy</i></button>
+          <button className="button"><i className='material-icons'>content_paste</i></button>
+          <button className="button"><i className='material-icons'>content_cut</i></button>
+          <button className="button"><i className='material-icons'>undo</i></button>
+          <button className="button"><i className='material-icons'>redo</i></button>
+        </div>
+        <div className="tool-buttons">
+          <div className="main-tool-buttons">
+            <UI_MenuButtons uiRef={menuButtonsRef}></UI_MenuButtons>
+            <div className="headerCommandButton" id="menu_btnOperationOption">
+              <img className="mainMenuButtonImage" src="./dist/res/icons8-settings-100.png" />
+            </div>
+          </div>
+          <div className="subtool-window">
+            <UI_SubToolWindow uiRef={subToolWindowRef}></UI_SubToolWindow>
+          </div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+/*
       <div className="main-operations">
         <div className="inner-container">
 
@@ -41,25 +67,5 @@ export function UI_FooterOperationPanel(
 
         </div>
       </div>
-      <div className="tool-ribbon">
-        <div className="sub-command-buttons">
-          <button className="button"><i className='material-icons'>content_copy</i></button>
-          <button className="button"><i className='material-icons'>content_paste</i></button>
-          <button className="button"><i className='material-icons'>undo</i></button>
-          <button className="button"><i className='material-icons'>redo</i></button>
-        </div>
-        <div className="tool-buttons">
-          <div className="main-tool-buttons">
-            <UI_MenuButtons uiRef={menuButtonsRef}></UI_MenuButtons>
-            <div className="headerCommandButton" id="menu_btnOperationOption">
-              <img className="mainMenuButtonImage" src="./dist/res/icons8-settings-100.png" />
-            </div>
-          </div>
-          <div className="subtool-window">
-            <UI_SubToolWindow uiRef={subToolWindowRef}></UI_SubToolWindow>
-          </div>
-        </div>
-      </div>
-    </React.Fragment>
-  );
-}
+
+*/

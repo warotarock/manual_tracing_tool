@@ -1,4 +1,4 @@
-import { int, float, List } from 'base/conversion';
+import { int, float, List } from '../base/conversion';
 
 export class RenderModel {
 

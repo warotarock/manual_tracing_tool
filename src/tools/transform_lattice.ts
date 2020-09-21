@@ -1,5 +1,5 @@
-﻿import { List, float, int } from 'base/conversion';
-import { Layer, } from 'base/data';
+﻿import { List, float, int } from '../base/conversion';
+import { Layer, } from '../base/data';
 
 import {
     ToolEnvironment, ToolMouseEvent,
@@ -7,11 +7,10 @@ import {
     LatticePoint,
     LatticePointEditTypeID,
     ToolDrawingEnvironment,
-} from 'base/tool';
+} from '../base/tool';
 
-import { Logic_Edit_Points, Logic_Edit_Points_RectangleArea } from 'logics/edit_vector_layer';
-import { Logic_Points } from 'logics/points';
-
+import { Logic_Edit_Points, Logic_Edit_Points_RectangleArea } from '../logics/edit_vector_layer';
+import { Logic_Points } from '../logics/points';
 
 export enum SelectedLatticePartID {
 

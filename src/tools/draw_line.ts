@@ -1,21 +1,20 @@
-﻿import { List, ListRemoveAt } from 'base/conversion';
+﻿import { List, ListRemoveAt } from '../base/conversion';
 
 import {
     VectorPoint,
     VectorStroke,
     VectorStrokeGroup,
     Layer,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolMouseEvent,
     ToolBase,
     ToolDrawingEnvironment,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
-import { Logic_Edit_Points, Logic_Edit_Line } from 'logics/edit_vector_layer';
-
+import { CommandBase } from '../base/command';
+import { Logic_Edit_Points, Logic_Edit_Line } from '../logics/edit_vector_layer';
 
 export class Tool_DrawLine extends ToolBase {
 

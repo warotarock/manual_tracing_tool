@@ -1,6 +1,6 @@
-﻿import { List, ListRemoveAt } from 'base/conversion';
-import { VectorStrokeGroup } from 'base/data';
-import { ToolEnvironment } from 'base/tool';
+﻿import { List, ListRemoveAt } from '../base/conversion';
+import { VectorStrokeGroup } from '../base/data';
+import { ToolEnvironment } from '../base/tool';
 
 export class CommandBase {
 

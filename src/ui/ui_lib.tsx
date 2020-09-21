@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { float } from 'base/conversion';
+import { float } from '../base/conversion';
 
 export class UILib {
 

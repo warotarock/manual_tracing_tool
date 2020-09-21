@@ -1,20 +1,19 @@
-﻿import { float, ListRemoveAt } from 'base/conversion';
+﻿import { float, ListRemoveAt } from '../base/conversion';
 
 import {
     VectorPoint,
     VectorStroke,
     VectorStrokeGroup,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolMouseEvent,
     ToolBase,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
+import { CommandBase } from '../base/command';
 
-import { Logic_Edit_Line } from 'logics/edit_vector_layer';
-
+import { Logic_Edit_Line } from '../logics/edit_vector_layer';
 
 export class Tool_AddPoint extends ToolBase {
 

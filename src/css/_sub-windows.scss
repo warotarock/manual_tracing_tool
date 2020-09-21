@@ -44,8 +44,6 @@ $operation-ui-border: solid 1px $windowBorderColor;
   right: 0;
   bottom: 0;
   height: 0;
-  border: $operation-ui-border;
-  background-color: $windowBackground;
   z-index: 300;
   overflow: visible;
 
@@ -80,6 +78,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
         }
 
         .bottom-part {
+          border-right: $operation-ui-border;
           background-color: $windowBackground;
           height: $ribbon-height;
         }
@@ -129,20 +128,22 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
   .tool-ribbon {
     position: absolute;
-    left: $main-tool-width;
+    left: $main-tool-width + 5px;
     right: 0;
     bottom: 0;
     height: $ribbon-height;
     box-sizing: border-box;
     border-top: $operation-ui-border;
-    padding: 5px 5px 0 0;
+    border-left: $operation-ui-border;
+    border-top-left-radius: 5px;
+    padding: 5px 5px 0 5px;
     display: flex;
     background-color: $windowBackground;
 
     .sub-command-buttons {
-      width: 94px;
+      width: 137px;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       grid-template-rows: 1fr 1fr;
 
       button {
@@ -172,6 +173,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
     .tool-buttons {
       flex: 1;
+      margin-inline-start: 5px;;
       display: flex;
       flex-direction: column;
 
@@ -185,7 +187,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
     display: flex;
     user-select: none;
 
-    div.button {
+    .button {
       box-sizing: border-box;
       min-width: 80px;
       height: 35px;
@@ -276,9 +278,9 @@ $operation-ui-border: solid 1px $windowBorderColor;
       background-color: #eeeeee;
     }*/
 
-    // &:not(:first-child) {
-    //   padding-left: 6px;
-    // }
+    &:not(:first-child) {
+      border-left: solid 1px #ccc;
+    }
 
     &:hover {
       background-color: $hoverBackground;
@@ -483,7 +485,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
 .time-line-window {
   position: absolute;
-  left: $main-tool-width + 5px;
+  left: $main-tool-width + 10px;
   right: 5px;
   bottom: $ribbon-height + 5;
   height: 46px;

@@ -1,7 +1,7 @@
-﻿import { int, float, List, Dictionary, DictionaryContainsKey, StringIsNullOrEmpty, StringLastIndexOf, StringSubstring } from 'base/conversion';
-import { CanvasWindow } from 'renders/render2d';
-import { GPUVertexBuffer } from 'logics/gpu_data';
-import { ImageResource, ModelResource, ModelFile } from 'posing3d/posing3d_view';
+﻿import { int, float, List, Dictionary, DictionaryContainsKey, StringIsNullOrEmpty, StringLastIndexOf, StringSubstring } from '../base/conversion';
+import { CanvasWindow } from '../renders/render2d';
+import { GPUVertexBuffer } from '../logics/gpu_data';
+import { ImageResource, ModelResource, ModelFile } from '../posing3d/posing3d_view';
 import { Posing3DSubToolID } from './tool';
 
 // Setting

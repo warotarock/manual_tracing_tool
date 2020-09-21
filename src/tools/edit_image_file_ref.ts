@@ -1,21 +1,20 @@
-﻿import { StringLastIndexOf, StringSubstring, StringIsNullOrEmpty } from 'base/conversion';
+﻿import { StringLastIndexOf, StringSubstring, StringIsNullOrEmpty } from '../base/conversion';
 
 import {
     ImageFileReferenceLayer,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolMouseEvent,
     ToolBase,
     OpenFileDialogTargetID,
     LatticePointEditTypeID,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
+import { CommandBase } from '../base/command';
 
-import { Tool_Transform_Lattice, TransformType, TransformModifyType } from 'tools/transform_lattice';
-import { RenderImage } from 'renders/render3d';
-
+import { Tool_Transform_Lattice, TransformType, TransformModifyType } from '../tools/transform_lattice';
+import { RenderImage } from '../renders/render3d';
 
 export class Tool_EditImageFileReference extends ToolBase {
 

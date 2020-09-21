@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 export function UI_ScrollView(
-  { children, wheelScrollY = 16, direction='vertical' }: { children, wheelScrollY?: number, direction: 'vertical' | 'horizontal' }
+  { children, wheelScrollY = 16, direction='vertical' }: { children, wheelScrollY?: number, direction?: 'vertical' | 'horizontal' }
 ) {
 
     const containerRef = React.useRef(null);

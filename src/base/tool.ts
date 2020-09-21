@@ -1,4 +1,4 @@
-﻿import { int, float, List } from 'base/conversion';
+﻿import { int, float, List } from '../base/conversion';
 import {
   DocumentData,
   Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
@@ -7,13 +7,13 @@ import {
   ImageFileReferenceLayer,
   AutoFillLayer,
   PosingLayer, PosingData, PosingModel, InputSideID
-} from 'base/data';
-import { CommandHistory } from 'base/command';
+} from '../base/data';
+import { CommandHistory } from '../base/command';
 
-import { CanvasWindow, CanvasRender } from 'renders/render2d';
-import { Posing3DView, ImageResource } from 'posing3d/posing3d_view';
-import { Posing3DLogic } from 'posing3d/posing3d_logic';
-import { Platform } from "platform/platform";
+import { CanvasWindow, CanvasRender } from '../renders/render2d';
+import { Posing3DView, ImageResource } from '../posing3d/posing3d_view';
+import { Posing3DLogic } from '../posing3d/posing3d_logic';
+import { Platform } from "../platform/platform";
 
 export enum MainToolID {
 
@@ -883,6 +883,9 @@ export class ToolEnvironment {
 }
 
 export class ToolDrawingStyle {
+
+  windowBorderColor = vec4.fromValues(8 /16, 8 / 16, 8 / 16, 1.0);
+  windowBackGroundColor = vec4.fromValues(0xfd / 255, 0xfd / 255, 0xfd / 255, 1.0);
 
   selectedButtonColor = vec4.fromValues(0.90, 0.90, 1.0, 1.0);
 

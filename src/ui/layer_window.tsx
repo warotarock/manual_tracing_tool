@@ -1,9 +1,9 @@
 import * as React from 'react';
 
-import { LayerWindowItem, LayerWindowButtonID } from 'app/view.class';
+import { LayerWindowItem, LayerWindowButtonID } from '../app/view.class';
 
-import { UI_ScrollView } from 'ui/scroll_view';
-import { UI_CommandButtonsItem, UI_CommandButtonsRef, UI_CommandButtons } from 'ui/command_buttons';
+import { UI_ScrollView } from './scroll_view';
+import { UI_CommandButtonsItem, UI_CommandButtonsRef, UI_CommandButtons } from './command_buttons';
 
 export interface UI_LayerWindowRef {
 

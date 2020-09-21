@@ -1,13 +1,12 @@
-﻿import { List } from 'base/conversion';
-import { VectorStroke, } from 'base/data';
-import { ToolEnvironment, } from 'base/tool';
-import { CommandBase } from 'base/command';
+﻿import { List } from '../base/conversion';
+import { VectorStroke, } from '../base/data';
+import { ToolEnvironment, } from '../base/tool';
+import { CommandBase } from '../base/command';
 
-import { Maths } from 'logics/math';
-import { Logic_Edit_Line, Logic_Edit_VectorLayer } from 'logics/edit_vector_layer';
+import { Maths } from '../logics/math';
+import { Logic_Edit_Line, Logic_Edit_VectorLayer } from '../logics/edit_vector_layer';
 
-import { Tool_ScratchLine, Tool_ScratchLine_CandidatePair } from 'tools/scratch_line';
-
+import { Tool_ScratchLine, Tool_ScratchLine_CandidatePair } from '../tools/scratch_line';
 
 class Tool_ScratchLineWidth_EditPoint {
 

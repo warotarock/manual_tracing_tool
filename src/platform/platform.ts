@@ -1,5 +1,5 @@
-import { int, ListRemoveAt, ListInsertAt, ListGetRange } from 'base/conversion';
-import { LocalSetting, LocalSettingFileSection } from 'base/data';
+import { int, ListRemoveAt, ListInsertAt, ListGetRange } from '../base/conversion';
+import { LocalSetting, LocalSettingFileSection } from '../base/data';
 
 var require = window['require'];
 

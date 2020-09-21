@@ -1,6 +1,5 @@
-﻿import { float } from 'base/conversion';
-import { Maths } from 'logics/math';
-
+﻿import { float } from '../base/conversion';
+import { Maths } from '../logics/math';
 
 export class Logic_Points {
 

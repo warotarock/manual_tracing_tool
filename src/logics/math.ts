@@ -1,5 +1,4 @@
-﻿import { float } from 'base/conversion';
-
+﻿import { float } from '../base/conversion';
 
 export class Maths {
 

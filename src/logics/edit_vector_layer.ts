@@ -1,4 +1,4 @@
-﻿import { int, float, List } from 'base/conversion';
+﻿import { int, float, List } from '../base/conversion';
 import {
   VectorStroke,
   VectorLineModifyFlagID,
@@ -7,11 +7,10 @@ import {
   VectorGeometry,
   VectorPoint,
   LinePointModifyFlagID,
-} from 'base/data';
+} from '../base/data';
 
-import { Maths } from 'logics/math';
-import { Logic_Points } from 'logics/points';
-
+import { Maths } from '../logics/math';
+import { Logic_Points } from '../logics/points';
 
 export class Logic_Edit_Points_RectangleArea {
 

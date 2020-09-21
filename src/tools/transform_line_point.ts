@@ -1,23 +1,22 @@
-﻿import { List } from 'base/conversion';
+﻿import { List } from '../base/conversion';
 
 import {
     VectorLayer,
     VectorPoint,
     VectorStroke,
     VectorStrokeGroup,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolMouseEvent,
     ViewKeyframeLayer,
     OperationUnitID,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
+import { CommandBase } from '../base/command';
 
-import { Tool_Transform_Lattice, TransformType } from 'tools/transform_lattice';
-import { Logic_Edit_Points, Logic_Edit_Line } from 'logics/edit_vector_layer';
-
+import { Tool_Transform_Lattice, TransformType } from '../tools/transform_lattice';
+import { Logic_Edit_Points, Logic_Edit_Line } from '../logics/edit_vector_layer';
 
 class Tool_Transform_Lattice_EditPoint {
 

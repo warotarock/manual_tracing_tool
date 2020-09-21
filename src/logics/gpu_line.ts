@@ -1,5 +1,5 @@
-﻿import { float, List, int } from "base/conversion";
-import { VectorStrokeGroup, VectorPoint } from "base/data";
+﻿import { float, List, int } from "../base/conversion";
+import { VectorStrokeGroup, VectorPoint } from "../base/data";
 import { GPULine, GPULinePoint, GPUVertexBuffer } from "./gpu_data";
 
 

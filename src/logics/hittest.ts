@@ -1,13 +1,13 @@
-﻿import { int, float } from 'base/conversion';
+﻿import { int, float } from '../base/conversion';
+
 import {
   VectorGeometry,
   VectorStrokeGroup,
   VectorStroke,
   VectorPoint,
-} from 'base/data';
+} from '../base/data';
 
-import { Logic_Points } from 'logics/points';
-
+import { Logic_Points } from '../logics/points';
 
 export class HitTest_VectorLayer_Base {
 

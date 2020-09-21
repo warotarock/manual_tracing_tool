@@ -1,15 +1,14 @@
 ﻿import {
     DocumentData,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolMouseEvent,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
+import { CommandBase } from '../base/command';
 
-import { Tool_Transform_Lattice, TransformType } from 'tools/transform_lattice';
-
+import { Tool_Transform_Lattice, TransformType } from '../tools/transform_lattice';
 
 export class Tool_EditDocumentFrame extends Tool_Transform_Lattice {
 

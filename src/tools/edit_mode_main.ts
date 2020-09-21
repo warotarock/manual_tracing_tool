@@ -1,6 +1,5 @@
 ﻿import { Tool_Transform_Lattice_LinePoint } from '../tools/transform_line_point';
 
-
 export class Tool_EditModeMain extends Tool_Transform_Lattice_LinePoint {
 
     helpText = '左クリックで矩形の辺や角を操作して、選択中の線または点を変形できます。<br />Aキーで全選択／解除します。G、R、Sキーで移動、回転、拡縮します。';

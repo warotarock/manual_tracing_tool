@@ -1,10 +1,10 @@
 import * as React from 'react';
 
-import { int } from 'base/conversion';
-import { PaletteColor } from 'base/data';
-import { PaletteSelectorWindowButtonID } from 'app/view.class';
+import { int } from '../base/conversion';
+import { PaletteColor } from '../base/data';
+import { PaletteSelectorWindowButtonID } from '../app/view.class';
 
-import { UI_CommandButtons, UI_CommandButtonsRef, UI_CommandButtonsItem } from 'ui/command_buttons';
+import { UI_CommandButtons, UI_CommandButtonsRef, UI_CommandButtonsItem } from './command_buttons';
 
 export interface UI_PaletteSelectorWindowRef {
 

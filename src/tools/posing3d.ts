@@ -1,19 +1,19 @@
-﻿import { int, float } from 'base/conversion';
+﻿import { int, float } from '../base/conversion';
 import {
   Layer, VectorPoint,
   VectorStroke,
   InputSideID,
   DirectionInputData,
-} from 'base/data';
+} from '../base/data';
 
 import {
   ModalToolBase,
   ToolEnvironment,
   ToolMouseEvent,
   ToolDrawingEnvironment
-} from 'base/tool';
+} from '../base/tool';
 
-import { Logic_Edit_Line } from 'logics/edit_vector_layer';
+import { Logic_Edit_Line } from '../logics/edit_vector_layer';
 
 export class Tool_Posing3d_ToolBase extends ModalToolBase {
 

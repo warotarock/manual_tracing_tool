@@ -3,16 +3,15 @@
     VectorStroke,
     VectorStrokeGroup,
     Layer,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment,
-} from 'base/tool';
+} from '../base/tool';
 
-import { Command_DeleteFlaggedPoints } from 'commands/delete_points';
-import { Selector_LinePoint_BrushSelect, ISelector_BrushSelect } from 'logics/selector';
-import { Tool_BrushSelectLinePointBase } from 'tools/select_brush_select';
-
+import { Command_DeleteFlaggedPoints } from '../commands/delete_points';
+import { Selector_LinePoint_BrushSelect, ISelector_BrushSelect } from '../logics/selector';
+import { Tool_BrushSelectLinePointBase } from '../tools/select_brush_select';
 
 export class Selector_DeleteLinePoint_BrushSelect extends Selector_LinePoint_BrushSelect {
 

@@ -1,9 +1,9 @@
-import { int } from 'base/conversion';
+import { int } from '../base/conversion';
 
-import { Logic_GPULine } from 'logics/gpu_line';
-import { GPUVertexBuffer } from 'logics/gpu_data';
+import { Logic_GPULine } from '../logics/gpu_line';
+import { GPUVertexBuffer } from '../logics/gpu_data';
 
-import {  RenderShader } from 'renders/render3d';
+import {  RenderShader } from '../renders/render3d';
 
 export class GPULineShader extends RenderShader {
 

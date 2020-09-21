@@ -1,10 +1,10 @@
-import { List, int } from 'base/conversion';
+import { List, int } from '../base/conversion';
 
 import {
     Layer, LayerTypeID, VectorLayer, ImageFileReferenceLayer,
     PosingLayer,
     GroupLayer
-} from 'base/data';
+} from '../base/data';
 
 import {
     MainToolID,
@@ -16,29 +16,29 @@ import {
     ModalToolBase,
     ModalToolID,
     EditModeID
-} from 'base/tool';
+} from '../base/tool';
 
-import { ImageResource, ModelFile, ModelResource } from 'posing3d/posing3d_view';
-import { Posing3DLogic } from 'posing3d/posing3d_logic';
+import { ImageResource, ModelFile, ModelResource } from '../posing3d/posing3d_view';
+import { Posing3DLogic } from '../posing3d/posing3d_logic';
 
-import { HitTest_Line_IsCloseToMouse } from 'logics/hittest';
+import { HitTest_Line_IsCloseToMouse } from '../logics/hittest';
 
-import { Command_Layer_CommandBase } from 'commands/edit_layer';
+import { Command_Layer_CommandBase } from '../commands/edit_layer';
 
-import { Tool_EditDocumentFrame } from 'tools/edit_document_frame';
-import { Tool_Select_BrushSelect_LinePoint, Tool_Select_BrushSelect_LineSegment, Tool_Select_BrushSelect_Line } from 'tools/select_brush_select';
-import { Tool_Select_All_LinePoint } from 'tools/select_points_all';
-import { Tool_EditImageFileReference, Tool_Transform_ReferenceImage_GrabMove, Tool_Transform_ReferenceImage_Rotate, Tool_Transform_ReferenceImage_Scale } from 'tools/edit_image_file_ref';
+import { Tool_EditDocumentFrame } from '../tools/edit_document_frame';
+import { Tool_Select_BrushSelect_LinePoint, Tool_Select_BrushSelect_LineSegment, Tool_Select_BrushSelect_Line } from '../tools/select_brush_select';
+import { Tool_Select_All_LinePoint } from '../tools/select_points_all';
+import { Tool_EditImageFileReference, Tool_Transform_ReferenceImage_GrabMove, Tool_Transform_ReferenceImage_Rotate, Tool_Transform_ReferenceImage_Scale } from '../tools/edit_image_file_ref';
 import { Tool_Transform_Lattice_GrabMove, Tool_Transform_Lattice_Rotate, Tool_Transform_Lattice_Scale } from '../tools/transform_line_point';
-import { Tool_EditModeMain } from 'tools/edit_mode_main';
-import { Tool_DrawLine } from 'tools/draw_line';
-import { Tool_DrawAutoFill } from 'tools/draw_auto_fill';
-import { Tool_ScratchLine } from 'tools/scratch_line';
-import { Tool_ScratchLineDraw } from 'tools/scratch_line_draw';
-import { Tool_OverWriteLineWidth, Tool_ScratchLineWidth } from 'tools/scratch_line_width';
-import { Tool_Resample_Segment } from 'tools/resample_segment';
-import { Tool_DeletePoints_DivideLine } from 'tools/delete_points_divide_line';
-import { Tool_HideLinePoint_BrushSelect } from 'tools/edit_points';
+import { Tool_EditModeMain } from '../tools/edit_mode_main';
+import { Tool_DrawLine } from '../tools/draw_line';
+import { Tool_DrawAutoFill } from '../tools/draw_auto_fill';
+import { Tool_ScratchLine } from '../tools/scratch_line';
+import { Tool_ScratchLineDraw } from '../tools/scratch_line_draw';
+import { Tool_OverWriteLineWidth, Tool_ScratchLineWidth } from '../tools/scratch_line_width';
+import { Tool_Resample_Segment } from '../tools/resample_segment';
+import { Tool_DeletePoints_DivideLine } from '../tools/delete_points_divide_line';
+import { Tool_HideLinePoint_BrushSelect } from '../tools/edit_points';
 import {
     Tool_Posing3d_LocateHead, Tool_Posing3d_RotateHead, Tool_Posing3d_LocateBody, Tool_Posing3d_LocateHips,
     Tool_Posing3d_LocateLeftShoulder, Tool_Posing3d_LocateRightShoulder,
@@ -46,10 +46,10 @@ import {
     Tool_Posing3d_LocateRightArm1, Tool_Posing3d_LocateRightArm2,
     Tool_Posing3d_LocateLeftLeg1, Tool_Posing3d_LocateLeftLeg2,
     Tool_Posing3d_LocateRightLeg1, Tool_Posing3d_LocateRightLeg2
-} from 'tools/posing3d';
+} from '../tools/posing3d';
 
-import { LayerWindowItem } from 'app/view.class';
-import { App_Drawing } from 'app/drawing';
+import { LayerWindowItem } from '../app/view.class';
+import { App_Drawing } from '../app/drawing';
 
 export class App_Tool extends App_Drawing {
 

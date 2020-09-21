@@ -65,6 +65,8 @@ header {
   display: flex;
   padding: 3px 5px 5px 5px;
 
+  border-bottom: $windowBorder;
+
   .file-commands {
     width: 210px;
     height: 35px;
@@ -100,7 +102,7 @@ main {
   left: 0;
   right: 0;
   top: 42px;
-  bottom: 41px;
+  bottom: 42px;
   padding: 0;
 
   .main-container {

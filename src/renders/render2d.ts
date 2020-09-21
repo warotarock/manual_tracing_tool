@@ -1,4 +1,4 @@
-﻿import { int, float, List } from 'base/conversion';
+﻿import { int, float, List } from '../base/conversion';
 
 export class CanvasWindow {
 
@@ -394,14 +394,14 @@ export class CanvasRender {
         this.context.stroke();
     }
 
-    drawRectangle(x: float, y: float, width: float, height: float) {
+    drawRect(x: float, y: float, width: float, height: float) {
 
         this.context.beginPath();
         this.context.strokeRect(x, y, width, height);
         this.context.stroke();
     }
 
-    drawImage(image: any, srcX: float, srcY: float, srcW: float, srcH: float, dstX: float, detY: float, dstW: float, dstH: float) {
+    drawImage(image: HTMLImageElement | HTMLCanvasElement, srcX: float, srcY: float, srcW: float, srcH: float, dstX: float, detY: float, dstW: float, dstH: float) {
 
         this.context.drawImage(image, srcX, srcY, srcW, srcH, dstX, detY, dstW, dstH);
     }

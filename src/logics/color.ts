@@ -1,6 +1,5 @@
-﻿import { float } from 'base/conversion';
-import { Maths } from 'logics/math';
-
+﻿import { float } from '../base/conversion';
+import { Maths } from '../logics/math';
 
 export class ColorLogic {
 
@@ -12,9 +11,9 @@ export class ColorLogic {
     static rgbToHex2String(color: Vec4) {
 
         return (
-            ColorLogic.floatToHex2String(Math.floor(color[0] * 255.0))
-            + ColorLogic.floatToHex2String(Math.floor(color[1] * 255.0))
-            + ColorLogic.floatToHex2String(Math.floor(color[2] * 255.0))
+            this.floatToHex2String(Math.floor(color[0] * 255.0))
+            + this.floatToHex2String(Math.floor(color[1] * 255.0))
+            + this.floatToHex2String(Math.floor(color[2] * 255.0))
         );
     }
 
@@ -34,14 +33,14 @@ export class ColorLogic {
 
     static hsvToRGB(out: Vec4, h: float, s: float, v: float) {
 
-        out[0] = ColorLogic.hsvToRGB_Element(h, s, v, 0.0);
-        out[1] = ColorLogic.hsvToRGB_Element(h, s, v, 2.0);
-        out[2] = ColorLogic.hsvToRGB_Element(h, s, v, 1.0);
+        out[0] = this.hsvToRGB_Element(h, s, v, 0.0);
+        out[1] = this.hsvToRGB_Element(h, s, v, 2.0);
+        out[2] = this.hsvToRGB_Element(h, s, v, 1.0);
     }
 
     static hsvToRGBv(out: Vec4, hsv: Vec4) {
 
-        ColorLogic.hsvToRGB(out, hsv[0], hsv[1], hsv[2]);
+      this.hsvToRGB(out, hsv[0], hsv[1], hsv[2]);
     }
 
     //private static rgbToHSV_K = vec4.fromValues(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -95,7 +94,7 @@ export class ColorLogic {
 
     static rgbToHSVv(out: Vec4, rgb: Vec4) {
 
-        ColorLogic.rgbToHSV(out, rgb[0], rgb[1], rgb[2]);
+      this.rgbToHSV(out, rgb[0], rgb[1], rgb[2]);
     }
 }
 

@@ -1,6 +1,5 @@
-﻿import { float, List } from 'base/conversion';
-import { VectorPoint } from 'base/data';
-
+﻿import { float, List } from '../base/conversion';
+import { VectorPoint } from '../base/data';
 
 export class GPULinePoint {
 

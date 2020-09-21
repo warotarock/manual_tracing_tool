@@ -1,33 +1,31 @@
 import {
   int, float, List, Dictionary, DictionaryContainsKey,
   StringIsNullOrEmpty, StringLastIndexOf, StringSubstring
-} from 'base/conversion';
+} from '../base/conversion';
 
 import {
-  DocumentData, Layer, LayerTypeID, FillAreaTypeID, VectorKeyframe,
+  DocumentData, Layer, FillAreaTypeID, VectorKeyframe,
   VectorLayer,
   ImageFileReferenceLayer,
   DrawLineTypeID,
-  AnimationSettingData,
   LocalSetting,
-  InputSideID,
-} from 'base/data';
+} from '../base/data';
 
 import {
-  ToolContext, ToolEnvironment, ToolDrawingEnvironment, ToolBase, ToolBaseWindow, ToolMouseEvent,
+  ToolContext, ToolEnvironment, ToolDrawingEnvironment, ToolBase, ToolMouseEvent,
   MainTool, MainToolID, EditModeID,
   ViewLayerContext, ViewKeyframe, ViewKeyframeLayer,
   OpenFileDialogTargetID,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CanvasWindow } from 'renders/render2d';
-import { ColorLogic } from 'logics/color';
+import { CanvasWindow } from '../renders/render2d';
+import { ColorLogic } from '../logics/color';
+import { RectangleLayoutArea } from '../logics/layout';
 
-import { Command_Animation_DeleteKeyframeAllLayer, Command_Animation_InsertKeyframeAllLayer } from 'commands/edit_animation';
+import { Command_Animation_DeleteKeyframeAllLayer, Command_Animation_InsertKeyframeAllLayer } from '../commands/edit_animation';
 
 import {
   HTMLElementID,
-  RectangleLayoutArea,
   MainWindow,
   LayerWindow, LayerWindowItem, LayerWindowButtonID,
   TimeLineWindow,
@@ -35,13 +33,13 @@ import {
   OpenPaletteColorModalMode,
   PaletteSelectorWindow, PaletteSelectorWindowButtonID,
   ColorCanvasWindow,
-} from 'app/view.class';
+} from '../app/view.class';
 
-import { UI_SubToolWindowRef } from 'ui/subtool_window';
-import { UI_MenuButtonsRef } from 'ui/menu_buttons';
-import { UI_LayerWindowRef } from 'ui/layer_window';
-import { UI_PaletteSelectorWindowRef } from 'ui/palette_selector_window';
-import { UI_ColorMixerWindowRef } from 'ui/color_mixer_window';
+import { UI_SubToolWindowRef } from '../ui/subtool_window';
+import { UI_MenuButtonsRef } from '../ui/menu_buttons';
+import { UI_LayerWindowRef } from '../ui/layer_window';
+import { UI_PaletteSelectorWindowRef } from '../ui/palette_selector_window';
+import { UI_ColorMixerWindowRef } from '../ui/color_mixer_window';
 import { UI_FileOpenDialogRef } from '../ui/file_open_dialog';
 import { UI_HeaderWindowRef } from '../ui/header_window';
 import { UI_SideBarContainerRef } from '../ui/side_bar_container';
@@ -213,8 +211,8 @@ export class App_View {
 
     let rect = canvasWindow.canvas.parentElement.getBoundingClientRect();
 
-    canvasWindow.width = rect.width - 2;
-    canvasWindow.height = rect.height - 2;
+    canvasWindow.width = rect.width;
+    canvasWindow.height = rect.height;
 
     canvasWindow.canvas.width = canvasWindow.width;
     canvasWindow.canvas.height = canvasWindow.height;
@@ -1250,7 +1248,6 @@ export class App_View {
       if (ImageFileReferenceLayer.isImageFileReferenceLayer(this.toolContext.currentLayer)) {
 
         let ifrLayer = <ImageFileReferenceLayer>(this.toolContext.currentLayer);
-        let filePath = ifrLayer.imageFilePath;
 
         this.openFileDialogModal(targetID);
       }

@@ -1,24 +1,23 @@
 ﻿import {
     List, float, int, ListAddRange, ListGetRange, ListClone
-} from 'base/conversion';
+} from '../base/conversion';
 
 import {
     Layer, VectorStrokeGroup, VectorStroke, VectorPoint, VectorGeometry, LinePointModifyFlagID,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolBase,
     ViewKeyframeLayer,
     ToolDrawingEnvironment,
     ToolMouseEvent,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
-import { Logic_Edit_Points, Logic_Edit_Line, Logic_Edit_VectorLayer } from 'logics/edit_vector_layer';
-import { HitTest_Line_PointToLineByDistanceSingle } from 'logics/hittest';
-import { Logic_Points } from 'logics/points';
-import { Maths } from 'logics/math';
-
+import { CommandBase } from '../base/command';
+import { Logic_Edit_Points, Logic_Edit_Line, Logic_Edit_VectorLayer } from '../logics/edit_vector_layer';
+import { HitTest_Line_PointToLineByDistanceSingle } from '../logics/hittest';
+import { Logic_Points } from '../logics/points';
+import { Maths } from '../logics/math';
 
 export class Tool_ScratchLine_CandidatePair {
 

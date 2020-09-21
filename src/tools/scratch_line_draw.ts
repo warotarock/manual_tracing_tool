@@ -1,23 +1,23 @@
 ﻿import {
   List, float, int, ListAddRange, ListGetRangeToLast, ListGetRange, ListClone, ListReverse
-} from 'base/conversion';
+} from '../base/conversion';
 
 import {
   VectorStroke, VectorPoint, VectorGeometry, VectorLineModifyFlagID,
-} from 'base/data';
+} from '../base/data';
 
 import {
   ToolEnvironment, ToolDrawingEnvironment,
   ToolMouseEvent,
-} from 'base/tool';
+} from '../base/tool';
 
-import { Logic_Edit_Points, Logic_Edit_Line } from 'logics/edit_vector_layer';
-import { HitTest_Line } from 'logics/hittest';
-import { Logic_Points } from 'logics/points';
+import { Logic_Edit_Points, Logic_Edit_Line } from '../logics/edit_vector_layer';
+import { HitTest_Line } from '../logics/hittest';
+import { Logic_Points } from '../logics/points';
 
-import { Command_DeleteFlaggedPoints } from 'commands/delete_points';
-import { Command_AddLine } from 'tools/draw_line';
-import { Tool_ScratchLine } from 'tools/scratch_line';
+import { Command_DeleteFlaggedPoints } from '../commands/delete_points';
+import { Command_AddLine } from '../tools/draw_line';
+import { Tool_ScratchLine } from '../tools/scratch_line';
 
 
 class SubjoinProcessingState {

@@ -1,17 +1,16 @@
-﻿import { List } from 'base/conversion';
+﻿import { List } from '../base/conversion';
 
 import {
     VectorStrokeGroup, VectorStroke, VectorPoint, LinePointModifyFlagID,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolMouseEvent,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
-import { Selector_LinePoint_BrushSelect, ISelector_BrushSelect, VectorLayerEditorSelectionInfo } from 'logics/selector';
-
-import { Tool_BrushSelectLinePointBase } from 'tools/select_brush_select';
+import { CommandBase } from '../base/command';
+import { Selector_LinePoint_BrushSelect, ISelector_BrushSelect, VectorLayerEditorSelectionInfo } from '../logics/selector';
+import { Tool_BrushSelectLinePointBase } from '../tools/select_brush_select';
 
 
 export class Selector_HideLinePoint_BrushSelect extends Selector_LinePoint_BrushSelect {

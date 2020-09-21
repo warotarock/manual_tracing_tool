@@ -1,12 +1,11 @@
-import { float, List, Dictionary} from 'base/conversion';
-import { Layer, PosingModel, PosingData, PosingLayer, JointPartDrawingUnit, InputSideID } from 'base/data';
-import { PickingWindow, Posing3DSubToolID, ToolEnvironment } from 'base/tool';
+import { float, List, Dictionary} from '../base/conversion';
+import { Layer, PosingModel, PosingData, PosingLayer, JointPartDrawingUnit, InputSideID } from '../base/data';
+import { PickingWindow, Posing3DSubToolID, ToolEnvironment } from '../base/tool';
 
-import { CanvasWindow } from 'renders/render2d';
-import { RenderImage, RenderModel, RenderShader, WebGLRender, WebGLRenderBlendType } from 'renders/render3d';
+import { CanvasWindow } from '../renders/render2d';
+import { RenderImage, RenderModel, RenderShader, WebGLRender, WebGLRenderBlendType } from '../renders/render3d';
 
-import { Maths } from 'logics/math';
-
+import { Maths } from '../logics/math';
 
 export class ImageResource {
 

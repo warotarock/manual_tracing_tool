@@ -1,18 +1,17 @@
-﻿import { List, float } from 'base/conversion';
+﻿import { List, float } from '../base/conversion';
 
 import {
     Layer, VectorStrokeGroup, VectorStroke, VectorPoint,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolBase,
     OperationUnitID,
     ViewKeyframeLayer,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
-import { Logic_Edit_Points, Logic_Edit_Line } from 'logics/edit_vector_layer';
-
+import { CommandBase } from '../base/command';
+import { Logic_Edit_Points, Logic_Edit_Line } from '../logics/edit_vector_layer';
 
 class Tool_Resample_Segment_EditLine {
 

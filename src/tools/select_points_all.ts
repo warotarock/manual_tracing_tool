@@ -1,10 +1,9 @@
-﻿import { List } from 'base/conversion';
-import { VectorStrokeGroup, } from 'base/data';
-import { ToolEnvironment, ToolBase, ViewKeyframeLayer, } from 'base/tool';
+﻿import { List } from '../base/conversion';
+import { VectorStrokeGroup, } from '../base/data';
+import { ToolEnvironment, ToolBase, ViewKeyframeLayer, } from '../base/tool';
 
-import { VectorLayerEditorSelectionInfo, SelectionEditMode } from 'logics/selector';
-import { Command_Select } from 'tools/select_brush_select';
-
+import { VectorLayerEditorSelectionInfo, SelectionEditMode } from '../logics/selector';
+import { Command_Select } from '../tools/select_brush_select';
 
 export class Tool_Select_All_LinePoint extends ToolBase {
 

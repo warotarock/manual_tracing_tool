@@ -1,9 +1,9 @@
-﻿import { List, ListClone, ListAddRange } from "base/conversion";
-import { VectorStrokeGroup, VectorStroke, VectorPoint } from "base/data";
-import { CommandBase } from "base/command";
-import { ToolEnvironment, ViewKeyframeLayer } from "base/tool";
-import { Logic_Edit_Line } from "logics/edit_vector_layer";
-import { Platform } from "platform/platform";
+﻿import { List, ListClone, ListAddRange } from "../base/conversion";
+import { VectorStrokeGroup, VectorStroke, VectorPoint } from "../base/data";
+import { CommandBase } from "../base/command";
+import { ToolEnvironment, ViewKeyframeLayer } from "../base/tool";
+import { Logic_Edit_Line } from "../logics/edit_vector_layer";
+import { Platform } from "../platform/platform";
 
 interface Clipboard {
 

@@ -1,4 +1,4 @@
-import { StringIsNullOrEmpty, int, long, List } from 'base/conversion';
+import { StringIsNullOrEmpty, int, long, List } from '../base/conversion';
 
 import {
   DocumentData, DocumentBackGroundTypeID, DocumentFileType,
@@ -7,7 +7,7 @@ import {
   ImageFileReferenceLayer,
   PosingModel,
   GroupLayer,
-} from 'base/data';
+} from '../base/data';
 
 import {
   MainEditor,
@@ -22,9 +22,9 @@ import {
   ViewKeyframeLayer,
   DrawPathModeID,
   OperationUnitID
-} from 'base/tool';
+} from '../base/tool';
 
-import { CanvasWindow } from 'renders/render2d';
+import { CanvasWindow } from '../renders/render2d';
 
 import {
   Command_Layer_CommandBase,
@@ -34,18 +34,18 @@ import {
   Command_Layer_AddPosingLayerToCurrentPosition,
   Command_Layer_AddImageFileReferenceLayerToCurrentPosition,
   Command_Layer_AddAutoFillLayerToCurrentPosition
-} from 'commands/edit_layer';
+} from '../commands/edit_layer';
 
 import {
   NewLayerTypeID
-} from 'app/view.class';
+} from '../app/view.class';
 
-import { ImageResource, ModelFile, ModelResource } from 'posing3d/posing3d_view';
+import { ImageResource, ModelFile, ModelResource } from '../posing3d/posing3d_view';
 
 import { App_Event } from './event';
-import { Platform } from 'platform/platform';
-import { DocumentLogic } from 'logics/document';
-import { CommandHistory } from 'base/command';
+import { Platform } from '../platform/platform';
+import { DocumentLogic } from '../logics/document';
+import { CommandHistory } from '../base/command';
 
 
 export enum MainProcessStateID {
@@ -1731,8 +1731,6 @@ export class App_Main extends App_Event implements MainEditor {
 
   protected drawEditorWindow(editorWindow: CanvasWindow, mainWindow: CanvasWindow) {
 
-    let context = this.toolContext;
-
     mainWindow.updateViewMatrix();
     mainWindow.copyTransformTo(editorWindow);
 
@@ -1749,6 +1747,8 @@ export class App_Main extends App_Event implements MainEditor {
       this.toolDrawEnv.setVariables(editorWindow);
       this.currentTool.onDrawEditor(this.toolEnv, this.toolDrawEnv);
     }
+
+    this.drawFooterOperationPanel(editorWindow);
   }
 
   protected drawExportImage(canvasWindow: CanvasWindow) { // @override

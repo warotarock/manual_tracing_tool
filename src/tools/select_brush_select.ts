@@ -1,9 +1,9 @@
-﻿import { List, ListClone } from 'base/conversion';
+﻿import { List, ListClone } from '../base/conversion';
 
 import {
     VectorLayer,
     Layer,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment, ToolMouseEvent,
@@ -11,7 +11,7 @@ import {
     OperationUnitID,
     ModalToolBase,
     ToolDrawingEnvironment,
-} from 'base/tool';
+} from '../base/tool';
 
 import {
     Selector_LinePoint_BrushSelect,
@@ -22,10 +22,9 @@ import {
     VectorLayerEditorSelectionInfo,
     LineSelectionInfo,
     PointSelectionInfo
-} from 'logics/selector';
+} from '../logics/selector';
 
-import { CommandBase } from 'base/command';
-
+import { CommandBase } from '../base/command';
 
 export class Tool_BrushSelectLinePointBase extends ModalToolBase {
 

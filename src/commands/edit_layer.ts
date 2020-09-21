@@ -1,6 +1,6 @@
-﻿import { List, int, ListClone, ListInsertAt, ListRemoveAt } from "base/conversion";
-import { CommandBase } from "base/command";
-import { ToolEnvironment } from "base/tool";
+﻿import { List, int, ListClone, ListInsertAt, ListRemoveAt } from "../base/conversion";
+import { CommandBase } from "../base/command";
+import { ToolEnvironment } from "../base/tool";
 import {
     Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
     VectorLayer, VectorKeyframe, VectorGeometry, VectorStrokeGroup,
@@ -10,7 +10,7 @@ import {
     PosingLayer,
     AutoFillLayer,
     VectorDrawingUnit
-} from "base/data";
+} from "../base/data";
 
 export class Command_Layer_CommandBase extends CommandBase {
 

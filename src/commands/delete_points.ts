@@ -1,9 +1,8 @@
-﻿import { List, int } from "base/conversion";
-import { VectorStrokeGroup, VectorStroke, VectorPoint, VectorLineModifyFlagID, LinePointModifyFlagID, VectorGroupModifyFlagID } from "base/data";
-import { CommandBase } from "base/command";
-import { ToolEnvironment, ViewKeyframeLayer } from "base/tool";
-import { Logic_Edit_Line } from "logics/edit_vector_layer";
-
+﻿import { List, int } from "../base/conversion";
+import { VectorStrokeGroup, VectorStroke, VectorPoint, VectorLineModifyFlagID, LinePointModifyFlagID, VectorGroupModifyFlagID } from "../base/data";
+import { CommandBase } from "../base/command";
+import { ToolEnvironment, ViewKeyframeLayer } from "../base/tool";
+import { Logic_Edit_Line } from "../logics/edit_vector_layer";
 
 class Command_DeletePoints_EditGroup {
 

@@ -1,4 +1,5 @@
-﻿import { float, List } from 'base/conversion';
+﻿import { float, List } from '../base/conversion';
+
 import {
     VectorLineModifyFlagID,
     LinePointModifyFlagID,
@@ -6,10 +7,11 @@ import {
     VectorStroke,
     VectorPoint,
     VectorGroupModifyFlagID,
-} from 'base/data';
+} from '../base/data';
 
-import { IHitTest_VectorLayerLinePoint, HitTest_LinePoint_PointToPointByDistance, HitTest_Line_PointToLineByDistance } from './hittest';
-
+import {
+  IHitTest_VectorLayerLinePoint, HitTest_LinePoint_PointToPointByDistance, HitTest_Line_PointToLineByDistance
+} from './hittest';
 
 export enum SelectionEditMode {
 

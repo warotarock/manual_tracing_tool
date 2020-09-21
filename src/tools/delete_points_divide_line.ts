@@ -1,23 +1,22 @@
-﻿import { List, float } from 'base/conversion';
+﻿import { List, float } from '../base/conversion';
 
 import {
     VectorPoint,
     VectorStroke,
     VectorStrokeGroup,
     VectorLineModifyFlagID,
-} from 'base/data';
+} from '../base/data';
 
 import {
     ToolEnvironment,
-} from 'base/tool';
+} from '../base/tool';
 
-import { CommandBase } from 'base/command';
+import { CommandBase } from '../base/command';
+import { Logic_Edit_Line } from '../logics/edit_vector_layer';
+import { Selector_LineSegment_BrushSelect, ISelector_BrushSelect, VectorLayerEditorSelectionInfo } from '../logics/selector';
+import { Maths } from '../logics/math';
 
-import { Logic_Edit_Line } from 'logics/edit_vector_layer';
-import { Selector_LineSegment_BrushSelect, ISelector_BrushSelect, VectorLayerEditorSelectionInfo } from 'logics/selector';
-import { Maths } from 'logics/math';
 import { Tool_BrushSelectLinePointBase } from './select_brush_select';
-
 
 class DivideLine_EditGroup {
 

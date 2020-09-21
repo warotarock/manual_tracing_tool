@@ -1,10 +1,11 @@
 import * as React from 'react';
 import 'rc-slider/assets/index.css';
 
-import { int, float, StringEndsWith, StringIsNullOrEmpty, ListInsertAt } from 'base/conversion';
-import { UI_SubScreenContainer, UI_SubScreenContainerRef } from './sub_screen_conatiner';
+import { int, float, StringEndsWith, StringIsNullOrEmpty, ListInsertAt } from '../base/conversion';
 import { Platform } from '../platform/platform';
 import { LocalSettingFileSection } from '../base/data';
+
+import { UI_SubScreenContainer, UI_SubScreenContainerRef } from './sub_screen_conatiner';
 
 export interface UI_FileOpenDialogRef {
 

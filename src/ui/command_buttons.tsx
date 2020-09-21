@@ -1,7 +1,6 @@
 import * as React from 'react';
 
-import { int } from 'base/conversion';
-import { RectangleLayoutArea } from 'app/view.class';
+import { int } from '../base/conversion';
 
 export interface UI_CommandButtonsItem {
 

@@ -1,4 +1,4 @@
-import { List, int, float } from 'base/conversion';
+import { List, int, float } from '../base/conversion';
 
 import {
   ToolEnvironment,
@@ -8,7 +8,7 @@ import {
   OperationUnitID,
   ViewKeyframe,
   ViewKeyframeLayer
-} from 'base/tool';
+} from '../base/tool';
 
 import {
   DocumentData,
@@ -16,27 +16,26 @@ import {
   VectorLayer, VectorGeometry, VectorStroke, VectorPoint, VectorLineModifyFlagID, LinePointModifyFlagID,
   ImageFileReferenceLayer,
   PosingLayer
-} from 'base/data';
+} from '../base/data';
 
-import { Logic_GPULine } from 'logics/gpu_line';
-import { ColorLogic } from 'logics/color';
+import { Logic_GPULine } from '../logics/gpu_line';
+import { ColorLogic } from '../logics/color';
+import { RectangleLayoutArea } from '../logics/layout';
 
-import { CanvasRender, CanvasWindow, CanvasRenderLineCap, CanvasRenderBlendMode } from 'renders/render2d';
-import { WebGLRender } from 'renders/render3d';
-import { Posing3DView, ImageResource } from 'posing3d/posing3d_view';
+import { CanvasRender, CanvasWindow, CanvasRenderLineCap, CanvasRenderBlendMode } from '../renders/render2d';
+import { WebGLRender } from '../renders/render3d';
+import { Posing3DView, ImageResource } from '../posing3d/posing3d_view';
 
-import { App_View } from 'app/view';
+import { App_View } from '../app/view';
 import {
-  RectangleLayoutArea,
   LayerWindowItem,
   LayerWindow,
   TimeLineWindow,
   PaletteSelectorWindow,
   PaletteSelectorWindowButtonID
-} from 'app/view.class';
+} from '../app/view.class';
 
 import { PolyLineShader, BezierLineShader, BezierDistanceLineShader, GPULineShader } from './drawing.class';
-
 
 export class App_Drawing extends App_View implements MainEditorDrawer {
 
@@ -108,6 +107,8 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
       alert('３Ｄ描画機能を初期化できませんでした。');
     }
+
+    this.icon_Move.image.src = this.icon_Move.filePath;
 
     try {
 
@@ -1072,6 +1073,71 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
       this.posing3dView.drawPosingModel(posingLayer, env);
     }
+  }
+
+  // Operation panel
+
+  icon_Move = { image: new Image(), filePath: './res/open_with-24px.svg' };
+  mainOperationUI_Icons = [this.icon_Move];
+  mainOperationUI_PanelBorderPoints: float[][] = [];
+  mainOperationUI_Buttons: RectangleLayoutArea[] = [
+    new RectangleLayoutArea().setIndex(0).setIndex(0),
+  ];
+
+  protected drawFooterOperationPanel(canvasWindow: CanvasWindow) {
+
+    this.canvasRender.resetTransform();
+
+    const windowWidth = 150; // [px]
+    const windowHeight = 302; // [px]
+
+    const windowLeft = -0.5;
+    const windowRight = windowLeft + windowWidth;
+    const windowTop = 0.5 + canvasWindow.height - windowHeight;
+    const windowBottom = windowTop + windowHeight;
+
+    const windowBorderRadius = 30; // [px]
+    const windowBorderRadiusUnit = 90 / 10;
+
+    this.canvasRender.setStrokeWidth(1.0);
+    this.canvasRender.setStrokeColorV(this.drawStyle.windowBorderColor);
+    this.canvasRender.setFillColorV(this.drawStyle.windowBackGroundColor);
+
+    // 背景
+    this.canvasRender.beginPath();
+    this.canvasRender.moveTo(windowLeft, windowTop);
+    this.canvasRender.lineTo(windowRight - windowBorderRadius, windowTop);
+    if (this.mainOperationUI_PanelBorderPoints.length == 0) {
+
+      for (let r = 90 - windowBorderRadiusUnit; r >= 0; r -= windowBorderRadiusUnit) {
+
+        this.mainOperationUI_PanelBorderPoints.push([
+          windowRight - windowBorderRadius + Math.cos(r * Math.PI / 180) * windowBorderRadius,
+          windowTop + windowBorderRadius - Math.sin(r * Math.PI / 180) * windowBorderRadius
+        ]);
+
+      }
+    }
+    for (const point of this.mainOperationUI_PanelBorderPoints) {
+
+      this.canvasRender.lineTo(point[0], point[1]);
+    }
+    this.canvasRender.lineTo(windowRight, windowBottom);
+    this.canvasRender.lineTo(windowLeft, windowBottom);
+    this.canvasRender.fill();
+
+    // 枠線
+    this.canvasRender.beginPath();
+    this.canvasRender.moveTo(windowLeft, windowTop);
+    this.canvasRender.lineTo(windowRight - windowBorderRadius, windowTop);
+    for (const point of this.mainOperationUI_PanelBorderPoints) {
+
+      this.canvasRender.lineTo(point[0], point[1]);
+    }
+    this.canvasRender.lineTo(windowRight, windowBottom);
+    this.canvasRender.stroke();
+
+    this.canvasRender.drawImage(this.icon_Move.image, 0, 0, 24, 24, windowLeft, windowTop, 24, 24);
   }
 
   // Layer window

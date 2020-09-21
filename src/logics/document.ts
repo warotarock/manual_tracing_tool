@@ -1,4 +1,4 @@
-﻿import { float, List } from 'base/conversion';
+﻿import { float, List } from '../base/conversion';
 import {
   DocumentData, DocumentDataSaveInfo,
   DocumentBackGroundTypeID,
@@ -17,10 +17,10 @@ import {
   VectorDrawingUnit,
   VectorStrokeGroup,
   VectorStroke,
-} from 'base/data';
+} from '../base/data';
 
-import { GPUVertexBuffer } from 'logics/gpu_data';
-import { Logic_Edit_Line } from 'logics/edit_vector_layer';
+import { GPUVertexBuffer } from '../logics/gpu_data';
+import { Logic_Edit_Line } from '../logics/edit_vector_layer';
 
 export class DocumentLogic {
 

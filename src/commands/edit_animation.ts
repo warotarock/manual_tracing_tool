@@ -1,7 +1,7 @@
-﻿import { List, ListClone, ListInsertAt, ListRemoveAt } from "base/conversion";
-import { CommandBase } from "base/command";
-import { ToolEnvironment } from "base/tool";
-import { VectorLayer, VectorKeyframe, Layer, LayerTypeID, VectorGeometry } from "base/data";
+﻿import { List, ListClone, ListInsertAt, ListRemoveAt } from "../base/conversion";
+import { CommandBase } from "../base/command";
+import { ToolEnvironment } from "../base/tool";
+import { VectorLayer, VectorKeyframe, Layer, LayerTypeID, VectorGeometry } from "../base/data";
 
 
 class Command_Animation_KeyframeListEditData {

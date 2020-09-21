@@ -1,18 +1,16 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { Platform } from 'platform/platform';
-import { DocumentData } from 'base/data';
+import { Platform } from './platform/platform';
+import { DocumentData } from './base/data';
 
-import { App_Main, MainProcessStateID } from 'app/main';
+import { App_Main, MainProcessStateID } from './app/main';
 
-import { UI_MenuButtons } from 'ui/menu_buttons';
-import { UI_SubToolWindow } from 'ui/subtool_window';
-import { UI_LayerWindow } from 'ui/layer_window';
-import { UI_PaletteSelectorWindow } from 'ui/palette_selector_window';
-import { UI_ColorMixerWindow } from 'ui/color_mixer_window';
-import { UI_FileOpenDialog } from 'ui/file_open_dialog';
-import { UI_HeaderWindow } from 'ui/header_window';
+import { UI_LayerWindow } from './ui/layer_window';
+import { UI_PaletteSelectorWindow } from './ui/palette_selector_window';
+import { UI_ColorMixerWindow } from './ui/color_mixer_window';
+import { UI_FileOpenDialog } from './ui/file_open_dialog';
+import { UI_HeaderWindow } from './ui/header_window';
 import { UI_SideBarContainer } from './ui/side_bar_container';
 import { UI_FooterOperationPanel } from './ui/footer_operation_panel';
 

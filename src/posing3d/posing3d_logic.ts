@@ -1,7 +1,6 @@
-﻿import { PosingModel, PosingData, InputSideID, DirectionInputData, JointPartInputData } from 'base/data';
-import { Maths } from 'logics/math';
+﻿import { PosingModel, PosingData, InputSideID, DirectionInputData, JointPartInputData } from '../base/data';
+import { Maths } from '../logics/math';
 import { Posing3DView } from './posing3d_view';
-
 
 export enum Posing3D_BodyLocateMode {
 

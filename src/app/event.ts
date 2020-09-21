@@ -1,17 +1,17 @@
-import { float, StringIsNullOrEmpty, int } from 'base/conversion';
-import { Layer, DocumentData, PaletteColor } from 'base/data';
-import { EditModeID, MainToolID, ToolBaseWindow, DrawLineToolSubToolID, ModalToolID } from 'base/tool';
+import { float, StringIsNullOrEmpty, int } from '../base/conversion';
+import { Layer, DocumentData, PaletteColor } from '../base/data';
+import { EditModeID, MainToolID, ToolBaseWindow, DrawLineToolSubToolID, ModalToolID } from '../base/tool';
 
-import { ColorLogic } from 'logics/color';
+import { ColorLogic } from '../logics/color';
 
-import { CanvasWindow } from 'renders/render2d';
+import { CanvasWindow } from '../renders/render2d';
 
-import { Command_DeleteSelectedPoints } from 'commands/delete_points';
-import { Command_CopyGeometry, Command_PasteGeometry } from 'commands/edit_copy';
-import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown } from 'commands/edit_layer';
+import { Command_DeleteSelectedPoints } from '../commands/delete_points';
+import { Command_CopyGeometry, Command_PasteGeometry } from '../commands/edit_copy';
+import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown } from '../commands/edit_layer';
 
-import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, OpenPaletteColorModalMode, RectangleLayoutArea, LayerWindowItem, MainCommandButtonID } from 'app/view.class';
-import { App_Document } from 'app/document';
+import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, LayerWindowItem, MainCommandButtonID } from '../app/view.class';
+import { App_Document } from '../app/document';
 import { UI_CommandButtonsItem } from '../ui/command_buttons';
 
 export class App_Event extends App_Document {

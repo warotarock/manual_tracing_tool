@@ -2,8 +2,8 @@ import * as React from 'react';
 import 'rc-slider/assets/index.css';
 import Slider from 'rc-slider';
 
-import { int, float } from 'base/conversion';
-import { ColorLogic } from 'logics/color';
+import { int, float } from '../base/conversion';
+import { ColorLogic } from '../logics/color';
 
 import { UILib } from '../ui/ui_lib';
 

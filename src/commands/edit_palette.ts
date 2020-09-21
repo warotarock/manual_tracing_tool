@@ -1,5 +1,5 @@
-﻿import { CommandBase } from "base/command";
-import { ToolEnvironment } from "base/tool";
+﻿import { CommandBase } from "../base/command";
+import { ToolEnvironment } from "../base/tool";
 
 
 export class Command_Palette_CommandBase extends CommandBase {

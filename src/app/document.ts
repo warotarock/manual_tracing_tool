@@ -2,7 +2,7 @@ import {
     float,
     StringLastIndexOf, StringIsNullOrEmpty,
     List, ListRemoveAt, ListInsertAt, ListGetRange
-} from 'base/conversion';
+} from '../base/conversion';
 
 import {
     Layer, LayerTypeID, VectorLayer, ImageFileReferenceLayer,
@@ -14,12 +14,12 @@ import {
     PosingModel,
     DocumentBackGroundTypeID,
     VectorDrawingUnit
-} from 'base/data';
+} from '../base/data';
 
-import { DocumentLogic } from 'logics/document';
+import { DocumentLogic } from '../logics/document';
 
-import { Platform } from 'platform/platform';
-import { App_Tool } from 'app/tool';
+import { Platform } from '../platform/platform';
+import { App_Tool } from '../app/tool';
 
 export class App_Document extends App_Tool {
 
