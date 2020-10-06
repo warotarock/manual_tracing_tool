@@ -15,7 +15,7 @@ import {
   ToolContext, ToolEnvironment, ToolDrawingEnvironment, ToolBase, ToolMouseEvent,
   MainTool, MainToolID, EditModeID,
   ViewLayerContext, ViewKeyframe, ViewKeyframeLayer,
-  OpenFileDialogTargetID,
+  OpenFileDialogTargetID, ToolEventPointer, InputableWindow
 } from '../base/tool';
 
 import { CanvasWindow } from '../renders/render2d';
@@ -47,6 +47,16 @@ import { UI_FooterOperationPanelRef } from '../ui/footer_operation_panel';
 
 declare var Custombox: any;
 
+export enum OperationUI_ID {
+
+  zoom = 1,
+  rotate = 2,
+  move = 3,
+  draw = 4,
+  erase = 5,
+  brushSize = 6,
+}
+
 export class App_View {
 
   // HTML elements
@@ -71,6 +81,27 @@ export class App_View {
   uiPaletteSelectorWindowRef: UI_PaletteSelectorWindowRef = {};
   uiColorMixerWindowRef: UI_ColorMixerWindowRef = {};
   uiFileOpenDialogRef: UI_FileOpenDialogRef = {};
+
+  // Operation panel
+
+  mainOperationUI_Icons = [
+    { image: new Image(), filePath: './res/zoom_in-24px.svg' },
+    { image: new Image(), filePath: './res/rotate_right-24px.svg' },
+    { image: new Image(), filePath: './res/open_with-24px.svg' },
+    { image: new Image(), filePath: './res/brush-24px.svg' },
+    { image: new Image(), filePath: './res/flip-24px.svg' },
+  ];
+  mainOperationUI_PanelBorderPoints: float[][] = [];
+  mainOperationUI_Area = new RectangleLayoutArea()
+    .setPadding({ left: 10, top: 10, right: 10, bottom: 15})
+    .setChildren([
+      new RectangleLayoutArea().setIndex(OperationUI_ID.brushSize).setCellSpan(1, 3),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.zoom).setIcon(0),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.rotate).setIcon(1),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.move).setIcon(2),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.draw).setIcon(3),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.erase).setIcon(4),
+    ]);
 
   // Drawing variables
 
@@ -100,12 +131,6 @@ export class App_View {
   selectCurrentLayerAnimationTime = 0.0;
   selectCurrentLayerAnimationTimeMax = 0.4;
 
-  isViewLocationMoved = false;
-  homeViewLocation = vec3.fromValues(0.0, 0.0, 0.0);
-  lastViewLocation = vec3.fromValues(0.0, 0.0, 0.0);
-  lastViewScale = 1.0;
-  lastViewRotation = 0.0;
-
   // Integrated tool system
 
   toolContext: ToolContext = null;
@@ -115,8 +140,6 @@ export class App_View {
 
   // Work variable
 
-  view2DMatrix = mat4.create();
-  invView2DMatrix = mat4.create();
   tempVec3 = vec3.create();
   tempVec4 = vec4.create();
   tempColor4 = vec4.create();
@@ -176,6 +199,11 @@ export class App_View {
 
     this.layerWindow_Initialize();
     this.initializePaletteSelectorWindow();
+
+    for (const icon of this.mainOperationUI_Icons) {
+
+      icon.image.src = icon.filePath;
+    }
   }
 
   // Initializing after loading resources
@@ -246,93 +274,250 @@ export class App_View {
     canvasWindow.canvas.height = canvasWindow.height;
   }
 
-  protected processMouseEventInput(toolMouseEvent: ToolMouseEvent, e: MouseEvent, touchUp: boolean, canvasWindow: CanvasWindow) {
+  protected processMouseEvent(
+    wnd: InputableWindow,
+    e: PointerEvent,
+    buttonDown: boolean,
+    buttonhUp: boolean
+  ) {
 
-    this.activeCanvasWindow = canvasWindow;
+    const toolMouseEvent = wnd.toolMouseEvent;
+
+    this.activeCanvasWindow = wnd;
 
     if (document.activeElement.nodeName == 'INPUT') {
       (<HTMLInputElement>document.activeElement).blur();
     }
 
+    // Main pointer
     toolMouseEvent.button = e.button;
     toolMouseEvent.buttons = e.buttons;
 
-    if (touchUp) {
+    // console.log(toolMouseEvent.button, toolMouseEvent.buttons);
+
+    if (buttonDown) {
+
+      toolMouseEvent.processMouseDragging();
+    }
+
+    if (buttonhUp) {
+
       toolMouseEvent.button = -1;
       toolMouseEvent.buttons = 0;
     }
 
-    // ____________| forefox | chrome        | opera         | firefox with pen
-    // L down      | 0, 1    | 0, 1 and 0, 1 | 0, 1          | 0, 0
-    // move with L | 0, 1    | 0, 1          | 0, 1          |
-    // L up        | 0, 0    | 0, 0 and 0, 0 | 0, 0 and 0, 0 |
-    // R down      | 2, 2    | 2, 2 and 2, 0 | 2, 2          | 2, 2
-    // move with R | 2, 0    | 2, 0          | 2, 0          | 0, 2
-    // R up        | 0, 0    | 2, 0 and 0, 0 | 0, 0          | 2, 0
-    // M down      | 1, 4    | 1, 4 and 0, 4 | 1, 4          |
-    // move with M | 0, 4    | 1, 0          | 0, 4          |
-    // M up        | 1, 0    | 1, 0 and 0, 0 | 1, 0 and 0, 0 |
-    //console.log(e.button + ', ' + e.buttons);
-
     toolMouseEvent.offsetX = e.offsetX;
     toolMouseEvent.offsetY = e.offsetY;
-    this.calculateTransfomredMouseParams(toolMouseEvent, canvasWindow);
 
-    toolMouseEvent.processMouseDragging();
+    this.calculateTransfomredMouseParams(toolMouseEvent, wnd);
+
+    // Multi pointer
+    let isPointerChanged = false;
+    let target_Pointer: ToolEventPointer | null = null;
+    let free_Pointer: ToolEventPointer | null = null;
+
+    for (let pointer of toolMouseEvent.pointers) {
+
+      if (pointer.isFree() && free_Pointer == null) {
+
+        free_Pointer = pointer;
+      }
+
+      if (pointer.identifier == e.pointerId) {
+
+        target_Pointer = pointer;
+        break;
+      }
+    }
+
+    if (buttonDown) {
+
+      if (target_Pointer == null && free_Pointer != null) {
+
+        free_Pointer.identifier = e.pointerId;
+        free_Pointer.descOrder = 0;
+
+        target_Pointer = free_Pointer;
+
+        isPointerChanged = true;
+      }
+    }
+
+    if (buttonhUp) {
+
+      if (target_Pointer != null) {
+
+        target_Pointer.identifier = -1;
+
+        isPointerChanged = true;
+      }
+    }
+
+    if (isPointerChanged) {
+
+      toolMouseEvent.activePointers = toolMouseEvent.pointers
+        .filter(pointer => pointer.isActive())
+        .sort((a, b) => b.descOrder - a.descOrder);
+
+        for (let pointer of toolMouseEvent.activePointers) {
+
+          pointer.descOrder++;
+        }
+
+      // console.log(toolMouseEvent.activeTouches);
+    }
+
+    if (target_Pointer != null) {
+
+      target_Pointer.window = wnd;
+      target_Pointer.offsetX = e.offsetX;
+      target_Pointer.offsetY = e.offsetY;
+      target_Pointer.currentLocation[0] = e.offsetX;
+      target_Pointer.currentLocation[1] = e.offsetX;
+      target_Pointer.force = e.pressure;
+
+      this.calculateTransfomredTouchParams(target_Pointer, wnd);
+    }
 
     //console.log(e.offsetX.toFixed(2) + ',' + e.offsetY.toFixed(2) + '  ' + toolMouseEvent.offsetX.toFixed(2) + ',' + this.toolMouseEvent.offsetY.toFixed(2));
   }
 
-  protected getTouchInfo(toolMouseEvent: ToolMouseEvent, e: TouchEvent, touchDown: boolean, touchUp: boolean, canvasWindow: CanvasWindow) {
+  protected processTouchEvent(wnd: InputableWindow, e: TouchEvent, touchDown: boolean, touchUp: boolean) {
 
-    this.activeCanvasWindow = canvasWindow;
+    const toolMouseEvent = wnd.toolMouseEvent;
+
+    const rect = wnd.canvas.getBoundingClientRect();
+
+    this.activeCanvasWindow = wnd;
 
     if (e.touches == undefined || e.touches.length == 0) {
-      toolMouseEvent.button = 0;
-      toolMouseEvent.buttons = 0;
-      return;
-    }
 
-    //console.log(e.touches.length);
-
-    var rect = canvasWindow.canvas.getBoundingClientRect();
-
-    let touch: any = e.touches[0];
-
-    if (!touchDown && touch.force < 0.1) {
-      return;
-    }
-
-    if (touchDown) {
-      toolMouseEvent.button = 0;
-      toolMouseEvent.buttons = 1;
-    }
-    if (touchUp) {
       toolMouseEvent.button = 0;
       toolMouseEvent.buttons = 0;
     }
-    toolMouseEvent.offsetX = touch.clientX - rect.left;
-    toolMouseEvent.offsetY = touch.clientY - rect.top;
+    else {
 
-    this.calculateTransfomredMouseParams(toolMouseEvent, canvasWindow);
+      const touch = e.touches[0];
 
-    //console.log(touch.clientX.toFixed(2) + ',' + touch.clientY.toFixed(2) + '(' + ')'  + '  ' + this.toolMouseEvent.offsetX.toFixed(2) + ',' + this.toolMouseEvent.offsetY.toFixed(2));
+      if (touchDown && touch.force >= 0.1) {
+        toolMouseEvent.button = 0;
+        toolMouseEvent.buttons = 1;
+      }
+
+      if (touchUp) {
+        toolMouseEvent.button = 0;
+        toolMouseEvent.buttons = 0;
+      }
+
+      toolMouseEvent.offsetX = touch.clientX - rect.left;
+      toolMouseEvent.offsetY = touch.clientY - rect.top;
+
+      this.calculateTransfomredMouseParams(toolMouseEvent, wnd);
+    }
+
+    let touchChanged = false;
+    for (let eventTouch of toolMouseEvent.pointers) {
+
+      let touch: Touch | null = null;
+
+      if (eventTouch.isActive()) {
+
+        for (const tc of e.touches) {
+
+          if (tc.identifier == eventTouch.identifier) {
+
+            touch = tc;
+          }
+        }
+
+        if (touch == null) {
+
+          eventTouch.identifier = -1;
+          eventTouch.currentLocation[0] = 0.0;
+          eventTouch.currentLocation[1] = 0.0;
+          eventTouch.force = 0.0;
+
+          touchChanged = true;
+        }
+        else {
+
+          eventTouch.currentLocation[0] = touch.clientX - rect.left;
+          eventTouch.currentLocation[1] = touch.clientY - rect.top;
+          eventTouch.force = touch.force;
+
+          this.calculateTransfomredTouchParams(eventTouch, wnd);
+        }
+      }
+    }
+
+    if (e.touches != undefined && e.touches.length > 0) {
+
+      let index = 0;
+      for (const touch of e.touches) {
+
+        let eventTouch: ToolEventPointer | null = null;
+        let free_EventTouch: ToolEventPointer | null = null;
+
+        for (let et of toolMouseEvent.pointers) {
+
+          if (et.isFree() && free_EventTouch == null) {
+
+            free_EventTouch = et;
+          }
+
+          if (et.identifier == touch.identifier) {
+
+            eventTouch = et;
+            break;
+          }
+        }
+
+        if (eventTouch == null && free_EventTouch != null) {
+
+          free_EventTouch.identifier = touch.identifier;
+          free_EventTouch.currentLocation[0] = touch.clientX - rect.left;
+          free_EventTouch.currentLocation[1] = touch.clientY - rect.top;
+          free_EventTouch.force = touch.force;
+
+          this.calculateTransfomredTouchParams(free_EventTouch, wnd);
+
+          touchChanged = true;
+        }
+
+        index++;
+      }
+    }
+
+    // console.log(toolMouseEvent.touches.map(et => et.identifier).join(' '));
+    // console.log(touch.clientX.toFixed(2) + ',' + touch.clientY.toFixed(2) + '(' + ')'  + '  ' + this.toolMouseEvent.offsetX.toFixed(2) + ',' + this.toolMouseEvent.offsetY.toFixed(2));
   }
 
-  protected calculateTransfomredLocation(resultVec: Vec3, canvasWindow: CanvasWindow, x: float, y: float) {
-
-    canvasWindow.caluclateViewMatrix(this.view2DMatrix);
-    mat4.invert(this.invView2DMatrix, this.view2DMatrix);
+  protected calculateTransfomredLocation(resultVec: Vec3, wnd: InputableWindow, x: float, y: float) {
 
     vec3.set(this.tempVec3, x, y, 0.0);
-    vec3.transformMat4(resultVec, this.tempVec3, this.invView2DMatrix);
+    vec3.transformMat4(resultVec, this.tempVec3, wnd.invView2DMatrix);
   }
 
-  protected calculateTransfomredMouseParams(toolMouseEvent: ToolMouseEvent, canvasWindow: CanvasWindow) {
+  protected calculateTransfomredMouseParams(e: ToolMouseEvent, wnd: InputableWindow) {
 
-    this.calculateTransfomredLocation(toolMouseEvent.location, canvasWindow, toolMouseEvent.offsetX, toolMouseEvent.offsetY);
+    this.calculateTransfomredLocation(
+      e.location,
+      wnd,
+      e.offsetX,
+      e.offsetY
+    );
 
-    vec3.copy(this.toolEnv.mouseCursorLocation, toolMouseEvent.location);
+    vec3.copy(this.toolEnv.mouseCursorLocation, e.location);
+  }
+
+  protected calculateTransfomredTouchParams(eventTouch: ToolEventPointer, wnd: InputableWindow) {
+
+    this.calculateTransfomredLocation(
+      eventTouch.currentLocation,
+      wnd,
+      eventTouch.currentLocation[0],
+      eventTouch.currentLocation[1]
+    );
   }
 
   protected getWheelInfo(toolMouseEvent: ToolMouseEvent, e: MouseEvent) {
@@ -380,41 +565,6 @@ export class App_View {
     let item = this.layerWindow_FindCurrentItem();
 
     this.startShowingLayerItem(item);
-  }
-
-  private copyLastViewLocation(setUpdate: boolean) {
-
-    this.isViewLocationMoved = setUpdate;
-    vec3.copy(this.lastViewLocation, this.mainWindow.viewLocation);
-    this.lastViewScale = this.mainWindow.viewScale;
-    this.lastViewRotation = this.mainWindow.viewRotation;
-  }
-
-  protected updateViewRotation() {
-
-    var env = this.toolEnv;
-
-    this.copyLastViewLocation(true);
-
-    if (this.mainWindow.viewRotation >= 360.0) {
-      this.mainWindow.viewRotation -= 360.0;
-    }
-    if (this.mainWindow.viewRotation <= 0.0) {
-      this.mainWindow.viewRotation += 360.0;
-    }
-
-    env.setRedrawMainWindowEditorWindow();
-  }
-
-  protected addViewScale(addScale: float) {
-
-    var env = this.toolEnv;
-
-    this.copyLastViewLocation(true);
-
-    this.mainWindow.addViewScale(addScale);
-
-    env.setRedrawMainWindowEditorWindow();
   }
 
   // ViewKeyframe for timeline
@@ -508,7 +658,6 @@ export class App_View {
 
   protected findNextViewKeyframeIndex(startFrame: int, searchDirection: int): int {
 
-
     let viewKeyframes = this.viewLayerContext.keyframes;
 
     let startKeyframeIndex = ViewKeyframe.findViewKeyframeIndex(viewKeyframes, startFrame);
@@ -533,7 +682,6 @@ export class App_View {
   }
 
   protected findNextViewKeyframeFrame(startFrame: int, searchDirection: int): int {
-
 
     let keyframeIndex = this.findNextViewKeyframeIndex(startFrame, searchDirection);
 
@@ -1318,36 +1466,6 @@ export class App_View {
 
       this.getElement(this.ID.footer).innerHTML = this.footerText;
       this.footerTextBefore = this.footerText;
-    }
-  }
-
-  // Hit test
-
-  protected hitTestLayout(areas: List<RectangleLayoutArea>, x: float, y: float): RectangleLayoutArea {
-
-    for (let area of areas) {
-
-      if (this.hitTestLayoutRectangle(area, x, y)) {
-
-        return area;
-      }
-    }
-
-    return null;
-  }
-
-  protected hitTestLayoutRectangle(area: RectangleLayoutArea, x: float, y: float): boolean {
-
-    if (x >= area.left
-      && x <= area.right
-      && y >= area.top
-      && y <= area.bottom) {
-
-      return true;
-    }
-    else {
-
-      return false;
     }
   }
 

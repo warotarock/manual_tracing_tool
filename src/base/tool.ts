@@ -128,21 +128,11 @@ export interface MainEditorDrawer {
   drawEditorVectorLineSegment(line: VectorStroke, startIndex: int, endIndex: int, useAdjustingLocation: boolean);
 }
 
-export class ToolBaseWindow extends CanvasWindow {
+export class InputableWindow extends CanvasWindow {
 
-  toolMouseEvent = new ToolMouseEvent();
-  dragBeforeViewLocation = vec3.create();
-
-  startMouseDragging() {
-
-    this.toolMouseEvent.startMouseDragging();
-    vec3.copy(this.dragBeforeViewLocation, this.viewLocation);
-  }
-
-  endMouseDragging() {
-
-    this.toolMouseEvent.endMouseDragging();
-  }
+  toolMouseEvent = new ToolMouseEvent(this);
+  view2DMatrix = mat4.create();
+  invView2DMatrix = mat4.create();
 }
 
 export class PickingWindow extends CanvasWindow {
@@ -885,7 +875,7 @@ export class ToolEnvironment {
 export class ToolDrawingStyle {
 
   windowBorderColor = vec4.fromValues(8 /16, 8 / 16, 8 / 16, 1.0);
-  windowBackGroundColor = vec4.fromValues(0xfd / 255, 0xfd / 255, 0xfd / 255, 1.0);
+  windowBackGroundColor = vec4.fromValues(0xf6 / 255, 0xf6 / 255, 0xf8 / 255, 1.0);
 
   selectedButtonColor = vec4.fromValues(0.90, 0.90, 1.0, 1.0);
 
@@ -970,7 +960,104 @@ export class ToolDrawingEnvironment {
   }
 }
 
+export class ToolEventPointer {
+
+  window: InputableWindow = null;
+
+  identifier = -1;
+  descOrder = 0;
+  offsetX = 0.0;
+  offsetY = 0.0;
+  currentLocation = vec3.fromValues(0.0, 0.0, 0.0);
+  lastClickedPosition = vec3.fromValues(0.0, 0.0, 0.0);
+  movedOffset = vec3.fromValues(0.0, 0.0, 0.0);
+  force= 0.0;
+
+  dragging = new ToolMouseEventDragging();
+
+  isActive() {
+
+    return (this.identifier != -1);
+  }
+
+  isFree() {
+
+    return (this.identifier == -1);
+  }
+
+  startDragging(scale: float) {
+
+    this.dragging.start(this.window, this.offsetX, this.offsetY, scale);
+  }
+}
+
+export class ToolMouseEventDragging {
+
+  window: InputableWindow = null;
+
+  dragBeforeTransformMatrix = mat4.create();
+
+  mouseDownOffset = vec3.fromValues(0.0, 0.0, 0.0);
+  mouseDownLocation = vec3.fromValues(0.0, 0.0, 0.0);
+
+  currentLocation = vec3.fromValues(0.0, 0.0, 0.0);
+
+  mouseOffset = vec3.fromValues(0.0, 0.0, 0.0);
+  mouseMovedOffset = vec3.fromValues(0.0, 0.0, 0.0);
+  mouseMovedVector = vec3.fromValues(0.0, 0.0, 0.0);
+
+  scale = 1.0;
+
+  tempVec3 = vec3.create();
+
+  start(wnd: InputableWindow, offsetX: float, offsetY: float, scale: float) {
+
+    this.window = wnd;
+
+    // offset
+
+    vec3.set(this.mouseOffset, offsetX, offsetY, 0.0);
+    vec3.copy(this.mouseDownOffset, this.mouseOffset);
+
+    // transformed location
+
+    mat4.copy(this.dragBeforeTransformMatrix, wnd.invView2DMatrix);
+
+    vec3.set(this.tempVec3, offsetX, offsetY, 0.0);
+    vec3.transformMat4(this.mouseDownLocation, this.tempVec3, this.dragBeforeTransformMatrix);
+
+    // reset moved values
+
+    vec3.set(this.mouseMovedOffset, 0.0, 0.0, 0.0);
+    vec3.set(this.mouseMovedVector, 0.0, 0.0, 0.0);
+
+    this.scale = scale;
+  }
+
+  move(offsetX: float, offsetY: float) {
+
+    // offset
+
+    vec3.set(this.mouseOffset, offsetX, offsetY, 0.0);
+
+    vec3.subtract(this.mouseMovedOffset, this.mouseOffset, this.mouseDownOffset);
+
+    vec3.scale(this.mouseMovedOffset, this.mouseMovedOffset, this.scale);
+
+    // transformed location
+
+    vec3.transformMat4(this.currentLocation, this.mouseOffset, this.dragBeforeTransformMatrix);
+
+    vec3.subtract(this.mouseMovedVector, this.mouseDownLocation, this.currentLocation);
+
+    vec3.scale(this.mouseMovedVector, this.mouseMovedVector, this.scale);
+  }
+}
+
 export class ToolMouseEvent {
+
+  window: InputableWindow = null;
+  pointerID: number = -1;
 
   button = 0;
   buttons = 0;
@@ -989,39 +1076,52 @@ export class ToolMouseEvent {
   mouseDownOffset = vec3.fromValues(0.0, 0.0, 0.0);
   mouseMovedOffset = vec3.fromValues(0.0, 0.0, 0.0);
 
+  pointers: ToolEventPointer[] = [
+    new ToolEventPointer(),
+    new ToolEventPointer(),
+    new ToolEventPointer()
+  ];
+
+  activePointers: ToolEventPointer[] = [];
+
   tempVec3 = vec3.fromValues(0.0, 0.0, 0.0);
+
+  constructor(wnd: InputableWindow) {
+
+    this.window = wnd;
+  }
 
   isLeftButtonPressing(): boolean {
 
-    return (this.button == 0 && this.buttons != 0);
+    return ((this.buttons & 0x1) != 0);
   }
 
   isRightButtonPressing(): boolean {
 
-    return (this.button == 2 && this.buttons != 0);
+    return ((this.buttons & 0x2) != 0);
   }
 
   isCenterButtonPressing(): boolean {
 
-    return (this.button == 1 && this.buttons != 0);
+    return ((this.buttons & 0x4) != 0);
   }
 
   isLeftButtonReleased(): boolean {
 
-    return (this.buttons == 0);
+    return !this.isLeftButtonPressing();
   }
 
   isRightButtonReleased(): boolean {
 
-    return (this.buttons == 0);
+    return !this.isRightButtonPressing();
   }
 
   isCenterButtonReleased(): boolean {
 
-    return (this.buttons == 0);
+    return !this.isCenterButtonPressing();
   }
 
-  hundleDoubleClick(offsetX: float, offsetY: float): boolean {
+  handleDoubleClick(offsetX: float, offsetY: float): boolean {
 
     if (this.clickCount == 0) {
 

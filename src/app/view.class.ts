@@ -1,17 +1,15 @@
 import { int, float, List } from '../base/conversion';
 import { AnimationSettingData, Layer, InputSideID } from '../base/data';
-import { ToolBaseWindow, ToolBase } from '../base/tool';
+import { InputableWindow, ToolBase } from '../base/tool';
 import { RectangleLayoutArea } from '../logics/layout';
 
-export class MainWindow extends ToolBaseWindow {
-
-  dragBeforeTransformMatrix = mat4.create();
+export class MainWindow extends InputableWindow {
 }
 
-export class EditorWindow extends ToolBaseWindow {
+export class EditorWindow extends InputableWindow {
 }
 
-export class LayerWindow extends ToolBaseWindow {
+export class LayerWindow extends InputableWindow {
 
   layerItemButtonScale = 0.5;
   layerItemButtonWidth = 64.0;
@@ -33,7 +31,7 @@ export class LayerWindow extends ToolBaseWindow {
   layerWindowCommandButtons: List<RectangleLayoutArea> = null;
 }
 
-export class SubtoolWindow extends ToolBaseWindow {
+export class SubtoolWindow extends InputableWindow {
 
   subToolItemScale = 0.5;
   subToolItemUnitWidth = 256;
@@ -42,7 +40,7 @@ export class SubtoolWindow extends ToolBaseWindow {
   subToolItemsBottom = 0.0;
 }
 
-export class ColorCanvasWindow extends ToolBaseWindow {
+export class ColorCanvasWindow extends InputableWindow {
 }
 
 export enum MainCommandButtonID {
@@ -57,7 +55,7 @@ export enum MainCommandButtonID {
   timeLineWindow = 7,
 }
 
-export class TimeLineWindow extends ToolBaseWindow {
+export class TimeLineWindow extends InputableWindow {
 
   leftPanelWidth = 100.0;
   frameUnitWidth = 8.0;
@@ -119,7 +117,7 @@ export enum PaletteSelectorWindowButtonID {
   fillColor = 2,
 }
 
-export class PaletteSelectorWindow extends ToolBaseWindow {
+export class PaletteSelectorWindow extends InputableWindow {
 
   leftMargin = 4.0;
   topMargin = 5.0;

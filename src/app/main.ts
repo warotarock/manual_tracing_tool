@@ -472,6 +472,7 @@ export class App_Main extends App_Event implements MainEditor {
     this.mainWindow.viewRotation = 0.0;
     this.mainWindow.mirrorX = false;
     this.mainWindow.mirrorY = false;
+    this.viewOperation.copyLastViewLocation(false, this.mainWindow);
 
     this.toolEnv.updateContext();
 
@@ -594,6 +595,8 @@ export class App_Main extends App_Event implements MainEditor {
 
     this.resizeWindows();
 
+    this.drawOperationUIPanel_Layout(this.editorWindow);
+
     this.prepareDrawPathBuffers();
   }
 
@@ -661,6 +664,9 @@ export class App_Main extends App_Event implements MainEditor {
   draw() {
 
     let isDrawingExist = false;
+
+    this.mainWindow.caluclateViewMatrix(this.mainWindow.view2DMatrix);
+    mat4.invert(this.mainWindow.invView2DMatrix, this.mainWindow.view2DMatrix);
 
     this.toolEnv.updateContext();
 
@@ -1748,7 +1754,7 @@ export class App_Main extends App_Event implements MainEditor {
       this.currentTool.onDrawEditor(this.toolEnv, this.toolDrawEnv);
     }
 
-    this.drawFooterOperationPanel(editorWindow);
+    this.drawOperationUIPanel(editorWindow);
   }
 
   protected drawExportImage(canvasWindow: CanvasWindow) { // @override

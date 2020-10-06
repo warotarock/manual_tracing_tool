@@ -5,7 +5,7 @@
   flex: 1;
   position: relative;
   // border: $windowBorder;
-  // margin-bottom: 5px;
+  // margin-bottom: $margin-basic;
   background-color: $canvasBackground;
 
   .main-canvas {
@@ -41,7 +41,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 .footer-operation-ui {
   position: absolute;
   left: 0;
-  right: 0;
+  right: 10px;
   bottom: 0;
   height: 0;
   z-index: 300;
@@ -92,16 +92,16 @@ $operation-ui-border: solid 1px $windowBorderColor;
         bottom: 0;
         z-index: 2;
         box-sizing: border-box;
-        padding: 10px 10px 10px 5px;
+        padding: 10px 10px 10px $padding-basic;
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr 1fr 1fr;
-        row-gap: 5px;
-        column-gap: 5px;
+        row-gap: $margin-basic;
+        column-gap: $margin-basic;
 
         button {
           border: 1px solid #888;
-          border-radius: 5px;
+          border-radius: $border-radius-basic;
           width: 1.3em;
           height: 1.3em;
           padding: 0.15em 0 0 0.12em;
@@ -128,15 +128,17 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
   .tool-ribbon {
     position: absolute;
-    left: $main-tool-width + 5px;
+    left: $main-tool-width + $margin-basic;
     right: 0;
     bottom: 0;
     height: $ribbon-height;
     box-sizing: border-box;
     border-top: $operation-ui-border;
     border-left: $operation-ui-border;
-    border-top-left-radius: 5px;
-    padding: 5px 5px 0 5px;
+    border-right: $operation-ui-border;
+    border-top-left-radius: $border-radius-basic;
+    border-top-right-radius: $border-radius-basic;
+    padding: $padding-basic $padding-basic 0 $padding-basic;
     display: flex;
     background-color: $windowBackground;
 
@@ -148,7 +150,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
       button {
         border: 1px solid #888;
-        border-radius: 5px;
+        border-radius: $border-radius-basic;
         width: 1.3em;
         height: 1.3em;
         padding: 0.15em 0 0 0.12em;
@@ -173,7 +175,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
     .tool-buttons {
       flex: 1;
-      margin-inline-start: 5px;;
+      margin-inline-start: $margin-basic;;
       display: flex;
       flex-direction: column;
 
@@ -191,10 +193,8 @@ $operation-ui-border: solid 1px $windowBorderColor;
       box-sizing: border-box;
       min-width: 80px;
       height: 35px;
-      border-left: solid;
-      border-top: solid;
-      border-color: #000;
-      border-width: 1px;
+      border-left: $windowBorder;
+      border-top: $windowBorder;
       text-align: center;
       font-size: 14px;
       line-height: 34px;
@@ -207,16 +207,15 @@ $operation-ui-border: solid 1px $windowBorderColor;
         background-color: $hoverBackground;
       }
 
-      $borderRadius: 5px;
+      $borderRadius: $border-radius-basic;
 
       &:first-child {
         border-top-left-radius: $borderRadius;
       }
 
       &:last-child {
-        border-right: solid;
+        border-right: $windowBorder;
         border-top-right-radius: $borderRadius;
-        border-width: 1px;
       }
 
       &.selected {
@@ -251,6 +250,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
   .ui-scroll-view-container {
     position: absolute;
+    box-sizing: border-box;
     left: 0;
     right: 0;
     top: 0px;
@@ -310,7 +310,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 .layer-window {
   overflow: hidden;
   flex: 1;
-  border: $windowBorder;
+  // border: $windowBorder;
   background-color: $windowBackground;
   display: flex;
   flex-direction: column;
@@ -375,7 +375,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 }
 
 .palette-selector-window {
-  border: $windowBorder;
+  // border: $windowBorder;
   background-color: $windowBackground;
 
   .items-container {
@@ -443,7 +443,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 .color-mixer-window {
   display: flex;
   flex-direction: column;
-  border: $windowBorder;
+  // border: $windowBorder;
   padding: 0px 0 8px 0;
   background-color: $windowBackground;
 
@@ -486,7 +486,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 .time-line-window {
   position: absolute;
   left: $main-tool-width + 10px;
-  right: 5px;
+  right: 15px;
   bottom: $ribbon-height + 5;
   height: 46px;
   overflow: hidden;
@@ -514,7 +514,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
     margin-right: 8px;
 
     .section-label {
-      padding: 2px 0 2px 5px;
+      padding: 2px 0 2px $padding-basic;
       font-size: $fontSizeSmall;
       color: $windowLabelColor;
       background-color: $windowLabelBackground;
@@ -527,7 +527,6 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
       .section-item {
         padding: 3px;
-        cursor: pointer;
 
         &:hover {
           background-color: $hoverBackground;
@@ -539,7 +538,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
         .section-item-inner {
           display: flex;
-          padding: 2px 5px 2px 8px;
+          padding: 2px $padding-basic 2px 8px;
           border-radius: 3px;
 
           &.selected {
@@ -586,7 +585,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
     flex: 1;
 
     .section-info {
-      padding: 5px 2px 5px 8px;
+      padding: $padding-basic 2px $padding-basic 8px;
 
       i {
         margin-right: 4px;
@@ -616,7 +615,6 @@ $operation-ui-border: solid 1px $windowBorderColor;
           list-style: none;
           background-color: $listItemBackground;
           padding: 3px;
-          cursor: pointer;
 
           &:hover {
             background-color: $hoverBackground;
@@ -631,7 +629,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
           }
 
           .file-item-inner {
-            padding: 8px 5px 8px 12px;
+            padding: 8px $padding-basic 8px 12px;
             border-radius: 3px;
 
             &.selected {
@@ -667,7 +665,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
     .file-commands {
       display: flex;
-      margin-top: 5px;
+      margin-top: $margin-basic;
 
       .file-info {
         flex: 1;
@@ -679,7 +677,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
       }
 
       button {
-        margin-left: 5px;
+        margin-left: $margin-basic;
       }
     }
   }

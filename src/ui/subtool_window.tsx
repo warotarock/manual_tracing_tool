@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import { SubToolViewItem } from 'app/view.class';
+import { SubToolViewItem } from '../app/view.class';
 
-import { UI_ScrollView } from 'ui/scroll_view';
+import { UI_ScrollView } from '../ui/scroll_view';
 
 export interface UI_SubToolWindowRef {
 

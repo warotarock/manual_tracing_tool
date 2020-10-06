@@ -1,6 +1,6 @@
 import { float, StringIsNullOrEmpty, int } from '../base/conversion';
 import { Layer, DocumentData, PaletteColor } from '../base/data';
-import { EditModeID, MainToolID, ToolBaseWindow, DrawLineToolSubToolID, ModalToolID } from '../base/tool';
+import { EditModeID, MainToolID, InputableWindow, DrawLineToolSubToolID, ModalToolID, ToolMouseEvent } from '../base/tool';
 
 import { ColorLogic } from '../logics/color';
 
@@ -12,11 +12,16 @@ import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, 
 
 import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, LayerWindowItem, MainCommandButtonID } from '../app/view.class';
 import { App_Document } from '../app/document';
+import { OperationUI_ID } from '../app/view';
 import { UI_CommandButtonsItem } from '../ui/command_buttons';
+import { LayoutLogic, RectangleLayoutArea } from '../logics/layout';
+import { ViewOperation, ViewOperationMode } from '../view_operations';
 
 export class App_Event extends App_Document {
 
   isEventSetDone = false;
+  lastHoverLayoutArea: RectangleLayoutArea = null;
+  viewOperation = new ViewOperation();
 
   // Backward interface definitions
 
@@ -53,8 +58,15 @@ export class App_Event extends App_Document {
       , false
     );
 
-    this.uiPaletteSelectorWindowRef.commandButton_Click = ((item) => this.paletteSelectorWindow_CommandButton_Click(item));
-    this.uiPaletteSelectorWindowRef.item_Click = ((paletteColorIndex, item) => this.paletteSelectorWindow_Item_Click(paletteColorIndex, item));
+    this.uiPaletteSelectorWindowRef.commandButton_Click = ((item) => {
+
+        this.paletteSelectorWindow_CommandButton_Click(item)
+    });
+
+    this.uiPaletteSelectorWindowRef.item_Click = ((paletteColorIndex, item) => {
+
+        this.paletteSelectorWindow_Item_Click(paletteColorIndex, item)
+    });
 
     this.setCanvasWindowMouseEvent(this.timeLineWindow, this.timeLineWindow
       , this.timeLineWindow_mousedown
@@ -287,88 +299,73 @@ export class App_Event extends App_Document {
     }
   }
 
-  protected setCanvasWindowMouseEvent(eventCanvasWindow: CanvasWindow, drawCanvasWindew: ToolBaseWindow, mousedown: Function, mousemove: Function, mouseup: Function, mousewheel: Function, isModal: boolean) {
+  protected setCanvasWindowMouseEvent(
+    eventCanvasWindow: CanvasWindow,
+    drawCanvasWindew: InputableWindow,
+    mousedown: Function,
+    mousemove: Function,
+    mouseup: Function,
+    mousewheel: Function,
+    isModal: boolean
+  ) {
+
+    const toolMouseEvent = drawCanvasWindew.toolMouseEvent;
+
+    const eventElement = eventCanvasWindow.canvas;
 
     if (mousedown != null) {
 
-      eventCanvasWindow.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+      eventElement.addEventListener('pointerdown', (e: PointerEvent) => {
 
         if (this.isEventDisabled() && !isModal) {
           return;
         }
 
-        this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
+        if (toolMouseEvent.pointerID == -1) {
+
+          toolMouseEvent.pointerID = e.pointerId;
+
+          eventElement.setPointerCapture(e.pointerId);
+        }
+
+        this.processMouseEvent(drawCanvasWindew, e, true, false);
+
         mousedown.call(this);
+
         e.preventDefault();
       });
     }
 
     if (mousemove != null) {
 
-      eventCanvasWindow.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+      eventElement.addEventListener('pointermove', (e: PointerEvent) => {
 
         if (this.isEventDisabled() && !isModal) {
           return;
         }
 
-        this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
+        this.processMouseEvent(drawCanvasWindew, e, false, false);
+
         mousemove.call(this);
+
         e.preventDefault();
       });
     }
 
     if (mouseup != null) {
 
-      eventCanvasWindow.canvas.addEventListener('mouseup', (e: MouseEvent) => {
+      eventElement.addEventListener('pointerup', (e: PointerEvent) => {
 
         if (this.isEventDisabled() && !isModal) {
           return;
         }
 
-        this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, true, drawCanvasWindew);
+        toolMouseEvent.pointerID = -1;
+
+        this.processMouseEvent(drawCanvasWindew, e, false, true);
+
         mouseup.call(this);
-        e.preventDefault();
-      });
-    }
 
-    if (mousedown != null) {
-
-      eventCanvasWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
-
-        if (this.isEventDisabled() && !isModal) {
-          return;
-        }
-
-        this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, true, false, drawCanvasWindew);
-        mousedown.call(this);
-        e.preventDefault();
-      });
-    }
-
-    if (mousemove != null) {
-
-      eventCanvasWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
-
-        if (this.isEventDisabled() && !isModal) {
-          return;
-        }
-
-        this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, false, false, drawCanvasWindew);
-        mousemove.call(this);
-        e.preventDefault();
-      });
-    }
-
-    if (mouseup != null) {
-
-      eventCanvasWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
-
-        if (this.isEventDisabled() && !isModal) {
-          return;
-        }
-
-        this.getTouchInfo(drawCanvasWindew.toolMouseEvent, e, false, true, drawCanvasWindew);
-        mouseup.call(this);
         e.preventDefault();
       });
     }
@@ -381,13 +378,31 @@ export class App_Event extends App_Document {
           return;
         }
 
-        this.getWheelInfo(drawCanvasWindew.toolMouseEvent, e);
-        this.processMouseEventInput(drawCanvasWindew.toolMouseEvent, e, false, drawCanvasWindew);
+        this.getWheelInfo(toolMouseEvent, e);
 
         mousewheel.call(this);
+
         e.preventDefault();
       });
     }
+
+    eventCanvasWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+
+      // Prevent page navigation by touch event
+      e.preventDefault();
+    });
+
+    eventCanvasWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+
+      // Prevent page navigation by touch event
+      e.preventDefault();
+    });
+
+    eventCanvasWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
+
+      // Prevent page navigation by touch event
+      e.preventDefault();
+    });
   }
 
   protected setEvents_ModalCloseButton(id: string) {
@@ -404,8 +419,10 @@ export class App_Event extends App_Document {
 
   protected document_keydown(e: KeyboardEvent) {
 
-    var env = this.toolEnv;
-    let context = this.toolContext;
+    const env = this.toolEnv;
+    const wnd = this.mainWindow;
+    const context = this.toolContext;
+
     let key = e.key;
     if (key.length == 1) {
       key = key.toLowerCase();
@@ -605,33 +622,7 @@ export class App_Event extends App_Document {
 
     if (key == 'Home' || key == 'q') {
 
-      if (env.isShiftKeyPressing()) {
-
-        this.mainWindow.viewLocation[0] = 0.0;
-        this.mainWindow.viewLocation[1] = 0.0;
-        vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
-        this.mainWindow.viewScale = context.document.defaultViewScale;
-        this.mainWindow.viewRotation = 0.0;
-        this.mainWindow.mirrorX = false;
-        this.mainWindow.mirrorY = false;
-        this.isViewLocationMoved = false;
-      }
-      else if (this.isViewLocationMoved) {
-
-        vec3.copy(this.mainWindow.viewLocation, this.homeViewLocation);
-        this.mainWindow.viewScale = context.document.defaultViewScale;
-        this.mainWindow.viewRotation = 0.0;
-        this.isViewLocationMoved = false;
-      }
-      else {
-
-        vec3.copy(this.mainWindow.viewLocation, this.lastViewLocation);
-        this.mainWindow.viewScale = this.lastViewScale;
-        this.mainWindow.viewRotation = this.lastViewRotation;
-        this.isViewLocationMoved = true;
-      }
-
-      env.setRedrawMainWindowEditorWindow();
+      this.viewOperation.reseTotHome(this.mainWindow, env);
 
       return;
     }
@@ -640,16 +631,9 @@ export class App_Event extends App_Document {
 
       if (env.isDrawMode()) {
 
-        let rot = 10.0;
-        if (key == 't') {
-          rot = -rot;
-        }
-        if (this.mainWindow.mirrorX) {
-          rot = -rot;
-        }
+        const clockwise = (key == 't');
 
-        this.mainWindow.viewRotation += rot;
-        this.updateViewRotation();
+        this.viewOperation.addViewRotation(10.0, clockwise, wnd, env);
         return;
       }
     }
@@ -664,11 +648,13 @@ export class App_Event extends App_Document {
     if (key == 'f' || key == 'd') {
 
       let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate;
+
       if (key == 'd') {
+
         addScale = 1 / addScale;
       }
 
-      this.addViewScale(addScale);
+      this.viewOperation.addViewScale(addScale, wnd, env);
 
       return;
     }
@@ -690,10 +676,10 @@ export class App_Event extends App_Document {
         y = 10.0;
       }
 
-      this.mainWindow.calculateViewUnitMatrix(this.view2DMatrix);
-      mat4.invert(this.invView2DMatrix, this.view2DMatrix);
+      this.mainWindow.calculateViewUnitMatrix(wnd.view2DMatrix);
+      mat4.invert(wnd.invView2DMatrix, wnd.view2DMatrix);
       vec3.set(this.tempVec3, x, y, 0.0);
-      vec3.transformMat4(this.tempVec3, this.tempVec3, this.invView2DMatrix);
+      vec3.transformMat4(this.tempVec3, this.tempVec3, wnd.invView2DMatrix);
 
       vec3.add(this.mainWindow.viewLocation, this.mainWindow.viewLocation, this.tempVec3);
 
@@ -757,16 +743,8 @@ export class App_Event extends App_Document {
 
       if (this.activeCanvasWindow == this.mainWindow) {
 
-        this.mainWindow_MouseViewOperationStart();
+        this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, null, env);
       }
-      else if (this.activeCanvasWindow == this.layerWindow) {
-
-        this.layerWindow.startMouseDragging();
-      }
-      //else if (this.activeCanvasWindow == this.subtoolWindow) {
-
-      //    this.subtoolWindow.startMouseDragging();
-      //}
 
       return;
     }
@@ -969,6 +947,8 @@ export class App_Event extends App_Document {
 
   protected document_keyup(e: KeyboardEvent) {
 
+    const env = this.toolEnv;
+
     this.toolContext.shiftKey = e.shiftKey;
     this.toolContext.altKey = e.altKey;
     this.toolContext.ctrlKey = e.ctrlKey;
@@ -977,16 +957,8 @@ export class App_Event extends App_Document {
 
       if (this.activeCanvasWindow == this.mainWindow) {
 
-        this.mainWindow_MouseViewOperationEnd();
+        this.viewOperation.endViewOperation(this.mainWindow, env);
       }
-      else if (this.activeCanvasWindow == this.layerWindow) {
-
-        this.layerWindow.endMouseDragging();
-      }
-      //else if (this.activeCanvasWindow == this.subtoolWindow) {
-
-      //    this.subtoolWindow.endMouseDragging();
-      //}
     }
   }
 
@@ -1160,69 +1132,86 @@ export class App_Event extends App_Document {
   protected mainWindow_mousedown() {
 
     let wnd = this.mainWindow;
-    let env = this.toolEnv;
     let e = wnd.toolMouseEvent;
+    let env = this.toolEnv;
 
     env.updateContext();
 
-    // Execute current tool
+    // console.log('mainWindow_mousedown', e.offsetX, e.offsetY);
+
+    // Operation UI
+    if (!this.isModalToolRunning() && !this.viewOperation.isViewOperationRunning()) {
+
+      this.mainWindow_mousedown_OperationUI(e);
+    }
+
+    if (this.viewOperation.isViewOperationRunning()) {
+
+      this.viewOperation.pointerDownAdditional(wnd, env);
+
+      return;
+    }
+
+    // Current tool
     if (this.isModalToolRunning()) {
 
       if (this.currentTool.isAvailable(env)) {
 
-        this.currentTool.mouseDown(e, this.toolEnv);
+        this.currentTool.mouseDown(e, env);
       }
     }
     else {
 
       if (this.currentTool.isAvailable(env)) {
 
-        this.currentTool.mouseDown(e, this.toolEnv);
+        this.currentTool.mouseDown(e, env);
       }
     }
 
-    // View operation
-    if (e.isRightButtonPressing() && this.toolEnv.isShiftKeyPressing()) {
+    // View operations
+    if (e.isRightButtonPressing() && env.isShiftKeyPressing()) {
 
       this.setOperatorCursorLocationToMouse();
     }
     else if (e.isRightButtonPressing() || e.isCenterButtonPressing()) {
 
-      this.mainWindow_MouseViewOperationStart();
+      this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, null, env);
     }
     else {
 
-      this.mainWindow_MouseViewOperationEnd();
+      this.viewOperation.endViewOperation(wnd, env);
     }
-  }
-
-  protected mainWindow_MouseViewOperationStart() {
-
-    let wnd = this.mainWindow;
-    let e = wnd.toolMouseEvent;
-
-    e.startMouseDragging();
-
-    mat4.copy(wnd.dragBeforeTransformMatrix, this.invView2DMatrix);
-    vec3.copy(wnd.dragBeforeViewLocation, wnd.viewLocation);
-  }
-
-  protected mainWindow_MouseViewOperationEnd() {
-
-    let e = this.mainWindow.toolMouseEvent;
-
-    e.endMouseDragging();
   }
 
   protected mainWindow_mousemove() {
 
-    let wnd = this.mainWindow;
-    let env = this.toolEnv;
-    let e = wnd.toolMouseEvent;
+    const wnd = this.mainWindow;
+    const e = wnd.toolMouseEvent;
+    const env = this.toolEnv;
 
-    this.toolEnv.updateContext();
+    env.updateContext();
 
-    // Execute current tool
+    // console.log('mainWindow_mousemove', e.offsetX, e.offsetY);
+
+    // View operations
+    if (this.viewOperation.isViewOperationRunning()) {
+
+      if (this.viewOperation.processViewOperation(wnd, wnd.toolMouseEvent, env)) {
+
+        return;
+      }
+    }
+
+    // Operation UI
+    if (!this.isModalToolRunning()) {
+
+      if (this.mainWindow_mousemove_OperationUI(e)) {
+
+        env.setRedrawEditorWindow();
+      }
+    }
+
+    // Current tool
     if (this.isModalToolRunning()) {
 
       if (!e.isMouseDragging) {
@@ -1233,90 +1222,141 @@ export class App_Event extends App_Document {
         }
       }
     }
-    else if (this.toolEnv.isDrawMode()) {
+    else if (env.isDrawMode()) {
 
-      this.currentTool.mouseMove(e, this.toolEnv);
+      this.currentTool.mouseMove(e, env);
     }
-    else if (this.toolEnv.isEditMode()) {
+    else if (env.isEditMode()) {
 
-      let isHitChanged = this.mousemoveHittest(e.location, this.toolEnv.mouseCursorViewRadius);
+      let isHitChanged = this.hittestToStrokes(e.location, env.mouseCursorViewRadius);
+
       if (isHitChanged) {
-        this.toolEnv.setRedrawCurrentLayer();
+
+        env.setRedrawCurrentLayer();
       }
 
-      this.currentTool.mouseMove(e, this.toolEnv);
+      this.currentTool.mouseMove(e, env);
     }
-
-    // View operation
-    if (e.isMouseDragging) {
-
-      vec3.set(this.tempVec3, e.offsetX, e.offsetY, 0.0);
-      vec3.transformMat4(this.tempVec3, this.tempVec3, wnd.dragBeforeTransformMatrix);
-
-      vec3.subtract(e.mouseMovedVector, e.mouseDownLocation, this.tempVec3);
-
-      vec3.add(this.mainWindow.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedVector);
-
-      if (!this.isViewLocationMoved) {
-
-        vec3.copy(this.homeViewLocation, this.mainWindow.viewLocation);
-      }
-      else {
-
-        vec3.copy(this.lastViewLocation, this.mainWindow.viewLocation);
-      }
-
-      this.toolEnv.setRedrawMainWindowEditorWindow();
-      this.toolEnv.setRedrawWebGLWindow();
-    }
-  }
-
-  protected mousemoveHittest(location: Vec3, minDistance: float): boolean {
-
-    if (this.toolEnv.currentVectorGeometry == null) {
-
-      return false;
-    }
-
-    this.hittest_Line_IsCloseTo.startProcess();
-
-    this.hittest_Line_IsCloseTo.processLayer(this.toolEnv.currentVectorGeometry, location, minDistance);
-
-    this.hittest_Line_IsCloseTo.endProcess();
-
-    return this.hittest_Line_IsCloseTo.isChanged;
   }
 
   protected mainWindow_mouseup() {
 
-    let wnd = this.mainWindow;
-    let e = wnd.toolMouseEvent;
+    const wnd = this.mainWindow;
+    const e = wnd.toolMouseEvent;
+    const env = this.toolEnv;
 
-    this.toolEnv.updateContext();
+    env.updateContext();
 
-    this.currentTool.mouseUp(e, this.toolEnv);
+    if (this.viewOperation.isViewOperationRunning()) {
 
-    this.mainWindow_MouseViewOperationEnd();
+      this.viewOperation.endViewOperation(wnd, env);
+
+      return;
+    }
+
+    if (this.currentTool) {
+
+      this.currentTool.mouseUp(e, env);
+    }
   }
 
   protected mainWindow_mousewheel() {
 
     let wnd = this.mainWindow;
     let e = wnd.toolMouseEvent;
+    let env = this.toolEnv;
 
-    // View operation
-    if (e.wheelDelta != 0.0
-      && !e.isMouseDragging) {
+    // View operations
+    if (e.wheelDelta != 0.0 && !e.isMouseDragging) {
 
       let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate * 0.5;
+
       if (e.wheelDelta < 0.0) {
+
         addScale = 1.0 / addScale;
       }
 
-      this.addViewScale(addScale);
+      this.viewOperation.addViewScale(addScale, wnd, env);
     }
 
     this.calculateTransfomredMouseParams(e, wnd);
+  }
+
+  protected hittestToStrokes(location: Vec3, minDistance: float): boolean {
+
+    let env = this.toolEnv;
+
+    if (env.currentVectorGeometry == null) {
+
+      return false;
+    }
+
+    this.hittest_Line_IsCloseTo.startProcess();
+
+    this.hittest_Line_IsCloseTo.processLayer(env.currentVectorGeometry, location, minDistance);
+
+    this.hittest_Line_IsCloseTo.endProcess();
+
+    return this.hittest_Line_IsCloseTo.isChanged;
+  }
+
+  protected mainWindow_mousedown_OperationUI(e: ToolMouseEvent): boolean {
+
+    const area = LayoutLogic.hitTestLayout(this.mainOperationUI_Area.children, e.offsetX, e.offsetY);
+
+    if (area != null) {
+
+      this.operationUI_Click(area, this.mainWindow);
+
+      return true;
+    }
+
+    if (LayoutLogic.hitTestLayout(this.mainOperationUI_Area, e.offsetX, e.offsetY)) {
+
+      return true;
+    }
+
+    return false;
+  }
+
+  protected mainWindow_mousemove_OperationUI(e: ToolMouseEvent): boolean {
+
+    // Operation UI
+    if (LayoutLogic.hitTestLayout(this.mainOperationUI_Area, e.offsetX, e.offsetY)) {
+
+      this.editorWindow.canvas.style.cursor = "default";
+    }
+    else {
+
+      this.editorWindow.canvas.style.cursor = "crosshair";
+    }
+
+    const area = LayoutLogic.hitTestLayout(this.mainOperationUI_Area.children, e.offsetX, e.offsetY);
+
+    if (this.lastHoverLayoutArea != null) {
+
+      this.lastHoverLayoutArea.saveState();
+    }
+
+    if (area != null) {
+
+      area.saveState();
+    }
+
+    if (this.lastHoverLayoutArea != null) {
+
+      this.lastHoverLayoutArea.hover = false;
+    }
+
+    if (area != null) {
+
+      area.hover = true;
+      this.lastHoverLayoutArea = area;
+    }
+
+    const isChanged = (LayoutLogic.isChanged(area) || LayoutLogic.isChanged(this.lastHoverLayoutArea));
+
+    return isChanged;
   }
 
   protected menuButton_Click(id: MainCommandButtonID) {
@@ -1354,63 +1394,27 @@ export class App_Event extends App_Document {
     }
   }
 
-  protected layerWindow_mousedown() {
+  protected operationUI_Click(area: RectangleLayoutArea, wnd: InputableWindow) {
 
-    let wnd = this.layerWindow;
-    let e = wnd.toolMouseEvent;
+    const env = this.toolEnv;
 
-    this.toolEnv.updateContext();
+    if (area.index == OperationUI_ID.move) {
 
-    let doubleClicked = wnd.toolMouseEvent.hundleDoubleClick(e.offsetX, e.offsetY);
-
-    let clickedX = e.location[0];
-    let clickedY = e.location[1];
-
-    if (e.isLeftButtonPressing()) {
-
-      if (e.location[1] <= wnd.layerCommandButtonButtom) {
-
-        // Layer window button click
-        // this.layerWindow_mousedown_LayerCommandButton(clickedX, clickedY);
-      }
-      else if (e.location[1] < wnd.layerItemsBottom) {
-
-        // Layer window item click
-        this.layerWindow_mousedown_LayerItem(clickedX, clickedY, doubleClicked);
-      }
+      this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, area, env);
+      return;
     }
-    else if (e.isCenterButtonPressing() || e.isRightButtonPressing()) {
 
-      wnd.startMouseDragging();
+    if (area.index == OperationUI_ID.rotate) {
+
+      this.viewOperation.startViewOperation(ViewOperationMode.rotate, wnd, area, env);
+      return;
     }
-  }
 
-  protected layerWindow_mousemove() {
+    if (area.index == OperationUI_ID.zoom) {
 
-    let wnd = this.layerWindow;
-    let e = wnd.toolMouseEvent;
-
-    // View operation
-    if (e.isMouseDragging) {
-
-      vec3.add(wnd.viewLocation, wnd.dragBeforeViewLocation, e.mouseMovedOffset);
-      wnd.viewLocation[0] = 0.0;
-
-      if (wnd.viewLocation[1] < 0.0) {
-        wnd.viewLocation[1] = 0.0;
-      }
-
-      if (wnd.viewLocation[1] > wnd.layerItemsBottom - wnd.layerItemHeight) {
-        wnd.viewLocation[1] = wnd.layerItemsBottom - wnd.layerItemHeight;
-      }
-
-      this.toolEnv.setRedrawLayerWindow();
+      this.viewOperation.startViewOperation(ViewOperationMode.zoom, wnd, area, env);
+      return;
     }
-  }
-
-  protected layerWindow_mouseup() {
-
-    this.layerWindow.endMouseDragging();
   }
 
   protected layerWindow_mousedown_LayerCommandButton(hitedButton: UI_CommandButtonsItem) {
@@ -1450,6 +1454,7 @@ export class App_Event extends App_Document {
 
   protected layerWindow_mousedown_LayerItem(clickedX: float, clickedY: float, doubleClicked: boolean) {
 
+    const env = this.toolEnv;
     let wnd = this.layerWindow;
 
     if (wnd.layerWindowItems.length == 0) {
@@ -1485,8 +1490,8 @@ export class App_Event extends App_Document {
       }
     }
 
-    this.toolEnv.setRedrawLayerWindow();
-    this.toolEnv.setRedrawSubtoolWindow();
+    env.setRedrawLayerWindow();
+    env.setRedrawSubtoolWindow();
   }
 
   protected layerWindow_Item_Click(item: LayerWindowItem) {
@@ -1494,7 +1499,7 @@ export class App_Event extends App_Document {
     let env = this.toolEnv;
     let selectedLayer = item.layer;
 
-    if (this.toolEnv.isShiftKeyPressing()) {
+    if (env.isShiftKeyPressing()) {
 
       this.setLayerSelection(selectedLayer, !selectedLayer.isSelected);
       this.activateCurrentTool();
@@ -1508,9 +1513,9 @@ export class App_Event extends App_Document {
 
     Layer.updateHierarchicalStatesRecursive(selectedLayer);
 
-    this.toolEnv.setRedrawMainWindowEditorWindow();
-    this.toolEnv.setRedrawLayerWindow();
-    this.toolEnv.setRedrawSubtoolWindow();
+    env.setRedrawMainWindowEditorWindow();
+    env.setRedrawLayerWindow();
+    env.setRedrawSubtoolWindow();
   }
 
   protected layerWindow_Visibility_Click(item: LayerWindowItem) {
@@ -1519,13 +1524,13 @@ export class App_Event extends App_Document {
 
     this.setLayerVisiblity(item.layer, !item.layer.isVisible);
 
-    Layer.updateHierarchicalStatesRecursive(this.toolEnv.document.rootLayer);
+    Layer.updateHierarchicalStatesRecursive(env.document.rootLayer);
 
     this.activateCurrentTool();
 
-    this.toolEnv.setRedrawMainWindowEditorWindow();
-    this.toolEnv.setRedrawLayerWindow();
-    this.toolEnv.setRedrawSubtoolWindow();
+    env.setRedrawMainWindowEditorWindow();
+    env.setRedrawLayerWindow();
+    env.setRedrawSubtoolWindow();
   }
 
   protected subtoolWindow_Item_Click(item: SubToolViewItem) {
@@ -1542,7 +1547,7 @@ export class App_Event extends App_Document {
       return;
     }
 
-    let buttonIndex = 0; // TODO: �����{�^�����K�v������
+    let buttonIndex = 0;
 
     if (tool.optionButton_Click(buttonIndex, env)) {
 
@@ -1573,38 +1578,6 @@ export class App_Event extends App_Document {
     this.activateCurrentTool();
     this.currentTool.toolWindowItemClick(env);
   }
-
-  // protected paletteSelectorWindow_mousedown() {
-
-  //   let context = this.toolContext;
-  //   let wnd = this.paletteSelectorWindow;
-  //   let e = wnd.toolMouseEvent;
-  //   let env = this.toolEnv;
-  //   let documentData = context.document;
-
-  //   if (e.isLeftButtonPressing()) {
-
-  //     let button_LayoutArea = this.hitTestLayout(wnd.commandButtonAreas, e.location[0], e.location[1]);
-
-  //     if (button_LayoutArea != null) {
-
-  //       wnd.currentTargetID = button_LayoutArea.index;
-
-  //       env.setRedrawColorSelectorWindow();
-  //       env.setRedrawColorMixerWindow();
-  //     }
-
-  //     let palette_LayoutArea = this.hitTestLayout(wnd.itemAreas, e.location[0], e.location[1]);
-
-  //     if (palette_LayoutArea != null) {
-
-  //       let paletteColorIndex = palette_LayoutArea.index;
-  //       let color = documentData.paletteColors[paletteColorIndex];
-
-  //       this.paletteSelectorWindow_Item_Click(paletteColorIndex, color);
-  //       }
-  //   }
-  // }
 
   paletteSelectorWindow_CommandButton_Click(item: UI_CommandButtonsItem) {
 
@@ -1640,10 +1613,11 @@ export class App_Event extends App_Document {
 
     env.setRedrawLayerWindow();
     env.setRedrawMainWindowEditorWindow();
-
   }
 
   protected setColorMixerRGBElementEvent(id: string, elementID: int) {
+
+    let env = this.toolEnv;
 
     this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', () => {
 
@@ -1656,9 +1630,9 @@ export class App_Event extends App_Document {
         color[elementID] = numberValue;
       }
 
-      this.toolEnv.setRedrawMainWindow();
-      this.toolEnv.setRedrawColorSelectorWindow();
-      this.toolEnv.setRedrawColorMixerWindow();
+      env.setRedrawMainWindow();
+      env.setRedrawColorSelectorWindow();
+      env.setRedrawColorMixerWindow();
     });
 
     this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', () => {
@@ -1672,13 +1646,15 @@ export class App_Event extends App_Document {
         color[elementID] = rangeValue;
       }
 
-      this.toolEnv.setRedrawMainWindow();
-      this.toolEnv.setRedrawColorSelectorWindow();
-      this.toolEnv.setRedrawColorMixerWindow();
+      env.setRedrawMainWindow();
+      env.setRedrawColorSelectorWindow();
+      env.setRedrawColorMixerWindow();
     });
   }
 
   protected setColorMixerHSVElementEvent(id: string) {
+
+    let env = this.toolEnv;
 
     this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', () => {
 
@@ -1692,9 +1668,9 @@ export class App_Event extends App_Document {
 
         ColorLogic.hsvToRGB(color, hueValue, satValue, valValue);
 
-        this.toolEnv.setRedrawMainWindow();
-        this.toolEnv.setRedrawColorSelectorWindow();
-        this.toolEnv.setRedrawColorMixerWindow();
+        env.setRedrawMainWindow();
+        env.setRedrawColorSelectorWindow();
+        env.setRedrawColorMixerWindow();
       }
     });
 
@@ -1710,9 +1686,9 @@ export class App_Event extends App_Document {
 
         ColorLogic.hsvToRGB(color, hueValue, satValue, valValue);
 
-        this.toolEnv.setRedrawMainWindow();
-        this.toolEnv.setRedrawColorSelectorWindow();
-        this.toolEnv.setRedrawColorMixerWindow();
+        env.setRedrawMainWindow();
+        env.setRedrawColorSelectorWindow();
+        env.setRedrawColorMixerWindow();
       }
     });
   }
@@ -1721,11 +1697,11 @@ export class App_Event extends App_Document {
 
     let wnd = this.colorMixerWindow_colorCanvas;
     let e = wnd.toolMouseEvent;
+    let env = this.toolEnv;
 
     if (!e.isLeftButtonPressing()) {
       return;
     }
-
 
     this.canvasRender.setContext(wnd);
     this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
@@ -1738,13 +1714,15 @@ export class App_Event extends App_Document {
       color[1] = this.tempColor4[1];
       color[2] = this.tempColor4[2];
 
-      this.toolEnv.setRedrawMainWindow();
-      this.toolEnv.setRedrawColorSelectorWindow();
-      this.toolEnv.setRedrawColorMixerWindow();
+      env.setRedrawMainWindow();
+      env.setRedrawColorSelectorWindow();
+      env.setRedrawColorMixerWindow();
     }
   }
 
   protected colorMixerWindow_changeColor(newColor: Vec4) {
+
+    let env = this.toolEnv;
 
     let color = this.getPaletteSelectorWindow_CurrentColor();
 
@@ -1752,8 +1730,8 @@ export class App_Event extends App_Document {
 
       vec4.copy(color, newColor);
 
-      this.toolEnv.setRedrawMainWindow();
-      this.toolEnv.setRedrawColorSelectorWindow();
+      env.setRedrawMainWindow();
+      env.setRedrawColorSelectorWindow();
     }
 
   }
@@ -1778,8 +1756,6 @@ export class App_Event extends App_Document {
   }
 
   protected timeLineWindow_OnPlayPauseButton() {
-
-    let wnd = this.timeLineWindow;
 
     let context = this.toolContext;
     let env = this.toolEnv;
@@ -1822,7 +1798,6 @@ export class App_Event extends App_Document {
     let wnd = this.timeLineWindow;
     let e = wnd.toolMouseEvent;
 
-
     if (e.isLeftButtonPressing()) {
 
       this.timeLineWindow_ProcessFrameInput();
@@ -1830,11 +1805,6 @@ export class App_Event extends App_Document {
   }
 
   protected timeLineWindow_mouseup() {
-
-    let wnd = this.timeLineWindow;
-
-
-    wnd.endMouseDragging();
   }
 
   protected timeLineWindow_mousewheel() {

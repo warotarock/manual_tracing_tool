@@ -1,6 +1,6 @@
-﻿$systemBackground: #f6f6f8;
+﻿$systemBackground: #e6e6e8;
 
-$windowBackground: #fdfdfd;
+$windowBackground: #f6f6f8;
 $windowBorderColor: #888;
 $windowBorderWidth: 1px;
 $windowBorder: solid $windowBorderWidth $windowBorderColor;
@@ -28,11 +28,15 @@ $zindex-screen-sub: 1000;
 $zindex-center-panel: 100;
 $zindex-side-panel: 200;
 
+$margin-basic: 5px;
+$padding-basic: 5px;
+$border-radius-basic: 5px;
+
 // ボタン
 
 .app-button {
   min-width: 120px;
-  margin-left: 5px;
+  margin-left: $margin-basic;
   padding: 0;
   font-size: $fontSizeNormal;
   text-align: center;
