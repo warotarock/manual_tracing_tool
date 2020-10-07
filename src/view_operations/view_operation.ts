@@ -197,35 +197,23 @@ export class ViewOperation {
       return;
     }
 
-    if (pointer == this.first_Pointer) {
+    vec3.subtract(this.direction, pointer.dragging.mouseDownLocation, wnd.viewLocation);
+    let initialAngle = Math.atan2(this.direction[1], this.direction[0]);
 
-      let rot = -pointer.dragging.mouseMovedOffset[0] - pointer.dragging.mouseMovedOffset[1];
+    vec3.subtract(this.direction, pointer.dragging.currentLocation, wnd.viewLocation);
+    let currentAngle = Math.atan2(this.direction[1], this.direction[0]);
 
-      if (wnd.mirrorX) {
+    let movedAngle  = currentAngle - initialAngle;
 
-        rot = -rot;
-      }
-
-      wnd.viewRotation = this.moveBeforeViewRotation + rot * 0.1;
+    if (movedAngle >= Math.PI) {
+        movedAngle -= Math.PI * 2;
     }
-    else {
 
-      vec3.subtract(this.direction, pointer.dragging.mouseDownLocation, wnd.viewLocation);
-      let initialAngle = Math.atan2(this.direction[1], this.direction[0]);
-
-      vec3.subtract(this.direction, pointer.dragging.currentLocation, wnd.viewLocation);
-      let currentAngle = Math.atan2(this.direction[1], this.direction[0]);
-
-      let movedAngle  = currentAngle - initialAngle;
-      if (movedAngle >= Math.PI) {
-          movedAngle -= Math.PI * 2;
-      }
-      if (movedAngle <= -Math.PI) {
-          movedAngle += Math.PI * 2;
-      }
-
-      wnd.viewRotation = this.moveBeforeViewRotation + movedAngle * 180 / Math.PI;
+    if (movedAngle <= -Math.PI) {
+        movedAngle += Math.PI * 2;
     }
+
+    wnd.viewRotation = this.moveBeforeViewRotation + movedAngle * 180 / Math.PI;
 
     wnd.fixViewRotation();
 
