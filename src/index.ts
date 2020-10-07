@@ -271,7 +271,7 @@ window.onload = () => {
     React.createElement(UI_FooterOperationPanel, {
       uiRef: _Main.uiFooterOperationpanelRef,
       menuButtonsRef: _Main.uiMenuButtonsRef,
-      subToolWindowRef: _Main.uiSubToolWindowRef
+      subToolWindowRef: _Main.uiSubToolWindowRef,
     })
     , document.getElementById("footer-operation-ui")
   );

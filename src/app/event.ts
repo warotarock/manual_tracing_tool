@@ -16,6 +16,7 @@ import { OperationUI_ID } from '../app/view';
 import { UI_CommandButtonsItem } from '../ui/command_buttons';
 import { LayoutLogic, RectangleLayoutArea } from '../logics/layout';
 import { ViewOperation, ViewOperationMode } from '../view_operations';
+import { UI_FooterOperationPanel_ID } from '../ui/footer_operation_panel';
 
 export class App_Event extends App_Document {
 
@@ -232,6 +233,11 @@ export class App_Event extends App_Document {
     this.uiHeaderWindowRef.commandButton_Click = (id) => {
 
       this.menuButton_Click(id);
+    };
+
+    this.uiFooterOperationpanelRef.button_Click = (id) => {
+
+      this.footerOperationpanel_Button_Click(id);
     };
 
     this.uiSubToolWindowRef.item_Click = (item) => {
@@ -482,141 +488,71 @@ export class App_Event extends App_Document {
 
     if (key == 'n' && env.isCtrlKeyPressing()) {
 
-      this.resetDocument();
+      // this.resetDocument();
 
       return;
     }
 
     if (key == 'b') {
 
-      if (env.isDrawMode()) {
-
-        this.setCurrentMainTool(MainToolID.drawLine);
-        this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
-
-        this.updateFooterMessage();
-        env.setRedrawMainWindowEditorWindow();
-        env.setRedrawLayerWindow();
-        env.setRedrawSubtoolWindow();
-      }
-
+      this.inputKey_draw_down();
       return;
     }
 
     if (key == 'e') {
 
-      if (env.isDrawMode()) {
-
-        this.setCurrentMainTool(MainToolID.drawLine);
-        if (context.subToolIndex != <int>DrawLineToolSubToolID.deletePointBrush) {
-
-          this.setCurrentSubTool(<int>DrawLineToolSubToolID.deletePointBrush);
-        }
-        else {
-
-          this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
-        }
-
-        this.updateFooterMessage();
-        env.setRedrawMainWindowEditorWindow();
-        env.setRedrawLayerWindow();
-        env.setRedrawSubtoolWindow();
-      }
-
+      this.inputKey_eraser_down();
       return;
     }
 
     if (key == 'p') {
-
       return;
     }
 
     if (key == 'z') {
 
-      this.toolContext.commandHistory.undo(env);
-
-      this.activateCurrentTool();
-
-      env.setRedrawMainWindowEditorWindow();
-
+      this.inputKey_undo_down();
       return;
     }
 
     if (key == 'y') {
 
-      this.toolContext.commandHistory.redo(env);
-
-      this.activateCurrentTool();
-
-      env.setRedrawMainWindowEditorWindow();
-
-      return;
-    }
-
-    if (key == 'Delete' || key == 'x') {
-
-      if (env.isEditMode()) {
-
-        if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
-
-          let withCut = (key == 'x' && env.isCtrlKeyPressing());
-
-          let command = new Command_DeleteSelectedPoints();
-          if (command.prepareEditTargets(env)) {
-
-            if (withCut) {
-
-              let command = new Command_CopyGeometry();
-              if (command.prepareEditData(env)) {
-
-                command.executeCommand(env);
-              }
-            }
-
-            command.executeCommand(env);
-            this.toolContext.commandHistory.addCommand(command);
-
-            env.setRedrawMainWindow();
-          }
-        }
-      }
-
+      this.inputKey_redo_down();
       return;
     }
 
     if (env.isCtrlKeyPressing() && key == 'c') {
 
-      if (env.isEditMode()) {
-
-        if (this.toolContext.currentVectorGroup != null) {
-
-          let command = new Command_CopyGeometry();
-          if (command.prepareEditData(env)) {
-
-            command.executeCommand(env);
-          }
-        }
-      }
-
+      this.inputKey_copy_down();
       return;
     }
 
     if (env.isCtrlKeyPressing() && key == 'v') {
 
-      if (this.toolContext.currentVectorGroup != null) {
+      this.inputKey_paste_down();
+      return;
+    }
 
-        let command = new Command_PasteGeometry();
-        if (command.prepareEditData(env)) {
+    if (!env.isCtrlKeyPressing() && (key == 'c' || key == 'v')) {
 
-          this.tool_SelectAllPoints.executeClearSelectAll(env);
-
-          command.executeCommand(env);
-          this.toolContext.commandHistory.addCommand(command);
-        }
-
-        env.setRedrawCurrentLayer();
+      let addFrame = 1;
+      if (key == 'c') {
+        addFrame = -addFrame;
       }
 
+      let frame = this.findNextViewKeyframeFrame(context.document.animationSettingData.currentTimeFrame, addFrame);
+
+      this.setCurrentFrame(frame);
+
+      env.setRedrawMainWindowEditorWindow();
+      env.setRedrawTimeLineWindow();
+    }
+
+    if (key == 'Delete' || key == 'x') {
+
+      const withCut = (key == 'x' && env.isCtrlKeyPressing());
+
+      this.inputKey_delete_down(withCut);
       return;
     }
 
@@ -714,21 +650,6 @@ export class App_Event extends App_Document {
       }
 
       this.setCurrentFrame(context.document.animationSettingData.currentTimeFrame + addFrame);
-
-      env.setRedrawMainWindowEditorWindow();
-      env.setRedrawTimeLineWindow();
-    }
-
-    if (!env.isCtrlKeyPressing() && (key == 'c' || key == 'v')) {
-
-      let addFrame = 1;
-      if (key == 'c') {
-        addFrame = -addFrame;
-      }
-
-      let frame = this.findNextViewKeyframeFrame(context.document.animationSettingData.currentTimeFrame, addFrame);
-
-      this.setCurrentFrame(frame);
 
       env.setRedrawMainWindowEditorWindow();
       env.setRedrawTimeLineWindow();
@@ -943,6 +864,139 @@ export class App_Event extends App_Document {
       context.drawCPUOnly = !this.toolContext.drawCPUOnly;
       env.setRedrawMainWindow();
     }
+  }
+
+  protected inputKey_undo_down() {
+
+    const env = this.toolEnv;
+
+    this.toolContext.commandHistory.undo(env);
+
+    this.activateCurrentTool();
+
+    env.setRedrawMainWindowEditorWindow();
+  }
+
+  protected inputKey_redo_down() {
+
+    const env = this.toolEnv;
+
+    this.toolContext.commandHistory.redo(env);
+
+    this.activateCurrentTool();
+
+    env.setRedrawMainWindowEditorWindow();
+  }
+
+  protected inputKey_copy_down() {
+
+    const env = this.toolEnv;
+
+    if (!env.isEditMode()) {
+      return;
+    }
+
+    if (this.toolContext.currentVectorGroup != null) {
+
+      let command = new Command_CopyGeometry();
+      if (command.prepareEditData(env)) {
+
+        command.executeCommand(env);
+      }
+    }
+  }
+
+  protected inputKey_paste_down() {
+
+    const env = this.toolEnv;
+    const context = this.toolContext;
+
+    if (context.currentVectorGroup == null) {
+      return;
+    }
+
+    let command = new Command_PasteGeometry();
+    if (command.prepareEditData(env)) {
+
+      this.tool_SelectAllPoints.executeClearSelectAll(env);
+
+      command.executeCommand(env);
+      context.commandHistory.addCommand(command);
+    }
+
+    env.setRedrawCurrentLayer();
+  }
+
+  protected inputKey_delete_down(withCut: boolean) {
+
+    const env = this.toolEnv;
+
+    if (!env.isEditMode()) {
+      return;
+    }
+
+    if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
+
+      let command = new Command_DeleteSelectedPoints();
+      if (command.prepareEditTargets(env)) {
+
+        if (withCut) {
+
+          let command = new Command_CopyGeometry();
+          if (command.prepareEditData(env)) {
+
+            command.executeCommand(env);
+          }
+        }
+
+        command.executeCommand(env);
+        this.toolContext.commandHistory.addCommand(command);
+
+        env.setRedrawMainWindow();
+      }
+    }
+  }
+
+  protected inputKey_draw_down() {
+
+    const env = this.toolEnv;
+
+    if (!env.isDrawMode()) {
+      return;
+    }
+
+    this.setCurrentMainTool(MainToolID.drawLine);
+    this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
+
+    this.updateFooterMessage();
+    env.setRedrawMainWindowEditorWindow();
+    env.setRedrawLayerWindow();
+    env.setRedrawSubtoolWindow();
+  }
+
+  protected inputKey_eraser_down() {
+
+    const env = this.toolEnv;
+    const context = this.toolContext;
+
+    if (!env.isDrawMode()) {
+      return;
+    }
+
+    this.setCurrentMainTool(MainToolID.drawLine);
+    if (context.subToolIndex != <int>DrawLineToolSubToolID.deletePointBrush) {
+
+      this.setCurrentSubTool(<int>DrawLineToolSubToolID.deletePointBrush);
+    }
+    else {
+
+      this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
+    }
+
+    this.updateFooterMessage();
+    env.setRedrawMainWindowEditorWindow();
+    env.setRedrawLayerWindow();
+    env.setRedrawSubtoolWindow();
   }
 
   protected document_keyup(e: KeyboardEvent) {
@@ -1394,25 +1448,75 @@ export class App_Event extends App_Document {
     }
   }
 
+
+  protected footerOperationpanel_Button_Click(id: UI_FooterOperationPanel_ID) {
+
+    if (this.isEventDisabled()) {
+      return;
+    }
+
+    if (id == UI_FooterOperationPanel_ID.copy) {
+
+      this.inputKey_copy_down();
+      return;
+    }
+
+    if (id == UI_FooterOperationPanel_ID.paste) {
+
+      this.inputKey_paste_down();
+      return;
+    }
+
+    if (id == UI_FooterOperationPanel_ID.cut) {
+
+      this.inputKey_delete_down(true);
+      return;
+    }
+
+    if (id == UI_FooterOperationPanel_ID.undo) {
+
+      this.inputKey_undo_down();
+      return;
+    }
+
+    if (id == UI_FooterOperationPanel_ID.redo) {
+
+      this.inputKey_redo_down();
+      return;
+    }
+  }
+
   protected operationUI_Click(area: RectangleLayoutArea, wnd: InputableWindow) {
 
     const env = this.toolEnv;
 
-    if (area.index == OperationUI_ID.move) {
+    if (area.index == OperationUI_ID.view_move) {
 
       this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, area, env);
       return;
     }
 
-    if (area.index == OperationUI_ID.rotate) {
+    if (area.index == OperationUI_ID.view_rotate) {
 
       this.viewOperation.startViewOperation(ViewOperationMode.rotate, wnd, area, env);
       return;
     }
 
-    if (area.index == OperationUI_ID.zoom) {
+    if (area.index == OperationUI_ID.view_zoom) {
 
       this.viewOperation.startViewOperation(ViewOperationMode.zoom, wnd, area, env);
+      return;
+    }
+
+    if (area.index == OperationUI_ID.draw) {
+
+      this.inputKey_draw_down();
+      return;
+    }
+
+    if (area.index == OperationUI_ID.eraser) {
+
+      this.inputKey_eraser_down();
       return;
     }
   }

@@ -215,6 +215,12 @@ export class ViewOperation {
 
     wnd.viewRotation = this.moveBeforeViewRotation + movedAngle * 180 / Math.PI;
 
+    if (env.isCtrlKeyPressing()) {
+
+      // movedAngle *= 2.0;
+      wnd.viewRotation = Math.floor(wnd.viewRotation / 11.25) * 11.25;
+    }
+
     wnd.fixViewRotation();
 
     env.setRedrawMainWindowEditorWindow();

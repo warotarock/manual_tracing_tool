@@ -49,11 +49,11 @@ declare var Custombox: any;
 
 export enum OperationUI_ID {
 
-  zoom = 1,
-  rotate = 2,
-  move = 3,
+  view_zoom = 1,
+  view_rotate = 2,
+  view_move = 3,
   draw = 4,
-  erase = 5,
+  eraser = 5,
   brushSize = 6,
 }
 
@@ -96,11 +96,11 @@ export class App_View {
     .setPadding({ left: 10, top: 10, right: 10, bottom: 15})
     .setChildren([
       new RectangleLayoutArea().setIndex(OperationUI_ID.brushSize).setCellSpan(1, 3),
-      new RectangleLayoutArea().setIndex(OperationUI_ID.zoom).setIcon(0),
-      new RectangleLayoutArea().setIndex(OperationUI_ID.rotate).setIcon(1),
-      new RectangleLayoutArea().setIndex(OperationUI_ID.move).setIcon(2),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.view_zoom).setIcon(0),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.view_rotate).setIcon(1),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.view_move).setIcon(2),
       new RectangleLayoutArea().setIndex(OperationUI_ID.draw).setIcon(3),
-      new RectangleLayoutArea().setIndex(OperationUI_ID.erase).setIcon(4),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.eraser).setIcon(4),
     ]);
 
   // Drawing variables

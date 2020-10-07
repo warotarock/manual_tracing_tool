@@ -3,12 +3,21 @@ import * as React from 'react';
 import { UI_MenuButtons, UI_MenuButtonsRef } from './menu_buttons';
 import { UI_SubToolWindow, UI_SubToolWindowRef } from './subtool_window';
 
+export enum UI_FooterOperationPanel_ID {
+
+  undo,
+  redo,
+  copy,
+  paste,
+  cut,
+}
+
 export interface UI_FooterOperationPanelRef {
 
   hide?: () => void;
   show?: () => void;
 
-  onEscape?: (e: React.KeyboardEvent) => void;
+  button_Click?: (buttonID: UI_FooterOperationPanel_ID) => void;
 }
 
 export function UI_FooterOperationPanel(
@@ -21,15 +30,33 @@ export function UI_FooterOperationPanel(
     };
   });
 
+  function button_Click(id: UI_FooterOperationPanel_ID) {
+
+    if (uiRef.button_Click) {
+
+      uiRef.button_Click(id);
+    }
+  }
+
   return (
     <React.Fragment>
       <div className="tool-ribbon">
         <div className="sub-command-buttons">
-          <button className="button"><i className='material-icons'>content_copy</i></button>
-          <button className="button"><i className='material-icons'>content_paste</i></button>
-          <button className="button"><i className='material-icons'>content_cut</i></button>
-          <button className="button"><i className='material-icons'>undo</i></button>
-          <button className="button"><i className='material-icons'>redo</i></button>
+          <button className="button" onClick={() => { button_Click(UI_FooterOperationPanel_ID.copy) }}>
+            <i className='material-icons'>content_copy</i>
+          </button>
+          <button className="button" onClick={() => { button_Click(UI_FooterOperationPanel_ID.paste) }}>
+            <i className='material-icons'>content_paste</i>
+          </button>
+          <button className="button" onClick={() => { button_Click(UI_FooterOperationPanel_ID.cut) }}>
+            <i className='material-icons'>content_cut</i>
+          </button>
+          <button className="button" onClick={() => { button_Click(UI_FooterOperationPanel_ID.undo) }}>
+            <i className='material-icons'>undo</i>
+          </button>
+          <button className="button" onClick={() => { button_Click(UI_FooterOperationPanel_ID.redo) }}>
+            <i className='material-icons'>redo</i>
+          </button>
         </div>
         <div className="tool-buttons">
           <div className="main-tool-buttons">
