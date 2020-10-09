@@ -70,7 +70,7 @@ export class ViewOperation {
     env.setRedrawEditorWindow();
   }
 
-  endViewOperation(wnd: InputableWindow, env: ToolEnvironment) {
+  endViewOperation(wnd: InputableWindow, spaceKeyUp: boolean, env: ToolEnvironment) {
 
     const e = wnd.toolMouseEvent;
 
@@ -78,6 +78,20 @@ export class ViewOperation {
       return;
     }
 
+    env.setRedrawEditorWindow();
+
+    // 全てのポインターの終了、またはスペースキー解除
+    if (this.first_Pointer.isFree() || spaceKeyUp) {
+
+      this.viewOperationMode = ViewOperationMode.none;
+
+      if (this.clickedArea != null) {
+
+        this.clickedArea.hover = false;
+      }
+    }
+
+    // 二つ目のポインターが終了し、一つ目のポインターが残っている場合
     if (this.first_Pointer.isActive()) {
 
       if (this.second_Pointer != null && this.second_Pointer.isFree()) {
@@ -86,20 +100,11 @@ export class ViewOperation {
 
         this.second_Pointer = null;
       }
-    }
-    else {
 
-      this.viewOperationMode = ViewOperationMode.none;
-
-      if (this.clickedArea != null) {
-
-        this.clickedArea.hover = false;
-      }
-
-      e.endMouseDragging();
+      return;
     }
 
-    env.setRedrawEditorWindow();
+    e.endMouseDragging();
   }
 
   pointerDownAdditional(wnd: InputableWindow, env: ToolEnvironment) {
@@ -124,7 +129,9 @@ export class ViewOperation {
 
   getActivePointer(): ToolEventPointer {
 
-    if (this.second_Pointer != null) {
+    // if secont pointer is inputed and is pressed
+    // isPressed condition is needed to ignore a mouse with no button pressed
+    if (this.second_Pointer != null && this.second_Pointer.isPressed()) {
 
       return this.second_Pointer;
     }
@@ -236,7 +243,7 @@ export class ViewOperation {
 
     if (pointer == this.first_Pointer) {
 
-      const range = Math.max(wnd.width, wnd.height);
+      const range = Math.min(wnd.width, wnd.height) / 2;
 
       const scaling = (pointer.dragging.mouseMovedOffset[0] - pointer.dragging.mouseMovedOffset[1]) / range;
 

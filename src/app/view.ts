@@ -274,11 +274,12 @@ export class App_View {
     canvasWindow.canvas.height = canvasWindow.height;
   }
 
-  protected processMouseEvent(
+  protected processPointerEvent(
     wnd: InputableWindow,
     e: PointerEvent,
     buttonDown: boolean,
-    buttonhUp: boolean
+    buttonhUp: boolean,
+    pointerMove: boolean
   ) {
 
     const toolMouseEvent = wnd.toolMouseEvent;
@@ -292,8 +293,6 @@ export class App_View {
     // Main pointer
     toolMouseEvent.button = e.button;
     toolMouseEvent.buttons = e.buttons;
-
-    // console.log(toolMouseEvent.button, toolMouseEvent.buttons);
 
     if (buttonDown) {
 
@@ -330,12 +329,13 @@ export class App_View {
       }
     }
 
-    if (buttonDown) {
+    if (buttonDown || pointerMove) {
 
       if (target_Pointer == null && free_Pointer != null) {
 
         free_Pointer.identifier = e.pointerId;
-        free_Pointer.descOrder = 0;
+        free_Pointer.ageOrderDesc = 0;
+        free_Pointer.pressed = (buttonDown ? 1 : 0);
 
         target_Pointer = free_Pointer;
 
@@ -357,11 +357,19 @@ export class App_View {
 
       toolMouseEvent.activePointers = toolMouseEvent.pointers
         .filter(pointer => pointer.isActive())
-        .sort((a, b) => b.descOrder - a.descOrder);
+        .sort((a, b) => {
+
+          if (a.pressed != b.pressed) {
+
+            return b.pressed - a.pressed;
+          }
+
+          return b.ageOrderDesc - a.ageOrderDesc
+        });
 
         for (let pointer of toolMouseEvent.activePointers) {
 
-          pointer.descOrder++;
+          pointer.ageOrderDesc++;
         }
 
       // console.log(toolMouseEvent.activeTouches);
@@ -452,7 +460,6 @@ export class App_View {
 
     if (e.touches != undefined && e.touches.length > 0) {
 
-      let index = 0;
       for (const touch of e.touches) {
 
         let eventTouch: ToolEventPointer | null = null;
@@ -483,8 +490,6 @@ export class App_View {
 
           touchChanged = true;
         }
-
-        index++;
       }
     }
 

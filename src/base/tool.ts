@@ -965,13 +965,14 @@ export class ToolEventPointer {
   window: InputableWindow = null;
 
   identifier = -1;
-  descOrder = 0;
+  pressed = 0;
+  ageOrderDesc = 0;
   offsetX = 0.0;
   offsetY = 0.0;
   currentLocation = vec3.fromValues(0.0, 0.0, 0.0);
   lastClickedPosition = vec3.fromValues(0.0, 0.0, 0.0);
   movedOffset = vec3.fromValues(0.0, 0.0, 0.0);
-  force= 0.0;
+  force = 0.0;
 
   dragging = new ToolMouseEventDragging();
 
@@ -983,6 +984,11 @@ export class ToolEventPointer {
   isFree() {
 
     return (this.identifier == -1);
+  }
+
+  isPressed() {
+
+    return (this.pressed != 0);
   }
 
   startDragging(scale: float) {
@@ -1077,9 +1083,9 @@ export class ToolMouseEvent {
   mouseMovedOffset = vec3.fromValues(0.0, 0.0, 0.0);
 
   pointers: ToolEventPointer[] = [
-    new ToolEventPointer(),
-    new ToolEventPointer(),
-    new ToolEventPointer()
+    new ToolEventPointer(), // for mouse input
+    new ToolEventPointer(), // for first finger
+    new ToolEventPointer()  // for second finger
   ];
 
   activePointers: ToolEventPointer[] = [];

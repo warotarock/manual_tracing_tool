@@ -334,7 +334,7 @@ export class App_Event extends App_Document {
           eventElement.setPointerCapture(e.pointerId);
         }
 
-        this.processMouseEvent(drawCanvasWindew, e, true, false);
+        this.processPointerEvent(drawCanvasWindew, e, true, false, false);
 
         mousedown.call(this);
 
@@ -350,7 +350,7 @@ export class App_Event extends App_Document {
           return;
         }
 
-        this.processMouseEvent(drawCanvasWindew, e, false, false);
+        this.processPointerEvent(drawCanvasWindew, e, false, false, true);
 
         mousemove.call(this);
 
@@ -368,7 +368,7 @@ export class App_Event extends App_Document {
 
         toolMouseEvent.pointerID = -1;
 
-        this.processMouseEvent(drawCanvasWindew, e, false, true);
+        this.processPointerEvent(drawCanvasWindew, e, false, true, false);
 
         mouseup.call(this);
 
@@ -448,6 +448,16 @@ export class App_Event extends App_Document {
 
         return;
       }
+    }
+
+    if (key == ' ') {
+
+      if (this.activeCanvasWindow == this.mainWindow) {
+
+        this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, null, env);
+      }
+
+      return;
     }
 
     if (key == '.' && env.needsDrawOperatorCursor()) {
@@ -656,16 +666,6 @@ export class App_Event extends App_Document {
     }
 
     if (key == 'i') {
-
-      return;
-    }
-
-    if (key == ' ') {
-
-      if (this.activeCanvasWindow == this.mainWindow) {
-
-        this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, null, env);
-      }
 
       return;
     }
@@ -1009,9 +1009,9 @@ export class App_Event extends App_Document {
 
     if (e.key == ' ') {
 
-      if (this.activeCanvasWindow == this.mainWindow) {
+      if (this.viewOperation.isViewOperationRunning()) {
 
-        this.viewOperation.endViewOperation(this.mainWindow, env);
+        this.viewOperation.endViewOperation(this.mainWindow, true, env);
       }
     }
   }
@@ -1233,7 +1233,7 @@ export class App_Event extends App_Document {
     }
     else {
 
-      this.viewOperation.endViewOperation(wnd, env);
+      this.viewOperation.endViewOperation(wnd, false, env);
     }
   }
 
@@ -1244,8 +1244,6 @@ export class App_Event extends App_Document {
     const env = this.toolEnv;
 
     env.updateContext();
-
-    // console.log('mainWindow_mousemove', e.offsetX, e.offsetY);
 
     // View operations
     if (this.viewOperation.isViewOperationRunning()) {
@@ -1303,7 +1301,7 @@ export class App_Event extends App_Document {
 
     if (this.viewOperation.isViewOperationRunning()) {
 
-      this.viewOperation.endViewOperation(wnd, env);
+      this.viewOperation.endViewOperation(wnd, false, env);
 
       return;
     }
@@ -1447,7 +1445,6 @@ export class App_Event extends App_Document {
         break;
     }
   }
-
 
   protected footerOperationpanel_Button_Click(id: UI_FooterOperationPanel_ID) {
 
