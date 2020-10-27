@@ -1206,6 +1206,10 @@ export class App_Event extends App_Document {
       return;
     }
 
+    if (this.operationUI_IsHover(e)) {
+      return;
+    }
+
     // Current tool
     if (this.isModalToolRunning()) {
 
@@ -1371,10 +1375,15 @@ export class App_Event extends App_Document {
     return false;
   }
 
+  protected operationUI_IsHover(e: ToolMouseEvent): boolean {
+
+    return LayoutLogic.hitTestLayout(this.mainOperationUI_Area, e.offsetX, e.offsetY) != null;
+  }
+
   protected mainWindow_mousemove_OperationUI(e: ToolMouseEvent): boolean {
 
     // Operation UI
-    if (LayoutLogic.hitTestLayout(this.mainOperationUI_Area, e.offsetX, e.offsetY)) {
+    if (this.operationUI_IsHover(e)) {
 
       this.editorWindow.canvas.style.cursor = "default";
     }

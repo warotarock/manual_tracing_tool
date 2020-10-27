@@ -60,30 +60,33 @@ header {
   top: 0;
   left: 0;
   right: 0;
-  height: 41px;
-
-  display: flex;
-  padding: 3px $padding-basic $padding-basic $padding-basic;
+  height: 144px;
 
   border-bottom: $windowBorder;
 
+  .header-row1 {
+    display: flex;
+    padding: 0 $padding-basic 0 $padding-basic;
+  }
+
+  .header-row2 {
+    display: flex;
+  }
+
   .file-commands {
-    width: 210px;
-    height: 35px;
+    padding: 0;
   }
 
   .file-name {
     flex: 1;
     border: none;
-    border-width: 1px;
     padding-top: $padding-basic + 1px;
-    padding-left: $padding-basic;
-    text-align: left;
-    margin-left: 10px;
-    margin-right: 50px;
+    padding-left: 30px;
+    padding-right: 30px;
+    display: flex;
 
     input {
-      width: 100%;
+      flex: 1;
       height: 18px;
       border: none;
       padding: 3px $padding-basic 0px $padding-basic;
@@ -93,7 +96,7 @@ header {
   }
 
   .view-commands {
-    padding-right: $padding-basic;
+    padding: 0;
   }
 }
 
@@ -101,7 +104,7 @@ main {
   position: absolute;
   left: 0;
   right: 0;
-  top: 42px;
+  top: 145px;
   bottom: 42px;
   padding: 0;
 

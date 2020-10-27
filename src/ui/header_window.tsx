@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import { MainCommandButtonID } from '../app/view.class';
-
 import { UI_CommandButtonsItem, UI_CommandButtonsRef, UI_CommandButtons } from './command_buttons';
 
 export interface UI_HeaderWindowRef {
@@ -62,18 +61,19 @@ export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
           uiRef.update = null;
       };
   });
-
   return (
     <React.Fragment>
-      <div className='file-commands'>
-        <UI_CommandButtons uiRef={file_CommandButtonsRef} noBorder={true} />
-      </div>
-      <div className='file-name'>
-        <input type="text" id="fileName" />
-      </div>
-      <div className='view-commands'>
-        <UI_CommandButtons uiRef={view_CommandButtonsRef} />
-      </div>
+
+        <div className='file-commands'>
+          <UI_CommandButtons uiRef={file_CommandButtonsRef} noBorder={true} />
+        </div>
+        <div className='file-name'>
+          <input type="text" id="fileName" />
+        </div>
+        <div className='view-commands'>
+          <UI_CommandButtons uiRef={view_CommandButtonsRef} />
+        </div>
+
     </React.Fragment>
   );
 }

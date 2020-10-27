@@ -208,7 +208,9 @@ export class HTMLElementID {
 
   fileName = 'fileName';
 
-  header = 'header';
+  header = 'header-ui';
+  ribbonUI = 'ribbon-ui';
+  footerUI = 'footer-ui';
   footer = 'footer';
 
   subtoolWindow = "subtoolWindow";

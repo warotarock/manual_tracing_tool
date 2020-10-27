@@ -40,10 +40,10 @@ export function UI_MenuButtons({ uiRef }: UI_MenuButtonsParam) {
     }
 
     return (
-        <div className="mainToolButtons">
-            <div id="menu_btnDrawTool" className={getClassName('menu_btnDrawTool')}>Draw</div>
-            <div id="menu_btnEditTool" className={getClassName('menu_btnEditTool')}>Edit</div>
-            <div id="menu_btnMiscTool" className={getClassName('menu_btnMiscTool')}>Setting</div>
-        </div>
+      <div className="menu-buttons">
+        <div id="menu_btnDrawTool" className={getClassName('menu_btnDrawTool')}>Draw</div>
+        <div id="menu_btnEditTool" className={getClassName('menu_btnEditTool')}>Edit</div>
+        <div id="menu_btnMiscTool" className={getClassName('menu_btnMiscTool')}>Setting</div>
+      </div>
     );
 }

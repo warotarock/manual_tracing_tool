@@ -32,6 +32,27 @@ $margin-basic: 5px;
 $padding-basic: 5px;
 $border-radius-basic: 5px;
 
+// 選択可能項目
+
+.selectable-item {
+
+  &:hover {
+    background-color: $hoverBackground;
+  }
+}
+
+.selectable-item-inner {
+  border-radius: 3px;
+
+  &.selected {
+    background-color: $selectedBackground;
+
+    &:hover {
+      background-color: darken($selectedBackground, 3%);
+    }
+  }
+}
+
 // ボタン
 
 .app-button {

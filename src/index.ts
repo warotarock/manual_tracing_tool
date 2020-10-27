@@ -13,6 +13,7 @@ import { UI_FileOpenDialog } from './ui/file_open_dialog';
 import { UI_HeaderWindow } from './ui/header_window';
 import { UI_SideBarContainer } from './ui/side_bar_container';
 import { UI_FooterOperationPanel } from './ui/footer_operation_panel';
+import { UI_RibbonUI } from './ui/ribbon_ui';
 
 // 大改修計画
 // ・新規作成テンプレート、最近使ったファイル、ファイルを開く、保存する画面
@@ -268,12 +269,19 @@ window.onload = () => {
   );
 
   ReactDOM.render(
-    React.createElement(UI_FooterOperationPanel, {
-      uiRef: _Main.uiFooterOperationpanelRef,
+    React.createElement(UI_RibbonUI, {
+      uiRef: _Main.uiRibbonUIRef,
       menuButtonsRef: _Main.uiMenuButtonsRef,
       subToolWindowRef: _Main.uiSubToolWindowRef,
     })
-    , document.getElementById("footer-operation-ui")
+    , document.getElementById(_Main.ID.ribbonUI)
+  );
+
+  ReactDOM.render(
+    React.createElement(UI_FooterOperationPanel, {
+      uiRef: _Main.uiFooterOperationpanelRef
+    })
+    , document.getElementById(_Main.ID.footerUI)
   );
 
   ReactDOM.render(
@@ -281,7 +289,7 @@ window.onload = () => {
       {
         dockingTo: 'left',
         contents: [
-          { key: 1, component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: true},
+          // { key: 1, component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: true},
           // { key: 2, component: UI_SubToolWindow, uiRef: _Main.uiSubToolWindowRef, icon: 'layers', isOpened: true}
         ],
         uiRef: _Main.uiSideBarContainerRef,
@@ -294,8 +302,9 @@ window.onload = () => {
       {
         dockingTo: 'right',
         contents: [
-          { key: 1, component: UI_PaletteSelectorWindow, uiRef: _Main.uiPaletteSelectorWindowRef, icon: 'palette', isOpened: true},
-          { key: 2, component: UI_ColorMixerWindow, uiRef: _Main.uiColorMixerWindowRef, icon: 'palette', isOpened: true}
+          { key: 1, component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: false},
+          { key: 2, component: UI_PaletteSelectorWindow, uiRef: _Main.uiPaletteSelectorWindowRef, icon: 'palette', isOpened: false},
+          { key: 3, component: UI_ColorMixerWindow, uiRef: _Main.uiColorMixerWindowRef, icon: 'palette', isOpened: false}
         ],
         uiRef: _Main.uiSideBarContainerRef,
       })

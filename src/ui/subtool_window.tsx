@@ -40,28 +40,32 @@ export function UI_SubToolWindow({ uiRef }: UI_SubToolWindowParam) {
   });
 
   return (
-    <UI_ScrollView wheelScrollY={32} direction='horizontal'>
-      {
-        items.map(item => (
-          <div key={item.subToolIndex}
-            className={`item ${item.tool.toolBarImage.cssImageClassName} ${active_SubToolIndex == item.subToolIndex ? 'active' : ''}`}
-            style={{ backgroundPosition: `0 -${item.tool.toolBarImageIndex * 64 * itemScale}px`, opacity: (item.isAvailable ? 1.0 : 0.5) }}
-            onMouseDown={(e) => { if (e.button == 0) { uiRef.item_Click(item); } }}
-          >
-            <div className='item-inner'>
-              <div className='spacer'></div>
-              {item.buttons.length > 0 ?
-                <div className='command-button image-splite-system'
-                  style={{ backgroundPosition: `-${(item.buttonStateID - 1) * 64 * itemScale}px 0` }}
-                  onMouseDown={(e) => { if (e.button == 0) { uiRef.itemButton_Click(item); } } }
-                ></div>
-                :
-                <div className='command-button'></div>
-              }
+    <div className="subtool-window">
+      <UI_ScrollView wheelScrollY={32} direction='horizontal'>
+        {
+          items.map(item => (
+            <div key={item.subToolIndex}
+              className={`item ${active_SubToolIndex == item.subToolIndex ? 'selected' : ''}`}
+              onMouseDown={(e) => { if (e.button == 0) { uiRef.item_Click(item); } }}
+            >
+              <div
+                className={`item-inner ${item.tool.toolBarImage.cssImageClassName} ${active_SubToolIndex == item.subToolIndex ? 'selected' : ''}`}
+                style={{ backgroundPosition: `0 -${item.tool.toolBarImageIndex * 64 * itemScale}px`, opacity: (item.isAvailable ? 1.0 : 0.5) }}
+              >
+                <div className='spacer'></div>
+                {item.buttons.length > 0 ?
+                  <div className='command-button'
+                    style={{ backgroundPosition: `-${(item.buttonStateID - 1) * 64 * itemScale}px 0` }}
+                    onMouseDown={(e) => { if (e.button == 0) { uiRef.itemButton_Click(item); } } }
+                  ></div>
+                  :
+                  <div className='command-button'></div>
+                }
+              </div>
             </div>
-          </div>
-        ))
-        }
-    </UI_ScrollView>
+          ))
+          }
+      </UI_ScrollView>
+    </div>
   );
 }

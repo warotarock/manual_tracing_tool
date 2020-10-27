@@ -34,102 +34,205 @@
 }
 
 $main-tool-width: 150px;
+$sub-tool-buttons-width: 160px;
 $main-tool-height: 300px;
 $ribbon-height: 105px;
+$tool-button-width: 70px;
 $operation-ui-border: solid 1px $windowBorderColor;
 
-.footer-operation-ui {
+.tool-ribbon {
+  z-index: 300;
+  width: 100%;
+  height: $ribbon-height;
+  box-sizing: border-box;
+  border-top: $operation-ui-border;
+  padding: $padding-basic $padding-basic 0 $padding-basic;
+  display: flex;
+  background-color: $windowBackground;
+
+  .tool-ribbon-rows {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .menu-buttons-row {
+      display: flex;
+
+      .menu-buttons {
+        display: flex;
+        user-select: none;
+
+        .button {
+          box-sizing: border-box;
+          min-width: 80px;
+          height: 25px;
+          border-left: $windowBorder;
+          border-top: $windowBorder;
+          text-align: center;
+          font-size: 14px;
+          line-height: 25px;
+          vertical-align: middle;
+          cursor: default;
+          color: #000;
+          background-color: $windowBackground;
+
+          &:hover {
+            background-color: $hoverBackground;
+          }
+
+          $borderRadius: $border-radius-basic;
+
+          &:first-child {
+            border-top-left-radius: $borderRadius;
+          }
+
+          &:last-child {
+            border-right: $windowBorder;
+            border-top-right-radius: $borderRadius;
+          }
+
+          &.selected {
+            color: #fff;
+            background: #000;
+            border-color: #000;
+            border-width: 1px;
+
+            &:hover {
+              color: $hoverBackground;
+              border-color: #000;
+              background: #555;
+            }
+          }
+        }
+      }
+
+      .headerCommandButton {
+        margin-inline-start: 8px;
+
+        img {
+          width: 13px;
+          height: 13px;
+        }
+      }
+    }
+
+    .ribbon-ui-row {
+      display: flex;
+      flex: 1;
+      border-left: $windowBorder;
+      border-right: $windowBorder;
+      border-top: $windowBorder;
+      padding: 3px;
+
+      .ribbon-home-ui {
+        display: flex;
+      }
+
+      .subtool-window {
+        flex: 1;
+        position: relative;
+
+        .ui-scroll-view-container {
+          position: absolute;
+          box-sizing: border-box;
+          left: 0;
+          right: 0;
+          top: 0px;
+          bottom: 0;
+          white-space:nowrap;
+        }
+
+        $item-scale: 0.9;
+
+        .item {
+          display: inline-block;
+          box-sizing: border-box;
+          height: 100%;
+          height: 100%;
+          vertical-align: middle;
+          padding: 3px;
+
+          &:not(:last-child) {
+            border-right: solid 1px #ccc;
+          }
+
+          &:hover {
+            @extend .selectable-item:hover;
+          }
+
+          .item-inner {
+            @extend .selectable-item-inner;
+            display: flex;
+            background-size: 128px * $item-scale;
+            background-repeat: no-repeat;
+            height: 100%;
+
+            .spacer {
+              width: 80px * $item-scale;
+              height: 100%;
+            }
+
+            .command-button {
+              width: 64px * $item-scale;
+              height: 100%;
+              background-size: 256px * $item-scale;
+            }
+          }
+        }
+      }
+
+      .tool-button {
+        box-sizing: border-box;
+        width: $tool-button-width;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 3px;
+        user-select: none;
+        // border: solid 1px #ccc;
+        border-radius: $border-radius-basic;
+
+        margin-inline-end: 3px;
+
+        &:hover {
+          @extend .selectable-item:hover;
+        }
+
+        .icon {
+          height: 40px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+
+          img {
+            width: 40px;
+            pointer-events: none;
+          }
+        }
+
+        .label {
+          text-align: center;
+          font-size: 12px;
+        }
+      }
+    }
+  }
+}
+
+.footer-ui {
   position: absolute;
-  left: 0;
+  left: $main-tool-width + $margin-basic;
   right: 10px;
   bottom: 0;
   height: 0;
   z-index: 300;
   overflow: visible;
 
-  .main-operations {
+  .sub-command-buttons-container {
     position: absolute;
     left: 0;
-    bottom: 0;
-    width: $main-tool-width;
-    height: $main-tool-height;
-
-    .inner-container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-
-      .border-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        z-index: 1;
-
-        .top-part {
-          flex: 1;
-          border-right: $operation-ui-border;
-          border-top: $operation-ui-border;
-          background-color: $windowBackground;
-          border-top-right-radius: 30px;
-        }
-
-        .bottom-part {
-          border-right: $operation-ui-border;
-          background-color: $windowBackground;
-          height: $ribbon-height;
-        }
-      }
-
-      .controls {
-        position: absolute;
-        left: 0;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 2;
-        box-sizing: border-box;
-        padding: 10px 10px 10px $padding-basic;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr 1fr 1fr;
-        row-gap: $margin-basic;
-        column-gap: $margin-basic;
-
-        button {
-          border: 1px solid #888;
-          border-radius: $border-radius-basic;
-          width: 1.3em;
-          height: 1.3em;
-          padding: 0.15em 0 0 0.12em;
-          font-size: 50px;
-          overflow: hidden;
-          text-align: left;
-          background-color: $buttonBackground;
-
-          &:hover {
-            background-color: $hoverBackground;
-          }
-
-          &:focus {
-            outline: none;
-          }
-
-          i {
-            font-size: 1.0em;
-          }
-        }
-      }
-    }
-  }
-
-  .tool-ribbon {
-    position: absolute;
-    left: $main-tool-width + $margin-basic;
-    right: 0;
+    width: $sub-tool-buttons-width;
     bottom: 0;
     height: $ribbon-height;
     box-sizing: border-box;
@@ -143,7 +246,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
     background-color: $windowBackground;
 
     .sub-command-buttons {
-      width: 137px;
+      width: 100%;
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       grid-template-rows: 1fr 1fr;
@@ -170,138 +273,6 @@ $operation-ui-border: solid 1px $windowBorderColor;
         i {
           font-size: 1.0em;
         }
-      }
-    }
-
-    .tool-buttons {
-      flex: 1;
-      margin-inline-start: $margin-basic;;
-      display: flex;
-      flex-direction: column;
-
-      .main-tool-buttons {
-        display: flex;
-      }
-    }
-  }
-
-  .mainToolButtons {
-    display: flex;
-    user-select: none;
-
-    .button {
-      box-sizing: border-box;
-      min-width: 80px;
-      height: 35px;
-      border-left: $windowBorder;
-      border-top: $windowBorder;
-      text-align: center;
-      font-size: 14px;
-      line-height: 34px;
-      vertical-align: middle;
-      cursor: default;
-      color: #000;
-      background-color: $windowBackground;
-
-      &:hover {
-        background-color: $hoverBackground;
-      }
-
-      $borderRadius: $border-radius-basic;
-
-      &:first-child {
-        border-top-left-radius: $borderRadius;
-      }
-
-      &:last-child {
-        border-right: $windowBorder;
-        border-top-right-radius: $borderRadius;
-      }
-
-      &.selected {
-        color: #fff;
-        background: #000;
-        border-color: #000;
-        border-width: 1px;
-
-        &:hover {
-          color: $hoverBackground;
-          border-color: #000;
-          background: #555;
-        }
-      }
-    }
-  }
-
-  .headerCommandButton {
-    margin-inline-start: 8px;
-    padding-top: 2px;
-
-    .mainMenuButtonImage {
-      width: 24px;
-      height: 24px;
-    }
-  }
-}
-
-.subtool-window {
-  position: relative;
-  flex: 1;
-
-  .ui-scroll-view-container {
-    position: absolute;
-    box-sizing: border-box;
-    left: 0;
-    right: 0;
-    top: 0px;
-    bottom: 0;
-    border-left: $windowBorder;
-    border-right: $windowBorder;
-    border-top: $windowBorder;
-    padding: 3px;
-    white-space:nowrap;
-  }
-
-  $item-scale: 0.9;
-
-  .item {
-    display: inline-block;
-    box-sizing: border-box;
-    height: 64px * $item-scale;
-    line-height: 64px * $item-scale;
-    vertical-align: middle;
-    background-size: 128px * $item-scale;
-    background-repeat: no-repeat;
-    border-bottom: 1px solid darken($systemBackground, 1);
-
-    /*&:nth-child(odd) {
-      background-color: #eeeeee;
-    }*/
-
-    &:not(:first-child) {
-      border-left: solid 1px #ccc;
-    }
-
-    &:hover {
-      background-color: $hoverBackground;
-    }
-
-    &.active {
-      background-color: $activeBackground;
-    }
-
-    .item-inner {
-      display: flex;
-
-      .spacer {
-        width: 80px * $item-scale;
-        height: 64px * $item-scale;
-      }
-
-      .command-button {
-        width: 64px * $item-scale;
-        height: 64px * $item-scale;
-        background-size: 256px * $item-scale;
       }
     }
   }
@@ -485,12 +456,14 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
 .time-line-window {
   position: absolute;
-  left: $main-tool-width + 10px;
-  right: 15px;
-  bottom: $ribbon-height + 5;
+  left: $main-tool-width  + $sub-tool-buttons-width + 10px;
+  right: $padding-basic;
+  bottom: 0;
   height: 46px;
   overflow: hidden;
-  border: $windowBorder;
+  border-top: $operation-ui-border;
+  border-left: $operation-ui-border;
+  border-right: $operation-ui-border;
   background-color: $windowBackground;
   z-index: 301;
 
@@ -529,7 +502,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
         padding: 3px;
 
         &:hover {
-          background-color: $hoverBackground;
+          @extend .selectable-item:hover;
 
           .section-item-inner .button {
             opacity: 100%;
@@ -542,11 +515,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
           border-radius: 3px;
 
           &.selected {
-            background-color: $selectedBackground;
-
-            &:hover {
-              background-color: darken($selectedBackground, 3%);
-            }
+            @extend .selectable-item-inner;
           }
 
           $lineHeight: $fontSizeNormal * 2.0;
@@ -617,7 +586,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
           padding: 3px;
 
           &:hover {
-            background-color: $hoverBackground;
+            @extend .selectable-item:hover;
           }
 
           &:nth-child(odd) {
@@ -633,11 +602,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
             border-radius: 3px;
 
             &.selected {
-              background-color: $selectedBackground;
-
-              &:hover {
-                background-color: darken($selectedBackground, 3%);
-              }
+              @extend .selectable-item-inner;
             }
 
             i {

@@ -44,6 +44,7 @@ import { UI_FileOpenDialogRef } from '../ui/file_open_dialog';
 import { UI_HeaderWindowRef } from '../ui/header_window';
 import { UI_SideBarContainerRef } from '../ui/side_bar_container';
 import { UI_FooterOperationPanelRef } from '../ui/footer_operation_panel';
+import { UI_RibbonUIRef } from '../ui/ribbon_ui';
 
 declare var Custombox: any;
 
@@ -73,6 +74,7 @@ export class App_View {
   paletteColorModal_colorCanvas = new ColorCanvasWindow();
 
   uiHeaderWindowRef: UI_HeaderWindowRef = {};
+  uiRibbonUIRef: UI_RibbonUIRef = {};
   uiFooterOperationpanelRef: UI_FooterOperationPanelRef = {};
   uiSubToolWindowRef: UI_SubToolWindowRef = {};
   uiMenuButtonsRef: UI_MenuButtonsRef = {};
@@ -85,19 +87,19 @@ export class App_View {
   // Operation panel
 
   mainOperationUI_Icons = [
-    { image: new Image(), filePath: './res/zoom_in-24px.svg' },
-    { image: new Image(), filePath: './res/rotate_right-24px.svg' },
-    { image: new Image(), filePath: './res/open_with-24px.svg' },
-    { image: new Image(), filePath: './res/brush-24px.svg' },
-    { image: new Image(), filePath: './res/flip-24px.svg' },
+    { image: new Image(), filePath: './res/svg/zoom_in-24px.svg' },
+    { image: new Image(), filePath: './res/svg/rotate_right-24px.svg' },
+    { image: new Image(), filePath: './res/svg/open_with-24px.svg' },
+    { image: new Image(), filePath: './res/svg/brush-24px.svg' },
+    { image: new Image(), filePath: './res/svg/flip-24px.svg' },
   ];
   mainOperationUI_PanelBorderPoints: float[][] = [];
   mainOperationUI_Area = new RectangleLayoutArea()
     .setPadding({ left: 10, top: 10, right: 10, bottom: 15})
     .setChildren([
       new RectangleLayoutArea().setIndex(OperationUI_ID.brushSize).setCellSpan(1, 3),
-      new RectangleLayoutArea().setIndex(OperationUI_ID.view_zoom).setIcon(0),
       new RectangleLayoutArea().setIndex(OperationUI_ID.view_rotate).setIcon(1),
+      new RectangleLayoutArea().setIndex(OperationUI_ID.view_zoom).setIcon(0),
       new RectangleLayoutArea().setIndex(OperationUI_ID.view_move).setIcon(2),
       new RectangleLayoutArea().setIndex(OperationUI_ID.draw).setIcon(3),
       new RectangleLayoutArea().setIndex(OperationUI_ID.eraser).setIcon(4),
