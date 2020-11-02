@@ -1,21 +1,21 @@
 import { List, int } from '../base/conversion';
 
 import {
-    Layer, LayerTypeID, VectorLayer, ImageFileReferenceLayer,
-    PosingLayer,
-    GroupLayer
+  Layer, LayerTypeID, VectorLayer, ImageFileReferenceLayer,
+  PosingLayer,
+  GroupLayer
 } from '../base/data';
 
 import {
-    MainToolID,
-    OperationUnitID,
-    ViewKeyframe,
-    ViewKeyframeLayer,
-    MainTool,
-    ToolBase,
-    ModalToolBase,
-    ModalToolID,
-    EditModeID
+  MainToolID,
+  OperationUnitID,
+  ViewKeyframe,
+  ViewKeyframeLayer,
+  MainTool,
+  ToolBase,
+  ModalToolBase,
+  ModalToolID,
+  EditModeID
 } from '../base/tool';
 
 import { ImageResource, ModelFile, ModelResource } from '../posing3d/posing3d_view';
@@ -40,12 +40,12 @@ import { Tool_Resample_Segment } from '../tools/resample_segment';
 import { Tool_DeletePoints_DivideLine } from '../tools/delete_points_divide_line';
 import { Tool_HideLinePoint_BrushSelect } from '../tools/edit_points';
 import {
-    Tool_Posing3d_LocateHead, Tool_Posing3d_RotateHead, Tool_Posing3d_LocateBody, Tool_Posing3d_LocateHips,
-    Tool_Posing3d_LocateLeftShoulder, Tool_Posing3d_LocateRightShoulder,
-    Tool_Posing3d_LocateLeftArm1, Tool_Posing3d_LocateLeftArm2,
-    Tool_Posing3d_LocateRightArm1, Tool_Posing3d_LocateRightArm2,
-    Tool_Posing3d_LocateLeftLeg1, Tool_Posing3d_LocateLeftLeg2,
-    Tool_Posing3d_LocateRightLeg1, Tool_Posing3d_LocateRightLeg2
+  Tool_Posing3d_LocateHead, Tool_Posing3d_RotateHead, Tool_Posing3d_LocateBody, Tool_Posing3d_LocateHips,
+  Tool_Posing3d_LocateLeftShoulder, Tool_Posing3d_LocateRightShoulder,
+  Tool_Posing3d_LocateLeftArm1, Tool_Posing3d_LocateLeftArm2,
+  Tool_Posing3d_LocateRightArm1, Tool_Posing3d_LocateRightArm2,
+  Tool_Posing3d_LocateLeftLeg1, Tool_Posing3d_LocateLeftLeg2,
+  Tool_Posing3d_LocateRightLeg1, Tool_Posing3d_LocateRightLeg2
 } from '../tools/posing3d';
 
 import { LayerWindowItem } from '../app/view.class';
@@ -53,720 +53,733 @@ import { App_Drawing } from '../app/drawing';
 
 export class App_Tool extends App_Drawing {
 
-    // Integrated tool system
+  // Integrated tool system
 
-    mainTools = new List<MainTool>();
+  mainTools = new List<MainTool>();
 
-    currentTool: ToolBase = null;
-    currentViewKeyframe: ViewKeyframe = null;
-    previousKeyframe: ViewKeyframe = null;
-    nextKeyframe: ViewKeyframe = null;
+  currentTool: ToolBase = null;
+  currentViewKeyframe: ViewKeyframe = null;
+  previousKeyframe: ViewKeyframe = null;
+  nextKeyframe: ViewKeyframe = null;
 
-    //layerCommands = new List<Command_Layer_CommandBase>(LayerWindowButtonID.IDCount);
+  //layerCommands = new List<Command_Layer_CommandBase>(LayerWindowButtonID.IDCount);
+
+  // Modal tools
+  currentModalTool: ModalToolBase = null;
+  modalBeforeTool: ToolBase = null;
+  vectorLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
+  imageFileReferenceLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
+
+  // Document setting tools
+  tool_EditDocumentFrame = new Tool_EditDocumentFrame();
+
+  // Selection tools
+  selectionTools = List<ToolBase>(<int>OperationUnitID.countOfID);
+  tool_LinePointBrushSelect = new Tool_Select_BrushSelect_LinePoint();
+  tool_LineSegmentBrushSelect = new Tool_Select_BrushSelect_LineSegment();
+  tool_LineBrushSelect = new Tool_Select_BrushSelect_Line();
+  tool_SelectAllPoints = new Tool_Select_All_LinePoint();
+
+  // File reference layer tools
+  tool_EditImageFileReference = new Tool_EditImageFileReference();
+  tool_Transform_ReferenceImage_GrabMove = new Tool_Transform_ReferenceImage_GrabMove();
+  tool_Transform_ReferenceImage_Rotate = new Tool_Transform_ReferenceImage_Rotate();
+  tool_Transform_ReferenceImage_Scale = new Tool_Transform_ReferenceImage_Scale();
+
+  // Transform tools
+  tool_Transform_Lattice_GrabMove = new Tool_Transform_Lattice_GrabMove();
+  tool_Transform_Lattice_Rotate = new Tool_Transform_Lattice_Rotate();
+  tool_Transform_Lattice_Scale = new Tool_Transform_Lattice_Scale();
+  tool_EditModeMain = new Tool_EditModeMain();
+
+  // Drawing tools
+  tool_DrawLine = new Tool_DrawLine();
+  //tool_AddPoint = new Tool_AddPoint();
+  tool_ScratchLine = new Tool_ScratchLine();
+  tool_ExtrudeLine = new Tool_ScratchLineDraw();
+  tool_OverWriteLineWidth = new Tool_OverWriteLineWidth();
+  tool_ScratchLineWidth = new Tool_ScratchLineWidth();
+  tool_ResampleSegment = new Tool_Resample_Segment();
+  //tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
+  tool_DeletePoints_DivideLine = new Tool_DeletePoints_DivideLine();
+  tool_EditLinePointWidth_BrushSelect = new Tool_HideLinePoint_BrushSelect();
+  tool_DrawAutoFill = new Tool_DrawAutoFill();
+
+  hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
+
+  // Posing tools
+  posing3DLogic = new Posing3DLogic();
+  tool_Posing3d_LocateHead = new Tool_Posing3d_LocateHead();
+  tool_Posing3d_RotateHead = new Tool_Posing3d_RotateHead();
+  tool_Posing3d_LocateBody = new Tool_Posing3d_LocateBody();
+  tool_Posing3d_LocateHips = new Tool_Posing3d_LocateHips();
+  tool_Posing3d_LocateLeftShoulder = new Tool_Posing3d_LocateLeftShoulder();
+  tool_Posing3d_LocateRightShoulder = new Tool_Posing3d_LocateRightShoulder();
+  tool_Posing3d_LocateLeftArm1 = new Tool_Posing3d_LocateLeftArm1();
+  tool_Posing3d_LocateLeftArm2 = new Tool_Posing3d_LocateLeftArm2();
+  tool_Posing3d_LocateRightArm1 = new Tool_Posing3d_LocateRightArm1();
+  tool_Posing3d_LocateRightArm2 = new Tool_Posing3d_LocateRightArm2();
+  tool_Posing3d_LocateLeftLeg1 = new Tool_Posing3d_LocateLeftLeg1();
+  tool_Posing3d_LocateLeftLeg2 = new Tool_Posing3d_LocateLeftLeg2();
+  tool_Posing3d_LocateRightLeg1 = new Tool_Posing3d_LocateRightLeg1();
+  tool_Posing3d_LocateRightLeg2 = new Tool_Posing3d_LocateRightLeg2();
+  imageResurces = new List<ImageResource>();
+  modelFile = new ModelFile();
+  modelResources = new List<ModelResource>();
+
+  constructor() {
+
+    super();
+
+    this.modelFile.file('models.json');
+
+    this.imageResurces.push(new ImageResource().set({ fileName: 'texture01.png', isGLTexture: true }));
+    this.imageResurces.push(new ImageResource().set({ fileName: 'system_image01.png', cssImageClassName: 'image-splite-system' }));
+    this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image01.png', cssImageClassName: 'image-splite-document' }));
+    this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image02.png', cssImageClassName: 'image-splite-subtool' }));
+    this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image03.png', cssImageClassName: 'image-splite-posing3d' }));
+    this.imageResurces.push(new ImageResource().set({ fileName: 'layerbar_image01.png' }));
+
+    this.systemImage = this.imageResurces[1];
+
+    this.subToolImages.push(this.imageResurces[2]);
+    this.subToolImages.push(this.imageResurces[3]);
+    this.subToolImages.push(this.imageResurces[4]);
+
+    this.layerButtonImage = this.imageResurces[5];
+  }
+
+  protected initializeTools() {
+
+    // Resoures
+    this.posing3dView.storeResources(this.modelFile, this.imageResurces);
+
+    // Constructs main tools and sub tools structure
+    this.mainTools.push(
+      new MainTool().id(MainToolID.none)
+    );
+
+    this.mainTools.push(
+      new MainTool().id(MainToolID.drawLine)
+        .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
+        .subTool(this.tool_DeletePoints_DivideLine, this.subToolImages[1], 5)
+        .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
+        .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
+        .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
+        .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
+        .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
+        .subTool(this.tool_DrawAutoFill, this.subToolImages[1], 0)
+    );
+
+    this.mainTools.push(
+      new MainTool().id(MainToolID.fill)
+        .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
+        .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
+        .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
+    );
+
+    this.mainTools.push(
+      new MainTool().id(MainToolID.posing)
+        .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
+        .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
+        .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
+        .subTool(this.tool_Posing3d_LocateHips, this.subToolImages[2], 3)
+        .subTool(this.tool_Posing3d_LocateLeftShoulder, this.subToolImages[2], 4)
+        .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 4)
+        .subTool(this.tool_Posing3d_LocateLeftArm2, this.subToolImages[2], 5)
+        .subTool(this.tool_Posing3d_LocateRightShoulder, this.subToolImages[2], 6)
+        .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 6)
+        .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 7)
+        .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 8)
+        .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 9)
+        .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 10)
+        .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 11)
+    );
+
+    this.mainTools.push(
+      new MainTool().id(MainToolID.imageReferenceLayer)
+        .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
+    );
+
+    this.mainTools.push(
+      new MainTool().id(MainToolID.misc)
+        .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
+    );
+
+    this.mainTools.push(
+      new MainTool().id(MainToolID.edit)
+        .subTool(this.tool_LineBrushSelect, this.subToolImages[2], 0)
+        .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 0)
+        .subTool(this.tool_LinePointBrushSelect, this.subToolImages[2], 0)
+        .subTool(this.tool_EditModeMain, this.subToolImages[2], 0)
+        .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
+    );
 
     // Modal tools
-    currentModalTool: ModalToolBase = null;
-    modalBeforeTool: ToolBase = null;
-    vectorLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
-    imageFileReferenceLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
+    this.vectorLayer_ModalTools[<int>ModalToolID.none] = null;
+    this.vectorLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
+    this.vectorLayer_ModalTools[<int>ModalToolID.rotate] = this.tool_Transform_Lattice_Rotate;
+    this.vectorLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_Lattice_Scale;
 
-    // Document setting tools
-    tool_EditDocumentFrame = new Tool_EditDocumentFrame();
+    this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.none] = null;
+    this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_ReferenceImage_GrabMove;
+    this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.rotate] = this.tool_Transform_ReferenceImage_Rotate;
+    this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_ReferenceImage_Scale;
 
     // Selection tools
-    selectionTools = List<ToolBase>(<int>OperationUnitID.countOfID);
-    tool_LinePointBrushSelect = new Tool_Select_BrushSelect_LinePoint();
-    tool_LineSegmentBrushSelect = new Tool_Select_BrushSelect_LineSegment();
-    tool_LineBrushSelect = new Tool_Select_BrushSelect_Line();
-    tool_SelectAllPoints = new Tool_Select_All_LinePoint();
+    this.selectionTools[<int>OperationUnitID.none] = null;
+    this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
+    this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
+    this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
 
-    // File reference layer tools
-    tool_EditImageFileReference = new Tool_EditImageFileReference();
-    tool_Transform_ReferenceImage_GrabMove = new Tool_Transform_ReferenceImage_GrabMove();
-    tool_Transform_ReferenceImage_Rotate = new Tool_Transform_ReferenceImage_Rotate();
-    tool_Transform_ReferenceImage_Scale = new Tool_Transform_ReferenceImage_Scale();
+    //this.currentTool = this.tool_DrawLine;
+    //this.currentTool = this.tool_AddPoint;
+    //this.currentTool = this.tool_ScratchLine;
+    this.currentTool = this.tool_Posing3d_LocateHead;
+  }
 
-    // Transform tools
-    tool_Transform_Lattice_GrabMove = new Tool_Transform_Lattice_GrabMove();
-    tool_Transform_Lattice_Rotate = new Tool_Transform_Lattice_Rotate();
-    tool_Transform_Lattice_Scale = new Tool_Transform_Lattice_Scale();
-    tool_EditModeMain = new Tool_EditModeMain();
+  // Tools and context operations
 
-    // Drawing tools
-    tool_DrawLine = new Tool_DrawLine();
-    //tool_AddPoint = new Tool_AddPoint();
-    tool_ScratchLine = new Tool_ScratchLine();
-    tool_ExtrudeLine = new Tool_ScratchLineDraw();
-    tool_OverWriteLineWidth = new Tool_OverWriteLineWidth();
-    tool_ScratchLineWidth = new Tool_ScratchLineWidth();
-    tool_ResampleSegment = new Tool_Resample_Segment();
-    //tool_DeletePoints_BrushSelect = new Tool_DeletePoints_BrushSelect();
-    tool_DeletePoints_DivideLine = new Tool_DeletePoints_DivideLine();
-    tool_EditLinePointWidth_BrushSelect = new Tool_HideLinePoint_BrushSelect();
-    tool_DrawAutoFill = new Tool_DrawAutoFill();
+  protected updateFooterMessage() {
 
-    hittest_Line_IsCloseTo = new HitTest_Line_IsCloseToMouse();
+    {
+      let modeText = '';
 
-    // Posing tools
-    posing3DLogic = new Posing3DLogic();
-    tool_Posing3d_LocateHead = new Tool_Posing3d_LocateHead();
-    tool_Posing3d_RotateHead = new Tool_Posing3d_RotateHead();
-    tool_Posing3d_LocateBody = new Tool_Posing3d_LocateBody();
-    tool_Posing3d_LocateHips = new Tool_Posing3d_LocateHips();
-    tool_Posing3d_LocateLeftShoulder = new Tool_Posing3d_LocateLeftShoulder();
-    tool_Posing3d_LocateRightShoulder = new Tool_Posing3d_LocateRightShoulder();
-    tool_Posing3d_LocateLeftArm1 = new Tool_Posing3d_LocateLeftArm1();
-    tool_Posing3d_LocateLeftArm2 = new Tool_Posing3d_LocateLeftArm2();
-    tool_Posing3d_LocateRightArm1 = new Tool_Posing3d_LocateRightArm1();
-    tool_Posing3d_LocateRightArm2 = new Tool_Posing3d_LocateRightArm2();
-    tool_Posing3d_LocateLeftLeg1 = new Tool_Posing3d_LocateLeftLeg1();
-    tool_Posing3d_LocateLeftLeg2 = new Tool_Posing3d_LocateLeftLeg2();
-    tool_Posing3d_LocateRightLeg1 = new Tool_Posing3d_LocateRightLeg1();
-    tool_Posing3d_LocateRightLeg2 = new Tool_Posing3d_LocateRightLeg2();
-    imageResurces = new List<ImageResource>();
-    modelFile = new ModelFile();
-    modelResources = new List<ModelResource>();
+      if (this.toolEnv.isDrawMode()) {
 
-    constructor() {
+        modeText = 'DrawMode';
+      }
+      else if (this.toolEnv.isEditMode()) {
 
-        super();
+        modeText = 'SelectMode';
+      }
 
-        this.modelFile.file('models.json');
+      let toolText = '';
 
-        this.imageResurces.push(new ImageResource().set({ fileName: 'texture01.png', isGLTexture: true }));
-        this.imageResurces.push(new ImageResource().set({ fileName: 'system_image01.png', cssImageClassName: 'image-splite-system' }));
-        this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image01.png', cssImageClassName: 'image-splite-document' }));
-        this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image02.png', cssImageClassName: 'image-splite-subtool' }));
-        this.imageResurces.push(new ImageResource().set({ fileName: 'toolbar_image03.png', cssImageClassName: 'image-splite-posing3d' }));
-        this.imageResurces.push(new ImageResource().set({ fileName: 'layerbar_image01.png' }));
+      if (this.toolEnv.isDrawMode()) {
 
-        this.systemImage = this.imageResurces[1];
+        if (this.currentTool == this.tool_DrawLine) {
 
-        this.subToolImages.push(this.imageResurces[2]);
-        this.subToolImages.push(this.imageResurces[3]);
-        this.subToolImages.push(this.imageResurces[4]);
+          toolText = 'Draw line';
+        }
+        else if (this.currentTool == this.tool_ScratchLine) {
 
-        this.layerButtonImage = this.imageResurces[5];
+          toolText = 'Scratch line';
+        }
+        else if (this.currentTool == this.tool_Posing3d_LocateHead) {
+
+          toolText = 'Posing(Head location)';
+        }
+      }
+      else if (this.toolEnv.isEditMode()) {
+
+        toolText = '';
+      }
+
+      // console.log(modeText, toolText);
     }
 
-    protected initializeTools() {
+    this.footerText = this.currentTool.helpText;
 
-        // Resoures
-        this.posing3dView.storeResources(this.modelFile, this.imageResurces);
+    this.toolContext.redrawFooterWindow = true;
+  }
 
-        // Constructs main tools and sub tools structure
-        this.mainTools.push(
-            new MainTool().id(MainToolID.none)
-        );
+  protected setCurrentEditMode(editModeID: EditModeID) {
 
-        this.mainTools.push(
-            new MainTool().id(MainToolID.drawLine)
-                .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
-                .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
-                .subTool(this.tool_DeletePoints_DivideLine, this.subToolImages[1], 5)
-                .subTool(this.tool_EditLinePointWidth_BrushSelect, this.subToolImages[1], 6)
-                .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
-                .subTool(this.tool_OverWriteLineWidth, this.subToolImages[1], 3)
-                .subTool(this.tool_ScratchLineWidth, this.subToolImages[1], 3)
-                .subTool(this.tool_DrawAutoFill, this.subToolImages[1], 0)
-        );
+    var env = this.toolEnv;
+    let context = this.toolContext;
 
-        this.mainTools.push(
-            new MainTool().id(MainToolID.fill)
-                .subTool(this.tool_DrawLine, this.subToolImages[1], 0)
-                .subTool(this.tool_ExtrudeLine, this.subToolImages[1], 2)
-                .subTool(this.tool_ScratchLine, this.subToolImages[1], 1)
-        );
+    context.editMode = editModeID;
 
-        this.mainTools.push(
-            new MainTool().id(MainToolID.posing)
-                .subTool(this.tool_Posing3d_LocateHead, this.subToolImages[2], 0)
-                .subTool(this.tool_Posing3d_RotateHead, this.subToolImages[2], 1)
-                .subTool(this.tool_Posing3d_LocateBody, this.subToolImages[2], 2)
-                .subTool(this.tool_Posing3d_LocateHips, this.subToolImages[2], 3)
-                .subTool(this.tool_Posing3d_LocateLeftShoulder, this.subToolImages[2], 4)
-                .subTool(this.tool_Posing3d_LocateLeftArm1, this.subToolImages[2], 4)
-                .subTool(this.tool_Posing3d_LocateLeftArm2, this.subToolImages[2], 5)
-                .subTool(this.tool_Posing3d_LocateRightShoulder, this.subToolImages[2], 6)
-                .subTool(this.tool_Posing3d_LocateRightArm1, this.subToolImages[2], 6)
-                .subTool(this.tool_Posing3d_LocateRightArm2, this.subToolImages[2], 7)
-                .subTool(this.tool_Posing3d_LocateLeftLeg1, this.subToolImages[2], 8)
-                .subTool(this.tool_Posing3d_LocateLeftLeg2, this.subToolImages[2], 9)
-                .subTool(this.tool_Posing3d_LocateRightLeg1, this.subToolImages[2], 10)
-                .subTool(this.tool_Posing3d_LocateRightLeg2, this.subToolImages[2], 11)
-        );
+    if (env.isDrawMode()) {
 
-        this.mainTools.push(
-            new MainTool().id(MainToolID.imageReferenceLayer)
-                .subTool(this.tool_EditImageFileReference, this.subToolImages[0], 1)
-        );
+      this.setCurrentMainTool(context.drawMode_MainToolID);
+    }
+    else {
 
-        this.mainTools.push(
-            new MainTool().id(MainToolID.misc)
-                .subTool(this.tool_EditDocumentFrame, this.subToolImages[0], 2)
-        );
-
-        this.mainTools.push(
-            new MainTool().id(MainToolID.edit)
-                .subTool(this.tool_LineBrushSelect, this.subToolImages[2], 0)
-                .subTool(this.tool_LineSegmentBrushSelect, this.subToolImages[2], 0)
-                .subTool(this.tool_LinePointBrushSelect, this.subToolImages[2], 0)
-                .subTool(this.tool_EditModeMain, this.subToolImages[2], 0)
-                .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
-        );
-
-        // Modal tools
-        this.vectorLayer_ModalTools[<int>ModalToolID.none] = null;
-        this.vectorLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
-        this.vectorLayer_ModalTools[<int>ModalToolID.rotate] = this.tool_Transform_Lattice_Rotate;
-        this.vectorLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_Lattice_Scale;
-
-        this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.none] = null;
-        this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_ReferenceImage_GrabMove;
-        this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.rotate] = this.tool_Transform_ReferenceImage_Rotate;
-        this.imageFileReferenceLayer_ModalTools[<int>ModalToolID.scale] = this.tool_Transform_ReferenceImage_Scale;
-
-        // Selection tools
-        this.selectionTools[<int>OperationUnitID.none] = null;
-        this.selectionTools[<int>OperationUnitID.linePoint] = this.tool_LinePointBrushSelect;
-        this.selectionTools[<int>OperationUnitID.lineSegment] = this.tool_LineSegmentBrushSelect;
-        this.selectionTools[<int>OperationUnitID.line] = this.tool_LineBrushSelect;
-
-        //this.currentTool = this.tool_DrawLine;
-        //this.currentTool = this.tool_AddPoint;
-        //this.currentTool = this.tool_ScratchLine;
-        this.currentTool = this.tool_Posing3d_LocateHead;
+      this.setCurrentMainTool(context.editMode_MainToolID);
     }
 
-    // Tools and context operations
+    this.updateFooterMessage();
+    env.setRedrawHeaderWindow();
+    env.setRedrawMainWindowEditorWindow();
+    env.setRedrawSubtoolWindow();
+  }
 
-    protected updateFooterMessage() {
+  protected getCurrentMainTool(): MainTool { // @override
 
-        {
-            let modeText = '';
+    return this.mainTools[<int>this.toolContext.mainToolID];
+  }
 
-            if (this.toolEnv.isDrawMode()) {
+  protected getCurrentTool(): ToolBase { // @override
 
-                modeText = 'DrawMode';
-            }
-            else if (this.toolEnv.isEditMode()) {
+    return this.currentTool;
+  }
 
-                modeText = 'SelectMode';
-            }
+  protected setCurrentMainToolForCurentLayer() {
 
-            let toolText = '';
+    var env = this.toolEnv;
+    env.updateContext();
 
-            if (this.toolEnv.isDrawMode()) {
+    if (env.isDrawMode()) {
 
-                if (this.currentTool == this.tool_DrawLine) {
+      if (env.isCurrentLayerVectorLayer()) {
 
-                    toolText = 'Draw line';
-                }
-                else if (this.currentTool == this.tool_ScratchLine) {
+        this.setCurrentMainTool(MainToolID.drawLine);
 
-                    toolText = 'Scratch line';
-                }
-                else if (this.currentTool == this.tool_Posing3d_LocateHead) {
+      }
+      else if (env.isCurrentLayerFillLayer()) {
 
-                    toolText = 'Posing(Head location)';
-                }
-            }
-            else if (this.toolEnv.isEditMode()) {
+        this.setCurrentMainTool(MainToolID.fill);
 
-                toolText = '';
-            }
+      }
+      else if (env.isCurrentLayerPosingLayer()) {
 
-            // console.log(modeText, toolText);
-        }
+        this.setCurrentMainTool(MainToolID.posing);
+      }
+      else if (env.isCurrentLayerImageFileReferenceLayer()) {
 
-        this.footerText = this.currentTool.helpText;
+        this.setCurrentMainTool(MainToolID.imageReferenceLayer);
+      }
+    }
+    else {
 
-        this.toolContext.redrawFooterWindow = true;
+      this.setCurrentMainTool(MainToolID.edit);
+    }
+  }
+
+  protected setCurrentMainTool(id: MainToolID) {
+
+    var env = this.toolEnv;
+    let context = this.toolContext;
+
+    let isChanged = (context.mainToolID != id);
+
+    context.mainToolID = id;
+
+    if (env.isDrawMode()) {
+
+      context.drawMode_MainToolID = id;
     }
 
-    protected setCurrentEditMode(editModeID: EditModeID) {
+    let mainTool = this.getCurrentMainTool();
 
-        var env = this.toolEnv;
-        let context = this.toolContext;
+    this.setCurrentSubTool(mainTool.currentSubToolIndex);
 
-        context.editMode = editModeID;
+    if (isChanged) {
 
-        if (env.isDrawMode()) {
+      //this.subtoolWindow.viewLocation[1] = 0.0;
+      this.subtoolWindow_CollectViewItems();
+      //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
 
-            this.setCurrentMainTool(context.drawMode_MainToolID);
-        }
-        else {
+      this.activateCurrentTool();
 
-            this.setCurrentMainTool(context.editMode_MainToolID);
-        }
+      this.toolEnv.setRedrawHeaderWindow()
+      this.updateFooterMessage();
 
-        this.updateFooterMessage();
-        env.setRedrawHeaderWindow();
-        env.setRedrawMainWindowEditorWindow();
-        env.setRedrawSubtoolWindow();
+      this.updateUISubToolWindow();
+    }
+  }
+
+  protected isSubToolAvailable(subToolIndex: int) {
+
+    var env = this.toolEnv;
+
+    let mainTool = this.getCurrentMainTool();
+
+    return mainTool.subTools[subToolIndex].isAvailable(env);
+  }
+
+  protected setCurrentSubTool(subToolIndex: int) {
+
+    var env = this.toolEnv;
+
+    this.cancelModalTool();
+
+    let mainTool = this.getCurrentMainTool();
+
+    mainTool.currentSubToolIndex = subToolIndex;
+
+    this.toolContext.subToolIndex = subToolIndex;
+
+    this.currentTool = mainTool.subTools[subToolIndex];
+
+    env.setRedrawSubtoolWindow();
+
+    // this.updateUISubToolWindow();
+
+    this.updateFooterMessage();
+  }
+
+  protected updateUISubToolWindow(forceRedraw = false) {
+
+    // console.log("updateUISubToolWindow", forceRedraw, this.toolContext.subToolIndex);
+
+    if (forceRedraw) {
+
+      this.uiRibbonUIRef.update(this.toolContext.subToolIndex, this.toolContext.drawLineBaseWidth);
+      this.uiSubToolWindowRef.update(this.subToolViewItems.slice(), this.toolContext.subToolIndex);
+    }
+    else {
+
+      this.uiRibbonUIRef.update(this.toolContext.subToolIndex, this.toolContext.drawLineBaseWidth);
+      this.uiSubToolWindowRef.update(this.subToolViewItems, this.toolContext.subToolIndex);
+    }
+  }
+
+  public setCurrentOperationUnitID(operationUnitID: OperationUnitID) { // @implements MainEditor
+
+    this.toolContext.operationUnitID = operationUnitID;
+  }
+
+  protected updateContextCurrentRefferences() {
+
+    let viewKeyframe = this.currentViewKeyframe;
+    let currentLayer = this.toolContext.currentLayer;
+
+    this.toolContext.currentVectorLine = null;
+
+    if (VectorLayer.isVectorLayer(currentLayer) && viewKeyframe != null) {
+
+      let viewKeyframeLayer = ViewKeyframe.findViewKeyframeLayer(viewKeyframe, currentLayer);
+      let geometry = viewKeyframeLayer.vectorLayerKeyframe.geometry;
+
+      this.toolContext.currentVectorLayer = <VectorLayer>currentLayer;
+      this.toolContext.currentVectorGeometry = geometry;
+      this.toolContext.currentVectorGroup = geometry.units[0].groups[0];
+    }
+    else {
+
+      this.toolContext.currentVectorLayer = null;
+      this.toolContext.currentVectorGeometry = null;
+      this.toolContext.currentVectorGroup = null;
     }
 
-    protected getCurrentMainTool(): MainTool { // @override
+    if (PosingLayer.isPosingLayer(currentLayer)) {
 
-        return this.mainTools[<int>this.toolContext.mainToolID];
+      let posingLayer = <PosingLayer>currentLayer;
+
+      this.toolContext.currentPosingLayer = posingLayer;
+      this.toolContext.currentPosingData = posingLayer.posingData;
+      this.toolContext.currentPosingModel = posingLayer.posingModel;
+    }
+    else {
+
+      this.toolContext.currentPosingLayer = null;
+      this.toolContext.currentPosingData = null;
+      this.toolContext.currentPosingModel = null;
     }
 
-    protected getCurrentTool(): ToolBase { // @override
+    if (ImageFileReferenceLayer.isImageFileReferenceLayer(currentLayer)) {
 
-        return this.currentTool;
+      let imageFileReferenceLayer = <ImageFileReferenceLayer>currentLayer;
+
+      this.toolContext.currentImageFileReferenceLayer = imageFileReferenceLayer;
+    }
+    else {
+
+      this.toolContext.currentImageFileReferenceLayer = null;
     }
 
-    protected setCurrentMainToolForCurentLayer() {
+  }
 
-        var env = this.toolEnv;
-        env.updateContext();
+  public setCurrentLayer(layer: Layer) { // @implements MainEditor
 
-        if (env.isDrawMode()) {
+    this.unselectAllLayer();
 
-            if (env.isCurrentLayerVectorLayer()) {
+    if (layer != null) {
 
-                this.setCurrentMainTool(MainToolID.drawLine);
-
-            }
-            else if (env.isCurrentLayerFillLayer()) {
-
-                this.setCurrentMainTool(MainToolID.fill);
-
-            }
-            else if (env.isCurrentLayerPosingLayer()) {
-
-                this.setCurrentMainTool(MainToolID.posing);
-            }
-            else if (env.isCurrentLayerImageFileReferenceLayer()) {
-
-                this.setCurrentMainTool(MainToolID.imageReferenceLayer);
-            }
-        }
-        else {
-
-            this.setCurrentMainTool(MainToolID.edit);
-        }
+      this.setLayerSelection(layer, true);
     }
 
-    protected setCurrentMainTool(id: MainToolID) {
+    this.toolContext.currentLayer = layer;
 
-        var env = this.toolEnv;
-        let context = this.toolContext;
+    this.updateContextCurrentRefferences();
 
-        let isChanged = (context.mainToolID != id);
+    this.setCurrentMainToolForCurentLayer();
 
-        context.mainToolID = id;
+    this.paletteSelector_SetCurrentModeForCurrentLayer();
 
-        if (env.isDrawMode()) {
+    this.activateCurrentTool();
+  }
 
-            context.drawMode_MainToolID = id;
-        }
+  public setCurrentFrame(frame: int) { // @implements MainEditor
 
-        let mainTool = this.getCurrentMainTool();
+    let context = this.toolContext;
+    let aniSetting = context.document.animationSettingData;
+    let viewKeyframes = this.viewLayerContext.keyframes;
 
-        this.setCurrentSubTool(mainTool.currentSubToolIndex);
+    aniSetting.currentTimeFrame = frame;
 
-        if (isChanged) {
+    // Find current keyframe for frame
 
-            //this.subtoolWindow.viewLocation[1] = 0.0;
-            this.subtoolWindow_CollectViewItems();
-            //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
+    if (aniSetting.currentTimeFrame < 0) {
 
-            this.activateCurrentTool();
-
-            this.toolEnv.setRedrawHeaderWindow()
-            this.updateFooterMessage();
-
-            this.updateUISubToolWindow();
-        }
+      aniSetting.currentTimeFrame = 0;
     }
 
-    protected setCurrentSubTool(subToolIndex: int) {
+    if (aniSetting.currentTimeFrame > aniSetting.maxFrame) {
 
-        var env = this.toolEnv;
-
-        this.cancelModalTool();
-
-        let mainTool = this.getCurrentMainTool();
-
-        mainTool.currentSubToolIndex = subToolIndex;
-
-        this.toolContext.subToolIndex = subToolIndex;
-
-        this.currentTool = mainTool.subTools[subToolIndex];
-
-        env.setRedrawSubtoolWindow();
-
-        this.updateUISubToolWindow();
-
-        this.updateFooterMessage();
+      aniSetting.currentTimeFrame = aniSetting.maxFrame;
     }
 
-    protected updateUISubToolWindow(forceRedraw = false) {
+    let keyframeIndex = ViewKeyframe.findViewKeyframeIndex(viewKeyframes, aniSetting.currentTimeFrame);
 
-        if (forceRedraw) {
+    if (keyframeIndex != -1) {
 
-            this.uiSubToolWindowRef.update(this.subToolViewItems.slice(), this.toolContext.subToolIndex);
-        }
-        else {
+      this.currentViewKeyframe = viewKeyframes[keyframeIndex];
 
-            this.uiSubToolWindowRef.update(this.subToolViewItems, this.toolContext.subToolIndex);
-        }
+      if (keyframeIndex - 1 >= 0) {
+
+        this.previousKeyframe = viewKeyframes[keyframeIndex - 1];
+      }
+      else {
+
+        this.previousKeyframe = null;
+      }
+
+      if (keyframeIndex + 1 < viewKeyframes.length) {
+
+        this.nextKeyframe = viewKeyframes[keyframeIndex + 1];
+      }
+      else {
+
+        this.nextKeyframe = null;
+      }
     }
 
-    public setCurrentOperationUnitID(operationUnitID: OperationUnitID) { // @implements MainEditor
+    // Update tool context
 
-        this.toolContext.operationUnitID = operationUnitID;
+    this.updateContextCurrentRefferences();
+  }
+
+  protected unselectAllLayer() {
+
+    for (let item of this.layerWindow.layerWindowItems) {
+
+      item.layer.isSelected = false;
+      item.layer.isHierarchicalSelected = false;
+    }
+  }
+
+  protected setLayerSelection(layer: Layer, isSelected: boolean) {
+
+    layer.isSelected = isSelected;
+  }
+
+  protected setLayerVisiblity(layer: Layer, isVisible: boolean) {
+
+    layer.isVisible = isVisible;
+  }
+
+  protected activateCurrentTool() {
+
+    if (this.currentTool != null) {
+
+      this.toolContext.needsDrawOperatorCursor = this.currentTool.isEditTool;
+
+      this.currentTool.onActivated(this.toolEnv);
+    }
+  }
+
+  public startModalTool(modalTool: ModalToolBase) { // @implements MainEditor
+
+    if (modalTool == null) {
+
+      return;
     }
 
-    protected updateContextCurrentRefferences() {
+    let available = modalTool.prepareModal(this.mainWindow.toolMouseEvent, this.toolEnv);
 
-        let viewKeyframe = this.currentViewKeyframe;
-        let currentLayer = this.toolContext.currentLayer;
+    if (!available) {
 
-        this.toolContext.currentVectorLine = null;
-
-        if (VectorLayer.isVectorLayer(currentLayer) && viewKeyframe != null) {
-
-            let viewKeyframeLayer = ViewKeyframe.findViewKeyframeLayer(viewKeyframe, currentLayer);
-            let geometry = viewKeyframeLayer.vectorLayerKeyframe.geometry;
-
-            this.toolContext.currentVectorLayer = <VectorLayer>currentLayer;
-            this.toolContext.currentVectorGeometry = geometry;
-            this.toolContext.currentVectorGroup = geometry.units[0].groups[0];
-        }
-        else {
-
-            this.toolContext.currentVectorLayer = null;
-            this.toolContext.currentVectorGeometry = null;
-            this.toolContext.currentVectorGroup = null;
-        }
-
-        if (PosingLayer.isPosingLayer(currentLayer)) {
-
-            let posingLayer = <PosingLayer>currentLayer;
-
-            this.toolContext.currentPosingLayer = posingLayer;
-            this.toolContext.currentPosingData = posingLayer.posingData;
-            this.toolContext.currentPosingModel = posingLayer.posingModel;
-        }
-        else {
-
-            this.toolContext.currentPosingLayer = null;
-            this.toolContext.currentPosingData = null;
-            this.toolContext.currentPosingModel = null;
-        }
-
-        if (ImageFileReferenceLayer.isImageFileReferenceLayer(currentLayer)) {
-
-            let imageFileReferenceLayer = <ImageFileReferenceLayer>currentLayer;
-
-            this.toolContext.currentImageFileReferenceLayer = imageFileReferenceLayer;
-        }
-        else {
-
-            this.toolContext.currentImageFileReferenceLayer = null;
-        }
-
+      return;
     }
 
-    public setCurrentLayer(layer: Layer) { // @implements MainEditor
+    modalTool.startModal(this.toolEnv);
 
-        this.unselectAllLayer();
+    this.modalBeforeTool = this.currentTool;
+    this.currentModalTool = modalTool;
+    this.currentTool = modalTool;
+  }
 
-        if (layer != null) {
+  public endModalTool() { // @implements MainEditor
 
-            this.setLayerSelection(layer, true);
-        }
+    this.toolEnv.updateContext();
+    this.currentModalTool.endModal(this.toolEnv);
 
-        this.toolContext.currentLayer = layer;
+    this.setModalToolBefore();
 
-        this.updateContextCurrentRefferences();
+    this.toolEnv.setRedrawMainWindowEditorWindow();
 
-        this.setCurrentMainToolForCurentLayer();
+    this.activateCurrentTool();
+  }
 
-        this.paletteSelector_SetCurrentModeForCurrentLayer();
+  public cancelModalTool() { // @implements MainEditor
 
-        this.activateCurrentTool();
+    if (!this.isModalToolRunning()) {
+
+      return;
     }
 
-    public setCurrentFrame(frame: int) { // @implements MainEditor
+    this.toolEnv.updateContext();
+    this.currentModalTool.cancelModal(this.toolEnv);
 
-        let context = this.toolContext;
-        let aniSetting = context.document.animationSettingData;
-        let viewKeyframes = this.viewLayerContext.keyframes;
+    this.setModalToolBefore();
 
-        aniSetting.currentTimeFrame = frame;
+    this.activateCurrentTool();
+  }
 
-        // Find current keyframe for frame
+  protected setModalToolBefore() {
 
-        if (aniSetting.currentTimeFrame < 0) {
+    this.currentTool = this.modalBeforeTool;
+    this.currentModalTool = null;
+    this.modalBeforeTool = null;
+  }
 
-            aniSetting.currentTimeFrame = 0;
+  public isModalToolRunning(): boolean { // @implements MainEditor
+
+    return (this.currentModalTool != null);
+  }
+
+  public collectEditTargetViewKeyframeLayers(): List<ViewKeyframeLayer> { // @implements MainEditor
+
+    let editableKeyframeLayers = new List<ViewKeyframeLayer>();
+
+    // Collects layers
+
+    if (this.currentViewKeyframe != null) {
+
+      for (let viewKeyframeLayer of this.currentViewKeyframe.layers) {
+
+        let layer = viewKeyframeLayer.layer;
+
+        if (Layer.isEditTarget(layer)) {
+
+          editableKeyframeLayers.push(viewKeyframeLayer);
         }
-
-        if (aniSetting.currentTimeFrame > aniSetting.maxFrame) {
-
-            aniSetting.currentTimeFrame = aniSetting.maxFrame;
-        }
-
-        let keyframeIndex = ViewKeyframe.findViewKeyframeIndex(viewKeyframes, aniSetting.currentTimeFrame);
-
-        if (keyframeIndex != -1) {
-
-            this.currentViewKeyframe = viewKeyframes[keyframeIndex];
-
-            if (keyframeIndex - 1 >= 0) {
-
-                this.previousKeyframe = viewKeyframes[keyframeIndex - 1];
-            }
-            else {
-
-                this.previousKeyframe = null;
-            }
-
-            if (keyframeIndex + 1 < viewKeyframes.length) {
-
-                this.nextKeyframe = viewKeyframes[keyframeIndex + 1];
-            }
-            else {
-
-                this.nextKeyframe = null;
-            }
-        }
-
-        // Update tool context
-
-        this.updateContextCurrentRefferences();
+      }
     }
 
-    protected unselectAllLayer() {
+    return editableKeyframeLayers;
+  }
 
-        for (let item of this.layerWindow.layerWindowItems) {
+  // Common functions
 
-            item.layer.isSelected = false;
-            item.layer.isHierarchicalSelected = false;
-        }
+  protected setLayerCommandParameters(layerCommand: Command_Layer_CommandBase, currentLayerWindowItem: LayerWindowItem) {
+
+    // Collects layer items for command
+    let currentLayer: Layer = currentLayerWindowItem.layer;
+    let currentLayerParent: Layer = currentLayerWindowItem.parentLayer;
+
+    let previousLayer: Layer = null;
+    let previousLayerParent: Layer = null;
+    if (GroupLayer.isGroupLayer(currentLayerWindowItem.layer)) {
+
+      if (currentLayerWindowItem.previousSiblingItem != null) {
+
+        previousLayer = currentLayerWindowItem.previousSiblingItem.layer;
+        previousLayerParent = currentLayerWindowItem.previousSiblingItem.parentLayer;
+      }
+    }
+    else {
+
+      if (currentLayerWindowItem.previousItem != null) {
+
+        previousLayer = currentLayerWindowItem.previousItem.layer;
+        previousLayerParent = currentLayerWindowItem.previousItem.parentLayer;
+      }
     }
 
-    protected setLayerSelection(layer: Layer, isSelected: boolean) {
+    let nextLayer: Layer = null;
+    let nextLayerParent: Layer = null;
+    if (GroupLayer.isGroupLayer(currentLayerWindowItem.layer)) {
 
-        layer.isSelected = isSelected;
+      if (currentLayerWindowItem.nextSiblingItem != null) {
+
+        nextLayer = currentLayerWindowItem.nextSiblingItem.layer;
+        nextLayerParent = currentLayerWindowItem.nextSiblingItem.parentLayer;
+      }
+    }
+    else {
+
+      if (currentLayerWindowItem.nextItem != null) {
+
+        nextLayer = currentLayerWindowItem.nextItem.layer;
+        nextLayerParent = currentLayerWindowItem.nextItem.parentLayer;
+      }
     }
 
-    protected setLayerVisiblity(layer: Layer, isVisible: boolean) {
+    layerCommand.setPrameters(
+      currentLayer
+      , currentLayerParent
+      , previousLayer
+      , previousLayerParent
+      , nextLayer
+      , nextLayerParent
+    );
+  }
 
-        layer.isVisible = isVisible;
+  protected executeLayerCommand(layerCommand: Command_Layer_CommandBase) {
+
+    let currentLayerWindowItem = this.layerWindow_FindCurrentItem();
+
+    if (currentLayerWindowItem == null) {
+
+      return;
     }
 
-    protected activateCurrentTool() {
+    this.setLayerCommandParameters(layerCommand, currentLayerWindowItem);
 
-        if (this.currentTool != null) {
+    if (layerCommand.isAvailable(this.toolEnv)) {
 
-            this.toolContext.needsDrawOperatorCursor = this.currentTool.isEditTool;
+      layerCommand.executeCommand(this.toolEnv);
 
-            this.currentTool.onActivated(this.toolEnv);
-        }
+      this.toolContext.commandHistory.addCommand(layerCommand);
+    }
+  }
+
+  protected startVectorLayerModalTool(modalToolID: ModalToolID) {
+
+    let modalTool = this.vectorLayer_ModalTools[<int>modalToolID];
+
+    if (modalTool == null) {
+
+      return;
     }
 
-    public startModalTool(modalTool: ModalToolBase) { // @implements MainEditor
+    this.startModalTool(modalTool);
+  }
 
-        if (modalTool == null) {
+  protected startImageFileReferenceLayerModalTool(modalToolID: ModalToolID) {
 
-            return;
-        }
+    let modalTool = this.imageFileReferenceLayer_ModalTools[<int>modalToolID];
 
-        let available = modalTool.prepareModal(this.mainWindow.toolMouseEvent, this.toolEnv);
+    if (modalTool == null) {
 
-        if (!available) {
-
-            return;
-        }
-
-        modalTool.startModal(this.toolEnv);
-
-        this.modalBeforeTool = this.currentTool;
-        this.currentModalTool = modalTool;
-        this.currentTool = modalTool;
+      return;
     }
 
-    public endModalTool() { // @implements MainEditor
+    this.startModalTool(modalTool);
+  }
 
-        this.toolEnv.updateContext();
-        this.currentModalTool.endModal(this.toolEnv);
+  protected selectNextOrPreviousLayer(selectNext: boolean) {
 
-        this.setModalToolBefore();
+    let item = this.layerWindow_FindCurrentItem();
 
-        this.toolEnv.setRedrawMainWindowEditorWindow();
+    if (selectNext) {
 
-        this.activateCurrentTool();
+      if (item.nextItem != null) {
+
+        this.setCurrentLayer(item.nextItem.layer);
+      }
     }
+    else {
 
-    public cancelModalTool() { // @implements MainEditor
+      if (item.previousItem != null) {
 
-        if (!this.isModalToolRunning()) {
-
-            return;
-        }
-
-        this.toolEnv.updateContext();
-        this.currentModalTool.cancelModal(this.toolEnv);
-
-        this.setModalToolBefore();
-
-        this.activateCurrentTool();
+        this.setCurrentLayer(item.previousItem.layer);
+      }
     }
-
-    protected setModalToolBefore() {
-
-        this.currentTool = this.modalBeforeTool;
-        this.currentModalTool = null;
-        this.modalBeforeTool = null;
-    }
-
-    public isModalToolRunning(): boolean { // @implements MainEditor
-
-        return (this.currentModalTool != null);
-    }
-
-    public collectEditTargetViewKeyframeLayers(): List<ViewKeyframeLayer> { // @implements MainEditor
-
-        let editableKeyframeLayers = new List<ViewKeyframeLayer>();
-
-        // Collects layers
-
-        if (this.currentViewKeyframe != null) {
-
-            for (let viewKeyframeLayer of this.currentViewKeyframe.layers) {
-
-                let layer = viewKeyframeLayer.layer;
-
-                if (Layer.isEditTarget(layer)) {
-
-                    editableKeyframeLayers.push(viewKeyframeLayer);
-                }
-            }
-        }
-
-        return editableKeyframeLayers;
-    }
-
-    // Common functions
-
-    protected setLayerCommandParameters(layerCommand: Command_Layer_CommandBase, currentLayerWindowItem: LayerWindowItem) {
-
-        // Collects layer items for command
-        let currentLayer: Layer = currentLayerWindowItem.layer;
-        let currentLayerParent: Layer = currentLayerWindowItem.parentLayer;
-
-        let previousLayer: Layer = null;
-        let previousLayerParent: Layer = null;
-        if (GroupLayer.isGroupLayer(currentLayerWindowItem.layer)) {
-
-            if (currentLayerWindowItem.previousSiblingItem != null) {
-
-                previousLayer = currentLayerWindowItem.previousSiblingItem.layer;
-                previousLayerParent = currentLayerWindowItem.previousSiblingItem.parentLayer;
-            }
-        }
-        else {
-
-            if (currentLayerWindowItem.previousItem != null) {
-
-                previousLayer = currentLayerWindowItem.previousItem.layer;
-                previousLayerParent = currentLayerWindowItem.previousItem.parentLayer;
-            }
-        }
-
-        let nextLayer: Layer = null;
-        let nextLayerParent: Layer = null;
-        if (GroupLayer.isGroupLayer(currentLayerWindowItem.layer)) {
-
-            if (currentLayerWindowItem.nextSiblingItem != null) {
-
-                nextLayer = currentLayerWindowItem.nextSiblingItem.layer;
-                nextLayerParent = currentLayerWindowItem.nextSiblingItem.parentLayer;
-            }
-        }
-        else {
-
-            if (currentLayerWindowItem.nextItem != null) {
-
-                nextLayer = currentLayerWindowItem.nextItem.layer;
-                nextLayerParent = currentLayerWindowItem.nextItem.parentLayer;
-            }
-        }
-
-        layerCommand.setPrameters(
-            currentLayer
-            , currentLayerParent
-            , previousLayer
-            , previousLayerParent
-            , nextLayer
-            , nextLayerParent
-        );
-    }
-
-    protected executeLayerCommand(layerCommand: Command_Layer_CommandBase) {
-
-        let currentLayerWindowItem = this.layerWindow_FindCurrentItem();
-
-        if (currentLayerWindowItem == null) {
-
-            return;
-        }
-
-        this.setLayerCommandParameters(layerCommand, currentLayerWindowItem);
-
-        if (layerCommand.isAvailable(this.toolEnv)) {
-
-            layerCommand.executeCommand(this.toolEnv);
-
-            this.toolContext.commandHistory.addCommand(layerCommand);
-        }
-    }
-
-    protected startVectorLayerModalTool(modalToolID: ModalToolID) {
-
-        let modalTool = this.vectorLayer_ModalTools[<int>modalToolID];
-
-        if (modalTool == null) {
-
-            return;
-        }
-
-        this.startModalTool(modalTool);
-    }
-
-    protected startImageFileReferenceLayerModalTool(modalToolID: ModalToolID) {
-
-        let modalTool = this.imageFileReferenceLayer_ModalTools[<int>modalToolID];
-
-        if (modalTool == null) {
-
-            return;
-        }
-
-        this.startModalTool(modalTool);
-    }
-
-    protected selectNextOrPreviousLayer(selectNext: boolean) {
-
-        let item = this.layerWindow_FindCurrentItem();
-
-        if (selectNext) {
-
-            if (item.nextItem != null) {
-
-                this.setCurrentLayer(item.nextItem.layer);
-            }
-        }
-        else {
-
-            if (item.previousItem != null) {
-
-                this.setCurrentLayer(item.previousItem.layer);
-            }
-        }
-    }
+  }
 }

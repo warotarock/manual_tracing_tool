@@ -253,9 +253,9 @@ export function UI_FileOpenDialog({ uiRef }: UI_FileOpenDialogParam) {
         <div className='section-list'>
         {
           fileSectionItems.map(sectionItem => (
-            <div key={sectionItem.key} className='section-item'>
+            <div key={sectionItem.key} className={`section-item selectable-item ${sectionItem == currentSectionItem ? 'selected' : ''}`}>
 
-              <div className={`section-item-inner ${sectionItem == currentSectionItem ? 'selected' : ''}`}
+              <div className="section-item-inner selectable-item-inner"
                 onMouseUp={() => { sectionItem_Click(sectionItem); } }
               >
                 <div className='name'>
@@ -283,9 +283,10 @@ export function UI_FileOpenDialog({ uiRef }: UI_FileOpenDialogParam) {
           {
             fileItems.map(fileItem => (
               <li key={fileItem.key}
+                className={`selectable-item ${fileItem == currentFileItem ? 'selected' : ''}`}
                 onMouseDown={() => { setCurrentFileItem(fileItem); } }
               >
-                <div className={`file-item-inner ${fileItem == currentFileItem ? 'selected' : ''}`}>
+                <div className="selectable-item-inner">
                   <i className='material-icons'>{fileItem.icon}</i>
                   <span className='name'>{fileItem.name}</span>
                   <span className='path'>{fileItem.path}</span>

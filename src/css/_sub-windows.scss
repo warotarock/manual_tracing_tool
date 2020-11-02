@@ -156,12 +156,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
             border-right: solid 1px #ccc;
           }
 
-          &:hover {
-            @extend .selectable-item:hover;
-          }
-
           .item-inner {
-            @extend .selectable-item-inner;
             display: flex;
             background-size: 128px * $item-scale;
             background-repeat: no-repeat;
@@ -181,40 +176,76 @@ $operation-ui-border: solid 1px $windowBorderColor;
         }
       }
 
+      .separator {
+        width: 1px;
+        border-right: solid 1px #ccc;
+        margin-inline-end: 6px;
+      }
+
       .tool-button {
         box-sizing: border-box;
         width: $tool-button-width;
         height: 100%;
         display: flex;
-        flex-direction: column;
         padding: 3px;
         user-select: none;
         // border: solid 1px #ccc;
-        border-radius: $border-radius-basic;
-
         margin-inline-end: 3px;
 
-        &:hover {
-          @extend .selectable-item:hover;
-        }
-
-        .icon {
-          height: 40px;
+        .tool-button-inner {
+          padding: 3px;
           display: flex;
           flex-direction: column;
-          justify-content: center;
-          align-items: center;
+          flex: 1;
 
-          img {
-            width: 40px;
-            pointer-events: none;
+          .icon {
+            height: 38px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            img {
+              width: 38px;
+              pointer-events: none;
+            }
           }
+
+          .label {
+            text-align: center;
+            font-size: 12px;
+            flex: 1;
+          }
+        }
+      }
+
+      .number-input {
+        display: flex;
+        height: 24px;
+
+        &:not(:first-child) {
+          padding-block-start: $margin-basic;
         }
 
         .label {
-          text-align: center;
+          flex: 1;
+          font-size: 12px;
+          line-height: 24px;
+          vertical-align: middle;
+          user-select: none;
+        }
+
+        input {
+          width: 45px;
           font-size: 12px;
         }
+      }
+
+      .draw-line-params {
+        width: 100px;
+        display: flex;
+        flex-direction: column;
+        padding: $margin-basic;
       }
     }
   }
@@ -502,7 +533,6 @@ $operation-ui-border: solid 1px $windowBorderColor;
         padding: 3px;
 
         &:hover {
-          @extend .selectable-item:hover;
 
           .section-item-inner .button {
             opacity: 100%;
@@ -513,10 +543,6 @@ $operation-ui-border: solid 1px $windowBorderColor;
           display: flex;
           padding: 2px $padding-basic 2px 8px;
           border-radius: 3px;
-
-          &.selected {
-            @extend .selectable-item-inner;
-          }
 
           $lineHeight: $fontSizeNormal * 2.0;
 
@@ -581,13 +607,10 @@ $operation-ui-border: solid 1px $windowBorderColor;
         padding: 0;
 
         li {
+          @extend .selectable-item;
           list-style: none;
           background-color: $listItemBackground;
           padding: 3px;
-
-          &:hover {
-            @extend .selectable-item:hover;
-          }
 
           &:nth-child(odd) {
             background-color: $listItemBackgroundOdd;
@@ -597,13 +620,9 @@ $operation-ui-border: solid 1px $windowBorderColor;
             }
           }
 
-          .file-item-inner {
+          .selectable-item-inner {
             padding: 8px $padding-basic 8px 12px;
-            border-radius: 3px;
-
-            &.selected {
-              @extend .selectable-item-inner;
-            }
+            border-radius: $border-radius-inner;
 
             i {
               font-size: $fontSizeNormal * 1.5 * 1.5;

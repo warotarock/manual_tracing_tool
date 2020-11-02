@@ -31,6 +31,7 @@ $zindex-side-panel: 200;
 $margin-basic: 5px;
 $padding-basic: 5px;
 $border-radius-basic: 5px;
+$border-radius-inner: 3px;
 
 // 選択可能項目
 
@@ -39,17 +40,16 @@ $border-radius-basic: 5px;
   &:hover {
     background-color: $hoverBackground;
   }
-}
-
-.selectable-item-inner {
-  border-radius: 3px;
 
   &.selected {
-    background-color: $selectedBackground;
 
-    &:hover {
+    .selectable-item-inner {
       background-color: darken($selectedBackground, 3%);
     }
+  }
+
+  .selectable-item-inner {
+    border-radius: $border-radius-inner;
   }
 }
 

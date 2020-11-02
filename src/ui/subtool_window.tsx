@@ -6,7 +6,7 @@ import { UI_ScrollView } from '../ui/scroll_view';
 
 export interface UI_SubToolWindowRef {
 
-  update?(items: SubToolViewItem[], subToolIndex_: number): void;
+  update?(items: SubToolViewItem[], subToolIndex: number): void;
 
   item_Click?(item: SubToolViewItem): void;
   itemButton_Click?(item: SubToolViewItem): void;
@@ -45,11 +45,11 @@ export function UI_SubToolWindow({ uiRef }: UI_SubToolWindowParam) {
         {
           items.map(item => (
             <div key={item.subToolIndex}
-              className={`item ${active_SubToolIndex == item.subToolIndex ? 'selected' : ''}`}
+              className={`item selectable-item ${active_SubToolIndex == item.subToolIndex ? 'selected' : ''}`}
               onMouseDown={(e) => { if (e.button == 0) { uiRef.item_Click(item); } }}
             >
               <div
-                className={`item-inner ${item.tool.toolBarImage.cssImageClassName} ${active_SubToolIndex == item.subToolIndex ? 'selected' : ''}`}
+                className={`item-inner selectable-item-inner ${item.tool.toolBarImage.cssImageClassName}`}
                 style={{ backgroundPosition: `0 -${item.tool.toolBarImageIndex * 64 * itemScale}px`, opacity: (item.isAvailable ? 1.0 : 0.5) }}
               >
                 <div className='spacer'></div>

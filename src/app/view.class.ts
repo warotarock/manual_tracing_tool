@@ -41,6 +41,8 @@ export class SubtoolWindow extends InputableWindow {
 }
 
 export class ColorCanvasWindow extends InputableWindow {
+
+  isDrawingDone = false;
 }
 
 export enum MainCommandButtonID {
@@ -200,6 +202,15 @@ export enum NewLayerTypeID {
   imageFileReferenceLayer = 5,
   posingLayer = 6,
   groupLayer = 7,
+}
+
+export enum RibbonUIControlID {
+
+  none = 0,
+  brushWidth_Max,
+  brushWidth_Min,
+  eraserWidth_Max,
+  eraserWidth_Min,
 }
 
 export class HTMLElementID {

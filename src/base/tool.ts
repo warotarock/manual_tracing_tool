@@ -29,8 +29,8 @@ export enum MainToolID {
 export enum DrawLineToolSubToolID {
 
   drawLine = 0,
-  extrudeLine = 1,
-  deletePointBrush = 2,
+  deletePointBrush = 1,
+  extrudeLine = 2,
   editLinePointWidth_BrushSelect = 3,
   scratchLine = 4,
   overWriteLineWidth = 5,

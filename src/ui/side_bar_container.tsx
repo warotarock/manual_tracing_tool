@@ -4,6 +4,7 @@ import 'rc-slider/assets/index.css';
 export interface UI_SideBarContentInfo {
 
   key: number;
+  id: string;
   component: any;
   uiRef: any;
   icon: string;
@@ -15,7 +16,7 @@ export interface UI_SideBarContainerRef {
   hide?: () => void;
   show?: () => void;
 
-  onEscape?: (e: React.KeyboardEvent) => void;
+  onOpen?: (cotentInfo: UI_SideBarContentInfo) => void;
 }
 
 export function UI_SideBarContainer(
@@ -53,6 +54,11 @@ export function UI_SideBarContainer(
   function tab_Click(cotentInfo: UI_SideBarContentInfo) {
 
     cotentInfo.isOpened = !(cotentInfo.isOpened);
+
+    if (cotentInfo.isOpened && uiRef.onOpen) {
+
+      uiRef.onOpen(cotentInfo);
+    }
 
     setContentInfos(contentInfos.slice());
 

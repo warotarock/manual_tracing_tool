@@ -10,13 +10,15 @@ import { Command_DeleteSelectedPoints } from '../commands/delete_points';
 import { Command_CopyGeometry, Command_PasteGeometry } from '../commands/edit_copy';
 import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown } from '../commands/edit_layer';
 
-import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, LayerWindowItem, MainCommandButtonID } from '../app/view.class';
+import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, LayerWindowItem, MainCommandButtonID, RibbonUIControlID } from '../app/view.class';
 import { App_Document } from '../app/document';
 import { OperationUI_ID } from '../app/view';
 import { UI_CommandButtonsItem } from '../ui/command_buttons';
 import { LayoutLogic, RectangleLayoutArea } from '../logics/layout';
 import { ViewOperation, ViewOperationMode } from '../view_operations';
 import { UI_FooterOperationPanel_ID } from '../ui/footer_operation_panel';
+import { UI_SideBarContentInfo } from '../ui/side_bar_container';
+import { UI_PaletteSelectorWindow } from '../ui/palette_selector_window';
 
 export class App_Event extends App_Document {
 
@@ -227,12 +229,37 @@ export class App_Event extends App_Document {
       e.preventDefault();
     });
 
-
     // React conponents
 
     this.uiHeaderWindowRef.commandButton_Click = (id) => {
 
       this.menuButton_Click(id);
+    };
+
+    this.uiSideBarContainerRef.onOpen = (cotentInfo: UI_SideBarContentInfo) => {
+
+      if (cotentInfo.id == 'ColorMixerWindow' && !this.colorMixerWindow_colorCanvas.isDrawingDone) {
+
+        window.setTimeout(
+          () => {
+
+            this.resizeFromStyle(this.colorMixerWindow_colorCanvas);
+
+            this.drawPaletteColorMixer(this.colorMixerWindow_colorCanvas);
+          },
+          100
+        )
+      }
+    };
+
+    this.uiRibbonUIRef.button_Click = (subToolIndex: number) => {
+
+      this.subtoolWindow_selectItem(subToolIndex);
+    };
+
+    this.uiRibbonUIRef.numberInput_Change = (id: RibbonUIControlID, value: float) => {
+
+      this.ribbonUI_NumberInput_Change(id, value);
     };
 
     this.uiFooterOperationpanelRef.button_Click = (id) => {
@@ -1645,7 +1672,7 @@ export class App_Event extends App_Document {
 
   protected subtoolWindow_Item_Click(item: SubToolViewItem) {
 
-    this.subtoolWindow_selectItem(item);
+    this.subtoolWindow_selectItem(item.subToolIndex);
   }
 
   protected subtoolWindow_Button_Click(item: SubToolViewItem) {
@@ -1670,23 +1697,34 @@ export class App_Event extends App_Document {
     }
   }
 
-  protected subtoolWindow_selectItem(item: SubToolViewItem) {
+  protected subtoolWindow_selectItem(subToolIndex: int) {
 
-    let tool = item.tool;
     let env = this.toolEnv;
 
-    if (!tool.isAvailable(env)) {
+    if (!this.isSubToolAvailable(subToolIndex)) {
       return;
     }
 
     // Change current sub tool
-    this.setCurrentSubTool(item.subToolIndex);
+    this.setCurrentSubTool(subToolIndex);
 
     env.setRedrawMainWindowEditorWindow();
 
     // Tool event
     this.activateCurrentTool();
     this.currentTool.toolWindowItemClick(env);
+  }
+
+  protected ribbonUI_NumberInput_Change(id: RibbonUIControlID, value: float) {
+
+    // console.log(id, value);
+
+    switch(id) {
+
+      case RibbonUIControlID.brushWidth_Max:
+        this.toolContext.drawLineBaseWidth = value;
+        break;
+    }
   }
 
   paletteSelectorWindow_CommandButton_Click(item: UI_CommandButtonsItem) {

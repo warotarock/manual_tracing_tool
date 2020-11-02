@@ -78,7 +78,7 @@ export function UI_ColorMixerWindow({ uiRef }: UI_PaletteSelectorWindowParam) {
       uiRef.color_Change(newRGBAValue);
     }
 
-    console.log('onChangeARGB', index, newRGBAValue);
+    // console.log('onChangeARGB', index, newRGBAValue);
   }
 
   function onChangeHSV(index: int, value: float) {

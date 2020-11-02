@@ -32,7 +32,8 @@ import {
   LayerWindow,
   TimeLineWindow,
   PaletteSelectorWindow,
-  PaletteSelectorWindowButtonID
+  PaletteSelectorWindowButtonID,
+  ColorCanvasWindow
 } from '../app/view.class';
 
 import { PolyLineShader, BezierLineShader, BezierDistanceLineShader, GPULineShader } from './drawing.class';
@@ -1638,7 +1639,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
   private colorW = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
   private colorB = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 
-  protected drawPaletteColorMixer(wnd: CanvasWindow) {
+  protected drawPaletteColorMixer(wnd: ColorCanvasWindow) {
 
     let width = wnd.width;
     let height = wnd.height;
@@ -1648,6 +1649,12 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     // let bottom = height - 1.0;
     //let minRadius = 10.0;
     //let maxRadius = width * 1.0;
+
+    // console.log("drawPaletteColorMixer.onOpen", width, height);
+
+    if (width == 0 || height == 0) {
+      return;
+    }
 
     this.canvasRender.setContext(wnd);
     this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
@@ -1705,7 +1712,10 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
       }
 
       drawX += unitWidth;
+
+      wnd.isDrawingDone = true;
     }
+
     this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
   }
 }

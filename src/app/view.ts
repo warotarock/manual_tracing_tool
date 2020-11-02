@@ -215,9 +215,9 @@ export class App_View {
     this.mainWindow.centerLocationRate[0] = 0.5;
     this.mainWindow.centerLocationRate[1] = 0.5;
 
-    this.setCanvasSizeFromStyle(this.colorMixerWindow_colorCanvas);
+    this.resizeFromStyle(this.colorMixerWindow_colorCanvas);
 
-    this.setCanvasSizeFromStyle(this.paletteColorModal_colorCanvas);
+    this.resizeFromStyle(this.paletteColorModal_colorCanvas);
   }
 
   // View management
@@ -266,11 +266,17 @@ export class App_View {
     canvasWindow.canvas.height = canvasWindow.height;
   }
 
-  private setCanvasSizeFromStyle(canvasWindow: CanvasWindow) {
+  protected setCanvasSizeFromStyle(canvasWindow: CanvasWindow) {
 
-    let style = window.getComputedStyle(canvasWindow.canvas);
-    canvasWindow.width = Number(style.width.replace('px', ''));
-    canvasWindow.height = Number(style.height.replace('px', ''));
+    let rect = canvasWindow.canvas.getBoundingClientRect();
+
+    canvasWindow.width = rect.width;
+    canvasWindow.height = rect.height;
+  }
+
+  protected resizeFromStyle(canvasWindow: CanvasWindow) {
+
+    this.setCanvasSizeFromStyle(canvasWindow);
 
     canvasWindow.canvas.width = canvasWindow.width;
     canvasWindow.canvas.height = canvasWindow.height;

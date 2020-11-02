@@ -302,9 +302,9 @@ window.onload = () => {
       {
         dockingTo: 'right',
         contents: [
-          { key: 1, component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: false},
-          { key: 2, component: UI_PaletteSelectorWindow, uiRef: _Main.uiPaletteSelectorWindowRef, icon: 'palette', isOpened: false},
-          { key: 3, component: UI_ColorMixerWindow, uiRef: _Main.uiColorMixerWindowRef, icon: 'palette', isOpened: false}
+          { key: 1, id: 'LayerWindow', component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: false},
+          { key: 2, id: 'PaletteSelectorWindow', component: UI_PaletteSelectorWindow, uiRef: _Main.uiPaletteSelectorWindowRef, icon: 'palette', isOpened: false},
+          { key: 3, id: 'ColorMixerWindow', component: UI_ColorMixerWindow, uiRef: _Main.uiColorMixerWindowRef, icon: 'palette', isOpened: false}
         ],
         uiRef: _Main.uiSideBarContainerRef,
       })
