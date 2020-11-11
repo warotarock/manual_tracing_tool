@@ -468,8 +468,7 @@ export class Tool_ScratchLineDraw extends Tool_ScratchLine {
         let command = new Command_DeleteFlaggedPoints();
         if (command.prepareEditTargets(env)) {
 
-          command.executeCommand(env);
-          env.commandHistory.addCommand(command);
+          env.commandHistory.executeCommand(command, env);
         }
       }
 
@@ -477,8 +476,8 @@ export class Tool_ScratchLineDraw extends Tool_ScratchLine {
         let command = new Command_AddLine();
         command.prepareEditTargets(env.currentVectorGroup, processingState.newLine);
         command.isContinued = true;
-        command.executeCommand(env);
-        env.commandHistory.addCommand(command);
+
+        env.commandHistory.executeCommand(command, env);
       }
     }
     else {

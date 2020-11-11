@@ -631,6 +631,7 @@ export class App_Main extends App_Event implements MainEditor {
 
       this.layerWindow_CollectItems(documentData);
       this.layerWindow_CaluculateLayout(this.layerWindow);
+      this.collectPosingLayerOptions();
     }
 
     // Update draw path
@@ -699,7 +700,7 @@ export class App_Main extends App_Event implements MainEditor {
       // this.clearWindow(this.layerWindow);
       this.drawLayerWindow(this.layerWindow);
 
-      this.uiLayerwindowRef.update(this.layerWindow.layerWindowItems);
+      this.updateUIDraw3D();
 
       this.toolContext.redrawLayerWindow = false;
     }

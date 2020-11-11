@@ -8,6 +8,7 @@ import {
 } from '../base/data';
 
 import {
+  ToolDrawingEnvironment,
     ToolEnvironment,
 } from '../base/tool';
 
@@ -153,6 +154,11 @@ export class Tool_DeletePoints_DivideLine extends Tool_BrushSelectLinePointBase 
     selector = new Selector_DeleteLinePoint_DivideLine();
     logic_Selector: ISelector_BrushSelect = this.selector; // @override
 
+    protected getSelectionRadius(env: ToolEnvironment) { // @override
+
+      return env.eraserRadius;
+    }
+
     protected existsResults(): boolean { // @override
 
         return (this.selector.selectionInfo.selectedGroups.length > 0);
@@ -163,8 +169,7 @@ export class Tool_DeletePoints_DivideLine extends Tool_BrushSelectLinePointBase 
         let command = new Command_DeletePoints_DivideLine();
         if (command.prepareEditTargets(this.selector.selectionInfo)) {
 
-            command.executeCommand(env);
-            env.commandHistory.addCommand(command);
+            env.commandHistory.executeCommand(command, env);
         }
 
         this.selector.resetModifyStates();
@@ -318,7 +323,7 @@ export class Command_DeletePoints_DivideLine extends CommandBase {
         }
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

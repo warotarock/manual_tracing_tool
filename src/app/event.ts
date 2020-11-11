@@ -8,7 +8,7 @@ import { CanvasWindow } from '../renders/render2d';
 
 import { Command_DeleteSelectedPoints } from '../commands/delete_points';
 import { Command_CopyGeometry, Command_PasteGeometry } from '../commands/edit_copy';
-import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown } from '../commands/edit_layer';
+import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown, Command_VectorLayer_EnableEyesSymmetry } from '../commands/edit_layer';
 
 import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, LayerWindowItem, MainCommandButtonID, RibbonUIControlID } from '../app/view.class';
 import { App_Document } from '../app/document';
@@ -19,6 +19,7 @@ import { ViewOperation, ViewOperationMode } from '../view_operations';
 import { UI_FooterOperationPanel_ID } from '../ui/footer_operation_panel';
 import { UI_SideBarContentInfo } from '../ui/side_bar_container';
 import { UI_PaletteSelectorWindow } from '../ui/palette_selector_window';
+import { UI_SelectBoxOption } from '../ui/selectbox';
 
 export class App_Event extends App_Document {
 
@@ -170,55 +171,6 @@ export class App_Event extends App_Document {
 
     // Menu buttons
 
-    this.getElement(this.ID.menu_btnDrawTool).addEventListener('mousedown', (e: Event) => {
-
-      if (this.isEventDisabled()) {
-        return;
-      }
-
-
-      this.setCurrentEditMode(EditModeID.drawMode);
-      this.setCurrentMainToolForCurentLayer();
-
-      this.toolEnv.setRedrawMainWindowEditorWindow();
-      this.toolEnv.setRedrawLayerWindow();
-      this.toolEnv.setRedrawSubtoolWindow();
-
-      e.preventDefault();
-    });
-
-    this.getElement(this.ID.menu_btnEditTool).addEventListener('mousedown', (e: Event) => {
-
-      if (this.isEventDisabled()) {
-        return;
-      }
-
-      let env = this.toolEnv;
-
-      if (env.isDrawMode()) {
-
-        this.setCurrentEditMode(EditModeID.editMode);
-      }
-
-      e.preventDefault();
-    });
-
-    this.getElement(this.ID.menu_btnMiscTool).addEventListener('mousedown', (e: Event) => {
-
-      if (this.isEventDisabled()) {
-        return;
-      }
-
-      this.setCurrentEditMode(EditModeID.drawMode);
-      this.setCurrentMainTool(MainToolID.misc);
-
-      this.toolEnv.setRedrawMainWindowEditorWindow();
-      this.toolEnv.setRedrawLayerWindow();
-      this.toolEnv.setRedrawSubtoolWindow();
-
-      e.preventDefault();
-    });
-
     this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', (e: Event) => {
 
       if (this.isEventDisabled()) {
@@ -231,12 +183,17 @@ export class App_Event extends App_Document {
 
     // React conponents
 
+    this.uiMenuButtonsRef.item_Click = (mainToolID) => {
+
+      this.mainTool_ItemClick(mainToolID);
+    };
+
     this.uiHeaderWindowRef.commandButton_Click = (id) => {
 
       this.menuButton_Click(id);
     };
 
-    this.uiSideBarContainerRef.onOpen = (cotentInfo: UI_SideBarContentInfo) => {
+    this.uiSideBarContainerRef.onOpen = (cotentInfo) => {
 
       if (cotentInfo.id == 'ColorMixerWindow' && !this.colorMixerWindow_colorCanvas.isDrawingDone) {
 
@@ -252,14 +209,24 @@ export class App_Event extends App_Document {
       }
     };
 
-    this.uiRibbonUIRef.button_Click = (subToolIndex: number) => {
+    this.uiRibbonUIRef.subtoolButton_Click = (subToolIndex) => {
 
       this.subtoolWindow_selectItem(subToolIndex);
     };
 
-    this.uiRibbonUIRef.numberInput_Change = (id: RibbonUIControlID, value: float) => {
+    this.uiRibbonUIRef.numberInput_Change = (id, value) => {
 
       this.ribbonUI_NumberInput_Change(id, value);
+    };
+
+    this.uiRibbonUIRef.checkBox_Change = (id, checked, value) => {
+
+      this.ribbonUI_CheckBox_Change(id, checked, value);
+    };
+
+    this.uiRibbonUIRef.selectBox_Change = (id, selected_Option) => {
+
+      this.ribbonUI_SelectBox_Change(id, selected_Option);
     };
 
     this.uiFooterOperationpanelRef.button_Click = (id) => {
@@ -928,7 +895,7 @@ export class App_Event extends App_Document {
       let command = new Command_CopyGeometry();
       if (command.prepareEditData(env)) {
 
-        command.executeCommand(env);
+        command.execute(env);
       }
     }
   }
@@ -947,8 +914,7 @@ export class App_Event extends App_Document {
 
       this.tool_SelectAllPoints.executeClearSelectAll(env);
 
-      command.executeCommand(env);
-      context.commandHistory.addCommand(command);
+      context.commandHistory.executeCommand(command, env);
     }
 
     env.setRedrawCurrentLayer();
@@ -969,15 +935,14 @@ export class App_Event extends App_Document {
 
         if (withCut) {
 
-          let command = new Command_CopyGeometry();
-          if (command.prepareEditData(env)) {
+          let copyCommand = new Command_CopyGeometry();
+          if (copyCommand.prepareEditData(env)) {
 
-            command.executeCommand(env);
+            copyCommand.execute(env);
           }
         }
 
-        command.executeCommand(env);
-        this.toolContext.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
 
         env.setRedrawMainWindow();
       }
@@ -1670,6 +1635,61 @@ export class App_Event extends App_Document {
     env.setRedrawSubtoolWindow();
   }
 
+  protected mainTool_ItemClick(mainToolID: MainToolID) {
+
+    if (this.isEventDisabled()) {
+      return;
+    }
+
+    const env = this.toolEnv;
+
+    switch(mainToolID) {
+
+      case MainToolID.drawLine:
+      case MainToolID.posing: {
+
+        this.setCurrentEditMode(EditModeID.drawMode);
+        this.setCurrentMainToolForCurentLayer();
+
+        this.toolEnv.setRedrawMainWindowEditorWindow();
+        this.toolEnv.setRedrawSubtoolWindow();
+
+        break;
+      }
+
+      case MainToolID.edit: {
+
+        if (env.isDrawMode()) {
+
+          this.setCurrentEditMode(EditModeID.editMode);
+        }
+
+        break;
+      }
+
+      case MainToolID.draw3D: {
+
+        this.setCurrentEditMode(EditModeID.drawMode);
+        this.setCurrentMainTool(MainToolID.draw3D);
+
+        this.toolEnv.setRedrawMainWindowEditorWindow();
+        this.toolEnv.setRedrawSubtoolWindow();
+        break;
+      }
+
+      case MainToolID.misc: {
+
+        this.setCurrentEditMode(EditModeID.drawMode);
+        this.setCurrentMainTool(MainToolID.misc);
+
+        this.toolEnv.setRedrawMainWindowEditorWindow();
+        this.toolEnv.setRedrawSubtoolWindow();
+
+        break;
+      }
+    }
+  }
+
   protected subtoolWindow_Item_Click(item: SubToolViewItem) {
 
     this.subtoolWindow_selectItem(item.subToolIndex);
@@ -1719,15 +1739,76 @@ export class App_Event extends App_Document {
 
     // console.log(id, value);
 
+    let env = this.toolEnv;
+
     switch(id) {
 
       case RibbonUIControlID.brushWidth_Max:
         this.toolContext.drawLineBaseWidth = value;
         break;
+
+      case RibbonUIControlID.brushWidth_Min:
+        this.toolContext.drawLineMinWidth = value;
+        break;
+
+        case RibbonUIControlID.eraserWidth_Max:
+          this.toolContext.eraserLineBaseWidth = value;
+          env.setRedrawEditorWindow();
+          break;
     }
   }
 
-  paletteSelectorWindow_CommandButton_Click(item: UI_CommandButtonsItem) {
+  protected ribbonUI_CheckBox_Change(id: RibbonUIControlID, checked: boolean, value: boolean | number | null) {
+
+    let env = this.toolEnv;
+
+    switch (id) {
+
+      case RibbonUIControlID.vectorLayer_enableEyesSymmetry:
+
+        if (env.currentVectorLayer) {
+
+          let command = new Command_VectorLayer_EnableEyesSymmetry();
+          command.layer = env.currentVectorLayer;
+          command.new_enableEyesSymmetry = checked;
+          if (command.isAvailable(env)) {
+
+            // console.log('ribbonUI_CheckBox_Change', id, checked, value);
+
+            env.commandHistory.executeCommand(command, env);
+          }
+        }
+        break;
+    }
+  }
+
+  protected ribbonUI_SelectBox_Change(id: RibbonUIControlID, selected_Options: UI_SelectBoxOption[]) {
+
+    let env = this.toolEnv;
+
+    switch (id) {
+
+      case RibbonUIControlID.vectorLayer_posingLayer:
+
+        const selected_Option = (selected_Options.length > 0 ? selected_Options[0] : null);
+
+        if (env.currentVectorLayer && selected_Option) {
+
+          // console.log('ribbonUI_SelectBox_Change', id, selected_Option, env.currentVectorLayer);
+
+          let command = new Command_VectorLayer_EnableEyesSymmetry();
+          command.layer = env.currentVectorLayer;
+          command.new_posingLayer = selected_Option.data;
+          if (command.isAvailable(env)) {
+
+            env.commandHistory.executeCommand(command, env);
+          }
+        }
+        break;
+    }
+  }
+
+  protected paletteSelectorWindow_CommandButton_Click(item: UI_CommandButtonsItem) {
 
     let wnd = this.paletteSelectorWindow;
     let env = this.toolEnv;
@@ -1738,7 +1819,7 @@ export class App_Event extends App_Document {
     env.setRedrawColorMixerWindow();
   }
 
-  paletteSelectorWindow_Item_Click(paletteColorIndex: int, color: PaletteColor) {
+  protected paletteSelectorWindow_Item_Click(paletteColorIndex: int, color: PaletteColor) {
 
     let wnd = this.paletteSelectorWindow;
     let env = this.toolEnv;

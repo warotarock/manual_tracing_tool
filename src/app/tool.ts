@@ -15,7 +15,8 @@ import {
   ToolBase,
   ModalToolBase,
   ModalToolID,
-  EditModeID
+  EditModeID,
+  Tool_None
 } from '../base/tool';
 
 import { ImageResource, ModelFile, ModelResource } from '../posing3d/posing3d_view';
@@ -69,6 +70,9 @@ export class App_Tool extends App_Drawing {
   modalBeforeTool: ToolBase = null;
   vectorLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
   imageFileReferenceLayer_ModalTools = List<ModalToolBase>(<int>ModalToolID.countOfID);
+
+  // Dummy tool
+  tool_None = new Tool_None();
 
   // Document setting tools
   tool_EditDocumentFrame = new Tool_EditDocumentFrame();
@@ -215,6 +219,11 @@ export class App_Tool extends App_Drawing {
         .subTool(this.tool_ResampleSegment, this.subToolImages[1], 4)
     );
 
+    this.mainTools.push(
+      new MainTool().id(MainToolID.draw3D)
+        .subTool(this.tool_None, null, 0)
+    );
+
     // Modal tools
     this.vectorLayer_ModalTools[<int>ModalToolID.none] = null;
     this.vectorLayer_ModalTools[<int>ModalToolID.grabMove] = this.tool_Transform_Lattice_GrabMove;
@@ -308,7 +317,7 @@ export class App_Tool extends App_Drawing {
 
   protected getCurrentMainTool(): MainTool { // @override
 
-    return this.mainTools[<int>this.toolContext.mainToolID];
+    return this.mainTools.find(mainTool => mainTool.mainToolID == this.toolContext.mainToolID);
   }
 
   protected getCurrentTool(): ToolBase { // @override
@@ -415,15 +424,41 @@ export class App_Tool extends App_Drawing {
 
     // console.log("updateUISubToolWindow", forceRedraw, this.toolContext.subToolIndex);
 
-    if (forceRedraw) {
+    if (this.uiRibbonUIRef.updateMainTool) {
 
-      this.uiRibbonUIRef.update(this.toolContext.subToolIndex, this.toolContext.drawLineBaseWidth);
-      this.uiSubToolWindowRef.update(this.subToolViewItems.slice(), this.toolContext.subToolIndex);
+      this.uiRibbonUIRef.updateMainTool(this.toolContext.mainToolID);
     }
-    else {
 
-      this.uiRibbonUIRef.update(this.toolContext.subToolIndex, this.toolContext.drawLineBaseWidth);
-      this.uiSubToolWindowRef.update(this.subToolViewItems, this.toolContext.subToolIndex);
+    if (this.uiRibbonUIRef.updateHome) {
+
+      this.uiRibbonUIRef.updateHome(
+        this.toolContext.subToolIndex,
+        this.toolContext.drawLineBaseWidth,
+        this.toolContext.drawLineMinWidth,
+        this.toolContext.eraserLineBaseWidth
+      );
+    }
+
+    this.updateUIDraw3D();
+
+    if (this.uiSubToolWindowRef.update) {
+
+      if (forceRedraw) {
+
+        this.uiSubToolWindowRef.update(this.subToolViewItems.slice(), this.toolContext.subToolIndex);
+      }
+      else {
+
+        this.uiSubToolWindowRef.update(this.subToolViewItems, this.toolContext.subToolIndex);
+      }
+    }
+  }
+
+  protected updateUIDraw3D() {
+
+    if (this.uiRibbonUIRef.updateDraw3D && this.toolContext.currentVectorLayer) {
+
+      this.uiRibbonUIRef.updateDraw3D(this.toolContext.currentVectorLayer, this.posingLayerOptions);
     }
   }
 
@@ -722,6 +757,8 @@ export class App_Tool extends App_Drawing {
 
   protected executeLayerCommand(layerCommand: Command_Layer_CommandBase) {
 
+    var env = this.toolEnv;
+
     let currentLayerWindowItem = this.layerWindow_FindCurrentItem();
 
     if (currentLayerWindowItem == null) {
@@ -733,9 +770,7 @@ export class App_Tool extends App_Drawing {
 
     if (layerCommand.isAvailable(this.toolEnv)) {
 
-      layerCommand.executeCommand(this.toolEnv);
-
-      this.toolContext.commandHistory.addCommand(layerCommand);
+      env.commandHistory.executeCommand(layerCommand, env);
     }
   }
 

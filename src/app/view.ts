@@ -9,6 +9,7 @@ import {
   ImageFileReferenceLayer,
   DrawLineTypeID,
   LocalSetting,
+  PosingLayer,
 } from '../base/data';
 
 import {
@@ -45,6 +46,7 @@ import { UI_HeaderWindowRef } from '../ui/header_window';
 import { UI_SideBarContainerRef } from '../ui/side_bar_container';
 import { UI_FooterOperationPanelRef } from '../ui/footer_operation_panel';
 import { UI_RibbonUIRef } from '../ui/ribbon_ui';
+import { UI_SelectBoxOption } from '../ui/selectbox';
 
 declare var Custombox: any;
 
@@ -87,11 +89,11 @@ export class App_View {
   // Operation panel
 
   mainOperationUI_Icons = [
-    { image: new Image(), filePath: './res/svg/zoom_in-24px.svg' },
-    { image: new Image(), filePath: './res/svg/rotate_right-24px.svg' },
-    { image: new Image(), filePath: './res/svg/open_with-24px.svg' },
-    { image: new Image(), filePath: './res/svg/brush-24px.svg' },
-    { image: new Image(), filePath: './res/svg/flip-24px.svg' },
+    { image: new Image(), filePath: './dist/res/zoom_in-24px.svg' },
+    { image: new Image(), filePath: './dist/res/rotate_right-24px.svg' },
+    { image: new Image(), filePath: './dist/res/open_with-24px.svg' },
+    { image: new Image(), filePath: './dist/res/icon_draw.svg' },
+    { image: new Image(), filePath: './dist/res/icon_eracer.svg' },
   ];
   mainOperationUI_PanelBorderPoints: float[][] = [];
   mainOperationUI_Area = new RectangleLayoutArea()
@@ -132,6 +134,8 @@ export class App_View {
   selectCurrentLayerAnimationLayer: Layer = null;
   selectCurrentLayerAnimationTime = 0.0;
   selectCurrentLayerAnimationTimeMax = 0.4;
+
+  posingLayerOptions: UI_SelectBoxOption[] = [];
 
   // Integrated tool system
 
@@ -944,6 +948,33 @@ export class App_View {
     this.setInputElementRangeValue(id + this.ID.colorMixer_id_range, colorValue, 1.0);
   }
 
+  // RibbonUI
+
+  protected collectPosingLayerOptions() {
+
+    let wnd = this.layerWindow;
+
+    this.posingLayerOptions = [];
+
+    this.posingLayerOptions.push({
+      value: '-1',
+      label: '--',
+      data: null
+    });
+
+    for (const [index, layerWindowItem] of wnd.layerWindowItems.entries()) {
+
+      if (PosingLayer.isPosingLayer(layerWindowItem.layer)) {
+
+        this.posingLayerOptions.push({
+          value: index.toString(),
+          label: layerWindowItem.layer.name,
+          data: layerWindowItem.layer
+        });
+      }
+    }
+  }
+
   // Dialogs
 
   currentModalDialogID: string = null;
@@ -1358,8 +1389,7 @@ export class App_View {
 
       if (command.isAvailable(env)) {
 
-        command.executeCommand(env);
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
       }
     }
   }
@@ -1387,8 +1417,7 @@ export class App_View {
 
       if (command.isAvailable(env)) {
 
-        command.executeCommand(env);
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
       }
     }
   }
@@ -1426,25 +1455,7 @@ export class App_View {
 
   protected updateHeaderButtons() {
 
-    let activeElementID = '';
-
-    if (this.toolContext.editMode == EditModeID.drawMode
-      && (this.toolContext.mainToolID == MainToolID.drawLine
-        || this.toolContext.mainToolID == MainToolID.posing
-        || this.toolContext.mainToolID == MainToolID.imageReferenceLayer)) {
-
-      activeElementID = this.ID.menu_btnDrawTool;
-    }
-    else if (this.toolContext.editMode == EditModeID.editMode) {
-
-      activeElementID = this.ID.menu_btnEditTool;
-    }
-    else {
-
-      activeElementID = this.ID.menu_btnMiscTool;
-    }
-
-    this.uiMenuButtonsRef.update(activeElementID);
+    this.uiMenuButtonsRef.update(this.toolContext.mainToolID, this.toolContext.currentLayer);
   }
 
   //private setHeaderButtonVisual(elementID: string, isSelected: boolean) {

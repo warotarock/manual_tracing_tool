@@ -64,9 +64,8 @@ export class Tool_EditImageFileReference extends ToolBase {
         let command = new Command_LoadReferenceImageToLayer();
         command.targetLayer = env.currentImageFileReferenceLayer;
         command.newFilePath = filePath;
-        command.executeCommand(env);
 
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
     }
 }
 
@@ -76,7 +75,7 @@ class Command_LoadReferenceImageToLayer extends CommandBase {
     oldFilePath: string = null;
     newFilePath: string = null;
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.errorCheck();
 
@@ -272,9 +271,7 @@ class Tool_Transform_ReferenceImage extends Tool_Transform_Lattice {
         vec3.copy(command.newRotation, command.targetLayer.adjustingRotation);
         vec3.copy(command.newScale, command.targetLayer.adjustingScale);
 
-        command.executeCommand(env);
-
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
     }
 
     cancelModal(env: ToolEnvironment) { // @override
@@ -301,7 +298,7 @@ class Command_Transform_ReferenceImage extends CommandBase {
     oldRotation = vec3.fromValues(0.0, 0.0, 0.0);
     oldScale = vec3.fromValues(1.0, 1.0, 1.0);
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.errorCheck();
 

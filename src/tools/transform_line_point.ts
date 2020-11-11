@@ -200,9 +200,7 @@ export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
         command.targetLines = this.targetLines;
         command.useGroups(this.targetGroups);
 
-        command.executeCommand(env);
-
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
 
         this.editPoints = null;
     }
@@ -213,7 +211,7 @@ export class Command_TransformLattice_LinePoint extends CommandBase {
     targetLines: List<VectorStroke> = null;
     editPoints: List<Tool_Transform_Lattice_EditPoint> = null;
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.errorCheck();
 

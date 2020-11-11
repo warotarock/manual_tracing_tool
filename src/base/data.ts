@@ -280,6 +280,12 @@ export class VectorLayer extends Layer {
   line_PaletteColorIndex = 0;
   fill_PaletteColorIndex = 1;
 
+  enableEyesSymmetry = false;
+  posingLayer: PosingLayer = null;
+
+  // file only
+  posingLayerID: int;
+
   static isVectorLayer(layer: Layer): boolean {
 
     return (

@@ -83,7 +83,7 @@ export class Command_Animation_InsertKeyframeAllLayer extends CommandBase {
         return (this.editDatas.length > 0);
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }
@@ -162,7 +162,7 @@ export class Command_Animation_DeleteKeyframeAllLayer extends CommandBase {
         return (this.editDatas.length > 0);
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

@@ -60,9 +60,7 @@ export class Tool_AddPoint extends ToolBase {
 
         command.useGroup(command.group);
 
-        command.executeCommand(env);
-
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
     }
 }
 
@@ -73,7 +71,7 @@ export class Command_AddPoint extends CommandBase {
     point: VectorPoint = null;
     addLine = false;
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

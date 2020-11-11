@@ -190,7 +190,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
   // MainEditorDrawer implementations
 
-  drawMouseCursor() { // @implements MainEditorDrawer
+  drawMouseCursor(radius: float) { // @implements MainEditorDrawer
 
     this.canvasRender.beginPath();
 
@@ -200,7 +200,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     this.canvasRender.circle(
       this.mainWindow.toolMouseEvent.location[0]
       , this.mainWindow.toolMouseEvent.location[1]
-      , this.getCurrentViewScaleLineWidth(this.toolContext.mouseCursorRadius)
+      , radius
     );
 
     this.canvasRender.stroke();

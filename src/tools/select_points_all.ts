@@ -135,8 +135,6 @@ export class Tool_Select_All_LinePoint extends ToolBase {
         let command = new Command_Select();
         command.selectionInfo = selectionInfo;
 
-        command.executeCommand(env);
-
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
     }
 }

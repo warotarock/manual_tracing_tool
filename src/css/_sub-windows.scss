@@ -34,9 +34,9 @@
 }
 
 $main-tool-width: 150px;
-$sub-tool-buttons-width: 160px;
+$sub-tool-buttons-width: 180px;
 $main-tool-height: 300px;
-$ribbon-height: 105px;
+$ribbon-height: 125px;
 $tool-button-width: 70px;
 $operation-ui-border: solid 1px $windowBorderColor;
 
@@ -46,9 +46,12 @@ $operation-ui-border: solid 1px $windowBorderColor;
   height: $ribbon-height;
   box-sizing: border-box;
   border-top: $operation-ui-border;
+  border-bottom: $operation-ui-border;
   padding: $padding-basic $padding-basic 0 $padding-basic;
   display: flex;
   background-color: $windowBackground;
+
+  $item-padding: 3px;
 
   .tool-ribbon-rows {
     flex: 1;
@@ -75,6 +78,8 @@ $operation-ui-border: solid 1px $windowBorderColor;
           cursor: default;
           color: #000;
           background-color: $windowBackground;
+          padding-inline-start: 10px;
+          padding-inline-end: 10px;
 
           &:hover {
             background-color: $hoverBackground;
@@ -122,9 +127,13 @@ $operation-ui-border: solid 1px $windowBorderColor;
       border-left: $windowBorder;
       border-right: $windowBorder;
       border-top: $windowBorder;
-      padding: 3px;
+      padding: $item-padding;
 
-      .ribbon-home-ui {
+      .ribbon-ui-home {
+        display: flex;
+      }
+
+      .ribbon-ui-draw3d {
         display: flex;
       }
 
@@ -147,8 +156,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
         .item {
           display: inline-block;
           box-sizing: border-box;
-          height: 100%;
-          height: 100%;
+          height: 75px * $item-scale;
           vertical-align: middle;
           padding: 3px;
 
@@ -246,6 +254,63 @@ $operation-ui-border: solid 1px $windowBorderColor;
         display: flex;
         flex-direction: column;
         padding: $margin-basic;
+        user-select: none;
+      }
+
+      .group-container {
+        display: flex;
+        flex-direction: column;
+        padding: 0 $margin-basic $margin-basic $margin-basic;
+
+        >.label {
+          font-size: $fontSizeSmall;
+          padding-left: 2px;
+          text-align: center;;
+          // background-color: #ddd;
+          // border-bottom: solid 1px #ddd;
+          user-select: none;
+        }
+
+        .contents {
+          display: flex;
+          padding-left: $margin-basic;
+
+          .item {
+
+            &:not(:first-child) {
+              margin-inline-start: $margin-basic * 3;
+            }
+
+            .label {
+              margin-top: $margin-basic;
+              margin-bottom: 3px;
+              font-size: $fontSizeSmall;
+              padding-left: $margin-basic;
+              padding-right: $margin-basic;
+              user-select: none;
+            }
+          }
+
+          .checkbox-item {
+            @extend .item;
+            display: flex;
+            flex-direction: column;
+
+            .checkbox {
+              text-align: center;;
+            }
+          }
+
+          .select-item {
+            @extend .item;
+            display: flex;
+            flex-direction: column;
+
+            &.eyes-symmetry {
+              width: 200px;
+            }
+          }
+        }
       }
     }
   }
@@ -272,7 +337,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
     border-right: $operation-ui-border;
     border-top-left-radius: $border-radius-basic;
     border-top-right-radius: $border-radius-basic;
-    padding: $padding-basic $padding-basic 0 $padding-basic;
+    padding: $padding-basic;
     display: flex;
     background-color: $windowBackground;
 
@@ -281,12 +346,14 @@ $operation-ui-border: solid 1px $windowBorderColor;
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       grid-template-rows: 1fr 1fr;
+      align-items: center;
+      justify-items: center;
 
       button {
         border: 1px solid #888;
         border-radius: $border-radius-basic;
-        width: 1.3em;
-        height: 1.3em;
+        width: 1.5em;
+        height: 1.5em;
         padding: 0.15em 0 0 0.12em;
         font-size: 32px;
         overflow: hidden;
@@ -302,7 +369,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
         }
 
         i {
-          font-size: 1.0em;
+          font-size: 1.2em;
         }
       }
     }

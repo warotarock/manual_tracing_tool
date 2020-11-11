@@ -2,504 +2,561 @@
 import { CommandBase } from "../base/command";
 import { ToolEnvironment } from "../base/tool";
 import {
-    Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
-    VectorLayer, VectorKeyframe, VectorGeometry, VectorStrokeGroup,
-    VectorLayerReferenceLayer,
-    GroupLayer,
-    ImageFileReferenceLayer,
-    PosingLayer,
-    AutoFillLayer,
-    VectorDrawingUnit
+  Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
+  VectorLayer, VectorKeyframe, VectorGeometry, VectorStrokeGroup,
+  VectorLayerReferenceLayer,
+  GroupLayer,
+  ImageFileReferenceLayer,
+  PosingLayer,
+  AutoFillLayer,
+  VectorDrawingUnit
 } from "../base/data";
 
 export class Command_Layer_CommandBase extends CommandBase {
 
-    currentLayer: Layer = null;
-    currentLayerParent: Layer = null;
-    currentLayerIndex = -1;
+  currentLayer: Layer = null;
+  currentLayerParent: Layer = null;
+  currentLayerIndex = -1;
 
-    previousLayer: Layer = null;
-    previousLayerParent: Layer = null;
-    previousLayerIndex = -1;
+  previousLayer: Layer = null;
+  previousLayerParent: Layer = null;
+  previousLayerIndex = -1;
 
-    nextLayer: Layer = null;
-    nextLayerParent: Layer = null;
-    nextLayerIndex = -1;
+  nextLayer: Layer = null;
+  nextLayerParent: Layer = null;
+  nextLayerIndex = -1;
 
-    removeFrom_ParentLayer: Layer = null;
-    removeFrom_OldChildLayerList: List<Layer> = null;
-    removeFrom_NewChildLayerList: List<Layer> = null;
+  removeFrom_ParentLayer: Layer = null;
+  removeFrom_OldChildLayerList: List<Layer> = null;
+  removeFrom_NewChildLayerList: List<Layer> = null;
 
-    insertTo_ParentLayer: Layer = null;
-    insertTo_Layer_OldChildLayerList: List<Layer> = null;
-    insertTo_Layer_NewChildLayerList: List<Layer> = null;
+  insertTo_ParentLayer: Layer = null;
+  insertTo_Layer_OldChildLayerList: List<Layer> = null;
+  insertTo_Layer_NewChildLayerList: List<Layer> = null;
 
-    newLayer: Layer = null;
+  newLayer: Layer = null;
 
-    isAvailable(env: ToolEnvironment): boolean { // @virtual
+  isAvailable(env: ToolEnvironment): boolean { // @virtual
 
-        return false;
+    return false;
+  }
+
+  setPrameters(currentLayer: Layer, currentLayerParent: Layer, previousLayer: Layer, previousLayerParent: Layer, nextLayer: Layer, nextLayerParent: Layer) {
+
+    this.currentLayer = currentLayer;
+    this.currentLayerParent = currentLayerParent;
+    this.currentLayerIndex = this.findChildLayerIndex(currentLayerParent, currentLayer);
+
+    this.previousLayer = previousLayer;
+    this.previousLayerParent = previousLayerParent;
+    this.previousLayerIndex = this.findChildLayerIndex(previousLayerParent, previousLayer);
+
+    this.nextLayer = nextLayer;
+    this.nextLayerParent = nextLayerParent;
+    this.nextLayerIndex = this.findChildLayerIndex(nextLayerParent, nextLayer);
+  }
+
+  private findChildLayerIndex(parentLayer: Layer, childLayer: Layer): int {
+
+    if (parentLayer == null || childLayer == null) {
+
+      return -1;
     }
 
-    setPrameters(currentLayer: Layer, currentLayerParent: Layer, previousLayer: Layer, previousLayerParent: Layer, nextLayer: Layer, nextLayerParent: Layer) {
+    for (let i = 0; i < parentLayer.childLayers.length; i++) {
 
-        this.currentLayer = currentLayer;
-        this.currentLayerParent = currentLayerParent;
-        this.currentLayerIndex = this.findChildLayerIndex(currentLayerParent, currentLayer);
+      if (parentLayer.childLayers[i] == childLayer) {
 
-        this.previousLayer = previousLayer;
-        this.previousLayerParent = previousLayerParent;
-        this.previousLayerIndex = this.findChildLayerIndex(previousLayerParent, previousLayer);
-
-        this.nextLayer = nextLayer;
-        this.nextLayerParent = nextLayerParent;
-        this.nextLayerIndex = this.findChildLayerIndex(nextLayerParent, nextLayer);
+        return i;
+      }
     }
 
-    private findChildLayerIndex(parentLayer: Layer, childLayer: Layer): int {
+    return -1;
+  }
 
-        if (parentLayer == null || childLayer == null) {
+  protected isContainerLayer(layer: Layer): boolean {
 
-            return -1;
-        }
+    return (Layer.isRootLayer(layer) || GroupLayer.isGroupLayer(layer));
+  }
 
-        for (let i = 0; i < parentLayer.childLayers.length; i++) {
+  protected executeLayerSwap(parentLayer: Layer, swapIndex1: int, swapIndex2: int, env: ToolEnvironment) {
 
-            if (parentLayer.childLayers[i] == childLayer) {
+    this.insertTo_ParentLayer = parentLayer;
 
-                return i;
-            }
-        }
+    this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
 
-        return -1;
+    this.insertTo_Layer_NewChildLayerList = ListClone(parentLayer.childLayers);
+
+    let swapItem = this.insertTo_Layer_NewChildLayerList[swapIndex1];
+    this.insertTo_Layer_NewChildLayerList[swapIndex1] = this.insertTo_Layer_NewChildLayerList[swapIndex2];
+    this.insertTo_Layer_NewChildLayerList[swapIndex2] = swapItem;
+
+    parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
+
+    env.updateLayerStructure();
+  }
+
+  protected executeLayerInsertToCurrent(layer: Layer, env: ToolEnvironment) {
+
+    let parentLayer: Layer;
+    let insertIndex: int;
+    if (GroupLayer.isGroupLayer(this.currentLayer)) {
+
+      parentLayer = this.currentLayer;
+      insertIndex = 0;
+    }
+    else {
+
+      parentLayer = this.currentLayerParent;
+      insertIndex = this.currentLayerIndex;
     }
 
-    protected isContainerLayer(layer: Layer): boolean {
+    this.executeLayerInsert(parentLayer, insertIndex, layer, env);
+  }
 
-        return (Layer.isRootLayer(layer) || GroupLayer.isGroupLayer(layer));
+  protected executeLayerInsert(parentLayer: Layer, insertIndex: int, layer: Layer, env: ToolEnvironment) {
+
+    this.insertTo_ParentLayer = parentLayer;
+
+    this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
+
+    this.insertTo_Layer_NewChildLayerList = ListClone(parentLayer.childLayers);
+
+    if (insertIndex < this.insertTo_Layer_NewChildLayerList.length) {
+
+      ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, layer);
+    }
+    else {
+
+      this.insertTo_Layer_NewChildLayerList.push(layer);
     }
 
-    protected executeLayerSwap(parentLayer: Layer, swapIndex1: int, swapIndex2: int, env: ToolEnvironment) {
+    parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
 
-        this.insertTo_ParentLayer = parentLayer;
+    env.updateLayerStructure();
 
-        this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
+    this.newLayer = layer;
+    env.setCurrentLayer(layer);
+  }
 
-        this.insertTo_Layer_NewChildLayerList = ListClone(parentLayer.childLayers);
+  protected executeLayerRemove(parentLayer: Layer, removeIndex: int, env: ToolEnvironment) {
 
-        let swapItem = this.insertTo_Layer_NewChildLayerList[swapIndex1];
-        this.insertTo_Layer_NewChildLayerList[swapIndex1] = this.insertTo_Layer_NewChildLayerList[swapIndex2];
-        this.insertTo_Layer_NewChildLayerList[swapIndex2] = swapItem;
+    this.removeFrom_ParentLayer = parentLayer;
 
-        parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
+    this.removeFrom_OldChildLayerList = parentLayer.childLayers;
 
-        env.updateLayerStructure();
+    this.removeFrom_NewChildLayerList = ListClone(parentLayer.childLayers);
+
+    ListRemoveAt(this.removeFrom_NewChildLayerList, removeIndex);
+
+    parentLayer.childLayers = this.removeFrom_NewChildLayerList;
+
+    env.setCurrentLayer(null);
+
+    env.updateLayerStructure();
+
+    if (this.previousLayer != null) {
+
+      env.setCurrentLayer(this.previousLayer);
+    }
+    else if (this.nextLayer != null) {
+
+      env.setCurrentLayer(this.nextLayer);
+    }
+  }
+
+  undo(env: ToolEnvironment) { // @override
+
+    if (this.insertTo_ParentLayer != null) {
+
+      this.insertTo_ParentLayer.childLayers = this.insertTo_Layer_OldChildLayerList;
     }
 
-    protected executeLayerInsertToCurrent(layer: Layer, env: ToolEnvironment) {
+    if (this.removeFrom_ParentLayer != null) {
 
-        let parentLayer: Layer;
-        let insertIndex: int;
-        if (GroupLayer.isGroupLayer(this.currentLayer)) {
-
-            parentLayer = this.currentLayer;
-            insertIndex = 0;
-        }
-        else {
-
-            parentLayer = this.currentLayerParent;
-            insertIndex = this.currentLayerIndex;
-        }
-
-        this.executeLayerInsert(parentLayer, insertIndex, layer, env);
+      this.removeFrom_ParentLayer.childLayers = this.removeFrom_OldChildLayerList;
     }
 
-    protected executeLayerInsert(parentLayer: Layer, insertIndex: int, layer: Layer, env: ToolEnvironment) {
+    env.setCurrentLayer(null);
 
-        this.insertTo_ParentLayer = parentLayer;
+    env.updateLayerStructure();
 
-        this.insertTo_Layer_OldChildLayerList = parentLayer.childLayers;
+    if (this.currentLayer != null) {
 
-        this.insertTo_Layer_NewChildLayerList = ListClone(parentLayer.childLayers);
-
-        if (insertIndex < this.insertTo_Layer_NewChildLayerList.length) {
-
-            ListInsertAt(this.insertTo_Layer_NewChildLayerList, insertIndex, layer);
-        }
-        else {
-
-            this.insertTo_Layer_NewChildLayerList.push(layer);
-        }
-
-        parentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
-
-        env.updateLayerStructure();
-
-        this.newLayer = layer;
-        env.setCurrentLayer(layer);
+      env.setCurrentLayer(this.currentLayer);
     }
 
-    protected executeLayerRemove(parentLayer: Layer, removeIndex: int, env: ToolEnvironment) {
+    env.setRedrawMainWindowEditorWindow();
+  }
 
-        this.removeFrom_ParentLayer = parentLayer;
+  redo(env: ToolEnvironment) { // @override
 
-        this.removeFrom_OldChildLayerList = parentLayer.childLayers;
+    if (this.insertTo_ParentLayer != null) {
 
-        this.removeFrom_NewChildLayerList = ListClone(parentLayer.childLayers);
-
-        ListRemoveAt(this.removeFrom_NewChildLayerList, removeIndex);
-
-        parentLayer.childLayers = this.removeFrom_NewChildLayerList;
-
-        env.setCurrentLayer(null);
-
-        env.updateLayerStructure();
-
-        if (this.previousLayer != null) {
-
-            env.setCurrentLayer(this.previousLayer);
-        }
-        else if (this.nextLayer != null) {
-
-            env.setCurrentLayer(this.nextLayer);
-        }
+      this.insertTo_ParentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
     }
 
-    undo(env: ToolEnvironment) { // @override
+    if (this.removeFrom_ParentLayer != null) {
 
-        if (this.insertTo_ParentLayer != null) {
-
-            this.insertTo_ParentLayer.childLayers = this.insertTo_Layer_OldChildLayerList;
-        }
-
-        if (this.removeFrom_ParentLayer != null) {
-
-            this.removeFrom_ParentLayer.childLayers = this.removeFrom_OldChildLayerList;
-        }
-
-        env.setCurrentLayer(null);
-
-        env.updateLayerStructure();
-
-        if (this.currentLayer != null) {
-
-            env.setCurrentLayer(this.currentLayer);
-        }
-
-        env.setRedrawMainWindowEditorWindow();
+      this.removeFrom_ParentLayer.childLayers = this.removeFrom_NewChildLayerList;
     }
 
-    redo(env: ToolEnvironment) { // @override
+    env.updateLayerStructure();
 
-        if (this.insertTo_ParentLayer != null) {
+    if (this.newLayer != null) {
 
-            this.insertTo_ParentLayer.childLayers = this.insertTo_Layer_NewChildLayerList;
-        }
-
-        if (this.removeFrom_ParentLayer != null) {
-
-            this.removeFrom_ParentLayer.childLayers = this.removeFrom_NewChildLayerList;
-        }
-
-        env.updateLayerStructure();
-
-        if (this.newLayer != null) {
-
-            env.setCurrentLayer(this.newLayer);
-        }
-
-        env.setRedrawMainWindowEditorWindow();
+      env.setCurrentLayer(this.newLayer);
     }
+
+    env.setRedrawMainWindowEditorWindow();
+  }
 }
 
 export class Command_Layer_AddVectorLayerToCurrentPosition extends Command_Layer_CommandBase {
 
-    createForFillColor = false;
+  createForFillColor = false;
 
-    newLayer: VectorLayer = null;
+  newLayer: VectorLayer = null;
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (!this.isContainerLayer(this.currentLayerParent)) {
+    if (!this.isContainerLayer(this.currentLayerParent)) {
 
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    return true;
+  }
 
-        this.newLayer = new VectorLayer();
+  execute(env: ToolEnvironment) { // @override
 
-        if (!this.createForFillColor) {
+    this.newLayer = new VectorLayer();
 
-            this.newLayer.name = 'new line layer';
-            this.newLayer.drawLineType = DrawLineTypeID.paletteColor;
-            this.newLayer.fillAreaType = FillAreaTypeID.none;
-        }
-        else {
+    if (!this.createForFillColor) {
 
-            this.newLayer.name = 'new fill layer';
-            this.newLayer.drawLineType = DrawLineTypeID.none;
-            this.newLayer.fillAreaType = FillAreaTypeID.paletteColor;
-        }
-
-        let keyFrame = new VectorKeyframe();
-        keyFrame.geometry = new VectorGeometry();
-        this.newLayer.keyframes.push(keyFrame);
-
-        const unit = new VectorDrawingUnit();
-        unit.groups.push(new VectorStrokeGroup());
-
-        keyFrame.geometry.units.push(unit);
-
-        this.executeLayerInsertToCurrent(this.newLayer, env);
+      this.newLayer.name = 'new line layer';
+      this.newLayer.drawLineType = DrawLineTypeID.paletteColor;
+      this.newLayer.fillAreaType = FillAreaTypeID.none;
     }
+    else {
+
+      this.newLayer.name = 'new fill layer';
+      this.newLayer.drawLineType = DrawLineTypeID.none;
+      this.newLayer.fillAreaType = FillAreaTypeID.paletteColor;
+    }
+
+    let keyFrame = new VectorKeyframe();
+    keyFrame.geometry = new VectorGeometry();
+    this.newLayer.keyframes.push(keyFrame);
+
+    const unit = new VectorDrawingUnit();
+    unit.groups.push(new VectorStrokeGroup());
+
+    keyFrame.geometry.units.push(unit);
+
+    this.executeLayerInsertToCurrent(this.newLayer, env);
+  }
 }
 
 export class Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition extends Command_Layer_CommandBase {
 
-    newLayer: VectorLayerReferenceLayer = null;
+  newLayer: VectorLayerReferenceLayer = null;
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (!this.isContainerLayer(this.currentLayerParent)) {
+    if (!this.isContainerLayer(this.currentLayerParent)) {
 
-            return false;
-        }
-
-        if (!VectorLayer.isVectorLayerWithOwnData(this.currentLayer)) {
-
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    if (!VectorLayer.isVectorLayerWithOwnData(this.currentLayer)) {
 
-        this.newLayer = new VectorLayerReferenceLayer();
-        this.newLayer.name = 'new ref layer';
-
-        this.newLayer.referenceLayer = <VectorLayer>(this.currentLayer);
-        this.newLayer.keyframes = this.newLayer.referenceLayer.keyframes;
-
-        this.executeLayerInsertToCurrent(this.newLayer, env);
+      return false;
     }
+
+    return true;
+  }
+
+  execute(env: ToolEnvironment) { // @override
+
+    this.newLayer = new VectorLayerReferenceLayer();
+    this.newLayer.name = 'new ref layer';
+
+    this.newLayer.referenceLayer = <VectorLayer>(this.currentLayer);
+    this.newLayer.keyframes = this.newLayer.referenceLayer.keyframes;
+
+    this.executeLayerInsertToCurrent(this.newLayer, env);
+  }
 }
 
 export class Command_Layer_AddAutoFillLayerToCurrentPosition extends Command_Layer_CommandBase {
 
-    newLayer: VectorLayer = null;
+  newLayer: VectorLayer = null;
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (!this.isContainerLayer(this.currentLayerParent)) {
+    if (!this.isContainerLayer(this.currentLayerParent)) {
 
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    return true;
+  }
 
-        this.newLayer = new AutoFillLayer();
+  execute(env: ToolEnvironment) { // @override
 
-        this.newLayer.name = 'new auto fill layer';
-        this.newLayer.drawLineType = DrawLineTypeID.paletteColor;
-        this.newLayer.fillAreaType = FillAreaTypeID.none;
+    this.newLayer = new AutoFillLayer();
 
-        let keyFrame = new VectorKeyframe();
-        keyFrame.geometry = new VectorGeometry();
-        this.newLayer.keyframes.push(keyFrame);
+    this.newLayer.name = 'new auto fill layer';
+    this.newLayer.drawLineType = DrawLineTypeID.paletteColor;
+    this.newLayer.fillAreaType = FillAreaTypeID.none;
 
-        const unit = new VectorDrawingUnit();
-        unit.groups.push(new VectorStrokeGroup());
+    let keyFrame = new VectorKeyframe();
+    keyFrame.geometry = new VectorGeometry();
+    this.newLayer.keyframes.push(keyFrame);
 
-        keyFrame.geometry.units.push(unit);
+    const unit = new VectorDrawingUnit();
+    unit.groups.push(new VectorStrokeGroup());
 
-        this.executeLayerInsertToCurrent(this.newLayer, env);
-    }
+    keyFrame.geometry.units.push(unit);
+
+    this.executeLayerInsertToCurrent(this.newLayer, env);
+  }
 }
 
 export class Command_Layer_AddGroupLayerToCurrentPosition extends Command_Layer_CommandBase {
 
-    newLayer: GroupLayer = null;
+  newLayer: GroupLayer = null;
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (!this.isContainerLayer(this.currentLayerParent)) {
+    if (!this.isContainerLayer(this.currentLayerParent)) {
 
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    return true;
+  }
 
-        this.newLayer = new GroupLayer();
-        this.newLayer.name = 'new group';
+  execute(env: ToolEnvironment) { // @override
 
-        this.executeLayerInsertToCurrent(this.newLayer, env);
-    }
+    this.newLayer = new GroupLayer();
+    this.newLayer.name = 'new group';
+
+    this.executeLayerInsertToCurrent(this.newLayer, env);
+  }
 }
 
 export class Command_Layer_AddImageFileReferenceLayerToCurrentPosition extends Command_Layer_CommandBase {
 
-    newLayer: ImageFileReferenceLayer = null;
+  newLayer: ImageFileReferenceLayer = null;
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (!this.isContainerLayer(this.currentLayerParent)) {
+    if (!this.isContainerLayer(this.currentLayerParent)) {
 
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    return true;
+  }
 
-        this.newLayer = new ImageFileReferenceLayer();
-        this.newLayer.name = 'new file';
+  execute(env: ToolEnvironment) { // @override
 
-        this.executeLayerInsertToCurrent(this.newLayer, env);
-    }
+    this.newLayer = new ImageFileReferenceLayer();
+    this.newLayer.name = 'new file';
+
+    this.executeLayerInsertToCurrent(this.newLayer, env);
+  }
 }
 
 export class Command_Layer_AddPosingLayerToCurrentPosition extends Command_Layer_CommandBase {
 
-    newLayer: PosingLayer = null;
+  newLayer: PosingLayer = null;
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (!this.isContainerLayer(this.currentLayerParent)) {
+    if (!this.isContainerLayer(this.currentLayerParent)) {
 
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    return true;
+  }
 
-        this.newLayer = new PosingLayer();
-        this.newLayer.name = 'new posing';
+  execute(env: ToolEnvironment) { // @override
 
-        this.newLayer.posingModel = env.getPosingModelByName('dummy_skin');
+    this.newLayer = new PosingLayer();
+    this.newLayer.name = 'new posing';
 
-        this.executeLayerInsertToCurrent(this.newLayer, env);
-    }
+    this.newLayer.posingModel = env.getPosingModelByName('dummy_skin');
+
+    this.executeLayerInsertToCurrent(this.newLayer, env);
+  }
 }
 
 export class Command_Layer_Delete extends Command_Layer_CommandBase {
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (Layer.isRootLayer(this.currentLayerParent) && this.currentLayerParent.childLayers.length == 1) {
+    if (Layer.isRootLayer(this.currentLayerParent) && this.currentLayerParent.childLayers.length == 1) {
 
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    return true;
+  }
 
-        this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+  execute(env: ToolEnvironment) { // @override
 
-        if (this.previousLayer != null) {
+    this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
 
-            env.setCurrentLayer(this.previousLayer);
-        }
-        else if (this.nextLayer != null) {
+    if (this.previousLayer != null) {
 
-            env.setCurrentLayer(this.nextLayer);
-        }
+      env.setCurrentLayer(this.previousLayer);
     }
+    else if (this.nextLayer != null) {
+
+      env.setCurrentLayer(this.nextLayer);
+    }
+  }
 }
 
 export class Command_Layer_MoveUp extends Command_Layer_CommandBase {
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (!this.isContainerLayer(this.currentLayerParent)) {
+    if (!this.isContainerLayer(this.currentLayerParent)) {
 
-            return false;
-        }
-
-        if (this.previousLayer == null) {
-
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    if (this.previousLayer == null) {
 
-        if (GroupLayer.isGroupLayer(this.previousLayer)) {
-
-            if (this.previousLayer == this.currentLayerParent) {
-
-                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
-                this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer, env);
-            }
-            else {
-
-                this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
-                this.executeLayerInsert(this.previousLayer, this.previousLayer.childLayers.length, this.currentLayer, env);
-            }
-        }
-        else if (this.previousLayerParent == this.currentLayerParent) {
-
-            this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex - 1, env);
-            env.setCurrentLayer(this.currentLayer);
-        }
-        else {
-
-            this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
-            this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer, env);
-        }
+      return false;
     }
+
+    return true;
+  }
+
+  execute(env: ToolEnvironment) { // @override
+
+    if (GroupLayer.isGroupLayer(this.previousLayer)) {
+
+      if (this.previousLayer == this.currentLayerParent) {
+
+        this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+        this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer, env);
+      }
+      else {
+
+        this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+        this.executeLayerInsert(this.previousLayer, this.previousLayer.childLayers.length, this.currentLayer, env);
+      }
+    }
+    else if (this.previousLayerParent == this.currentLayerParent) {
+
+      this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex - 1, env);
+      env.setCurrentLayer(this.currentLayer);
+    }
+    else {
+
+      this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+      this.executeLayerInsert(this.previousLayerParent, this.previousLayerIndex, this.currentLayer, env);
+    }
+  }
 }
 
 export class Command_Layer_MoveDown extends Command_Layer_MoveUp {
 
-    isAvailable(env: ToolEnvironment): boolean { // @override
+  isAvailable(env: ToolEnvironment): boolean { // @override
 
-        if (!this.isContainerLayer(this.currentLayerParent)) {
+    if (!this.isContainerLayer(this.currentLayerParent)) {
 
-            return false;
-        }
-
-        if (this.nextLayer == null) {
-
-            return false;
-        }
-
-        return true;
+      return false;
     }
 
-    execute(env: ToolEnvironment) { // @override
+    if (this.nextLayer == null) {
 
-        if (GroupLayer.isGroupLayer(this.nextLayer)) {
-
-            this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
-            this.executeLayerInsert(this.nextLayer, 0, this.currentLayer, env);
-        }
-        else if (this.currentLayerParent == this.nextLayerParent) {
-
-            this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex + 1, env);
-            env.setCurrentLayer(this.currentLayer);
-        }
-        else {
-
-            this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
-            this.executeLayerInsert(this.nextLayerParent, this.nextLayerIndex, this.currentLayer, env);
-        }
+      return false;
     }
+
+    return true;
+  }
+
+  execute(env: ToolEnvironment) { // @override
+
+    if (GroupLayer.isGroupLayer(this.nextLayer)) {
+
+      this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+      this.executeLayerInsert(this.nextLayer, 0, this.currentLayer, env);
+    }
+    else if (this.currentLayerParent == this.nextLayerParent) {
+
+      this.executeLayerSwap(this.currentLayerParent, this.currentLayerIndex, this.currentLayerIndex + 1, env);
+      env.setCurrentLayer(this.currentLayer);
+    }
+    else {
+
+      this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+      this.executeLayerInsert(this.nextLayerParent, this.nextLayerIndex, this.currentLayer, env);
+    }
+  }
+}
+
+export class Command_VectorLayer_EnableEyesSymmetry extends CommandBase {
+
+  layer: VectorLayer;
+  new_enableEyesSymmetry: boolean;
+  new_posingLayer: PosingLayer;
+
+  old_enableEyesSymmetry: boolean;
+  old_posingLayer: PosingLayer;
+
+  isAvailable(env: ToolEnvironment): boolean {
+
+    if (this.layer) {
+
+      return true;
+    }
+
+    return false;
+  }
+
+  execute(env: ToolEnvironment) { // @virtual
+
+    this.old_enableEyesSymmetry = env.currentVectorLayer.enableEyesSymmetry;
+    this.old_posingLayer = env.currentVectorLayer.posingLayer;
+
+    this.redo(env);
+  }
+
+  undo(env: ToolEnvironment) { // @virtual
+
+    this.layer.enableEyesSymmetry = this.old_enableEyesSymmetry;
+    this.layer.posingLayer = this.old_posingLayer;
+
+    // console.log('undo', this.layer.enableEyesSymmetry, this.layer.posingLayer ? this.layer.posingLayer.name : null);
+
+    env.setRedrawLayerWindow();
+  }
+
+  redo(env: ToolEnvironment) { // @virtual
+
+    // console.log('execute', this.new_enableEyesSymmetry, this.new_posingLayer ? this.new_posingLayer.name : null);
+
+    if (this.new_enableEyesSymmetry !== undefined) {
+
+      this.layer.enableEyesSymmetry = this.new_enableEyesSymmetry;
+
+      env.setRedrawLayerWindow();
+    }
+
+    if (this.new_posingLayer !== undefined) {
+
+      this.layer.posingLayer = this.new_posingLayer;
+
+      env.setRedrawLayerWindow();
+    }
+  }
 }

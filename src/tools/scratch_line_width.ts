@@ -65,10 +65,8 @@ export class Tool_OverWriteLineWidth extends Tool_ScratchLine {
 
             command.useGroup(targetGroup);
 
-            command.executeCommand(env);
-
-            env.commandHistory.addCommand(command);
-        }
+            env.commandHistory.executeCommand(command, env);
+          }
 
         Logic_Edit_VectorLayer.clearPointModifyFlags(oldPoints);
     }
@@ -204,7 +202,7 @@ export class Command_ScratchLineWidth extends CommandBase {
     targetLine: VectorStroke = null;
     editPoints = new List<Tool_ScratchLineWidth_EditPoint>();
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

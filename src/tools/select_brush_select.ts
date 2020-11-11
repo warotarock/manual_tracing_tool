@@ -45,7 +45,7 @@ export class Tool_BrushSelectLinePointBase extends ModalToolBase {
 
     onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
 
-        drawEnv.editorDrawer.drawMouseCursor();
+        drawEnv.editorDrawer.drawMouseCursor(this.getSelectionRadius(env));
     }
 
     mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
@@ -130,6 +130,11 @@ export class Tool_BrushSelectLinePointBase extends ModalToolBase {
         env.startModalTool(this);
     }
 
+    protected getSelectionRadius(env: ToolEnvironment) { // @virtual
+
+      return env.mouseCursorViewRadius;
+    }
+
     protected onStartSelection(e: ToolMouseEvent, env: ToolEnvironment) { // @virtual
 
     }
@@ -148,7 +153,7 @@ export class Tool_BrushSelectLinePointBase extends ModalToolBase {
                 this.logic_Selector.processLayer(
                     viewKeyframeLayer.vectorLayerKeyframe.geometry,
                     e.location,
-                    env.mouseCursorViewRadius
+                    this.getSelectionRadius(env)
                 );
             }
         }
@@ -213,9 +218,7 @@ export class Tool_Select_BrushSelect_LinePoint extends Tool_BrushSelectLinePoint
         let command = new Command_Select();
         command.selectionInfo = this.logic_Selector.selectionInfo;
 
-        command.executeCommand(env);
-
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
     }
 }
 
@@ -248,7 +251,7 @@ export class Command_Select extends CommandBase {
     private selectedLines: List<LineSelectionInfo> = null;
     private selectedPoints: List<PointSelectionInfo> = null;
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         // Selection process has done while inputting
         // so not required execute this.redo(env);

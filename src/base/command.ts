@@ -4,149 +4,151 @@ import { ToolEnvironment } from '../base/tool';
 
 export class CommandBase {
 
-    isContinued = false;
+  isContinued = false;
 
-    executeCommand(env: ToolEnvironment) {
+  execute(env: ToolEnvironment) { // @virtual
 
-        this.execute(env);
+  }
 
-        if (this.targetGroups != null) {
+  undo(env: ToolEnvironment) { // @virtual
 
-            VectorStrokeGroup.setGroupsUpdated(this.targetGroups);
+  }
 
-            env.setLazyRedraw();
-        }
+  redo(env: ToolEnvironment) { // @virtual
+
+  }
+
+  targetGroups: List<VectorStrokeGroup> = null;
+
+  useGroup(group: VectorStrokeGroup) {
+
+    if (!this.targetGroups) {
+
+      this.useGroups();
     }
 
-    protected execute(env: ToolEnvironment) { // @virtual
+    this.targetGroups.push(group);
+  }
 
+  useGroups(targetGroups?: List<VectorStrokeGroup>) {
+
+    if (targetGroups) {
+
+      this.targetGroups = targetGroups;
     }
+    else {
 
-    undo(env: ToolEnvironment) { // @virtual
-
+      this.targetGroups = new List<VectorStrokeGroup>();
     }
-
-    redo(env: ToolEnvironment) { // @virtual
-
-    }
-
-    targetGroups: List<VectorStrokeGroup> = null;
-
-    useGroup(group: VectorStrokeGroup) {
-
-        if (!this.targetGroups) {
-
-            this.useGroups();
-        }
-
-        this.targetGroups.push(group);
-    }
-
-    useGroups(targetGroups?: List<VectorStrokeGroup>) {
-
-        if (targetGroups) {
-
-            this.targetGroups = targetGroups;
-        }
-        else {
-
-            this.targetGroups = new List<VectorStrokeGroup>();
-        }
-    }
+  }
 }
 
 export class CommandHistory {
 
-    maxHistory = 300;
+  maxHistory = 300;
 
-    historyList = new List<CommandBase>();
-    redoList = new List<CommandBase>();
+  historyList = new List<CommandBase>();
+  redoList = new List<CommandBase>();
 
-    addCommand(command: CommandBase) {
+  executeCommand(command: CommandBase, env: ToolEnvironment) {
 
-        this.historyList.push(command);
+    command.execute(env);
 
-        if (this.historyList.length > this.maxHistory) {
+    if (command.targetGroups != null) {
 
-            ListRemoveAt(this.historyList, 0);
-        }
+      VectorStrokeGroup.setGroupsUpdated(command.targetGroups);
 
-        if (this.redoList.length > 0) {
-            this.redoList = new List<CommandBase>();
-        }
+      env.setLazyRedraw();
     }
 
-    private getUndoCommand(): CommandBase {
+    this.addCommand(command);
+  }
 
-        if (this.historyList.length == 0) {
-            return null;
-        }
+  addCommand(command: CommandBase) {
 
-        return this.historyList[this.historyList.length - 1];
+    this.historyList.push(command);
+
+    if (this.historyList.length > this.maxHistory) {
+
+      ListRemoveAt(this.historyList, 0);
     }
 
-    private getRedoCommand(): CommandBase {
+    if (this.redoList.length > 0) {
+      this.redoList = new List<CommandBase>();
+    }
+  }
 
-        if (this.redoList.length == 0) {
-            return null;
-        }
+  private getUndoCommand(): CommandBase {
 
-        return this.redoList[this.redoList.length - 1];
+    if (this.historyList.length == 0) {
+      return null;
     }
 
-    undo(env: ToolEnvironment) {
+    return this.historyList[this.historyList.length - 1];
+  }
 
-        let command: CommandBase = null;
+  private getRedoCommand(): CommandBase {
 
-        do {
-
-            command = this.getUndoCommand();
-
-            if (command == null) {
-                return;
-            }
-
-            command.undo(env);
-
-            if (command.targetGroups != null) {
-
-                VectorStrokeGroup.setGroupsUpdated(command.targetGroups);
-
-                env.setLazyRedraw();
-            }
-
-            this.redoList.push(command);
-            ListRemoveAt(this.historyList, this.historyList.length - 1);
-        }
-        while (command.isContinued);
+    if (this.redoList.length == 0) {
+      return null;
     }
 
-    redo(env: ToolEnvironment) {
+    return this.redoList[this.redoList.length - 1];
+  }
 
-        let command: CommandBase = null;
+  undo(env: ToolEnvironment) {
 
-        do {
+    let command: CommandBase = null;
 
-            command = this.getRedoCommand();
+    do {
 
-            if (command == null) {
-                return;
-            }
+      command = this.getUndoCommand();
 
-            command.redo(env);
+      if (command == null) {
+        return;
+      }
 
-            if (command.targetGroups != null) {
+      command.undo(env);
 
-                VectorStrokeGroup.setGroupsUpdated(command.targetGroups);
+      if (command.targetGroups != null) {
 
-                env.setLazyRedraw();
-            }
+        VectorStrokeGroup.setGroupsUpdated(command.targetGroups);
 
-            ListRemoveAt(this.redoList, this.redoList.length - 1);
-            this.historyList.push(command);
+        env.setLazyRedraw();
+      }
 
-            command = this.getRedoCommand();
-        }
-        while (command != null && command.isContinued);
+      this.redoList.push(command);
+      ListRemoveAt(this.historyList, this.historyList.length - 1);
     }
+    while (command.isContinued);
+  }
+
+  redo(env: ToolEnvironment) {
+
+    let command: CommandBase = null;
+
+    do {
+
+      command = this.getRedoCommand();
+
+      if (command == null) {
+        return;
+      }
+
+      command.redo(env);
+
+      if (command.targetGroups != null) {
+
+        VectorStrokeGroup.setGroupsUpdated(command.targetGroups);
+
+        env.setLazyRedraw();
+      }
+
+      ListRemoveAt(this.redoList, this.redoList.length - 1);
+      this.historyList.push(command);
+
+      command = this.getRedoCommand();
+    }
+    while (command != null && command.isContinued);
+  }
 }

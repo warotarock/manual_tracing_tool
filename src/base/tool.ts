@@ -23,7 +23,8 @@ export enum MainToolID {
   posing = 3,
   imageReferenceLayer = 4,
   misc = 5,
-  edit = 6
+  edit = 6,
+  draw3D = 7
 }
 
 export enum DrawLineToolSubToolID {
@@ -119,7 +120,7 @@ export interface MainEditor {
 
 export interface MainEditorDrawer {
 
-  drawMouseCursor();
+  drawMouseCursor(radius: float);
   drawMouseCursorCircle(radius: float);
   drawEditorEditLineStroke(line: VectorStroke);
   drawEditorVectorLineStroke(line: VectorStroke, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean);
@@ -444,6 +445,7 @@ export class ToolContext {
   posing3DLogic: Posing3DLogic = null;
 
   lazy_DrawPathContext: DrawPathContext = null;
+  drawCPUOnly = true;
 
   mainToolID = MainToolID.none;
   subToolIndex = 0;
@@ -456,7 +458,12 @@ export class ToolContext {
 
   drawLineBaseWidth = 1.0;
   drawLineMinWidth = 0.1;
-  drawCPUOnly = true;
+  eraserLineBaseWidth = 12.0;
+  mouseCursorRadius = 12.0;
+
+  resamplingUnitLength = 8.0
+
+  operatorCursor = new OperatorCursor();
 
   currentLayer: Layer = null;
 
@@ -482,12 +489,6 @@ export class ToolContext {
   redrawFooterWindow = false;
   redrawPaletteSelectorWindow = false;
   redrawColorMixerWindow = false;
-
-  mouseCursorRadius = 12.0;
-
-  resamplingUnitLength = 8.0
-
-  operatorCursor = new OperatorCursor();
 
   shiftKey: boolean = false;
   altKey: boolean = false;
@@ -519,6 +520,10 @@ export class ToolEnvironment {
 
   drawLineBaseWidth = 1.0;
   drawLineMinWidth = 1.0;
+  eraserRadius = 0.0;
+  mouseCursorRadius = 0.0;
+  mouseCursorViewRadius = 0.0;
+  mouseCursorLocation = vec3.fromValues(0.0, 0.0, 0.0);
 
   currentLayer: Layer = null;
 
@@ -540,9 +545,6 @@ export class ToolEnvironment {
   posing3DLogic: Posing3DLogic = null;
 
   viewScale = 0.0;
-
-  mouseCursorViewRadius = 0.0;
-  mouseCursorLocation = vec3.fromValues(0.0, 0.0, 0.0);
 
   constructor(toolContext: ToolContext) {
 
@@ -602,6 +604,8 @@ export class ToolEnvironment {
     this.viewScale = this.toolContext.mainWindow.viewScale;
     this.drawStyle = this.toolContext.drawStyle;
 
+    this.eraserRadius = this.getViewScaledLength(this.toolContext.eraserLineBaseWidth);
+    this.mouseCursorRadius = this.toolContext.mouseCursorRadius;
     this.mouseCursorViewRadius = this.getViewScaledLength(this.toolContext.mouseCursorRadius);
   }
 
@@ -1222,6 +1226,7 @@ export class ToolBase {
   }
 
   keydown(e: KeyboardEvent, env: ToolEnvironment): boolean { // @virtual
+
     return false;
   }
 
@@ -1239,6 +1244,10 @@ export class ToolBase {
 
   onOpenFile(filePath: string, env: ToolEnvironment) { // @virtual
   }
+}
+
+export class Tool_None extends ToolBase {
+
 }
 
 export class ModalToolBase extends ToolBase {

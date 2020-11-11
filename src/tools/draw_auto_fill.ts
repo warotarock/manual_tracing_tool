@@ -80,9 +80,8 @@ export class Tool_DrawAutoFill extends ToolBase {
         let command = new Command_AddLine();
         command.prepareEditTargets(env.currentVectorGroup, resampledLine);
         command.useGroup(env.currentVectorGroup);
-        command.executeCommand(env);
 
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
 
         this.editLine = null;
     }
@@ -105,7 +104,7 @@ export class Command_AddLine extends CommandBase {
         this.useGroup(group);
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

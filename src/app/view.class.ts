@@ -210,7 +210,8 @@ export enum RibbonUIControlID {
   brushWidth_Max,
   brushWidth_Min,
   eraserWidth_Max,
-  eraserWidth_Min,
+  vectorLayer_enableEyesSymmetry,
+  vectorLayer_posingLayer,
 }
 
 export class HTMLElementID {

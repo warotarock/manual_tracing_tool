@@ -180,7 +180,7 @@ export class Tool_ScratchLine extends ToolBase {
 
     onDrawEditor(env: ToolEnvironment, drawEnv: ToolDrawingEnvironment) { // @override
 
-        drawEnv.editorDrawer.drawMouseCursor();
+        drawEnv.editorDrawer.drawMouseCursor(env.mouseCursorViewRadius);
 
         if (this.tool_ScratchLine_EditLine_Visible) {
 
@@ -428,9 +428,7 @@ export class Tool_ScratchLine extends ToolBase {
 
             command.useGroup(targetGroup);
 
-            command.executeCommand(env);
-
-            env.commandHistory.addCommand(command);
+            env.commandHistory.executeCommand(command, env);
 
             return true;
         }
@@ -578,9 +576,7 @@ export class Tool_ScratchLine extends ToolBase {
 
             command.useGroup(targetGroup);
 
-            command.executeCommand(env);
-
-            env.commandHistory.addCommand(command);
+            env.commandHistory.executeCommand(command, env);
 
             return true;
         }
@@ -805,9 +801,7 @@ export class Tool_ScratchLine extends ToolBase {
 
         command.useGroup(targetGroup);
 
-        command.executeCommand(env);
-
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
     }
 
     // Common functions
@@ -916,7 +910,7 @@ export class Command_ExtrudeLine extends CommandBase {
     oldPointList: List<VectorPoint> = null;
     newPointList: List<VectorPoint> = null;
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.prepareEditPoints();
 
@@ -961,7 +955,7 @@ export class Command_ScratchLine extends CommandBase {
     targetLine: VectorStroke = null;
     editPoints = new List<Tool_ScratchLine_EditPoint>();
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.prepareEditPoints();
 
@@ -1022,7 +1016,7 @@ export class Command_DeleteDuplicationInLine extends CommandBase {
     oldPoints: List<VectorPoint> = null;
     newPoints: List<VectorPoint> = null;
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

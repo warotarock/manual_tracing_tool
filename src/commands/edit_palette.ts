@@ -9,9 +9,7 @@ export class Command_Palette_CommandBase extends CommandBase {
         return false;
     }
 
-    protected execute(env: ToolEnvironment) { // @override
-
-        this.executeCommand(env);
+    execute(env: ToolEnvironment) { // @override
 
         env.setRedrawMainWindowEditorWindow();
     }

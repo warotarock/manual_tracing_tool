@@ -46,8 +46,7 @@ export class Tool_DeletePoints_BrushSelect extends Tool_BrushSelectLinePointBase
         let command = new Command_DeleteFlaggedPoints();
         if (command.prepareEditTargets(env)) {
 
-            command.executeCommand(env);
-            env.commandHistory.addCommand(command);
+          env.commandHistory.executeCommand(command, env);
         }
 
         env.setRedrawMainWindow();

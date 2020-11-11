@@ -64,9 +64,7 @@ export class Tool_Resample_Segment extends ToolBase {
             command.editLines = this.editLines;
             command.useGroups(this.targetGroups);
 
-            command.executeCommand(env);
-
-            env.commandHistory.addCommand(command);
+            env.commandHistory.executeCommand(command, env);
 
             env.setRedrawMainWindowEditorWindow();
         }
@@ -225,7 +223,7 @@ export class Command_Resample_Segment extends CommandBase {
 
     editLines: List<Tool_Resample_Segment_EditLine> = null;
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

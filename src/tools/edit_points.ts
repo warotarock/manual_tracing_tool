@@ -59,8 +59,7 @@ export class Tool_HideLinePoint_BrushSelect extends Tool_BrushSelectLinePointBas
         let command = new Command_EditLinePointLineWidth();
         if (command.prepareEditTargets(this.selector.selectionInfo)) {
 
-            command.executeCommand(env);
-            env.commandHistory.addCommand(command);
+          env.commandHistory.executeCommand(command, env);
         }
 
         env.setRedrawMainWindow();
@@ -121,7 +120,7 @@ export class Command_EditLinePointLineWidth extends CommandBase {
         return (editPointCount > 0);
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

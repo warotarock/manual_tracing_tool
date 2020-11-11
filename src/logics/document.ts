@@ -128,7 +128,9 @@ export class DocumentLogic {
 
     if (VectorLayer.isVectorLayerWithOwnData(layer)) {
 
-      let vectorLayer = <VectorLayer>layer;
+      const vectorLayer = <VectorLayer>layer;
+
+      vectorLayer.posingLayer = null;
 
       if (vectorLayer.drawLineType == undefined) {
         vectorLayer.drawLineType = DrawLineTypeID.layerColor;
@@ -140,6 +142,10 @@ export class DocumentLogic {
 
       if (vectorLayer.fillColor == undefined) {
         vectorLayer.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+      }
+
+      if (vectorLayer.enableEyesSymmetry == undefined) {
+        vectorLayer.enableEyesSymmetry = false;
       }
 
       if (vectorLayer.line_PaletteColorIndex == undefined) {

@@ -45,7 +45,7 @@ export class Command_DeletePoints extends CommandBase {
         return true;
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

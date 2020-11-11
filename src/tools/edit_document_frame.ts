@@ -88,9 +88,8 @@ export class Tool_EditDocumentFrame extends Tool_Transform_Lattice {
         command.newDocumentFrame[1] = Math.floor(this.latticePoints[0].location[1]);
         command.newDocumentFrame[2] = Math.floor(this.latticePoints[2].location[0]);
         command.newDocumentFrame[3] = Math.floor(this.latticePoints[2].location[1]);
-        command.executeCommand(env);
 
-        env.commandHistory.addCommand(command);
+        env.commandHistory.executeCommand(command, env);
     }
 }
 
@@ -102,7 +101,7 @@ class Command_EditDocumentFrame extends CommandBase {
 
     oldDocumentFrame = vec4.create();
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.errorCheck();
 

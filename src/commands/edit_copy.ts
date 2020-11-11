@@ -88,7 +88,7 @@ export class Command_FilterGeometry extends CommandBase {
         return (this.editDatas != null);
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }
@@ -164,7 +164,7 @@ export class Command_CopyGeometry extends CommandBase {
         return (this.copy_VectorGroup != null);
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         // env.clipboard.copy_VectorGroup = this.copy_VectorGroup;
 
@@ -232,7 +232,7 @@ export class Command_PasteGeometry extends CommandBase {
         return true;
     }
 
-    protected execute(env: ToolEnvironment) { // @override
+    execute(env: ToolEnvironment) { // @override
 
         this.redo(env);
     }

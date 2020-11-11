@@ -60,3 +60,24 @@
     }
   }
 }
+
+.ui-checkbox-container {
+  display: inline-block;
+  border: $controlBorder;
+  background-color: $controlackground;
+  border-radius: 2px;
+
+  .content {
+    width: 23px;
+    height: 23px;
+    text-align: center;
+    user-select: none;
+
+    i {
+      font-size: 14px;
+      line-height: 23px;
+      vertical-align: middle;
+
+    }
+  }
+}
