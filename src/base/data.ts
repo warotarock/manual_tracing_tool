@@ -75,7 +75,7 @@ export class Layer {
 
   hashID = Layer.getHashID();
 
-  // when serializing only
+  // file only
   ID: int;
 
   static collectLayerRecursive(result: List<Layer>, parentLayer: Layer) {

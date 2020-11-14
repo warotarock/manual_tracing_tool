@@ -48,13 +48,15 @@ export class ColorCanvasWindow extends InputableWindow {
 export enum MainCommandButtonID {
 
   none = 0,
-  open = 1,
-  save = 2,
-  export = 3,
-  settings = 4,
-  layerWindow = 5,
-  paletteWindow = 6,
-  timeLineWindow = 7,
+  open,
+  save,
+  export,
+  undo,
+  redo,
+  settings,
+  layerWindow,
+  paletteWindow,
+  timeLineWindow,
 }
 
 export class TimeLineWindow extends InputableWindow {

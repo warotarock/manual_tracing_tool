@@ -9,10 +9,13 @@ import {
   ImageFileReferenceLayer,
   PosingLayer,
   AutoFillLayer,
-  VectorDrawingUnit
+  VectorDrawingUnit,
+  DocumentData
 } from "../base/data";
 
 export class Command_Layer_CommandBase extends CommandBase {
+
+  rootLayer: Layer = null;
 
   currentLayer: Layer = null;
   currentLayerParent: Layer = null;
@@ -41,7 +44,9 @@ export class Command_Layer_CommandBase extends CommandBase {
     return false;
   }
 
-  setPrameters(currentLayer: Layer, currentLayerParent: Layer, previousLayer: Layer, previousLayerParent: Layer, nextLayer: Layer, nextLayerParent: Layer) {
+  setPrameters(documentData: DocumentData, currentLayer: Layer, currentLayerParent: Layer, previousLayer: Layer, previousLayerParent: Layer, nextLayer: Layer, nextLayerParent: Layer) {
+
+    this.rootLayer = documentData.rootLayer;
 
     this.currentLayer = currentLayer;
     this.currentLayerParent = currentLayerParent;
@@ -177,6 +182,8 @@ export class Command_Layer_CommandBase extends CommandBase {
       this.removeFrom_ParentLayer.childLayers = this.removeFrom_OldChildLayerList;
     }
 
+    this.undoReplacedReferences();
+
     env.setCurrentLayer(null);
 
     env.updateLayerStructure();
@@ -200,6 +207,8 @@ export class Command_Layer_CommandBase extends CommandBase {
 
       this.removeFrom_ParentLayer.childLayers = this.removeFrom_NewChildLayerList;
     }
+
+    this.redoReplacedReferences();
 
     env.updateLayerStructure();
 
@@ -410,6 +419,8 @@ export class Command_Layer_Delete extends Command_Layer_CommandBase {
   execute(env: ToolEnvironment) { // @override
 
     this.executeLayerRemove(this.currentLayerParent, this.currentLayerIndex, env);
+
+    this.replaceReferenceRecursive(this.rootLayer, this.currentLayer, null);
 
     if (this.previousLayer != null) {
 

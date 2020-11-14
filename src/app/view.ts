@@ -1384,6 +1384,7 @@ export class App_View {
     if (insertType == 1) {
 
       let command = new Command_Animation_InsertKeyframeAllLayer();
+      command.rootLayer = env.document.rootLayer;
       command.frame = env.document.animationSettingData.currentTimeFrame;
       command.prepareEditData(env);
 
@@ -1412,6 +1413,7 @@ export class App_View {
     if (insertType == 1) {
 
       let command = new Command_Animation_DeleteKeyframeAllLayer();
+      command.rootLayer = env.document.rootLayer;
       command.frame = env.document.animationSettingData.currentTimeFrame;
       command.prepareEditData(env);
 

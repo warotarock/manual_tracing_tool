@@ -187,7 +187,8 @@ $operation-ui-border: solid 1px $windowBorderColor;
       .separator {
         width: 1px;
         border-right: solid 1px #ccc;
-        margin-inline-end: 6px;
+        margin-inline-start: 3px;
+        margin-inline-end: 3px;
       }
 
       .tool-button {
@@ -274,6 +275,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
         .contents {
           display: flex;
           padding-left: $margin-basic;
+          justify-content: center;
 
           .item {
 

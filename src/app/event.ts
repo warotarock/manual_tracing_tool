@@ -1432,6 +1432,14 @@ export class App_Event extends App_Document {
         this.openExportImageFileModal();
         break;
 
+      case MainCommandButtonID.undo:
+        this.inputKey_undo_down();
+        break;
+
+      case MainCommandButtonID.redo:
+        this.inputKey_redo_down();
+        break;
+
       case MainCommandButtonID.settings:
         this.openDocumentSettingDialog();
         break;
@@ -2014,7 +2022,7 @@ export class App_Event extends App_Document {
 
     let clickedFrame = wnd.getFrameByLocation(e.offsetX, aniSetting);
 
-    if (clickedFrame != -1) {
+    if (clickedFrame != -1 && clickedFrame != aniSetting.currentTimeFrame) {
 
       this.setCurrentFrame(clickedFrame);
       env.setRedrawMainWindowEditorWindow();

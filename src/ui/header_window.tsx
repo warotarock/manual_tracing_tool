@@ -24,6 +24,8 @@ export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
         { index: MainCommandButtonID.open, icon: 'folder' },
         { index: MainCommandButtonID.save, icon: 'save' },
         { index: MainCommandButtonID.export, icon: 'publish' },
+        { index: MainCommandButtonID.undo, icon: 'undo' },
+        { index: MainCommandButtonID.redo, icon: 'redo' },
         { index: MainCommandButtonID.settings, icon: 'settings' },
       ],
 

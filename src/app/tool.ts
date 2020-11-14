@@ -3,7 +3,8 @@ import { List, int } from '../base/conversion';
 import {
   Layer, LayerTypeID, VectorLayer, ImageFileReferenceLayer,
   PosingLayer,
-  GroupLayer
+  GroupLayer,
+  DocumentData
 } from '../base/data';
 
 import {
@@ -53,6 +54,11 @@ import { LayerWindowItem } from '../app/view.class';
 import { App_Drawing } from '../app/drawing';
 
 export class App_Tool extends App_Drawing {
+
+  // Backward interface definitions
+
+  protected collectDrawPaths() {  // @virtual
+  }
 
   // Integrated tool system
 
@@ -538,7 +544,7 @@ export class App_Tool extends App_Drawing {
     this.activateCurrentTool();
   }
 
-  public setCurrentFrame(frame: int) { // @implements MainEditor
+  public setCurrentFrame(frame: int, skipCollectDrawPaths = false) { // @implements MainEditor
 
     let context = this.toolContext;
     let aniSetting = context.document.animationSettingData;
@@ -586,6 +592,11 @@ export class App_Tool extends App_Drawing {
     // Update tool context
 
     this.updateContextCurrentRefferences();
+
+    if (!skipCollectDrawPaths) {
+
+      this.collectDrawPaths();
+    }
   }
 
   protected unselectAllLayer() {
@@ -701,7 +712,7 @@ export class App_Tool extends App_Drawing {
 
   // Common functions
 
-  protected setLayerCommandParameters(layerCommand: Command_Layer_CommandBase, currentLayerWindowItem: LayerWindowItem) {
+  protected setLayerCommandParameters(layerCommand: Command_Layer_CommandBase, currentLayerWindowItem: LayerWindowItem, documentData: DocumentData) {
 
     // Collects layer items for command
     let currentLayer: Layer = currentLayerWindowItem.layer;
@@ -746,7 +757,8 @@ export class App_Tool extends App_Drawing {
     }
 
     layerCommand.setPrameters(
-      currentLayer
+      documentData
+      , currentLayer
       , currentLayerParent
       , previousLayer
       , previousLayerParent
@@ -766,7 +778,7 @@ export class App_Tool extends App_Drawing {
       return;
     }
 
-    this.setLayerCommandParameters(layerCommand, currentLayerWindowItem);
+    this.setLayerCommandParameters(layerCommand, currentLayerWindowItem, env.document);
 
     if (layerCommand.isAvailable(this.toolEnv)) {
 

@@ -46,7 +46,7 @@ export function UI_MenuButtons({ uiRef }: UI_MenuButtonsParam) {
       {VectorLayer.isVectorLayer(currentLayer) ? <React.Fragment>
         <UI_MenuButton mainToolID={MainToolID.drawLine} label="線画" current_mainToolID={mainToolID} handleClick={handleClick} />
         <UI_MenuButton mainToolID={MainToolID.edit} label="編集" current_mainToolID={mainToolID} handleClick={handleClick} />
-        <UI_MenuButton mainToolID={MainToolID.draw3D} label="3D線画補助" current_mainToolID={mainToolID} handleClick={handleClick} />
+        {/* <UI_MenuButton mainToolID={MainToolID.draw3D} label="3D線画補助" current_mainToolID={mainToolID} handleClick={handleClick} /> */}
       </React.Fragment> : null}
       {PosingLayer.isPosingLayer(currentLayer) ? <React.Fragment>
         <UI_MenuButton mainToolID={MainToolID.posing} label="3Dポーズ" current_mainToolID={mainToolID} handleClick={handleClick} />

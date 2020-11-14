@@ -1,5 +1,5 @@
 ﻿import { List, ListRemoveAt } from '../base/conversion';
-import { VectorStrokeGroup } from '../base/data';
+import { Layer, VectorLayer, VectorLayerReferenceLayer, VectorStrokeGroup } from '../base/data';
 import { ToolEnvironment } from '../base/tool';
 
 export class CommandBase {
@@ -41,6 +41,79 @@ export class CommandBase {
       this.targetGroups = new List<VectorStrokeGroup>();
     }
   }
+
+  private replacedReferenceInfos: ReplacedReferenceInfo[] = [];
+
+  protected replaceReference<T>(target: T, propertyKeyName: keyof(T), oldReference: any, newReference: any) {
+
+    const propertyName = String(propertyKeyName);
+
+    if ((propertyName in target) && target[propertyName] == oldReference) {
+
+      this.replacedReferenceInfos.push(
+        {
+          propertyName: propertyName,
+          target: target,
+          oldReference: target[propertyName],
+          newReference: newReference,
+        }
+      );
+
+      target[propertyName] = newReference;
+    }
+  }
+
+  protected replaceReferenceRecursive(layer: Layer, oldReference: any, newReference: any) {
+
+    if (VectorLayer.isVectorLayerWithOwnData(layer)) {
+
+      const vectorLayer = <VectorLayer>layer;
+
+      this.replaceReference(vectorLayer, 'posingLayer', oldReference, newReference);
+      this.replaceReference(vectorLayer, 'keyframes', oldReference, newReference);
+    }
+    else if (VectorLayerReferenceLayer.isVectorLayerReferenceLayer(layer)) {
+
+      let vRefLayer = <VectorLayerReferenceLayer>layer;
+
+      this.replaceReference(vRefLayer, 'referenceLayer', oldReference, newReference);
+      this.replaceReference(vRefLayer, 'keyframes', oldReference, newReference);
+    }
+
+    for (const child of layer.childLayers) {
+
+      this.replaceReferenceRecursive(child, oldReference, newReference);
+    }
+  }
+
+  protected existsReplacedReference(): boolean {
+
+    return (this.replacedReferenceInfos.length > 0);
+  }
+
+  protected undoReplacedReferences() {
+
+    for (const unlinkedLayerInfo of this.replacedReferenceInfos) {
+
+      unlinkedLayerInfo.target[unlinkedLayerInfo.propertyName] = unlinkedLayerInfo.oldReference;
+    }
+  }
+
+  protected redoReplacedReferences() {
+
+    for (const unlinkedLayerInfo of this.replacedReferenceInfos) {
+
+      unlinkedLayerInfo.target[unlinkedLayerInfo.propertyName] = unlinkedLayerInfo.newReference;
+    }
+  }
+}
+
+interface ReplacedReferenceInfo {
+
+  propertyName: string;
+  target: any;
+  oldReference: any;
+  newReference: any;
 }
 
 export class CommandHistory {

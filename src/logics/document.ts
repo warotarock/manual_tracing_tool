@@ -130,21 +130,33 @@ export class DocumentLogic {
 
       const vectorLayer = <VectorLayer>layer;
 
-      vectorLayer.posingLayer = null;
+      if (vectorLayer.posingLayerID) {
+
+        vectorLayer.posingLayer = <PosingLayer>info.layerDictionary[vectorLayer.posingLayerID];
+        delete vectorLayer.posingLayerID;
+      }
+      else {
+
+        vectorLayer.posingLayer = null;
+      }
 
       if (vectorLayer.drawLineType == undefined) {
+
         vectorLayer.drawLineType = DrawLineTypeID.layerColor;
       }
 
       if (vectorLayer.fillAreaType == undefined) {
+
         vectorLayer.fillAreaType = FillAreaTypeID.none;
       }
 
       if (vectorLayer.fillColor == undefined) {
+
         vectorLayer.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
       }
 
       if (vectorLayer.enableEyesSymmetry == undefined) {
+
         vectorLayer.enableEyesSymmetry = false;
       }
 
@@ -168,10 +180,12 @@ export class DocumentLogic {
       }
 
       if (vectorLayer['geometry'] != undefined) {
+
         delete vectorLayer['geometry'];
       }
 
       if (vectorLayer['groups'] != undefined) {
+
         delete vectorLayer['groups'];
       }
 
@@ -183,10 +197,18 @@ export class DocumentLogic {
 
       let vRefLayer = <VectorLayerReferenceLayer>layer;
 
-      vRefLayer.referenceLayer = <VectorLayer>info.layerDictionary[vRefLayer.referenceLayerID];
-      vRefLayer.keyframes = vRefLayer.referenceLayer.keyframes;
+      if (vRefLayer.referenceLayerID) {
 
-      delete vRefLayer.referenceLayerID;
+        vRefLayer.referenceLayer = <VectorLayer>info.layerDictionary[vRefLayer.referenceLayerID];
+        vRefLayer.keyframes = vRefLayer.referenceLayer.keyframes;
+
+        delete vRefLayer.referenceLayerID;
+      }
+      else {
+
+        vRefLayer.referenceLayer = null;
+        vRefLayer.keyframes = null;
+      }
     }
     else if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
@@ -363,11 +385,23 @@ export class DocumentLogic {
 
   static fixSaveDocumentData_CopyID_Recursive(layer: Layer, info: DocumentDataSaveInfo) {
 
-    if (VectorLayerReferenceLayer.isVectorLayerReferenceLayer(layer)) {
+    if (VectorLayer.isVectorLayerWithOwnData(layer)) {
+
+      let vectorLayer = <VectorLayer>layer;
+
+      if (vectorLayer.posingLayer != null) {
+
+        vectorLayer.posingLayerID = vectorLayer.posingLayer.ID;
+      }
+    }
+    else if (VectorLayerReferenceLayer.isVectorLayerReferenceLayer(layer)) {
 
       let vRefLayer = <VectorLayerReferenceLayer>layer;
 
-      vRefLayer.referenceLayerID = vRefLayer.referenceLayer.ID;
+      if (vRefLayer.referenceLayer != null) {
+
+        vRefLayer.referenceLayerID = vRefLayer.referenceLayer.ID;
+      }
     }
 
     for (let childLayer of layer.childLayers) {
@@ -388,6 +422,7 @@ export class DocumentLogic {
       let vectorLayer = <VectorLayer>layer;
 
       vectorLayer.fillColor = DocumentLogic.vec4ToArray(vectorLayer.fillColor);
+      delete vectorLayer.posingLayer;
 
       for (let keyframe of vectorLayer.keyframes) {
 

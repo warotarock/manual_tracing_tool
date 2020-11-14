@@ -454,16 +454,13 @@ export class App_Main extends App_Event implements MainEditor {
     this.initializeViewState();
 
     this.drawPaletteColorMixer(this.colorMixerWindow_colorCanvas);
-    // this.drawPaletteColorMixer(this.paletteColorModal_colorCanvas);
 
     this.updateLayerStructureInternal(true, true, false, false);
 
     this.setCurrentMainTool(MainToolID.drawLine);
-    //this.setCurrentMainTool(MainToolID.posing);
 
     this.setCurrentOperationUnitID(this.toolContext.operationUnitID);
 
-    this.setCurrentFrame(0);
     this.setCurrentLayer(documentData.rootLayer.childLayers[0]);
 
     this.updateLayerStructureInternal(false, false, true, true);
@@ -624,7 +621,9 @@ export class App_Main extends App_Event implements MainEditor {
 
       this.collectViewKeyframeContext();
 
-      this.setCurrentFrame(documentData.animationSettingData.currentTimeFrame); // TODO: this.currentViewKeyframeを更新するために必要 updateContextCurrentRefferences() で必要なため。
+      // TODO: this.currentViewKeyframeを更新するために必要 updateContextCurrentRefferences() で必要なため。
+      const skipCollectDrawPaths = (updateDrawPash == false);
+      this.setCurrentFrame(documentData.animationSettingData.currentTimeFrame, skipCollectDrawPaths);
     }
 
     if (updateLayerWindowItems) {
@@ -699,6 +698,8 @@ export class App_Main extends App_Event implements MainEditor {
 
       // this.clearWindow(this.layerWindow);
       this.drawLayerWindow(this.layerWindow);
+
+      this.uiLayerwindowRef.update(this.layerWindow.layerWindowItems);
 
       this.updateUIDraw3D();
 
@@ -808,11 +809,11 @@ export class App_Main extends App_Event implements MainEditor {
 
     this.lazy_DrawPathContext.steps = this.drawPathContext.steps;
 
-    console.log(`collectDrawPaths`);
+    console.debug(`collectDrawPaths`);
     let stepIndex = 0;
     for (let step of this.drawPathContext.steps) {
 
-      console.log(` ${stepIndex}: ${step._debugText} ${step.layer ? step.layer.name : step.layer}`);
+      console.debug(` ${stepIndex}: ${step._debugText} ${step.layer ? step.layer.name : step.layer}`);
 
       stepIndex++;
     }

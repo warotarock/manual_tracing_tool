@@ -69,10 +69,10 @@ export function UI_RibbonUI({ uiRef, menuButtonsRef, subToolWindowRef }: UI_Ribb
               new_mainToolID == MainToolID.drawLine ?
                 <UI_RibbonUI_Home uiRef={uiRef} /> : null
             }
-            {
+            {/* {
               new_mainToolID == MainToolID.draw3D ?
                 <UI_RibbonUI_Draw3D uiRef={uiRef} /> : null
-            }
+            } */}
             {
               (new_mainToolID != MainToolID.drawLine && new_mainToolID != MainToolID.draw3D) ?
                 <UI_SubToolWindow uiRef={subToolWindowRef} /> : null
@@ -180,6 +180,10 @@ function UI_RibbonUI_Home({ uiRef }: { uiRef: UI_RibbonUIRef }) {
   const [brushWidth_Min, set_brushWidth_Min] = React.useState(1.0);
   const [eraserWidth_Max, set_eraserWidth_Max] = React.useState(1.0);
 
+  const [enableEyesSymmetry, set_enableEyesSymmetry] = React.useState(false);
+  const [currentLayerOptions, set_currentLayerOptions] = React.useState<UI_SelectBoxOption[]>([]);
+  const [layerOptions, set_layerOptions] = React.useState<UI_SelectBoxOption[]>([]);
+
   React.useEffect(() => {
 
     uiRef.updateHome = (subToolIndex: int, brushWidthMax: float, brushWidthMin: float, eraserWidthMax: float) => {
@@ -192,90 +196,6 @@ function UI_RibbonUI_Home({ uiRef }: { uiRef: UI_RibbonUIRef }) {
       set_brushWidth_Min(brushWidthMin);
       set_eraserWidth_Max(eraserWidthMax);
     };
-
-    return function cleanup() {
-
-      uiRef.updateHome = null;
-    };
-  });
-
-  function handle_brushWidth(value: float, id: RibbonUIControlID) {
-
-    if (uiRef.numberInput_Change) {
-
-      uiRef.numberInput_Change(id, value);
-    }
-  }
-
-  return (
-    <div className="ribbon-ui-home">
-      <UI_RibbonUI_Button uiRef={uiRef}
-        icon="./dist/res/icon_draw.svg" label={["線を描く"]}
-        subToolIndex={DrawLineToolSubToolID.drawLine}
-      />
-      <div className="draw-line-params">
-        <UI_RibbonUI_NumberInput label="基本幅" value={brushWidth_Max}
-          onChange={(value) => {
-            set_brushWidth_Max(value);
-            handle_brushWidth(value, RibbonUIControlID.brushWidth_Max);
-          }}
-        />
-        <UI_RibbonUI_NumberInput label="最小幅" value={brushWidth_Min}
-          onChange={(value) => {
-            set_brushWidth_Min(value);
-            handle_brushWidth(value, RibbonUIControlID.brushWidth_Min)
-          }}
-        />
-      </div>
-      <UI_RibbonUI_Separator />
-      <UI_RibbonUI_Button uiRef={uiRef}
-        icon="./dist/res/icon_eracer.svg" label={["消しゴム"]}
-        subToolIndex={DrawLineToolSubToolID.deletePointBrush}
-      />
-      <div className="draw-line-params">
-        <UI_RibbonUI_NumberInput label="サイズ" value={eraserWidth_Max} step={1.0}
-          onChange={(value) => {
-            set_eraserWidth_Max(value);
-            handle_brushWidth(value, RibbonUIControlID.eraserWidth_Max);
-          }}
-        />
-      </div>
-      <UI_RibbonUI_Separator />
-      <UI_RibbonUI_Button uiRef={uiRef}
-        icon="./dist/res/icon_extrude_line.svg" label={["線の延長"]}
-        subToolIndex={DrawLineToolSubToolID.extrudeLine}
-      />
-      {/* <UI_RibbonUI_Button uiRef={uiRef}
-        icon="./dist/res/icon_dummy.svg" label={["太さの", "上書き"]}
-        subToolIndex={DrawLineToolSubToolID.editLinePointWidth_BrushSelect}
-      />
-      <UI_RibbonUI_Button uiRef={uiRef}
-        icon="./dist/res/icon_dummy.svg" label={["太さを", "足す"]}
-        subToolIndex={DrawLineToolSubToolID.overWriteLineWidth}
-      />
-      <UI_RibbonUI_Separator /> */}
-      <UI_RibbonUI_Button uiRef={uiRef}
-        icon="./dist/res/icon_scratch_line.svg" label={["線の修正"]}
-        subToolIndex={DrawLineToolSubToolID.scratchLine}
-      />
-      <UI_RibbonUI_Button uiRef={uiRef}
-        icon="./dist/res/icon_dummy.svg" label={["太さの", "修正"]}
-        subToolIndex={DrawLineToolSubToolID.scratchLineWidth}
-      />
-      <UI_RibbonUI_Separator />
-    </div>
-  );
-}
-
-let selectBox_Cancel = false;
-
-function UI_RibbonUI_Draw3D({ uiRef }: { uiRef: UI_RibbonUIRef }) {
-
-  const [enableEyesSymmetry, set_enableEyesSymmetry] = React.useState(false);
-  const [currentLayerOptions, set_currentLayerOptions] = React.useState<UI_SelectBoxOption[]>([]);
-  const [layerOptions, set_layerOptions] = React.useState<UI_SelectBoxOption[]>([]);
-
-  React.useEffect(() => {
 
     uiRef.updateDraw3D = (vectorLayer: VectorLayer, new_layerOptions: UI_SelectBoxOption[]) => {
 
@@ -306,9 +226,18 @@ function UI_RibbonUI_Draw3D({ uiRef }: { uiRef: UI_RibbonUIRef }) {
 
     return function cleanup() {
 
+      uiRef.updateHome = null;
       uiRef.updateDraw3D = null;
     };
   });
+
+  function handle_numberInput_Change(value: float, id: RibbonUIControlID) {
+
+    if (uiRef.numberInput_Change) {
+
+      uiRef.numberInput_Change(id, value);
+    }
+  }
 
   function handle_checkBox_Change(id: RibbonUIControlID, checked: boolean, value: boolean | number | null) {
 
@@ -331,7 +260,61 @@ function UI_RibbonUI_Draw3D({ uiRef }: { uiRef: UI_RibbonUIRef }) {
   }
 
   return (
-    <div className="ribbon-ui-draw3d">
+    <div className="ribbon-ui-home">
+      <UI_RibbonUI_Button uiRef={uiRef}
+        icon="./dist/res/icon_draw.svg" label={["線を描く"]}
+        subToolIndex={DrawLineToolSubToolID.drawLine}
+      />
+      <div className="draw-line-params">
+        <UI_RibbonUI_NumberInput label="基本幅" value={brushWidth_Max}
+          onChange={(value) => {
+            set_brushWidth_Max(value);
+            handle_numberInput_Change(value, RibbonUIControlID.brushWidth_Max);
+          }}
+        />
+        <UI_RibbonUI_NumberInput label="最小幅" value={brushWidth_Min}
+          onChange={(value) => {
+            set_brushWidth_Min(value);
+            handle_numberInput_Change(value, RibbonUIControlID.brushWidth_Min)
+          }}
+        />
+      </div>
+      <UI_RibbonUI_Separator />
+      <UI_RibbonUI_Button uiRef={uiRef}
+        icon="./dist/res/icon_eracer.svg" label={["消しゴム"]}
+        subToolIndex={DrawLineToolSubToolID.deletePointBrush}
+      />
+      <div className="draw-line-params">
+        <UI_RibbonUI_NumberInput label="サイズ" value={eraserWidth_Max} step={1.0}
+          onChange={(value) => {
+            set_eraserWidth_Max(value);
+            handle_numberInput_Change(value, RibbonUIControlID.eraserWidth_Max);
+          }}
+        />
+      </div>
+      <UI_RibbonUI_Separator />
+      <UI_RibbonUI_Button uiRef={uiRef}
+        icon="./dist/res/icon_extrude_line.svg" label={["線の延長"]}
+        subToolIndex={DrawLineToolSubToolID.extrudeLine}
+      />
+      {/* <UI_RibbonUI_Button uiRef={uiRef}
+        icon="./dist/res/icon_dummy.svg" label={["太さの", "上書き"]}
+        subToolIndex={DrawLineToolSubToolID.editLinePointWidth_BrushSelect}
+      />
+      <UI_RibbonUI_Button uiRef={uiRef}
+        icon="./dist/res/icon_dummy.svg" label={["太さを", "足す"]}
+        subToolIndex={DrawLineToolSubToolID.overWriteLineWidth}
+      />
+      <UI_RibbonUI_Separator /> */}
+      <UI_RibbonUI_Button uiRef={uiRef}
+        icon="./dist/res/icon_scratch_line.svg" label={["線の修正"]}
+        subToolIndex={DrawLineToolSubToolID.scratchLine}
+      />
+      <UI_RibbonUI_Button uiRef={uiRef}
+        icon="./dist/res/icon_dummy.svg" label={["太さの", "修正"]}
+        subToolIndex={DrawLineToolSubToolID.scratchLineWidth}
+      />
+      <UI_RibbonUI_Separator />
       <div className="group-container ">
         <div className="label">目の左右対象表示</div>
         <div className="contents">
@@ -341,19 +324,36 @@ function UI_RibbonUI_Draw3D({ uiRef }: { uiRef: UI_RibbonUIRef }) {
               <UI_CheckBox value={enableEyesSymmetry} onChange={(checked, value) => handle_checkBox_Change(RibbonUIControlID.vectorLayer_enableEyesSymmetry, checked, value)}/>
             </div>
           </div>
-          <div className="select-item eyes-symmetry">
-            <div className="label">ポーズレイヤー</div>
-            <UI_SelectBox
-              options={layerOptions}
-              values={currentLayerOptions}
-              dropdownGap={0}
-              searchable={false}
-              onChange={(value) => handle_selectBox_Change(RibbonUIControlID.vectorLayer_posingLayer, value)}
-            />
-          </div>
+          {
+            enableEyesSymmetry ?
+            <div className="select-item eyes-symmetry">
+              <div className="label">ポーズレイヤー</div>
+              <UI_SelectBox
+                options={layerOptions}
+                values={currentLayerOptions}
+                dropdownGap={0}
+                searchable={false}
+                onChange={(value) => handle_selectBox_Change(RibbonUIControlID.vectorLayer_posingLayer, value)}
+              />
+            </div> : null
+          }
+
         </div>
       </div>
       <UI_RibbonUI_Separator />
     </div>
   );
 }
+
+let selectBox_Cancel = false;
+
+// function UI_RibbonUI_Draw3D({ uiRef }: { uiRef: UI_RibbonUIRef }) {
+//   React.useEffect(() => {
+//     return function cleanup() {
+//     };
+//   });
+//   return (
+//     <div className="ribbon-ui-draw3d">
+//     </div>
+//   );
+// }
