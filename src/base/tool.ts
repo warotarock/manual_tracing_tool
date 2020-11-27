@@ -40,7 +40,16 @@ export enum DrawLineToolSubToolID {
 
 export enum EditModeSubToolID {
 
-  mainEditTool = 0,
+  lineBrushSelect = 0,
+  lineSegmentBrushSelect = 1,
+  linePointBrushSelect = 2,
+  editModeMain = 3,
+  resampleSegment = 4,
+}
+
+export enum SettingsSubToolID {
+
+  editDocumentFrame = 0,
 }
 
 export enum ModalToolID {
@@ -1061,6 +1070,11 @@ export class ToolMouseEventDragging {
     vec3.subtract(this.mouseMovedVector, this.mouseDownLocation, this.currentLocation);
 
     vec3.scale(this.mouseMovedVector, this.mouseMovedVector, this.scale);
+  }
+
+  isMoved() {
+
+    return (vec3.length(this.mouseMovedOffset) > 0.0);
   }
 }
 

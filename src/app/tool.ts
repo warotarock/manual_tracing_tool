@@ -430,6 +430,8 @@ export class App_Tool extends App_Drawing {
 
     // console.log("updateUISubToolWindow", forceRedraw, this.toolContext.subToolIndex);
 
+    this.uiRibbonUIRef.subToolIndex = this.toolContext.subToolIndex;
+
     if (this.uiRibbonUIRef.updateMainTool) {
 
       this.uiRibbonUIRef.updateMainTool(this.toolContext.mainToolID);

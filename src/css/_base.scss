@@ -43,13 +43,17 @@ $border-radius-inner: 3px;
 .selectable-item {
 
   &:hover {
-    background-color: $hoverBackground;
+    background-color: $hoverBackground !important;
   }
 
   &.selected {
 
     .selectable-item-inner {
-      background-color: darken($selectedBackground, 3%);
+      background-color: darken($selectedBackground, 3%) !important;
+    }
+
+    .selectable-item-inner-sq {
+      background-color: darken($selectedBackground, 3%) !important;
     }
   }
 

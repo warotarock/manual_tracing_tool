@@ -8,7 +8,7 @@ import { CanvasWindow } from '../renders/render2d';
 
 import { Command_DeleteSelectedPoints } from '../commands/delete_points';
 import { Command_CopyGeometry, Command_PasteGeometry } from '../commands/edit_copy';
-import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown, Command_VectorLayer_EnableEyesSymmetry } from '../commands/edit_layer';
+import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown, Command_VectorLayer_SetProperty } from '../commands/edit_layer';
 
 import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, LayerWindowItem, MainCommandButtonID, RibbonUIControlID } from '../app/view.class';
 import { App_Document } from '../app/document';
@@ -119,10 +119,12 @@ export class App_Event extends App_Document {
     });
 
     window.addEventListener('resize', (e: Event) => {
+
       this.htmlWindow_resize();
     });
 
     window.addEventListener('contextmenu', (e: Event) => {
+
       return this.htmlWindow_contextmenu(e);
     });
 
@@ -214,19 +216,24 @@ export class App_Event extends App_Document {
       this.subtoolWindow_selectItem(subToolIndex);
     };
 
+    this.uiRibbonUIRef.toggleButton_Click = (id, value) => {
+
+      this.ribbonUI_toggleButton_Click(id, value);
+    };
+
     this.uiRibbonUIRef.numberInput_Change = (id, value) => {
 
-      this.ribbonUI_NumberInput_Change(id, value);
+      this.ribbonUI_numberInput_Change(id, value);
     };
 
     this.uiRibbonUIRef.checkBox_Change = (id, checked, value) => {
 
-      this.ribbonUI_CheckBox_Change(id, checked, value);
+      this.ribbonUI_checkBox_Change(id, checked, value);
     };
 
     this.uiRibbonUIRef.selectBox_Change = (id, selected_Option) => {
 
-      this.ribbonUI_SelectBox_Change(id, selected_Option);
+      this.ribbonUI_selectBox_Change(id, selected_Option);
     };
 
     this.uiFooterOperationpanelRef.button_Click = (id) => {
@@ -1297,9 +1304,10 @@ export class App_Event extends App_Document {
 
     if (this.viewOperation.isViewOperationRunning()) {
 
-      this.viewOperation.endViewOperation(wnd, false, env);
+      if (this.viewOperation.endViewOperation(wnd, false, env)) {
 
-      return;
+        return;
+      }
     }
 
     if (this.currentTool) {
@@ -1743,7 +1751,32 @@ export class App_Event extends App_Document {
     this.currentTool.toolWindowItemClick(env);
   }
 
-  protected ribbonUI_NumberInput_Change(id: RibbonUIControlID, value: float) {
+  protected ribbonUI_toggleButton_Click(id: RibbonUIControlID, value: float) {
+
+    let env = this.toolEnv;
+
+    switch(id) {
+
+      case RibbonUIControlID.vectorLayer_eyesSymmetryInputSide:
+
+        if (env.currentVectorLayer) {
+
+          env.currentVectorLayer.eyesSymmetryInputSide = value;
+
+          let command = new Command_VectorLayer_SetProperty();
+          command.layer = env.currentVectorLayer;
+          command.new_eyesSymmetryInputSide = value;
+          if (command.isAvailable(env)) {
+
+            env.commandHistory.executeCommand(command, env);
+          }
+        }
+
+        break;
+    }
+  }
+
+  protected ribbonUI_numberInput_Change(id: RibbonUIControlID, value: float) {
 
     // console.log(id, value);
 
@@ -1759,14 +1792,14 @@ export class App_Event extends App_Document {
         this.toolContext.drawLineMinWidth = value;
         break;
 
-        case RibbonUIControlID.eraserWidth_Max:
-          this.toolContext.eraserLineBaseWidth = value;
-          env.setRedrawEditorWindow();
-          break;
+      case RibbonUIControlID.eraserWidth_Max:
+        this.toolContext.eraserLineBaseWidth = value;
+        env.setRedrawEditorWindow();
+        break;
     }
   }
 
-  protected ribbonUI_CheckBox_Change(id: RibbonUIControlID, checked: boolean, value: boolean | number | null) {
+  protected ribbonUI_checkBox_Change(id: RibbonUIControlID, checked: boolean, value: boolean | number | null) {
 
     let env = this.toolEnv;
 
@@ -1776,7 +1809,7 @@ export class App_Event extends App_Document {
 
         if (env.currentVectorLayer) {
 
-          let command = new Command_VectorLayer_EnableEyesSymmetry();
+          let command = new Command_VectorLayer_SetProperty();
           command.layer = env.currentVectorLayer;
           command.new_enableEyesSymmetry = checked;
           if (command.isAvailable(env)) {
@@ -1790,7 +1823,7 @@ export class App_Event extends App_Document {
     }
   }
 
-  protected ribbonUI_SelectBox_Change(id: RibbonUIControlID, selected_Options: UI_SelectBoxOption[]) {
+  protected ribbonUI_selectBox_Change(id: RibbonUIControlID, selected_Options: UI_SelectBoxOption[]) {
 
     let env = this.toolEnv;
 
@@ -1804,7 +1837,7 @@ export class App_Event extends App_Document {
 
           // console.log('ribbonUI_SelectBox_Change', id, selected_Option, env.currentVectorLayer);
 
-          let command = new Command_VectorLayer_EnableEyesSymmetry();
+          let command = new Command_VectorLayer_SetProperty();
           command.layer = env.currentVectorLayer;
           command.new_posingLayer = selected_Option.data;
           if (command.isAvailable(env)) {

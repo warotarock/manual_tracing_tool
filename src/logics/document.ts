@@ -17,6 +17,7 @@ import {
   VectorDrawingUnit,
   VectorStrokeGroup,
   VectorStroke,
+  EyesSymmetryInputSideID,
 } from '../base/data';
 
 import { GPUVertexBuffer } from '../logics/gpu_data';
@@ -130,16 +131,6 @@ export class DocumentLogic {
 
       const vectorLayer = <VectorLayer>layer;
 
-      if (vectorLayer.posingLayerID) {
-
-        vectorLayer.posingLayer = <PosingLayer>info.layerDictionary[vectorLayer.posingLayerID];
-        delete vectorLayer.posingLayerID;
-      }
-      else {
-
-        vectorLayer.posingLayer = null;
-      }
-
       if (vectorLayer.drawLineType == undefined) {
 
         vectorLayer.drawLineType = DrawLineTypeID.layerColor;
@@ -158,16 +149,28 @@ export class DocumentLogic {
       if (vectorLayer.enableEyesSymmetry == undefined) {
 
         vectorLayer.enableEyesSymmetry = false;
+        vectorLayer.eyesSymmetryInputSide = EyesSymmetryInputSideID.left;
+        vectorLayer.posingLayer = null;
+      }
+
+      if (vectorLayer.posingLayerID) {
+
+        vectorLayer.posingLayer = <PosingLayer>info.layerDictionary[vectorLayer.posingLayerID];
+        delete vectorLayer.posingLayerID;
+      }
+      else {
+
+        vectorLayer.posingLayer = null;
       }
 
       if (vectorLayer.line_PaletteColorIndex == undefined) {
 
-        vectorLayer['line_PaletteColorIndex'] = vectorLayer['line_PalletColorIndex'] || 0;
+        vectorLayer.line_PaletteColorIndex = vectorLayer['line_PalletColorIndex'] || 0;
       }
 
       if (vectorLayer.fill_PaletteColorIndex == undefined) {
 
-        vectorLayer['fill_PaletteColorIndex'] = vectorLayer['fill_PalletColorIndex'] || 0;
+        vectorLayer.fill_PaletteColorIndex = vectorLayer['fill_PalletColorIndex'] || 0;
       }
 
       if (vectorLayer.keyframes == undefined && vectorLayer['geometry'] != undefined) {

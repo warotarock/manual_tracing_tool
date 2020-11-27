@@ -7,6 +7,7 @@ export interface UI_CommandButtonsItem {
   index: int;
   icon: string;
   isSelected?: boolean;
+  title?: string;
 }
 
 export interface UI_CommandButtonsRef {
@@ -45,6 +46,7 @@ export function UI_CommandButtons({ uiRef, noBorder }: UI_CommandButtonsParam) {
         uiRef.items.map(item => (
           <div key={item.index}>
             <button
+              title={item.title ? item.title : null}
               className={`${item.isSelected ? 'selected' : ''} ${noBorder ? 'no-border' : ''}`}
               onMouseDown={(e) => {
 

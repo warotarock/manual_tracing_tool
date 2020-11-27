@@ -10,7 +10,8 @@ import {
   PosingLayer,
   AutoFillLayer,
   VectorDrawingUnit,
-  DocumentData
+  DocumentData,
+  EyesSymmetryInputSideID
 } from "../base/data";
 
 export class Command_Layer_CommandBase extends CommandBase {
@@ -515,14 +516,16 @@ export class Command_Layer_MoveDown extends Command_Layer_MoveUp {
   }
 }
 
-export class Command_VectorLayer_EnableEyesSymmetry extends CommandBase {
+export class Command_VectorLayer_SetProperty extends CommandBase {
 
   layer: VectorLayer;
   new_enableEyesSymmetry: boolean;
   new_posingLayer: PosingLayer;
+  new_eyesSymmetryInputSide: EyesSymmetryInputSideID;
 
   old_enableEyesSymmetry: boolean;
   old_posingLayer: PosingLayer;
+  old_eyesSymmetryInputSide: EyesSymmetryInputSideID;
 
   isAvailable(env: ToolEnvironment): boolean {
 
@@ -537,6 +540,7 @@ export class Command_VectorLayer_EnableEyesSymmetry extends CommandBase {
   execute(env: ToolEnvironment) { // @virtual
 
     this.old_enableEyesSymmetry = env.currentVectorLayer.enableEyesSymmetry;
+    this.old_eyesSymmetryInputSide = env.currentVectorLayer.eyesSymmetryInputSide;
     this.old_posingLayer = env.currentVectorLayer.posingLayer;
 
     this.redo(env);
@@ -545,6 +549,7 @@ export class Command_VectorLayer_EnableEyesSymmetry extends CommandBase {
   undo(env: ToolEnvironment) { // @virtual
 
     this.layer.enableEyesSymmetry = this.old_enableEyesSymmetry;
+    this.layer.eyesSymmetryInputSide = this.old_eyesSymmetryInputSide;
     this.layer.posingLayer = this.old_posingLayer;
 
     // console.log('undo', this.layer.enableEyesSymmetry, this.layer.posingLayer ? this.layer.posingLayer.name : null);
@@ -559,6 +564,13 @@ export class Command_VectorLayer_EnableEyesSymmetry extends CommandBase {
     if (this.new_enableEyesSymmetry !== undefined) {
 
       this.layer.enableEyesSymmetry = this.new_enableEyesSymmetry;
+
+      env.setRedrawLayerWindow();
+    }
+
+    if (this.new_eyesSymmetryInputSide !== undefined) {
+
+      this.layer.eyesSymmetryInputSide = this.new_eyesSymmetryInputSide;
 
       env.setRedrawLayerWindow();
     }

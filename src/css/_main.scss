@@ -117,6 +117,7 @@ main {
       position: absolute;
       top: 10px;
       display: flex;
+      pointer-events: none;
 
       &.left-panel {
         left: 0;
@@ -133,13 +134,13 @@ main {
         display: flex;
         flex-direction: column;
         // background-color: $windowBackgroundHalf;
-
         > div:not(:first-child) {
           margin-top: 4px;
         }
 
         .side-panel-content {
           display: flex;
+
 
           &.right-panel {
             flex-flow: row-reverse;
@@ -154,6 +155,7 @@ main {
               height: 54px;
               background-color: $windowBackground;
               text-align: center;
+              pointer-events: auto;
 
               i {
                 font-size: 22px;
@@ -200,6 +202,7 @@ main {
           }
 
           .content-container {
+            pointer-events: auto;
 
             &.left-panel {
               width: 240px;

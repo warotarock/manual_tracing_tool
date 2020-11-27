@@ -1756,7 +1756,7 @@ export class App_Main extends App_Event implements MainEditor {
       this.currentTool.onDrawEditor(this.toolEnv, this.toolDrawEnv);
     }
 
-    this.drawOperationUIPanel(editorWindow);
+    this.drawOperationUI(editorWindow);
   }
 
   protected drawExportImage(canvasWindow: CanvasWindow) { // @override

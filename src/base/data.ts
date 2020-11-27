@@ -266,6 +266,13 @@ export enum FillAreaTypeID {
   paletteColor = 3,
 }
 
+export enum EyesSymmetryInputSideID {
+
+  none = 0,
+  left = 1,
+  right = 2,
+}
+
 export class VectorLayer extends Layer {
 
   type = LayerTypeID.vectorLayer;
@@ -281,6 +288,7 @@ export class VectorLayer extends Layer {
   fill_PaletteColorIndex = 1;
 
   enableEyesSymmetry = false;
+  eyesSymmetryInputSide = EyesSymmetryInputSideID.left;
   posingLayer: PosingLayer = null;
 
   // file only

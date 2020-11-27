@@ -21,12 +21,12 @@ export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
 
     return {
       items: [
-        { index: MainCommandButtonID.open, icon: 'folder' },
-        { index: MainCommandButtonID.save, icon: 'save' },
-        { index: MainCommandButtonID.export, icon: 'publish' },
-        { index: MainCommandButtonID.undo, icon: 'undo' },
-        { index: MainCommandButtonID.redo, icon: 'redo' },
-        { index: MainCommandButtonID.settings, icon: 'settings' },
+        { index: MainCommandButtonID.open, icon: 'folder', title: 'ファイルを開く' },
+        { index: MainCommandButtonID.save, icon: 'save', title: '保存' },
+        { index: MainCommandButtonID.export, icon: 'publish', title: 'エクスポート' },
+        { index: MainCommandButtonID.undo, icon: 'undo', title: '元に戻す' },
+        { index: MainCommandButtonID.redo, icon: 'redo', title: 'やり直し' },
+        { index: MainCommandButtonID.settings, icon: 'settings', title: 'ドキュメントの設定' },
       ],
 
       commandButton_Click: (item: UI_CommandButtonsItem) => {
@@ -42,6 +42,7 @@ export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
       items: [
         { index: MainCommandButtonID.layerWindow, icon: 'layers' },
         { index: MainCommandButtonID.paletteWindow, icon: 'palette' },
+        { index: MainCommandButtonID.colorMixerWindow, icon: 'colorize' },
         { index: MainCommandButtonID.timeLineWindow, icon: 'play_circle_outline' },
       ],
 

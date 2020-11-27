@@ -29,8 +29,8 @@ export function UI_PaletteSelectorWindow({ uiRef }: UI_PaletteSelectorWindowPara
 
     return {
       items: [
-        { index: PaletteSelectorWindowButtonID.lineColor, icon: 'edit' },
-        { index: PaletteSelectorWindowButtonID.fillColor, icon: 'palette' },
+        { index: PaletteSelectorWindowButtonID.lineColor, icon: 'edit', title: '線の色' },
+        { index: PaletteSelectorWindowButtonID.fillColor, icon: 'format_paint', title: '塗りつぶしの色' },
       ],
 
       commandButton_Click: (item: UI_CommandButtonsItem) => {

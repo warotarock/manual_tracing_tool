@@ -70,12 +70,12 @@ export class ViewOperation {
     env.setRedrawEditorWindow();
   }
 
-  endViewOperation(wnd: InputableWindow, spaceKeyUp: boolean, env: ToolEnvironment) {
+  endViewOperation(wnd: InputableWindow, spaceKeyUp: boolean, env: ToolEnvironment): boolean {
 
     const e = wnd.toolMouseEvent;
 
     if (this.first_Pointer == null) {
-      return;
+      return false;
     }
 
     env.setRedrawEditorWindow();
@@ -101,10 +101,12 @@ export class ViewOperation {
         this.second_Pointer = null;
       }
 
-      return;
+      return true;
     }
 
     e.endMouseDragging();
+
+    return this.first_Pointer.dragging.isMoved();
   }
 
   pointerDownAdditional(wnd: InputableWindow, env: ToolEnvironment) {
@@ -150,7 +152,7 @@ export class ViewOperation {
     const pointer = this.getActivePointer();
 
     if (pointer == null) {
-      return;
+      return false;
     }
 
     pointer.dragging.move(pointer.offsetX, pointer.offsetY);
@@ -170,7 +172,7 @@ export class ViewOperation {
         break;
     }
 
-    return true;
+    return (pointer.dragging.isMoved());
   }
 
   processMove(wnd: CanvasWindow, e: ToolMouseEvent, env: ToolEnvironment) {

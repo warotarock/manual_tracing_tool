@@ -56,6 +56,7 @@ export enum MainCommandButtonID {
   settings,
   layerWindow,
   paletteWindow,
+  colorMixerWindow,
   timeLineWindow,
 }
 
@@ -213,6 +214,7 @@ export enum RibbonUIControlID {
   brushWidth_Min,
   eraserWidth_Max,
   vectorLayer_enableEyesSymmetry,
+  vectorLayer_eyesSymmetryInputSide,
   vectorLayer_posingLayer,
 }
 

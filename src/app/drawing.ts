@@ -518,14 +518,9 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     }
   }
 
-  protected drawVectorLineStroke(line: VectorStroke, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean, isExporting: boolean) {
+  protected drawVectorLineStroke(stroke: VectorStroke, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean, isExporting: boolean) {
 
-    if (line.points.length == 0) {
-      return;
-    }
-
-    if (!isExporting
-      && (line.range != 0.0 && !this.canvasRender.isInViewRectangle(line.left, line.top, line.right, line.bottom, line.range))
+    if (!isExporting && !this.isStrokeInViewRectangle(stroke)
       //&& this.toolEnv.isShiftKeyPressing() // for clipping test
     ) {
       return;
@@ -533,12 +528,12 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     this.canvasRender.setStrokeColorV(color);
 
-    this.drawVectorLineSegment(line, 0, line.points.length - 1, strokeWidthBiasRate, strokeWidthBolding, useAdjustingLocation);
+    this.drawVectorLineSegment(stroke, 0, stroke.points.length - 1, strokeWidthBiasRate, strokeWidthBolding, useAdjustingLocation);
   }
 
-  protected drawVectorLinePoints(line: VectorStroke, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+  protected drawVectorLinePoints(stroke: VectorStroke, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
 
-    if (line.points.length == 0) {
+    if (!this.isStrokeInViewRectangle(stroke)) {
       return;
     }
 
@@ -558,7 +553,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     this.tempEditorLinePointColor2[3] = color[3];
 
-    for (let point of line.points) {
+    for (let point of stroke.points) {
 
       this.drawVectorLinePoint(point, this.tempEditorLinePointColor2, useAdjustingLocation);
     }
@@ -747,9 +742,22 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     let viewScale = this.canvasRender.getViewScale();
 
-    this.canvasRender.beginPath()
-
     let radius = this.drawStyle.generalLinePointRadius / viewScale;
+
+    let location: Vec3;
+
+    if (useAdjustingLocation) {
+
+      location = point.adjustingLocation;
+    }
+    else {
+
+      location = point.location;
+    }
+
+    if (!this.canvasRender.isInViewRectangle(location[0], location[1], location[0], location[1], radius)) {
+      return;
+    }
 
     if (point.isSelected) {
 
@@ -763,16 +771,15 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
       this.canvasRender.setFillColorV(color);
     }
 
-    if (useAdjustingLocation) {
+    // this.canvasRender.beginPath()
+    // this.canvasRender.circle(location[0], location[1], radius);
+    // this.canvasRender.fill();
 
-      this.canvasRender.circle(point.adjustingLocation[0], point.adjustingLocation[1], radius);
-    }
-    else {
-
-      this.canvasRender.circle(point.location[0], point.location[1], radius);
-    }
-
-    this.canvasRender.fill();
+    this.canvasRender.setStrokeWidth(radius * 2);
+    this.canvasRender.beginPath();
+    this.canvasRender.moveTo(location[0], location[1]);
+    this.canvasRender.lineTo(location[0] + 0.1, location[1]);
+    this.canvasRender.stroke();
   }
 
   protected drawEditLineStroke(line: VectorStroke) {
@@ -780,14 +787,18 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     this.drawVectorLineStroke(line, this.drawStyle.editingLineColor, 1.0, 2.0, false, false);
   }
 
-  protected drawEditLinePoints(canvasWindow: CanvasWindow, line: VectorStroke, color: Vec4) {
+  protected drawEditLinePoints(stroke: VectorStroke, color: Vec4) {
+
+    if (!this.isStrokeInViewRectangle(stroke)) {
+      return;
+    }
 
     this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
 
     this.canvasRender.setStrokeColorV(color);
     this.canvasRender.setFillColorV(color);
 
-    for (let point of line.points) {
+    for (let point of stroke.points) {
 
       this.drawVectorLinePoint(point, color, false);
     }
@@ -857,6 +868,21 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
   protected getViewScaledSize(width: float) {
 
     return width / this.canvasRender.getViewScale();
+  }
+
+  protected isStrokeInViewRectangle(stroke: VectorStroke): boolean {
+
+    if (stroke.range == 0.0) {
+
+      return true;
+    }
+
+    if (stroke.points.length == 0) {
+
+      return false;
+    }
+
+    return this.canvasRender.isInViewRectangle(stroke.left, stroke.top, stroke.right, stroke.bottom, stroke.range);
   }
 
   protected pickLayer(canvasWindow: CanvasWindow, viewKeyframe: ViewKeyframe, pickLocationX: float, pickLocationY: float): Layer {
@@ -1111,7 +1137,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     LayoutLogic.gridLayout(area, { columns: 2, columnGap: 5, rows: 4 ,rowGap: 5 });
   }
 
-  protected drawOperationUIPanel(canvasWindow: CanvasWindow) {
+  protected drawOperationUI(canvasWindow: CanvasWindow) {
 
     const render = this.canvasRender;
 
