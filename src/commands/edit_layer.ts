@@ -539,7 +539,7 @@ export class Command_VectorLayer_SetProperty extends CommandBase {
 
   execute(env: ToolEnvironment) { // @virtual
 
-    this.old_enableEyesSymmetry = env.currentVectorLayer.enableEyesSymmetry;
+    this.old_enableEyesSymmetry = env.currentVectorLayer.eyesSymmetryEnabled;
     this.old_eyesSymmetryInputSide = env.currentVectorLayer.eyesSymmetryInputSide;
     this.old_posingLayer = env.currentVectorLayer.posingLayer;
 
@@ -548,7 +548,7 @@ export class Command_VectorLayer_SetProperty extends CommandBase {
 
   undo(env: ToolEnvironment) { // @virtual
 
-    this.layer.enableEyesSymmetry = this.old_enableEyesSymmetry;
+    this.layer.eyesSymmetryEnabled = this.old_enableEyesSymmetry;
     this.layer.eyesSymmetryInputSide = this.old_eyesSymmetryInputSide;
     this.layer.posingLayer = this.old_posingLayer;
 
@@ -563,9 +563,10 @@ export class Command_VectorLayer_SetProperty extends CommandBase {
 
     if (this.new_enableEyesSymmetry !== undefined) {
 
-      this.layer.enableEyesSymmetry = this.new_enableEyesSymmetry;
+      this.layer.eyesSymmetryEnabled = this.new_enableEyesSymmetry;
 
       env.setRedrawLayerWindow();
+      env.setRedrawEditorWindow();
     }
 
     if (this.new_eyesSymmetryInputSide !== undefined) {
@@ -573,6 +574,7 @@ export class Command_VectorLayer_SetProperty extends CommandBase {
       this.layer.eyesSymmetryInputSide = this.new_eyesSymmetryInputSide;
 
       env.setRedrawLayerWindow();
+      env.setRedrawEditorWindow();
     }
 
     if (this.new_posingLayer !== undefined) {
@@ -580,6 +582,7 @@ export class Command_VectorLayer_SetProperty extends CommandBase {
       this.layer.posingLayer = this.new_posingLayer;
 
       env.setRedrawLayerWindow();
+      env.setRedrawEditorWindow();
     }
   }
 }

@@ -7,6 +7,11 @@ import {
   ImageFileReferenceLayer,
   PosingModel,
   GroupLayer,
+  VectorGeometry,
+  VectorStrokeGroup,
+  VectorDrawingUnit,
+  VectorStroke,
+  VectorPoint
 } from '../base/data';
 
 import {
@@ -46,6 +51,7 @@ import { App_Event } from './event';
 import { Platform } from '../platform/platform';
 import { DocumentLogic } from '../logics/document';
 import { CommandHistory } from '../base/command';
+import { Logic_Edit_Line } from '../logics/edit_vector_layer';
 
 
 export enum MainProcessStateID {
@@ -242,7 +248,7 @@ export class App_Main extends App_Event implements MainEditor {
 
     if (fileType == DocumentFileType.none) {
 
-      console.log('error: not supported file type.');
+      console.debug('error: not supported file type.');
       return;
     }
 
@@ -264,7 +270,7 @@ export class App_Main extends App_Event implements MainEditor {
     }
     else {
 
-      console.log('error: not supported file type.');
+      console.debug('error: not supported file type.');
       return;
     }
   }
@@ -476,6 +482,8 @@ export class App_Main extends App_Event implements MainEditor {
     // 初回描画
     this.resizeWindowsAndBuffers(); // TODO: これをしないとキャンバスの高さが足りなくなる。最初のリサイズのときは高さがなぜか少し小さい。2回リサイズする必要は本来ないはずなのでなんとかしたい。
 
+    this.toolEnv.setLazyRedraw();
+
     this.updateHeaderButtons();
 
     this.updateFooterMessage();
@@ -507,28 +515,28 @@ export class App_Main extends App_Event implements MainEditor {
     this.toolDrawEnv = new ToolDrawingEnvironment();
     this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
 
-    this.lazy_DrawPathContext.resetLazyDrawProcess();
+    this.lazy_DrawPathContext.lazyProcess.resetLazyDrawProcess();
   }
 
   protected onWindowBlur() { // @override
 
-    // console.log('Window blur');
+    // console.debug('Window blur');
 
     if (this.mainProcessState == MainProcessStateID.running) {
 
       this.mainProcessState = MainProcessStateID.pause;
-      // console.log('  mainProcessState -> pause');
+      // console.debug('  mainProcessState -> pause');
     }
   }
 
   protected onWindowFocus() { // @override
 
-    // console.log('Window focus');
+    // console.debug('Window focus');
 
     if (this.mainProcessState == MainProcessStateID.pause) {
 
       this.mainProcessState = MainProcessStateID.running;
-      // console.log('  mainProcessState -> running');
+      // console.debug('  mainProcessState -> running');
     }
   }
 
@@ -764,7 +772,7 @@ export class App_Main extends App_Event implements MainEditor {
       this.toolContext.redrawFooterWindow = false;
     }
 
-    this.lazyDraw_Process(this.lazy_DrawPathContext);
+    this.lazyProcess(this.lazy_DrawPathContext);
   }
 
   protected collectDrawPaths() {
@@ -809,13 +817,18 @@ export class App_Main extends App_Event implements MainEditor {
 
     this.lazy_DrawPathContext.steps = this.drawPathContext.steps;
 
-    console.debug(`collectDrawPaths`);
-    let stepIndex = 0;
-    for (let step of this.drawPathContext.steps) {
+    // Debug output
+    {
+      console.debug(`DrawPath collectDrawPaths`);
 
-      console.debug(` ${stepIndex}: ${step._debugText} ${step.layer ? step.layer.name : step.layer}`);
+      let stepIndex = 0;
 
-      stepIndex++;
+      for (let step of this.drawPathContext.steps) {
+
+        console.debug(` ${stepIndex}: ${step._debugText} ${(step.layer && step.layer.name) ? step.layer.name : ''}`);
+
+        stepIndex++;
+      }
     }
   }
 
@@ -910,7 +923,7 @@ export class App_Main extends App_Event implements MainEditor {
       }
       else if (VectorLayer.isVectorLayer(vLayer.layer)) {
 
-        let vectorLayer = <VectorLayer>vLayer.layer;
+        const vectorLayer = <VectorLayer>vLayer.layer;
 
         // Insert a step to draw fill
         if (vectorLayer.fillAreaType != FillAreaTypeID.none) {
@@ -1047,7 +1060,7 @@ export class App_Main extends App_Event implements MainEditor {
     drawPathContext.activeDrawPathStartIndex = firstSelectedIndex;
     drawPathContext.activeDrawPathEndIndex = lastSelectedIndex;
 
-    //console.log('CollectSelectionInfo', firstSelectedIndex, lastSelectedIndex);
+    //console.debug('CollectSelectionInfo', firstSelectedIndex, lastSelectedIndex);
   }
 
   protected collectDrawPasths_CollectViewKeyframe(drawPathSteps: List<DrawPathStep>, viewKeyframeLayers: Array<ViewKeyframeLayer>) {
@@ -1076,9 +1089,9 @@ export class App_Main extends App_Event implements MainEditor {
 
     let baseCanvasWindow = this.mainWindow;
 
-    if (this.prepareDrawPathBuffers_IsChanged(this.lazy_DrawPathContext.lazyDraw_Buffer, baseCanvasWindow)) {
+    if (this.prepareDrawPathBuffers_IsChanged(this.lazy_DrawPathContext.lazyProcess.buffer, baseCanvasWindow)) {
 
-      this.lazy_DrawPathContext.lazyDraw_Buffer = this.prepareDrawPathBuffers_CreateCanvasWindow(baseCanvasWindow);
+      this.lazy_DrawPathContext.lazyProcess.buffer = this.prepareDrawPathBuffers_CreateCanvasWindow(baseCanvasWindow);
     }
 
     for (let drawPathStep of this.drawPathContext.steps) {
@@ -1143,13 +1156,11 @@ export class App_Main extends App_Event implements MainEditor {
     // TODO: 必要なときだけ実行する
     this.collectDrawPasths_CollectSelectionInfo(drawPathContext);
 
-    let isLazyDrawFinished = this.lazy_DrawPathContext.isLazyDrawFinished();
-
     let activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex;
     let activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex;
     let maxStepIndex = drawPathContext.steps.length - 1;
 
-    if (isLazyDrawFinished && !isModalToolRunning && !drawCPUOnly) {
+    if (this.lazy_DrawPathContext.lazyProcess.isRendered && !isModalToolRunning && !drawCPUOnly) {
 
       drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
     }
@@ -1359,7 +1370,7 @@ export class App_Main extends App_Event implements MainEditor {
         let viewKeyFrameLayer = drawPathStep.viewKeyframeLayer;
         let layer = viewKeyFrameLayer ? viewKeyFrameLayer.layer : null;
 
-        //console.log('  DrawPath EditMode', i, drawPathStep._debugText, layer ? layer.name : '');
+        //console.debug('  DrawPath EditMode', i, drawPathStep._debugText, layer ? layer.name : '');
 
         if (currentLayerOnly) {
 
@@ -1389,9 +1400,9 @@ export class App_Main extends App_Event implements MainEditor {
             );
           }
 
-          this.drawVectorLayerForEditMode(
+          this.drawForegroundForEditMode(
             vectorLayer
-            , viewKeyFrameLayer.vectorLayerKeyframe.geometry
+            , viewKeyFrameLayer
             , documentData
             , drawStrokes
             , drawPoints
@@ -1400,12 +1411,8 @@ export class App_Main extends App_Event implements MainEditor {
         }
         else {
 
-          this.drawForeground(
-            viewKeyFrameLayer,
-            this.toolContext.document
-            , false,
-            drawPathContext.isModalToolRunning
-          );
+          this.drawForeground(viewKeyFrameLayer, this.toolContext.document
+            , false, drawPathContext.isModalToolRunning);
         }
       }
     }
@@ -1441,7 +1448,7 @@ export class App_Main extends App_Event implements MainEditor {
 
     if (this.drawPath_logging) {
 
-      console.log('  DrawPath start clearState', clearState);
+      console.debug('  DrawPath start clearState', clearState);
     }
 
     for (let i = drawPathContext.startIndex; i <= drawPathContext.endIndex; i++) {
@@ -1455,7 +1462,7 @@ export class App_Main extends App_Event implements MainEditor {
 
       if (this.drawPath_logging) {
 
-        console.log('  DrawPath', i, drawPathStep._debugText, layer ? layer.name : '', 'stack:', drawPathContext.bufferStack.length);
+        console.debug('  DrawPath', i, drawPathStep._debugText, layer ? layer.name : '', 'stack:', drawPathContext.bufferStack.length);
       }
 
       if (drawPathStep.operationType == DrawPathOperationTypeID.beginDrawing) {
@@ -1588,7 +1595,7 @@ export class App_Main extends App_Event implements MainEditor {
 
       let lastTime = Platform.getCurrentTime();
 
-      if (lastTime - startTime >= drawPathContext.lazyDraw_MaxTime
+      if (lastTime - startTime >= drawPathContext.lazyProcess.maxTime
         || i == drawPathContext.endIndex) {
 
         drawPathContext.bufferStack.push(bufferCanvasWindow);
@@ -1666,77 +1673,6 @@ export class App_Main extends App_Event implements MainEditor {
     }
   }
 
-  protected lazyDraw_Process(drawPathContext: DrawPathContext) {
-
-    if (this.toolContext.drawCPUOnly) {
-      return;
-    }
-
-    let canvasWindow = drawPathContext.lazyDraw_Buffer;
-    let env = this.toolEnv;
-
-    // Rest or skip process
-    if (drawPathContext.needsLazyRedraw) {
-
-      drawPathContext.resetLazyDrawProcess();
-
-      drawPathContext.needsLazyRedraw = false;
-
-      return;
-    }
-
-    if (drawPathContext.isLazyDrawFinished()) {
-      return;
-    }
-
-    if (drawPathContext.isLazyDrawWaiting()) {
-      return;
-    }
-
-    let clearState = drawPathContext.isLazyDrawBigining();
-
-    console.log(`LazyDraw from ${drawPathContext.lazyDraw_ProcessedIndex}${clearState ? ' clear' : ''} buffer-stack[${drawPathContext.bufferStack.length}]`);
-
-    // Draw steps
-    drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
-    drawPathContext.startIndex = drawPathContext.lazyDraw_ProcessedIndex + 1;
-    drawPathContext.endIndex = drawPathContext.steps.length - 1;
-    drawPathContext.isModalToolRunning = env.isModalToolRunning();
-    drawPathContext.currentLayerOnly = false;
-
-    drawPathContext.lazyDraw_MaxTime = 10; // TODO: 適当な値を設定する
-
-    this.drawDrawPaths(canvasWindow, drawPathContext, clearState);
-
-    // Save states for drawing steps
-    if (drawPathContext.isLastDrawExist()) {
-
-      drawPathContext.lazyDraw_ProcessedIndex = drawPathContext.lastDrawPathIndex;
-
-      if (drawPathContext.isLazyDrawFinished()) {
-
-        console.log('  --> lazyDraw finished', drawPathContext.lazyDraw_ProcessedIndex);
-
-        this.clearWindow(this.mainWindow);
-
-        this.canvasRender.resetTransform();
-
-        this.canvasRender.drawImage(canvasWindow.canvas
-          , 0, 0, this.mainWindow.width, this.mainWindow.height
-          , 0, 0, this.mainWindow.width, this.mainWindow.height);
-
-        if (env.isEditMode()) {
-
-          this.drawMainWindow_drawEditMode(this.mainWindow, true, false, false);
-        }
-      }
-    }
-    else {
-
-      drawPathContext.lazyDraw_ProcessedIndex = drawPathContext.steps.length;
-    }
-  }
-
   protected drawEditorWindow(editorWindow: CanvasWindow, mainWindow: CanvasWindow) {
 
     mainWindow.updateViewMatrix();
@@ -1748,6 +1684,8 @@ export class App_Main extends App_Event implements MainEditor {
 
       this.drawOperatorCursor();
     }
+
+    this.drawEditor_EyesSymmetry(this.canvasRender, this.toolEnv);
 
     if (this.currentTool != null) {
 
@@ -1792,6 +1730,211 @@ export class App_Main extends App_Event implements MainEditor {
   protected drawColorMixerWindow() {
 
     this.drawColorMixerWindow_SetInputControls();
+  }
+
+  // Lazy process
+
+  protected lazyProcess(drawPathContext: DrawPathContext) {
+
+    const lazyProcess = drawPathContext.lazyProcess;
+
+    if (lazyProcess.isFinished) {
+
+      return;
+    }
+
+    if (lazyProcess.needsStartingLazyDraw) {
+
+      lazyProcess.startLazyDrawProcess();
+      return;
+    }
+
+    if (lazyProcess.isLazyDrawWaiting()) {
+
+      return;
+    }
+
+    if (lazyProcess.isFirstDraw) {
+
+      this.lazyProcess_EyesSymetry();
+
+      lazyProcess.isFirstDraw = false;
+
+      this.toolEnv.setRedrawMainWindow();
+    }
+
+    if (!this.toolContext.drawCPUOnly) {
+
+      this.lazyProcess_DrawPath(drawPathContext);
+    }
+  }
+
+  protected lazyProcess_DrawPath(drawPathContext: DrawPathContext) {
+
+    const env = this.toolEnv;
+    const lazyProcess = drawPathContext.lazyProcess;
+
+    // Draw steps
+    drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
+    drawPathContext.startIndex = lazyProcess.processedIndex + 1;
+    drawPathContext.endIndex = drawPathContext.steps.length - 1;
+    drawPathContext.isModalToolRunning = env.isModalToolRunning();
+    drawPathContext.currentLayerOnly = false;
+
+    lazyProcess.maxTime = 10; // TODO: 適当な値を設定する
+
+    const last_lazyDraw_ProcessedIndex = lazyProcess.processedIndex;
+    const clearState = lazyProcess.isLazyDrawBigining();
+    const bufferCanvas = lazyProcess.buffer;
+
+    this.drawDrawPaths(bufferCanvas, drawPathContext, clearState);
+
+    console.debug(`LazyDraw${clearState ? ' begin' : ' draw'} from ${last_lazyDraw_ProcessedIndex} to ${lazyProcess.processedIndex} -? buffer[${drawPathContext.bufferStack.length}]`);
+
+    // Save states for drawing steps
+    if (drawPathContext.isLastDrawExist()) {
+
+      lazyProcess.processedIndex = drawPathContext.lastDrawPathIndex;
+
+      const isFinished = (lazyProcess.processedIndex >= drawPathContext.steps.length - 1);
+
+      if (isFinished) {
+
+        lazyProcess.finishLazyDrawProcess();
+
+        console.debug('LazyDraw finished at', lazyProcess.processedIndex);
+
+        this.clearWindow(this.mainWindow);
+
+        this.canvasRender.resetTransform();
+
+        this.canvasRender.drawImage(bufferCanvas.canvas
+          , 0, 0, this.mainWindow.width, this.mainWindow.height
+          , 0, 0, this.mainWindow.width, this.mainWindow.height);
+
+        if (env.isEditMode()) {
+
+          this.drawMainWindow_drawEditMode(this.mainWindow, true, false, false);
+        }
+      }
+    }
+    else {
+
+      lazyProcess.processedIndex = drawPathContext.steps.length;
+    }
+  }
+
+  protected lazyProcess_EyesSymetry() {
+
+    // console.debug('lazyProcess_EyesSymetry');
+
+    const env = this.toolEnv;
+
+    let viewKeyframeLayers = this.collectViewKeyframeLayers();
+
+    // console.debug('viewKeyframeLayers', viewKeyframeLayers.length);
+
+    ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup, vectorLayer: VectorLayer) => {
+
+      // console.debug('group.isUpdated', group.isUpdated);
+
+      if (!group.isUpdated) {
+        return;
+      }
+
+      if (VectorLayer.isVectorLayerWithOwnData(vectorLayer) && vectorLayer.eyesSymmetryEnabled) {
+
+        this.calculateEyesSymetry(group, vectorLayer);
+      }
+
+      group.isUpdated = false;
+    });
+  }
+
+  locationFront = vec3.create();
+  locationBack = vec3.create();
+  eyeMatrix = mat4.create();
+  invMatrix = mat4.create();
+  mirrorMatrix = mat4.create();
+  oppositeTransformMatrix = mat4.create();
+
+  protected  calculateEyesSymetry(group: VectorStrokeGroup, vectorLayer: VectorLayer) {
+
+    const env = this.toolEnv;
+
+    const posingData = vectorLayer.posingLayer.posingData;
+
+    this.toolEnv.posing3DLogic.getEyeSphereLocation(this.eyeLocation, posingData, vectorLayer.eyesSymmetryInputSide);
+
+    // 反転処理の行列を計算
+    mat4.invert(this.invMatrix, posingData.headMatrix);
+    mat4.identity(this.mirrorMatrix);
+    mat4.scale(this.mirrorMatrix, this.mirrorMatrix, vec3.set(this.tempVec3, -1.0, 1.0 ,1.0));
+
+    mat4.multiply(this.tempMat4, posingData.headMatrix, this.mirrorMatrix);
+    mat4.multiply(this.oppositeTransformMatrix, this.tempMat4, this.invMatrix);
+
+    const eyeSize = this.toolEnv.posing3DLogic.getEyeSphereSize();
+
+    // console.debug('calculateEyesSymetry', eyeSize, this.centimeter(this.eyeLocation));
+
+    vectorLayer.eyesSymmetryGeometry = new VectorGeometry();
+    const drawingUnit = new VectorDrawingUnit();
+    const strokeGroup = new VectorStrokeGroup();
+
+    for (const stroke of group.lines) {
+
+      const symmetryStroke = new VectorStroke();
+
+      for (const point of stroke.points) {
+
+        const hited = env.posing3DLogic.calculateInputLocation3DWSide(
+          this.locationFront,
+          this.locationBack,
+          point.location,
+          this.eyeLocation,
+          eyeSize,
+          posingData,
+          env.posing3DView
+        );
+
+        if (hited) {
+
+          vec3.copy(point.location3D, this.locationFront);
+
+          const symmetryPoint = VectorPoint.clone(point);
+          vec3.transformMat4(symmetryPoint.location3D, point.location3D, this.oppositeTransformMatrix);
+
+          env.posing3DView.calculate2DLocationFrom3DLocation(symmetryPoint.location, symmetryPoint.location3D, posingData);
+          vec3.copy(symmetryPoint.adjustingLocation, symmetryPoint.location);
+
+          symmetryStroke.points.push(symmetryPoint);
+
+          // console.debug(this.centimeter(point.location3D));
+        }
+      }
+
+      if (symmetryStroke.points.length > 0) {
+
+        Logic_Edit_Line.calculateParameters(symmetryStroke);
+
+        strokeGroup.lines.push(symmetryStroke);
+        // console.debug(`symmetryStroke`, symmetryStroke.points.length);
+      }
+    }
+
+    drawingUnit.groups.push(strokeGroup);
+    // console.debug(`strokeGroup`, strokeGroup.lines.length);
+
+    vectorLayer.eyesSymmetryGeometry.units.push(drawingUnit);
+    // console.debug(`drawingUnit`, drawingUnit.groups.length);
+
+    // console.debug(`eyesSymmetryGeometry`, vectorLayer.eyesSymmetryGeometry.units.length);
+  }
+
+  centimeter(vec: Vec3): string {
+
+    return `(${(vec[0] * 100).toFixed(4)}, ${(vec[1] * 100).toFixed(4)}, ${(vec[2] * 100).toFixed(4)})`;
   }
 
   // Subtool window

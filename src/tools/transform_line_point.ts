@@ -81,7 +81,7 @@ export class Tool_Transform_Lattice_LinePoint extends Tool_Transform_Lattice {
 
         let viewKeyframeLayers = env.collectEditTargetViewKeyframeLayers();
 
-        ViewKeyframeLayer.forEachLayerAndGroup(viewKeyframeLayers, (layer: VectorLayer, group: VectorStrokeGroup) => {
+        ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup) => {
 
             let existsInGroup = false;
 

@@ -130,6 +130,7 @@ export class DocumentLogic {
     if (VectorLayer.isVectorLayerWithOwnData(layer)) {
 
       const vectorLayer = <VectorLayer>layer;
+      vectorLayer.eyesSymmetryGeometry = null;
 
       if (vectorLayer.drawLineType == undefined) {
 
@@ -146,9 +147,14 @@ export class DocumentLogic {
         vectorLayer.fillColor = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
       }
 
-      if (vectorLayer.enableEyesSymmetry == undefined) {
+      if (vectorLayer['enableEyesSymmetry'] != undefined) {
 
-        vectorLayer.enableEyesSymmetry = false;
+        vectorLayer.eyesSymmetryEnabled = vectorLayer['enableEyesSymmetry'];
+      }
+
+      if (vectorLayer.eyesSymmetryEnabled == undefined) {
+
+        vectorLayer.eyesSymmetryEnabled = false;
         vectorLayer.eyesSymmetryInputSide = EyesSymmetryInputSideID.left;
         vectorLayer.posingLayer = null;
       }
@@ -247,13 +253,18 @@ export class DocumentLogic {
         posingData = new PosingData();
       }
 
+      if (posingData.real3DModelDistance == undefined) {
+
+        posingData.real3DModelDistance = (new PosingData()).real3DModelDistance;
+      }
+
       if (posingData.real3DViewMeterPerPixel == undefined) {
 
         let posingModel = posingLayer.posingModel;
-        let radiusSum = posingData.headLocationInputData.radius;
-        let real2DViewWidth = posingData.real3DViewHalfWidth / posingModel.headSphereSize * radiusSum;
+        let radiusPx = posingData.headLocationInputData.radius;
+        let real2DViewWidth = posingData.real3DViewHalfWidth / posingModel.headSphereSize * radiusPx;
 
-        posingData.real3DViewMeterPerPixel = posingData.real3DViewHalfWidth / real2DViewWidth / 1.75 * 2.0;
+        posingData.real3DViewMeterPerPixel = posingData.real3DViewHalfWidth * 2.0 / real2DViewWidth;
       }
 
       posingLayer.posingModel = info.modelFile.posingModelDictionary['dummy_skin'];
@@ -315,6 +326,7 @@ export class DocumentLogic {
 
         for (let group of unit.groups) {
 
+          group.isUpdated = true;
           group.buffer = new GPUVertexBuffer();
 
           for (let line of group.lines) {
@@ -326,25 +338,34 @@ export class DocumentLogic {
 
               point.modifyFlag = LinePointModifyFlagID.none;
 
-              point.location[2] = 0.0;
+              if (point.v != undefined) {
 
-              point.adjustingLocation = vec3.create();
-              vec3.copy(point.adjustingLocation, point.location);
+                point.location = vec3.fromValues(point.v[0], point.v[1], 0.0);
+                point.lineWidth = point.w;
+                point.isSelected = (point.s == 1);
 
-              point.tempLocation = vec3.create();
-
-              point.adjustingLineWidth = point.lineWidth;
+                delete point.v;
+                delete point.w;
+                delete point.s;
+              }
 
               if (point.lineWidth == undefined) {
                 point.lineWidth = 1.0;
               }
 
+              point.tempLocation = vec3.create();
+              point.adjustingLocation = vec3.clone(point.location);
+              point.adjustingLineWidth = point.lineWidth;
               point.adjustingLengthFrom = 1.0;
               point.adjustingLengthTo = 0.0;
+              point.totalLength = 0.0;
+              point.curvature = 0.0;
 
               if (point['adjustedLocation'] != undefined) {
                 delete point['adjustedLocation'];
               }
+
+              point.location3D = vec3.create();
             }
 
             Logic_Edit_Line.calculateParameters(line);
@@ -426,6 +447,7 @@ export class DocumentLogic {
 
       vectorLayer.fillColor = DocumentLogic.vec4ToArray(vectorLayer.fillColor);
       delete vectorLayer.posingLayer;
+      delete vectorLayer.eyesSymmetryGeometry;
 
       for (let keyframe of vectorLayer.keyframes) {
 
@@ -433,6 +455,7 @@ export class DocumentLogic {
 
           for (let group of unit.groups) {
 
+            delete group.isUpdated;
             delete group.buffer;
 
             for (let line of group.lines) {
@@ -448,11 +471,23 @@ export class DocumentLogic {
 
               for (let point of line.points) {
 
-                point.location = DocumentLogic.vec3ToArray(point.location);
+                // データ量削減
+                point.v = DocumentLogic.vec3ToArray(point.location);
+                point.w = point.lineWidth;
+                point.s = point.isSelected ? 1 : 0;
 
-                delete point.adjustingLocation;
+                delete point.location;
+                delete point.lineWidth;
+                delete point.isSelected;
+                delete point.modifyFlag;
                 delete point.tempLocation;
+                delete point.adjustingLocation;
                 delete point.adjustingLineWidth;
+                delete point.adjustingLengthFrom;
+                delete point.adjustingLengthTo;
+                delete point.totalLength;
+                delete point.curvature;
+                delete point.location3D;
               }
             }
           }

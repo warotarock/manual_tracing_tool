@@ -450,9 +450,9 @@ export class App_Document extends App_Tool {
         });
     }
 
-    protected saveDocumentOraFile(filePath: string, documentData: DocumentData, backGroundType: DocumentBackGroundTypeID) {
+    protected saveDocumentOraFile(filePath: string, save_DocumentData: DocumentData, backGroundType: DocumentBackGroundTypeID) {
 
-        let canvas = this.createExportImage(documentData, 1.0, backGroundType);
+        let canvas = this.createExportImage(save_DocumentData, 1.0, backGroundType);
 
         ora.scriptsPath = this.oraScriptsPath;
         // ora.blending = false;
@@ -462,8 +462,6 @@ export class App_Document extends App_Tool {
 
         let layer = oraFile.addLayer('marged', 0);
         layer.image = canvas;
-
-        let save_DocumentData = this.createSaveDocumentData(documentData);
 
         oraFile.save(
             this.oraVectorFileName

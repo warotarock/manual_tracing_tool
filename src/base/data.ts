@@ -142,11 +142,10 @@ export enum LinePointModifyFlagID {
 
 export class VectorPoint {
 
+  // runtime
   location = vec3.fromValues(0.0, 0.0, 0.0);
   lineWidth = 1.0;
   isSelected = false;
-
-  // runtime
   modifyFlag = LinePointModifyFlagID.none;
   tempLocation = vec3.fromValues(0.0, 0.0, 0.0);
   adjustingLocation = vec3.fromValues(0.0, 0.0, 0.0);
@@ -155,6 +154,12 @@ export class VectorPoint {
   adjustingLengthTo = 0.0; // start position to draw segment of side of to-point (0.0 - 1.0)
   totalLength = 0.0;
   curvature = 0.0;
+  location3D = vec3.fromValues(0.0, 0.0, 0.0);
+
+  // file only
+  v: float[]; // location
+  w: float;   // lineWidth
+  s: int;     // isSelected
 
   static clone(srcPoint: VectorPoint): VectorPoint {
 
@@ -221,9 +226,11 @@ export class VectorStrokeGroup {
   modifyFlag = VectorGroupModifyFlagID.none;
   linePointModifyFlag = VectorGroupModifyFlagID.none;
   buffer = new GPUVertexBuffer();
+  isUpdated = false;
 
   static setUpdated(group: VectorStrokeGroup) {
 
+    group.isUpdated = true;
     group.buffer.isStored = false;
   }
 
@@ -287,12 +294,15 @@ export class VectorLayer extends Layer {
   line_PaletteColorIndex = 0;
   fill_PaletteColorIndex = 1;
 
-  enableEyesSymmetry = false;
+  eyesSymmetryEnabled = false;
   eyesSymmetryInputSide = EyesSymmetryInputSideID.left;
   posingLayer: PosingLayer = null;
 
   // file only
   posingLayerID: int;
+
+  // runtime
+  eyesSymmetryGeometry: VectorGeometry = null;
 
   static isVectorLayer(layer: Layer): boolean {
 
@@ -567,6 +577,7 @@ export class PosingData {
 
   real3DViewHalfWidth = 1.0;
   real3DViewMeterPerPixel = 1.0;
+  real3DModelDistance = 2.0;
 
   rootMatrix = mat4.create();
 

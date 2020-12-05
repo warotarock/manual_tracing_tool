@@ -692,6 +692,11 @@ export class App_Tool extends App_Drawing {
 
   public collectEditTargetViewKeyframeLayers(): List<ViewKeyframeLayer> { // @implements MainEditor
 
+    return this.collectViewKeyframeLayers(true);
+  }
+
+  public collectViewKeyframeLayers(editTargetOnly = false): List<ViewKeyframeLayer> {
+
     let editableKeyframeLayers = new List<ViewKeyframeLayer>();
 
     // Collects layers
@@ -702,15 +707,21 @@ export class App_Tool extends App_Drawing {
 
         let layer = viewKeyframeLayer.layer;
 
-        if (Layer.isEditTarget(layer)) {
-
-          editableKeyframeLayers.push(viewKeyframeLayer);
+        if (!VectorLayer.isVectorLayer(layer)) {
+          continue;
         }
+
+        if (editTargetOnly && !Layer.isEditTarget(layer)) {
+          continue;
+        }
+
+        editableKeyframeLayers.push(viewKeyframeLayer);
       }
     }
 
     return editableKeyframeLayers;
   }
+
 
   // Common functions
 

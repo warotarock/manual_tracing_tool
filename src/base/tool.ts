@@ -178,7 +178,7 @@ export class ViewKeyframeLayer {
     return (this.vectorLayerKeyframe != null);
   }
 
-  static forEachGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (group: VectorStrokeGroup) => void) {
+  static forEachGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (group: VectorStrokeGroup, vectorLayer?: VectorLayer) => void) {
 
     for (let viewKeyframeLayer of viewKeyframeLayers) {
 
@@ -190,7 +190,7 @@ export class ViewKeyframeLayer {
 
         for (let group of unit.groups) {
 
-          loopBodyFunction(group);
+          loopBodyFunction(group, <VectorLayer>viewKeyframeLayer.layer);
         }
       }
     }
@@ -205,24 +205,6 @@ export class ViewKeyframeLayer {
       }
 
       loopBodyFunction(viewKeyframeLayer.vectorLayerKeyframe.geometry);
-    }
-  }
-
-  static forEachLayerAndGroup(viewKeyframeLayers: List<ViewKeyframeLayer>, loopBodyFunction: (layer: VectorLayer, group: VectorStrokeGroup) => void) {
-
-    for (let viewKeyframeLayer of viewKeyframeLayers) {
-
-      if (viewKeyframeLayer.vectorLayerKeyframe == null) {
-        continue;
-      }
-
-      for (let unit of viewKeyframeLayer.vectorLayerKeyframe.geometry.units) {
-
-        for (let group of unit.groups) {
-
-          loopBodyFunction(<VectorLayer>viewKeyframeLayer.layer, group);
-        }
-      }
     }
   }
 }
@@ -363,13 +345,6 @@ export class DrawPathContext {
   activeDrawPathStartIndex = -1;
   activeDrawPathEndIndex = -1;
 
-  lazyDraw_ProcessedIndex = -1;
-  lazyDraw_LastResetTime = 0;
-  lazyDraw_LimitTime = 100;
-  lazyDraw_MaxTime = 100000;
-  lazyDraw_WaitTime = 500;
-  lazyDraw_Buffer: CanvasWindow = null;
-
   drawPathModeID = DrawPathModeID.none;
   isModalToolRunning = false;
   currentLayerOnly = false;
@@ -378,7 +353,7 @@ export class DrawPathContext {
   lastDrawPathIndex = -1;
   bufferStack = new List<CanvasWindow>();
 
-  needsLazyRedraw = false;
+  lazyProcess = new LazyProcess();
 
   clearDrawingStates() {
 
@@ -390,10 +365,15 @@ export class DrawPathContext {
     }
   }
 
-  resetLazyDrawProcess() {
+  isLastDrawExist(): boolean {
 
-    this.lazyDraw_ProcessedIndex = -1;
-    this.lazyDraw_LastResetTime = Platform.getCurrentTime();
+    return (this.lastDrawPathIndex != -1);
+  }
+
+  isFullRendering(): boolean {
+
+    return (this.drawPathModeID == DrawPathModeID.editorPreview
+      || this.drawPathModeID == DrawPathModeID.export);
   }
 
   getCurrentBuffer(): CanvasWindow {
@@ -405,32 +385,61 @@ export class DrawPathContext {
 
     return this.bufferStack[this.bufferStack.length - 1];
   }
+}
 
-  isFullRendering(): boolean {
+export class LazyProcess {
 
-    return (this.drawPathModeID == DrawPathModeID.editorPreview
-      || this.drawPathModeID == DrawPathModeID.export);
+  needsStartingLazyDraw = false;
+
+  processedIndex = -1;
+  lastResetTime = 0;
+  limitTime = 100;
+  maxTime = 100000;
+  waitTime = 500;
+  buffer: CanvasWindow = null;
+  isFirstDraw = true;
+  isFinished = false;
+  isRendered = false;
+
+  resetLazyDrawProcess() {
+
+    this.needsStartingLazyDraw = false;
+    this.isFirstDraw = true;
+    this.isFinished = false;
+    this.isRendered = false;
+  }
+
+  setLazyDraw() {
+
+    this.needsStartingLazyDraw = true;
+    this.isFinished = false;
+  }
+
+  startLazyDrawProcess() {
+
+    this.needsStartingLazyDraw = false;
+    this.processedIndex = -1;
+    this.lastResetTime = Platform.getCurrentTime();
+    this.isFirstDraw = true;
+    this.isFinished = false;
+    this.isRendered = false;
+  }
+
+  finishLazyDrawProcess() {
+
+    this.isFinished = true;
+    this.isRendered = true;
   }
 
   isLazyDrawBigining(): boolean {
 
-    return (this.lazyDraw_ProcessedIndex == -1);
-  }
-
-  isLazyDrawFinished(): boolean {
-
-    return (this.lazyDraw_ProcessedIndex >= this.steps.length - 1) && !this.needsLazyRedraw;
+    return (this.processedIndex == -1);
   }
 
   isLazyDrawWaiting(): boolean {
 
-    return (!this.isLazyDrawFinished()
-      && this.lazyDraw_LastResetTime + this.lazyDraw_WaitTime > Platform.getCurrentTime());
-  }
-
-  isLastDrawExist(): boolean {
-
-    return (this.lastDrawPathIndex != -1);
+    return (!this.isFinished
+      && this.lastResetTime + this.waitTime > Platform.getCurrentTime());
   }
 }
 
@@ -703,7 +712,7 @@ export class ToolEnvironment {
 
   setLazyRedraw() {
 
-    this.toolContext.lazy_DrawPathContext.needsLazyRedraw = true;
+    this.toolContext.lazy_DrawPathContext.lazyProcess.setLazyDraw();
   }
 
   isAnyModifierKeyPressing(): boolean {
@@ -928,6 +937,8 @@ export class ToolDrawingStyle {
   posing3DBoneForwardColor = vec4.fromValues(0.2, 1.0, 0.2, 1.0);
   posing3DBoneInputCircleRadius = 15.0;
   posing3DBoneInputCircleHitRadius = 1.8;
+  posing3DHelperGrayColor1 = vec4.fromValues(0.5, 0.5, 0.5, 1.0);
+  posing3DHelperGrayColor2 = vec4.fromValues(0.5, 0.5, 0.5, 0.3);
 
   generalLinePointRadius = 2.0;
   selectedLinePointRadius = 3.0;
@@ -951,6 +962,39 @@ export class ToolDrawingEnvironment {
   setVariables(canvasWindow: CanvasWindow) {
 
     this.canvasWindow = canvasWindow;
+  }
+
+  beginPath(locationFrom?: Vec3) {
+
+    this.render.beginPath();
+
+    if (locationFrom) {
+
+      this.render.moveTo(locationFrom[0], locationFrom[1]);
+    }
+  }
+
+  stroke(strokeWidth: float, color: Vec4) {
+
+    this.render.setStrokeColorV(color);
+    this.render.setStrokeWidth(strokeWidth);
+    this.render.stroke();
+  }
+
+  fill(color: Vec4) {
+
+    this.render.setFillColorV(color);
+    this.render.fill();
+  }
+
+  moveTo(location: Vec3) {
+
+    this.render.moveTo(location[0], location[1]);
+  }
+
+  lineTo(location: Vec3) {
+
+    this.render.lineTo(location[0], location[1]);
   }
 
   drawLine(locationFrom: Vec3, locationTo: Vec3, strokeWidth: float, color: Vec4) {

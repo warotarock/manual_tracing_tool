@@ -15,7 +15,8 @@ import {
   Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
   VectorLayer, VectorGeometry, VectorStroke, VectorPoint, VectorLineModifyFlagID, LinePointModifyFlagID,
   ImageFileReferenceLayer,
-  PosingLayer
+  PosingLayer,
+  EyesSymmetryInputSideID
 } from '../base/data';
 
 import { Logic_GPULine } from '../logics/gpu_line';
@@ -37,6 +38,7 @@ import {
 } from '../app/view.class';
 
 import { PolyLineShader, BezierLineShader, BezierDistanceLineShader, GPULineShader } from './drawing.class';
+import { Maths } from '../logics/math';
 
 export class App_Drawing extends App_View implements MainEditorDrawer {
 
@@ -84,7 +86,6 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
   viewMatrix = mat4.create();
   modelViewMatrix = mat4.create();
   projectionMatrix = mat4.create();
-  tmpMatrix = mat4.create();
 
   operatorCurosrLineDash = [2.0, 2.0];
   operatorCurosrLineDashScaled = [0.0, 0.0];
@@ -262,6 +263,11 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
       let geometry = viewKeyFrameLayer.vectorLayerKeyframe.geometry;
 
       this.drawForeground_VectorLayer(vectorLayer, geometry, documentData, isExporting, isModalToolRunning);
+
+      if (vectorLayer.eyesSymmetryEnabled && vectorLayer.eyesSymmetryGeometry != null) {
+
+        this.drawForeground_VectorLayer(vectorLayer, vectorLayer.eyesSymmetryGeometry, documentData, isExporting, isModalToolRunning);
+      }
     }
     else if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
@@ -273,6 +279,10 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
   private drawForeground_VectorLayer(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
 
+    if (layer.drawLineType == DrawLineTypeID.none) {
+      return;
+    }
+
     let env = this.toolEnv;
     let useAdjustingLocation = isModalToolRunning;
 
@@ -283,12 +293,9 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
       for (let group of unit.groups) {
 
-        if (layer.drawLineType != DrawLineTypeID.none) {
+        for (let line of group.lines) {
 
-          for (let line of group.lines) {
-
-            this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
-          }
+          this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
         }
       }
     }
@@ -448,12 +455,24 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     }
   }
 
-  protected drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, drawStrokes: boolean, drawPoints: boolean, isModalToolRunning: boolean) {
+  protected drawForegroundForEditMode(vectorLayer: VectorLayer, viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, drawStrokes: boolean, drawPoints: boolean, isModalToolRunning: boolean) {
+
+    let isSelectedLayer = Layer.isSelected(vectorLayer);
+
+    this.drawVectorLayerForEditMode(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry,
+      documentData, isSelectedLayer, drawStrokes, drawPoints, isModalToolRunning);
+
+    if (vectorLayer.eyesSymmetryEnabled && vectorLayer.eyesSymmetryGeometry != null) {
+
+      this.drawVectorLayerForEditMode(vectorLayer, vectorLayer.eyesSymmetryGeometry,
+        documentData, false, drawStrokes, drawPoints, isModalToolRunning);
+    }
+  }
+
+  protected drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isSelectedLayer: boolean, drawStrokes: boolean, drawPoints: boolean, isModalToolRunning: boolean) {
 
     let context = this.toolContext;
     let env = this.toolEnv;
-
-    let isSelectedLayer = Layer.isSelected(layer);
 
     // drawing parameters
     let widthRate = context.document.lineWidthBiasRate;
@@ -647,7 +666,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
     this.canvasRender.setLineCap(CanvasRenderLineCap.round)
 
-    let firstPoint = line.points[startIndex];
+    // let firstPoint = line.points[startIndex];
     let currentLineWidth = -1.0;
 
     let strokeStarted = false;
@@ -661,7 +680,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
       let toLocation = (useAdjustingLocation ? toPoint.adjustingLocation : toPoint.location);
 
       let lineWidth = (useAdjustingLocation ? fromPoint.adjustingLineWidth : fromPoint.lineWidth);
-      let isVisibleWidth = (lineWidth > 0.0);
+      // let isVisibleWidth = (lineWidth > 0.0);
       //let isVisibleSegment = (fromPoint.lengthFrom != 0.0 || fromPoint.lengthTo != 0.0);
 
       let lengthFrom = (useAdjustingLocation ? fromPoint.adjustingLengthFrom : 1.0);
@@ -990,8 +1009,8 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
     let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: 計算が怪しい（なぜか縦横両方に同じ値を掛けないと合わない）ので後で検討する
     mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, orthoWidth, -orthoWidth, 0.1, 1.0);
 
-    wnd.caluclateGLViewMatrix(this.tmpMatrix);
-    mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
+    wnd.caluclateGLViewMatrix(this.tempMat4);
+    mat4.multiply(this.projectionMatrix, this.tempMat4, this.projectionMatrix);
 
     render.setDepthTest(false)
     render.setCulling(false);
@@ -1025,7 +1044,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
         if (!group.buffer.isStored) {
 
-          console.log(`Calculate line point buffer data`);
+          // console.debug(`Calculate line point buffer data`);
 
           this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
 
@@ -1052,6 +1071,63 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
           render.drawArrayTryangles(drawCount);
         }
+      }
+    }
+  }
+
+  // EyesSymmetry support
+
+  protected location2D = vec3.create();
+  protected location3D = vec3.create();
+  protected direction = vec3.create();
+  protected localLocation = vec3.create();
+  protected radiusLocation = vec3.create();
+  protected radiusLocationWorld = vec3.create();
+  protected radiusLocation2D = vec3.create();
+
+  protected drawEditor_EyesSymmetry(render: CanvasRender, env: ToolEnvironment) {
+
+    let vectorLayer: VectorLayer = null;
+
+    for (const item of this.layerWindow.layerWindowItems) {
+
+      if (VectorLayer.isVectorLayerWithOwnData(item.layer)) {
+
+        vectorLayer = <VectorLayer>item.layer;
+
+        if (vectorLayer == null
+          || vectorLayer.eyesSymmetryEnabled == false
+          || vectorLayer.posingLayer == null
+          || !vectorLayer.isVisible
+          || !vectorLayer.isSelected
+        ) {
+          continue;
+        }
+
+        const posingData = vectorLayer.posingLayer.posingData;
+
+        if (!posingData.headLocationInputData.inputDone) {
+          continue;
+        }
+
+        this.toolEnv.posing3DLogic.getEyeSphereLocation(this.eyeLocation, posingData, vectorLayer.eyesSymmetryInputSide);
+        env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.eyeLocation, posingData);
+
+        const eyeSize = this.toolEnv.posing3DLogic.getEyeSphereSize();
+        vec3.transformMat4(this.localLocation, this.eyeLocation, env.posing3DView.viewMatrix);
+        vec3.set(this.direction, eyeSize, 0.0, 0.0);
+        vec3.add(this.radiusLocation, this.localLocation, this.direction);
+        vec3.transformMat4(this.radiusLocationWorld, this.radiusLocation, env.posing3DView.cameraMatrix);
+        env.posing3DView.calculate2DLocationFrom3DLocation(this.radiusLocation2D, this.radiusLocationWorld, posingData);
+        const raduis2D = vec3.distance(this.location2D, this.radiusLocation2D);
+
+        const strokeWidth = this.getCurrentViewScaleLineWidth(1.0);
+
+        render.setStrokeColorV(this.drawStyle.selectedVectorLineColor);
+        render.setStrokeWidth(strokeWidth);
+        render.beginPath();
+        render.circle(this.location2D[0], this.location2D[1], raduis2D);
+        render.stroke();
       }
     }
   }

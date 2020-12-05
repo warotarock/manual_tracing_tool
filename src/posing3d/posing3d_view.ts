@@ -1,4 +1,4 @@
-import { float, List, Dictionary} from '../base/conversion';
+import { float, List, Dictionary } from '../base/conversion';
 import { Layer, PosingModel, PosingData, PosingLayer, JointPartDrawingUnit, InputSideID } from '../base/data';
 import { PickingWindow, Posing3DSubToolID, ToolEnvironment } from '../base/tool';
 
@@ -9,864 +9,843 @@ import { Maths } from '../logics/math';
 
 export class ImageResource {
 
-    fileName: string = null;
-    image = new RenderImage();
-    isGLTexture = false;
-    cssImageClassName = '';
+  fileName: string = null;
+  image = new RenderImage();
+  isGLTexture = false;
+  cssImageClassName = '';
 
-    loaded = false;
+  loaded = false;
 
-    set({fileName, cssImageClassName, isGLTexture}: { fileName?: string, cssImageClassName?: string, isGLTexture?: boolean }) {
+  set({ fileName, cssImageClassName, isGLTexture }: { fileName?: string, cssImageClassName?: string, isGLTexture?: boolean }) {
 
-      if (fileName) {
+    if (fileName) {
 
-        this.fileName = fileName;
-      }
-
-      if (cssImageClassName) {
-
-        this.cssImageClassName = cssImageClassName;
-      }
-
-      if (isGLTexture) {
-
-        this.isGLTexture = isGLTexture;
-      }
-
-      return this;
+      this.fileName = fileName;
     }
+
+    if (cssImageClassName) {
+
+      this.cssImageClassName = cssImageClassName;
+    }
+
+    if (isGLTexture) {
+
+      this.isGLTexture = isGLTexture;
+    }
+
+    return this;
+  }
 }
 
 export class ModelResource {
 
-    modelName: string = null;
-    model = new RenderModel();
+  modelName: string = null;
+  model = new RenderModel();
 }
 
 export class ModelFile {
 
-    fileName: string = null;
-    modelResources = new List<ModelResource>();
-    modelResourceDictionary = new Dictionary<ModelResource>();
-    posingModelDictionary = new Dictionary<PosingModel>();
-    loaded = false;
+  fileName: string = null;
+  modelResources = new List<ModelResource>();
+  modelResourceDictionary = new Dictionary<ModelResource>();
+  posingModelDictionary = new Dictionary<PosingModel>();
+  loaded = false;
 
-    file(fileName: string): ModelFile {
+  file(fileName: string): ModelFile {
 
-        this.fileName = fileName;
+    this.fileName = fileName;
 
-        return this;
-    }
+    return this;
+  }
 }
 
 enum DrawImageType {
 
-    visualImage = 1,
-    depthImage = 2
+  visualImage = 1,
+  depthImage = 2
 }
 
 export class Posing3DView {
 
-    // Posing
+  render: WebGLRender = null;
+  webglWindow: CanvasWindow = null;
+  //pickingWindow: PickingWindow = null;
+  posingFigureShader = new PosingFigureShader();
+  depthShader = new DepthShader();
 
-    // Rendering
-    render: WebGLRender = null;
-    webglWindow: CanvasWindow = null;
-    //pickingWindow: PickingWindow = null;
-    posingFigureShader = new PosingFigureShader();
-    depthShader = new DepthShader();
+  imageResurces = new List<ImageResource>();
 
-    imageResurces = new List<ImageResource>();
+  axisModel: ModelResource = null;
+  zTestShpereModel: ModelResource = null;
+  zTestShpereEdgeModel: ModelResource = null;
+  headModel: ModelResource = null;
+  chestModel: ModelResource = null;
+  leftSholderModel: ModelResource = null;
+  rightSholderModel: ModelResource = null;
+  hipsModel: ModelResource = null;
+  leftArm1Model: ModelResource = null;
+  leftArm2Model: ModelResource = null;
+  rightArm1Model: ModelResource = null;
+  rightArm2Model: ModelResource = null;
+  leftLeg1Model: ModelResource = null;
+  leftLeg2Model: ModelResource = null;
+  rightLeg1Model: ModelResource = null;
+  rightLeg2Model: ModelResource = null;
 
-    axisModel: ModelResource = null;
-    zTestShpereModel: ModelResource = null;
-    zTestShpereEdgeModel: ModelResource = null;
-    headModel: ModelResource = null;
-    chestModel: ModelResource = null;
-    leftSholderModel: ModelResource = null;
-    rightSholderModel: ModelResource = null;
-    hipsModel: ModelResource = null;
-    leftArm1Model: ModelResource = null;
-    leftArm2Model: ModelResource = null;
-    rightArm1Model: ModelResource = null;
-    rightArm2Model: ModelResource = null;
-    leftLeg1Model: ModelResource = null;
-    leftLeg2Model: ModelResource = null;
-    rightLeg1Model: ModelResource = null;
-    rightLeg2Model: ModelResource = null;
+  eyeLocation = vec3.create();
+  lookatLocation = vec3.create();
+  upVector = vec3.create();
 
-    modelLocation = vec3.create();
+  modelMatrix = mat4.create();
+  normalMatrix = mat4.create();
+  viewMatrix = mat4.create();
+  modelViewMatrix = mat4.create();
+  projectionMatrix = mat4.create();
+  projectionInvMatrix = mat4.create();
+  cameraMatrix = mat4.create();
 
-    eyeLocation = vec3.create();
-    lookatLocation = vec3.create();
-    upVector = vec3.create();
+  real3DProjectionMatrix = mat4.create();
 
-    modelMatrix = mat4.create();
-    normalMatrix = mat4.create();
-    viewMatrix = mat4.create();
-    modelViewMatrix = mat4.create();
-    projectionMatrix = mat4.create();
-    projectionInvMatrix = mat4.create();
-    cameraMatrix = mat4.create();
+  locationMatrix = mat4.create();
+  tempVec3 = vec3.create();
+  invProjectedVec3 = vec3.create();
+  tmpMatrix = mat4.create();
+  screenLocation = vec3.create();
 
-    real3DProjectionMatrix = mat4.create();
+  initialize(render: WebGLRender, webglWindow: CanvasWindow, pickingWindow: PickingWindow) {
 
-    locationMatrix = mat4.create();
-    tempVec3 = vec3.create();
-    invProjectedVec3 = vec3.create();
-    tmpMatrix = mat4.create();
-    screenLocation = vec3.create();
+    this.render = render;
+    this.webglWindow = webglWindow;
+    //this.pickingWindow = pickingWindow;
 
-    initialize(render: WebGLRender, webglWindow: CanvasWindow, pickingWindow: PickingWindow) {
+    this.render.initializeShader(this.posingFigureShader);
+    this.render.initializeShader(this.depthShader);
 
-        this.render = render;
-        this.webglWindow = webglWindow;
-        //this.pickingWindow = pickingWindow;
+    this.render.setShader(this.depthShader);
+    //this.depthShader.setMaxDepth(pickingWindow.maxDepth);
+  }
 
-        this.render.initializeShader(this.posingFigureShader);
-        this.render.initializeShader(this.depthShader);
+  storeResources(modelFile: ModelFile, imageResurces: List<ImageResource>) {
 
-        this.render.setShader(this.depthShader);
-        //this.depthShader.setMaxDepth(pickingWindow.maxDepth);
+    this.axisModel = modelFile.modelResourceDictionary['Axis'];
+    this.zTestShpereModel = modelFile.modelResourceDictionary['ZTestSphere'];
+    this.zTestShpereEdgeModel = modelFile.modelResourceDictionary['ZTestSphereEdge'];
+
+    this.headModel = modelFile.modelResourceDictionary['Head02'];
+    this.chestModel = modelFile.modelResourceDictionary['Chest'];
+    this.leftSholderModel = modelFile.modelResourceDictionary['LeftShoulder'];
+    this.rightSholderModel = modelFile.modelResourceDictionary['LeftShoulder'];
+    this.hipsModel = modelFile.modelResourceDictionary['Hips'];
+
+    this.leftArm1Model = modelFile.modelResourceDictionary['Arm1'];
+    this.leftArm2Model = modelFile.modelResourceDictionary['Arm1'];
+    this.rightArm1Model = modelFile.modelResourceDictionary['Arm1'];
+    this.rightArm2Model = modelFile.modelResourceDictionary['Arm1'];
+
+    this.leftLeg1Model = modelFile.modelResourceDictionary['Leg1'];
+    this.leftLeg2Model = modelFile.modelResourceDictionary['Leg2'];
+    this.rightLeg1Model = modelFile.modelResourceDictionary['Leg1'];
+    this.rightLeg2Model = modelFile.modelResourceDictionary['Leg2'];
+
+    this.imageResurces.push(imageResurces[0]);
+  }
+
+  buildDrawingStructures(posingLayer: PosingLayer) {
+
+    let posingData = posingLayer.posingData;
+    let posingModel = posingLayer.posingModel;
+
+    let drawingUnits = new List<JointPartDrawingUnit>();
+
+    // Head top to neck
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "headLocationInputData";
+      unit.targetData = posingData.headRotationInputData;
+      unit.dependentInputData = posingData.headLocationInputData;
+      unit.subToolID = Posing3DSubToolID.rotateHead;
+      unit.modelResource = this.headModel;
+      unit.drawModel = false;
+      unit.targetData.parentMatrix = posingData.neckSphereMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.headTopToNeckVector);
+      drawingUnits.push(unit);
     }
 
-    storeResources(modelFile: ModelFile, imageResurces: List<ImageResource>) {
-
-        this.axisModel = modelFile.modelResourceDictionary['Axis'];
-        this.zTestShpereModel = modelFile.modelResourceDictionary['ZTestSphere'];
-        this.zTestShpereEdgeModel = modelFile.modelResourceDictionary['ZTestSphereEdge'];
-
-        this.headModel = modelFile.modelResourceDictionary['Head02'];
-        this.chestModel = modelFile.modelResourceDictionary['Chest'];
-        this.leftSholderModel = modelFile.modelResourceDictionary['LeftShoulder'];
-        this.rightSholderModel = modelFile.modelResourceDictionary['LeftShoulder'];
-        this.hipsModel = modelFile.modelResourceDictionary['Hips'];
-
-        this.leftArm1Model = modelFile.modelResourceDictionary['Arm1'];
-        this.leftArm2Model = modelFile.modelResourceDictionary['Arm1'];
-        this.rightArm1Model = modelFile.modelResourceDictionary['Arm1'];
-        this.rightArm2Model = modelFile.modelResourceDictionary['Arm1'];
-
-        this.leftLeg1Model = modelFile.modelResourceDictionary['Leg1'];
-        this.leftLeg2Model = modelFile.modelResourceDictionary['Leg2'];
-        this.rightLeg1Model = modelFile.modelResourceDictionary['Leg1'];
-        this.rightLeg2Model = modelFile.modelResourceDictionary['Leg2'];
-
-        this.imageResurces.push(imageResurces[0]);
+    // Chest and hips
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "bodyLocationInputData";
+      unit.targetData = posingData.bodyLocationInputData;
+      unit.dependentInputData = posingData.headLocationInputData;
+      unit.modelConvertMatrix = posingModel.chestModelConvertMatrix;
+      unit.subToolID = Posing3DSubToolID.locateBody;
+      unit.modelResource = this.chestModel;
+      unit.targetData.parentMatrix = posingData.chestRootMatrix;
+      unit.targetData.hitTestSphereRadius = posingModel.bodySphereSize;
+      drawingUnits.push(unit);
     }
 
-    buildDrawingStructures(posingLayer: PosingLayer) {
-
-        let posingData = posingLayer.posingData;
-        let posingModel = posingLayer.posingModel;
-
-        let drawingUnits = new List<JointPartDrawingUnit>();
-
-        // Head top to neck
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "headLocationInputData";
-            unit.targetData = posingData.headRotationInputData;
-            unit.dependentInputData = posingData.headLocationInputData;
-            unit.subToolID = Posing3DSubToolID.rotateHead;
-            unit.modelResource = this.headModel;
-            unit.drawModel = false;
-            unit.targetData.parentMatrix = posingData.neckSphereMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.headTopToNeckVector);
-            drawingUnits.push(unit);
-        }
-
-        // Chest and hips
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "bodyLocationInputData";
-            unit.targetData = posingData.bodyLocationInputData;
-            unit.dependentInputData = posingData.headLocationInputData;
-            unit.modelConvertMatrix = posingModel.chestModelConvertMatrix;
-            unit.subToolID = Posing3DSubToolID.locateBody;
-            unit.modelResource = this.chestModel;
-            unit.targetData.parentMatrix = posingData.chestRootMatrix;
-            unit.targetData.hitTestSphereRadius = posingModel.bodySphereSize;
-            drawingUnits.push(unit);
-        }
-
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "hipsLocationInputData";
-            unit.targetData = posingData.hipsLocationInputData;
-            unit.dependentInputData = posingData.bodyLocationInputData;
-            unit.modelConvertMatrix = posingModel.hipsModelConvertMatrix;
-            unit.subToolID = Posing3DSubToolID.rotateBody;
-            unit.modelResource = this.hipsModel;
-            unit.targetData.parentMatrix = posingData.hipsRootMatrix;
-            unit.targetData.hitTestSphereRadius = posingModel.hipsSphereSize;
-            drawingUnits.push(unit);
-        }
-
-        // Left arms
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "leftShoulderLocationInputData";
-            unit.targetData = posingData.leftShoulderLocationInputData;
-            unit.dependentInputData = posingData.bodyLocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateLeftShoulder;
-            unit.modelResource = this.leftSholderModel;
-            unit.targetData.parentMatrix = posingData.shoulderRootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm1Location);
-            drawingUnits.push(unit);
-        }
-
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "leftArm1LocationInputData";
-            unit.targetData = posingData.leftArm1LocationInputData;
-            unit.dependentInputData = posingData.bodyLocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateLeftArm1;
-            unit.modelResource = this.leftArm1Model;
-            unit.targetData.parentMatrix = posingData.leftArm1RootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm1HeadLocation);
-            drawingUnits.push(unit);
-        }
-
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "leftArm2LocationInputData";
-            unit.targetData = posingData.leftArm2LocationInputData;
-            unit.dependentInputData = posingData.leftArm1LocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateLeftArm2;
-            unit.modelResource = this.leftArm2Model;
-            unit.targetData.parentMatrix = posingData.leftArm1LocationInputData.childJointRootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm2HeadLocation);
-            drawingUnits.push(unit);
-        }
-
-        // Right arm
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "rightShoulderLocationInputData";
-            unit.targetData = posingData.rightShoulderLocationInputData;
-            unit.dependentInputData = posingData.bodyLocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateRightShoulder;
-            unit.modelResource = this.rightSholderModel;
-            unit.targetData.parentMatrix = posingData.shoulderRootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm1Location);
-            drawingUnits.push(unit);
-        }
-
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "rightArm1LocationInputData";
-            unit.targetData = posingData.rightArm1LocationInputData;
-            unit.dependentInputData = posingData.bodyLocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateRightArm1;
-            unit.modelResource = this.rightArm1Model;
-            unit.targetData.parentMatrix = posingData.rightArm1RootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm1HeadLocation);
-            drawingUnits.push(unit);
-        }
-
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "rightArm2LocationInputData";
-            unit.targetData = posingData.rightArm2LocationInputData;
-            unit.dependentInputData = posingData.rightArm1LocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateRightArm2;
-            unit.modelResource = this.rightArm2Model;
-            unit.targetData.parentMatrix = posingData.rightArm1LocationInputData.childJointRootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm2HeadLocation);
-            drawingUnits.push(unit);
-        }
-
-        // Left leg
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "leftLeg1LocationInputData";
-            unit.targetData = posingData.leftLeg1LocationInputData;
-            unit.dependentInputData = posingData.bodyLocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateLeftLeg1;
-            unit.modelResource = this.leftLeg1Model;
-            unit.targetData.parentMatrix = posingData.leftLeg1RootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftLeg1HeadLocation);
-            drawingUnits.push(unit);
-        }
-
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "rightLeg2LocationInputData";
-            unit.targetData = posingData.leftLeg2LocationInputData;
-            unit.dependentInputData = posingData.leftLeg1LocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateLeftLeg2;
-            unit.modelResource = this.leftLeg2Model;
-            unit.targetData.parentMatrix = posingData.leftLeg1LocationInputData.childJointRootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftLeg2HeadLocation);
-            drawingUnits.push(unit);
-        }
-
-        // Right leg
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "rightLeg1LocationInputData";
-            unit.targetData = posingData.rightLeg1LocationInputData;
-            unit.dependentInputData = posingData.bodyLocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateRightLeg1;
-            unit.modelResource = this.rightLeg1Model;
-            unit.targetData.parentMatrix = posingData.rightLeg1RootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightLeg1HeadLocation);
-            drawingUnits.push(unit);
-        }
-
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "rightLeg2LocationInputData";
-            unit.targetData = posingData.rightLeg2LocationInputData;
-            unit.dependentInputData = posingData.rightLeg1LocationInputData;
-            unit.subToolID = Posing3DSubToolID.locateRightLeg2;
-            unit.modelResource = this.rightLeg2Model;
-            unit.targetData.parentMatrix = posingData.rightLeg1LocationInputData.childJointRootMatrix;
-            unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightLeg2HeadLocation);
-            drawingUnits.push(unit);
-        }
-
-        // Head twist
-        {
-            let unit = new JointPartDrawingUnit();
-            unit.name = "headTwistInputData";
-            unit.targetData = posingData.headTwistInputData;
-            unit.dependentInputData = posingData.headRotationInputData;
-            unit.subToolID = Posing3DSubToolID.twistHead;
-            unit.drawModel = false;
-            unit.targetData.parentMatrix = posingData.neckSphereMatrix;
-            unit.targetData.hitTestSphereRadius = posingModel.headTwistSphereSize;
-            drawingUnits.push(unit);
-        }
-
-        posingLayer.drawingUnits = drawingUnits;
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "hipsLocationInputData";
+      unit.targetData = posingData.hipsLocationInputData;
+      unit.dependentInputData = posingData.bodyLocationInputData;
+      unit.modelConvertMatrix = posingModel.hipsModelConvertMatrix;
+      unit.subToolID = Posing3DSubToolID.rotateBody;
+      unit.modelResource = this.hipsModel;
+      unit.targetData.parentMatrix = posingData.hipsRootMatrix;
+      unit.targetData.hitTestSphereRadius = posingModel.hipsSphereSize;
+      drawingUnits.push(unit);
     }
 
-    clear(env: ToolEnvironment) {
-
-        this.render.setDepthTest(true)
-        this.render.setCulling(true);
-        this.render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
+    // Left arms
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "leftShoulderLocationInputData";
+      unit.targetData = posingData.leftShoulderLocationInputData;
+      unit.dependentInputData = posingData.bodyLocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateLeftShoulder;
+      unit.modelResource = this.leftSholderModel;
+      unit.targetData.parentMatrix = posingData.shoulderRootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm1Location);
+      drawingUnits.push(unit);
     }
 
-    prepareDrawingStructures(posingLayer: PosingLayer) {
-
-        if (posingLayer.drawingUnits == null) {
-
-            this.buildDrawingStructures(posingLayer);
-        }
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "leftArm1LocationInputData";
+      unit.targetData = posingData.leftArm1LocationInputData;
+      unit.dependentInputData = posingData.bodyLocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateLeftArm1;
+      unit.modelResource = this.leftArm1Model;
+      unit.targetData.parentMatrix = posingData.leftArm1RootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm1HeadLocation);
+      drawingUnits.push(unit);
     }
 
-    drawManipulaters(posingLayer: PosingLayer, env: ToolEnvironment) {
-
-        let posingData = posingLayer.posingData;
-        let posingModel = posingLayer.posingModel;
-
-        this.caluculateCameraMatrix(posingData);
-
-        // Draws input manipulaters
-
-        this.drawHeadSphere(DrawImageType.visualImage, posingLayer, env);
-
-        for (let drawingUnit of posingLayer.drawingUnits) {
-
-            if (env.subToolIndex == drawingUnit.subToolID) {
-
-                //this.drawAxis(drawingUnit.parentMatrix, 0.3, 0.5, env);
-
-                this.drawSphere(DrawImageType.visualImage
-                    , drawingUnit.targetData.inputSideID
-                    , drawingUnit.targetData.parentMatrix
-                    , drawingUnit.targetData.hitTestSphereRadius
-                    , posingLayer
-                    , env);
-            }
-        }
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "leftArm2LocationInputData";
+      unit.targetData = posingData.leftArm2LocationInputData;
+      unit.dependentInputData = posingData.leftArm1LocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateLeftArm2;
+      unit.modelResource = this.leftArm2Model;
+      unit.targetData.parentMatrix = posingData.leftArm1LocationInputData.childJointRootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftArm2HeadLocation);
+      drawingUnits.push(unit);
     }
 
-    drawPosingModel(posingLayer: PosingLayer, env: ToolEnvironment) {
-
-        if (!Layer.isVisible(posingLayer)) {
-            return;
-        }
-
-        let posingData = posingLayer.posingData;
-        let posingModel = posingLayer.posingModel;
-
-        this.caluculateCameraMatrix(posingData);
-
-        this.render.clearDepthBuffer();
-
-        if (this.isHeadDrawable(posingData)) {
-
-            this.setShaderParameters(posingData.headMatrix, false, this.posingFigureShader);
-            this.posingFigureShader.setAlpha(posingLayer.layerColor[3]);
-            this.drawModel(this.posingFigureShader, this.headModel.model, this.imageResurces[0].image);
-        }
-
-        if (this.isBodyDrawable(posingData)) {
-
-            //mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.chestModelConvertMatrix);
-            //this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
-            //this.posingFigureShader.setAlpha(1.0);
-            //this.drawModel(this.chestModel.model, this.imageResurces[0].image);
-
-            //mat4.multiply(this.tmpMatrix, posingData.chestMatrix, posingModel.hipsModelConvertMatrix);
-            //this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
-            //this.posingFigureShader.setAlpha(1.0);
-            //this.drawModel(this.hipsModel.model, this.imageResurces[0].image);
-
-            let debugDraw = false;
-            if (debugDraw) {
-                this.drawAxis(posingData.leftArm1RootMatrix, 0.1, 0.5, env);
-                this.drawAxis(posingData.rightArm1RootMatrix, 0.1, 0.5, env);
-                this.drawAxis(posingData.leftLeg1RootMatrix, 0.1, 0.5, env);
-                this.drawAxis(posingData.rightLeg1RootMatrix, 0.1, 0.5, env);
-            }
-        }
-
-        for (let drawingUnit of posingLayer.drawingUnits) {
-
-            if (drawingUnit.drawModel && drawingUnit.targetData.inputDone) {
-
-                if (drawingUnit.modelConvertMatrix != null) {
-
-                    mat4.multiply(this.tmpMatrix, drawingUnit.targetData.matrix, drawingUnit.modelConvertMatrix);
-                }
-                else {
-
-                    mat4.copy(this.tmpMatrix, drawingUnit.targetData.matrix);
-                }
-
-                this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
-                this.posingFigureShader.setAlpha(drawingUnit.visualModelAlpha * posingLayer.layerColor[3]);
-                this.drawModel(this.posingFigureShader, drawingUnit.modelResource.model, this.imageResurces[0].image);
-
-                //this.drawAxis(drawingUnit.targetData.matrix, 0.2, 0.5, env);
-            }
-        }
+    // Right arm
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "rightShoulderLocationInputData";
+      unit.targetData = posingData.rightShoulderLocationInputData;
+      unit.dependentInputData = posingData.bodyLocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateRightShoulder;
+      unit.modelResource = this.rightSholderModel;
+      unit.targetData.parentMatrix = posingData.shoulderRootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm1Location);
+      drawingUnits.push(unit);
     }
 
-    drawPickingImage(posingLayer: PosingLayer, env: ToolEnvironment) {
-
-        this.render.setBlendType(WebGLRenderBlendType.src);
-
-        this.drawHeadSphere(DrawImageType.depthImage, posingLayer, env);
-
-        this.drawBodySphere(DrawImageType.depthImage, posingLayer, env);
-
-        this.drawBodyRotationSphere(DrawImageType.depthImage, posingLayer, env);
-
-        for (let drawingUnit of posingLayer.drawingUnits) {
-
-            if (env.subToolIndex == drawingUnit.subToolID) {
-
-                this.drawSphere(DrawImageType.depthImage
-                    , drawingUnit.targetData.inputSideID
-                    , drawingUnit.targetData.parentMatrix
-                    , drawingUnit.targetData.hitTestSphereRadius
-                    , posingLayer
-                    , env);
-            }
-        }
-
-        this.render.setBlendType(WebGLRenderBlendType.blend);
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "rightArm1LocationInputData";
+      unit.targetData = posingData.rightArm1LocationInputData;
+      unit.dependentInputData = posingData.bodyLocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateRightArm1;
+      unit.modelResource = this.rightArm1Model;
+      unit.targetData.parentMatrix = posingData.rightArm1RootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm1HeadLocation);
+      drawingUnits.push(unit);
     }
 
-    getCurrentDrawingUnit(env: ToolEnvironment): JointPartDrawingUnit {
-
-        for (let drawingUnit of env.currentPosingLayer.drawingUnits) {
-
-            if (env.subToolIndex == drawingUnit.subToolID) {
-
-                return drawingUnit;
-            }
-        }
-
-        return null;
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "rightArm2LocationInputData";
+      unit.targetData = posingData.rightArm2LocationInputData;
+      unit.dependentInputData = posingData.rightArm1LocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateRightArm2;
+      unit.modelResource = this.rightArm2Model;
+      unit.targetData.parentMatrix = posingData.rightArm1LocationInputData.childJointRootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightArm2HeadLocation);
+      drawingUnits.push(unit);
     }
 
-    private drawHeadSphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
+    // Left leg
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "leftLeg1LocationInputData";
+      unit.targetData = posingData.leftLeg1LocationInputData;
+      unit.dependentInputData = posingData.bodyLocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateLeftLeg1;
+      unit.modelResource = this.leftLeg1Model;
+      unit.targetData.parentMatrix = posingData.leftLeg1RootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftLeg1HeadLocation);
+      drawingUnits.push(unit);
+    }
 
-        let posingData = posingLayer.posingData;
-        let posingModel = posingLayer.posingModel;
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "rightLeg2LocationInputData";
+      unit.targetData = posingData.leftLeg2LocationInputData;
+      unit.dependentInputData = posingData.leftLeg1LocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateLeftLeg2;
+      unit.modelResource = this.leftLeg2Model;
+      unit.targetData.parentMatrix = posingData.leftLeg1LocationInputData.childJointRootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.leftLeg2HeadLocation);
+      drawingUnits.push(unit);
+    }
 
-        let needsDrawing = (
-            posingData != null
-            && posingData.headLocationInputData.inputDone
-            && env.subToolIndex == Posing3DSubToolID.locateHead
-        );
+    // Right leg
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "rightLeg1LocationInputData";
+      unit.targetData = posingData.rightLeg1LocationInputData;
+      unit.dependentInputData = posingData.bodyLocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateRightLeg1;
+      unit.modelResource = this.rightLeg1Model;
+      unit.targetData.parentMatrix = posingData.rightLeg1RootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightLeg1HeadLocation);
+      drawingUnits.push(unit);
+    }
 
-        if (!needsDrawing) {
-            return
-        }
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "rightLeg2LocationInputData";
+      unit.targetData = posingData.rightLeg2LocationInputData;
+      unit.dependentInputData = posingData.rightLeg1LocationInputData;
+      unit.subToolID = Posing3DSubToolID.locateRightLeg2;
+      unit.modelResource = this.rightLeg2Model;
+      unit.targetData.parentMatrix = posingData.rightLeg1LocationInputData.childJointRootMatrix;
+      unit.targetData.hitTestSphereRadius = vec3.length(posingModel.rightLeg2HeadLocation);
+      drawingUnits.push(unit);
+    }
 
-        mat4.copy(this.locationMatrix, posingData.rootMatrix);
-        let scale = posingModel.headSphereSize;
-        mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
+    // Head twist
+    {
+      let unit = new JointPartDrawingUnit();
+      unit.name = "headTwistInputData";
+      unit.targetData = posingData.headTwistInputData;
+      unit.dependentInputData = posingData.headRotationInputData;
+      unit.subToolID = Posing3DSubToolID.twistHead;
+      unit.drawModel = false;
+      unit.targetData.parentMatrix = posingData.neckSphereMatrix;
+      unit.targetData.hitTestSphereRadius = posingModel.headTwistSphereSize;
+      drawingUnits.push(unit);
+    }
 
-        if (drawImageType == DrawImageType.visualImage) {
+    posingLayer.drawingUnits = drawingUnits;
+  }
 
-            this.drawZTestSphere(this.locationMatrix, posingData.headRotationInputData.inputSideID, env);
+  clear(env: ToolEnvironment) {
+
+    this.render.setDepthTest(true)
+    this.render.setCulling(true);
+    this.render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
+  }
+
+  prepareDrawingStructures(posingLayer: PosingLayer) {
+
+    if (posingLayer.drawingUnits == null) {
+
+      this.buildDrawingStructures(posingLayer);
+    }
+  }
+
+  drawManipulaters(posingLayer: PosingLayer, env: ToolEnvironment) {
+
+    let posingData = posingLayer.posingData;
+    let posingModel = posingLayer.posingModel;
+
+    this.caluculateCameraMatrix(posingData);
+
+    // Draws input manipulaters
+
+    this.drawHeadSphere(DrawImageType.visualImage, posingLayer, env);
+
+    for (let drawingUnit of posingLayer.drawingUnits) {
+
+      if (env.subToolIndex == drawingUnit.subToolID) {
+
+        //this.drawAxis(drawingUnit.parentMatrix, 0.3, 0.5, env);
+
+        this.drawSphere(DrawImageType.visualImage
+          , drawingUnit.targetData.inputSideID
+          , drawingUnit.targetData.parentMatrix
+          , drawingUnit.targetData.hitTestSphereRadius
+          , posingLayer
+          , env);
+      }
+    }
+  }
+
+  drawPosingModel(posingLayer: PosingLayer, env: ToolEnvironment) {
+
+    if (!Layer.isVisible(posingLayer)) {
+      return;
+    }
+
+    let posingData = posingLayer.posingData;
+    let posingModel = posingLayer.posingModel;
+
+    this.caluculateCameraMatrix(posingData);
+
+    this.render.clearDepthBuffer();
+
+    if (this.isHeadDrawable(posingData)) {
+
+      this.setShaderParameters(posingData.headMatrix, false, this.posingFigureShader);
+      this.posingFigureShader.setAlpha(posingLayer.layerColor[3]);
+      this.drawModel(this.posingFigureShader, this.headModel.model, this.imageResurces[0].image);
+    }
+
+    if (this.isBodyDrawable(posingData)) {
+
+      //mat4.multiply(this.tmpMatrix, posingData.bodyLocationInputData.bodyMatrix, posingModel.chestModelConvertMatrix);
+      //this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
+      //this.posingFigureShader.setAlpha(1.0);
+      //this.drawModel(this.chestModel.model, this.imageResurces[0].image);
+
+      //mat4.multiply(this.tmpMatrix, posingData.chestMatrix, posingModel.hipsModelConvertMatrix);
+      //this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
+      //this.posingFigureShader.setAlpha(1.0);
+      //this.drawModel(this.hipsModel.model, this.imageResurces[0].image);
+
+      let debugDraw = false;
+      if (debugDraw) {
+        this.drawAxis(posingData.leftArm1RootMatrix, 0.1, 0.5, env);
+        this.drawAxis(posingData.rightArm1RootMatrix, 0.1, 0.5, env);
+        this.drawAxis(posingData.leftLeg1RootMatrix, 0.1, 0.5, env);
+        this.drawAxis(posingData.rightLeg1RootMatrix, 0.1, 0.5, env);
+      }
+    }
+
+    for (let drawingUnit of posingLayer.drawingUnits) {
+
+      if (drawingUnit.drawModel && drawingUnit.targetData.inputDone) {
+
+        if (drawingUnit.modelConvertMatrix != null) {
+
+          mat4.multiply(this.tmpMatrix, drawingUnit.targetData.matrix, drawingUnit.modelConvertMatrix);
         }
         else {
 
-            this.render.clearDepthBuffer();
-
-            this.drawZTestSphereDepth(this.locationMatrix, posingData.headRotationInputData.inputSideID, env);
-        }
-    }
-
-    private drawBodySphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
-
-        let posingData = posingLayer.posingData;
-        let posingModel = posingLayer.posingModel;
-
-        let needsDrawing = (
-            posingData != null
-            && posingData.headLocationInputData.inputDone
-            && env.subToolIndex == Posing3DSubToolID.locateBody
-        );
-
-        if (!needsDrawing) {
-            return
+          mat4.copy(this.tmpMatrix, drawingUnit.targetData.matrix);
         }
 
-        Maths.getTranslationMat4(this.tempVec3, posingData.chestRootMatrix);
-        mat4.identity(this.tmpMatrix);
-        mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
+        this.setShaderParameters(this.tmpMatrix, false, this.posingFigureShader);
+        this.posingFigureShader.setAlpha(drawingUnit.visualModelAlpha * posingLayer.layerColor[3]);
+        this.drawModel(this.posingFigureShader, drawingUnit.modelResource.model, this.imageResurces[0].image);
 
-        let scale = posingModel.bodySphereSize;
-        mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
+        //this.drawAxis(drawingUnit.targetData.matrix, 0.2, 0.5, env);
+      }
+    }
+  }
 
-        if (drawImageType == DrawImageType.visualImage) {
+  drawPickingImage(posingLayer: PosingLayer, env: ToolEnvironment) {
 
-            this.drawZTestSphere(this.locationMatrix, posingData.bodyLocationInputData.inputSideID, env);
-        }
-        else {
+    this.render.setBlendType(WebGLRenderBlendType.src);
 
-            this.render.clearDepthBuffer();
+    this.drawHeadSphere(DrawImageType.depthImage, posingLayer, env);
 
-            this.drawZTestSphereDepth(this.locationMatrix, posingData.bodyLocationInputData.inputSideID, env);
-        }
+    this.drawBodySphere(DrawImageType.depthImage, posingLayer, env);
+
+    this.drawBodyRotationSphere(DrawImageType.depthImage, posingLayer, env);
+
+    for (let drawingUnit of posingLayer.drawingUnits) {
+
+      if (env.subToolIndex == drawingUnit.subToolID) {
+
+        this.drawSphere(DrawImageType.depthImage
+          , drawingUnit.targetData.inputSideID
+          , drawingUnit.targetData.parentMatrix
+          , drawingUnit.targetData.hitTestSphereRadius
+          , posingLayer
+          , env);
+      }
     }
 
-    private drawBodyRotationSphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
+    this.render.setBlendType(WebGLRenderBlendType.blend);
+  }
 
-        let posingData = posingLayer.posingData;
-        let posingModel = posingLayer.posingModel;
+  getCurrentDrawingUnit(env: ToolEnvironment): JointPartDrawingUnit {
 
-        let needsDrawing = (
-            posingData != null
-            && posingData.bodyLocationInputData.inputDone
-            && env.subToolIndex == Posing3DSubToolID.rotateBody
-        );
+    for (let drawingUnit of env.currentPosingLayer.drawingUnits) {
 
-        if (!needsDrawing) {
-            return
-        }
+      if (env.subToolIndex == drawingUnit.subToolID) {
 
-        Maths.getTranslationMat4(this.tempVec3, posingData.bodyRotationCenterMatrix);
-        mat4.identity(this.tmpMatrix);
-        mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
-
-        let scale = posingModel.bodyRotationSphereSize;
-        mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
-
-        if (drawImageType == DrawImageType.visualImage) {
-
-            this.drawZTestSphere(this.locationMatrix, posingData.bodyRotationInputData.inputSideID, env);
-        }
-        else {
-
-            this.render.clearDepthBuffer();
-
-            this.drawZTestSphereDepth(this.locationMatrix, posingData.bodyRotationInputData.inputSideID, env);
-        }
+        return drawingUnit;
+      }
     }
 
-    private drawSphere(drawImageType: DrawImageType, inputSideID: InputSideID, rootMatrix: Mat4, scale: float, posingLayer: PosingLayer, env: ToolEnvironment) {
+    return null;
+  }
 
-        let posingData = posingLayer.posingData;
+  private drawHeadSphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
 
-        Maths.getTranslationMat4(this.tempVec3, rootMatrix);
-        mat4.identity(this.tmpMatrix);
-        mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
+    let posingData = posingLayer.posingData;
+    let posingModel = posingLayer.posingModel;
 
-        mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
+    let needsDrawing = (
+      posingData != null
+      && posingData.headLocationInputData.inputDone
+      && env.subToolIndex == Posing3DSubToolID.locateHead
+    );
 
-        if (drawImageType == DrawImageType.visualImage) {
-
-            this.drawZTestSphere(this.locationMatrix, inputSideID, env);
-        }
-        else {
-
-            this.render.clearDepthBuffer();
-
-            this.drawZTestSphereDepth(this.locationMatrix, inputSideID, env);
-        }
+    if (!needsDrawing) {
+      return
     }
 
-    private isHeadDrawable(posingData: PosingData): boolean {
+    mat4.copy(this.locationMatrix, posingData.rootMatrix);
+    let scale = posingModel.headSphereSize;
+    mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
 
-        return (posingData != null
-            && (posingData.headLocationInputData.inputDone
-                || posingData.headRotationInputData.inputDone));
+    if (drawImageType == DrawImageType.visualImage) {
+
+      this.drawZTestSphere(this.locationMatrix, posingData.headRotationInputData.inputSideID, env);
+    }
+    else {
+
+      this.render.clearDepthBuffer();
+
+      this.drawZTestSphereDepth(this.locationMatrix, posingData.headRotationInputData.inputSideID, env);
+    }
+  }
+
+  private drawBodySphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
+
+    let posingData = posingLayer.posingData;
+    let posingModel = posingLayer.posingModel;
+
+    let needsDrawing = (
+      posingData != null
+      && posingData.headLocationInputData.inputDone
+      && env.subToolIndex == Posing3DSubToolID.locateBody
+    );
+
+    if (!needsDrawing) {
+      return
     }
 
-    private isBodyDrawable(posingData: PosingData): boolean {
+    Maths.copyTranslation(this.tempVec3, posingData.chestRootMatrix);
+    mat4.identity(this.tmpMatrix);
+    mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
 
-        return (posingData != null
-            && posingData.bodyLocationInputData.inputDone
-        );
+    let scale = posingModel.bodySphereSize;
+    mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
+
+    if (drawImageType == DrawImageType.visualImage) {
+
+      this.drawZTestSphere(this.locationMatrix, posingData.bodyLocationInputData.inputSideID, env);
+    }
+    else {
+
+      this.render.clearDepthBuffer();
+
+      this.drawZTestSphereDepth(this.locationMatrix, posingData.bodyLocationInputData.inputSideID, env);
+    }
+  }
+
+  private drawBodyRotationSphere(drawImageType: DrawImageType, posingLayer: PosingLayer, env: ToolEnvironment) {
+
+    let posingData = posingLayer.posingData;
+    let posingModel = posingLayer.posingModel;
+
+    let needsDrawing = (
+      posingData != null
+      && posingData.bodyLocationInputData.inputDone
+      && env.subToolIndex == Posing3DSubToolID.rotateBody
+    );
+
+    if (!needsDrawing) {
+      return
     }
 
-    private isLeftArm1Drawable(posingData: PosingData): boolean {
+    Maths.copyTranslation(this.tempVec3, posingData.bodyRotationCenterMatrix);
+    mat4.identity(this.tmpMatrix);
+    mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
 
-        return (posingData != null
-            && posingData.leftArm1LocationInputData.inputDone
-        );
+    let scale = posingModel.bodyRotationSphereSize;
+    mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
+
+    if (drawImageType == DrawImageType.visualImage) {
+
+      this.drawZTestSphere(this.locationMatrix, posingData.bodyRotationInputData.inputSideID, env);
+    }
+    else {
+
+      this.render.clearDepthBuffer();
+
+      this.drawZTestSphereDepth(this.locationMatrix, posingData.bodyRotationInputData.inputSideID, env);
+    }
+  }
+
+  private drawSphere(drawImageType: DrawImageType, inputSideID: InputSideID, rootMatrix: Mat4, scale: float, posingLayer: PosingLayer, env: ToolEnvironment) {
+
+    let posingData = posingLayer.posingData;
+
+    Maths.copyTranslation(this.tempVec3, rootMatrix);
+    mat4.identity(this.tmpMatrix);
+    mat4.translate(this.locationMatrix, this.tmpMatrix, this.tempVec3);
+
+    mat4.scale(this.locationMatrix, this.locationMatrix, vec3.set(this.tempVec3, scale, scale, scale));
+
+    if (drawImageType == DrawImageType.visualImage) {
+
+      this.drawZTestSphere(this.locationMatrix, inputSideID, env);
+    }
+    else {
+
+      this.render.clearDepthBuffer();
+
+      this.drawZTestSphereDepth(this.locationMatrix, inputSideID, env);
+    }
+  }
+
+  private isHeadDrawable(posingData: PosingData): boolean {
+
+    return (posingData != null
+      && (posingData.headLocationInputData.inputDone
+        || posingData.headRotationInputData.inputDone));
+  }
+
+  private isBodyDrawable(posingData: PosingData): boolean {
+
+    return (posingData != null
+      && posingData.bodyLocationInputData.inputDone
+    );
+  }
+
+  private isLeftArm1Drawable(posingData: PosingData): boolean {
+
+    return (posingData != null
+      && posingData.leftArm1LocationInputData.inputDone
+    );
+  }
+
+  private isRightArm1Drawable(posingData: PosingData): boolean {
+
+    return (posingData != null
+      && posingData.rightArm1LocationInputData.inputDone
+    );
+  }
+
+  private isLeftLeg1Drawable(posingData: PosingData): boolean {
+
+    return (posingData != null
+      && posingData.leftLeg1LocationInputData.inputDone
+    );
+  }
+
+  private isRightLeg1Drawable(posingData: PosingData): boolean {
+
+    return (posingData != null
+      && posingData.rightLeg1LocationInputData.inputDone
+    );
+  }
+
+  private setShaderParameters(locationMatrix: Mat4, flipSide: boolean, shader: PosingFigureShader) {
+
+    let gl = this.render.gl;
+
+    mat4.copy(this.modelMatrix, locationMatrix);
+
+    let wnd = this.webglWindow;
+    let cullingBackFace = !wnd.mirrorX;
+
+    if (flipSide) {
+
+      mat4.scale(this.modelMatrix, this.modelMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
+      //cullingBackFace = !cullingBackFace;
     }
 
-    private isRightArm1Drawable(posingData: PosingData): boolean {
+    this.render.setCullingBackFace(cullingBackFace);
 
-        return (posingData != null
-            && posingData.rightArm1LocationInputData.inputDone
-        );
+    mat4.multiply(this.modelViewMatrix, this.viewMatrix, this.modelMatrix);
+
+    mat4.copy(this.normalMatrix, this.modelViewMatrix);
+    this.normalMatrix[12] = 0.0;
+    this.normalMatrix[13] = 0.0;
+    this.normalMatrix[14] = 0.0;
+
+    if (flipSide) {
+
+      mat4.scale(this.normalMatrix, this.normalMatrix, vec3.set(this.tempVec3, -1.0, -1.0, -1.0));
     }
 
-    private isLeftLeg1Drawable(posingData: PosingData): boolean {
+    this.render.setShader(shader);
 
-        return (posingData != null
-            && posingData.leftLeg1LocationInputData.inputDone
-        );
+    shader.setProjectionMatrix(this.projectionMatrix);
+    shader.setModelViewMatrix(this.modelViewMatrix);
+    shader.setNormalMatrix(this.normalMatrix);
+  }
+
+  private drawZTestSphere(locationMatrix: Mat4, inputSideID: InputSideID, env: ToolEnvironment) {
+
+    let modelResource: ModelResource = this.zTestShpereModel;
+
+    let flipSide = (inputSideID == InputSideID.back);
+    this.setShaderParameters(locationMatrix, flipSide, this.posingFigureShader);
+
+    if (this.isHeadDrawable(env.currentPosingData)) {
+      this.posingFigureShader.setAlpha(0.3);
+    }
+    else {
+      this.posingFigureShader.setAlpha(0.8);
     }
 
-    private isRightLeg1Drawable(posingData: PosingData): boolean {
+    this.drawModel(this.posingFigureShader, modelResource.model, this.imageResurces[0].image);
 
-        return (posingData != null
-            && posingData.rightLeg1LocationInputData.inputDone
-        );
+    this.render.setCullingBackFace(true);
+  }
+
+  private drawZTestSphereDepth(locationMatrix: Mat4, inputSideID: InputSideID, env: ToolEnvironment) {
+
+    let flipSide = (inputSideID == InputSideID.back);
+    this.setShaderParameters(locationMatrix, flipSide, this.depthShader);
+
+    let modelResource1: ModelResource = this.zTestShpereModel;
+    this.drawModel(this.depthShader, this.zTestShpereModel.model, this.imageResurces[0].image);
+
+    let modelResource2: ModelResource = this.zTestShpereEdgeModel;
+    this.drawModel(this.depthShader, this.zTestShpereEdgeModel.model, this.imageResurces[0].image);
+  }
+
+  private drawAxis(locationMatrix: Mat4, scale: float, alpha: float, env: ToolEnvironment) {
+
+    mat4.copy(this.modelMatrix, locationMatrix);
+    mat4.scale(this.modelMatrix, this.modelMatrix, vec3.set(this.tempVec3, scale, scale, scale));
+
+    this.setShaderParameters(this.modelMatrix, false, this.posingFigureShader);
+
+    this.posingFigureShader.setAlpha(alpha);
+
+    this.drawModel(this.posingFigureShader, this.axisModel.model, this.imageResurces[0].image);
+  }
+
+  private drawModel(shader: PosingFigureShader, model: RenderModel, image: RenderImage) {
+
+    let gl = this.render.gl;
+
+    shader.setBuffers(model, [image]);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, image.texture);
+
+    this.render.drawElements(model);
+  }
+
+  private caluculateCameraMatrix(posingData: PosingData) {
+
+    let wnd = this.webglWindow;
+    let real3DViewHalfWidth = posingData.real3DViewMeterPerPixel * (wnd.height / 2.0);
+
+    // Camera position
+    vec3.set(this.lookatLocation, 0.0, -1.0, 0.0);
+    vec3.set(this.upVector, 0.0, 0.0, 1.0);
+    vec3.set(this.eyeLocation, 0.0, 0.0, 0.0);
+
+    // 2D scale
+    let viewScale = wnd.viewScale;
+
+    // Projection
+    let orthoWidth = real3DViewHalfWidth / viewScale;
+    mat4.ortho(this.real3DProjectionMatrix, -real3DViewHalfWidth, real3DViewHalfWidth, -real3DViewHalfWidth, real3DViewHalfWidth, 0.1, 10.0);
+    mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, -orthoWidth, orthoWidth, 0.1, 10.0);
+
+    // 2D rendering
+    wnd.caluclateGLViewMatrix(this.tmpMatrix);
+    mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
+
+    mat4.invert(this.projectionInvMatrix, this.projectionMatrix);
+
+    mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
+
+    mat4.invert(this.cameraMatrix, this.viewMatrix);
+  }
+
+  calculate3DLocationFrom2DLocation(result: Vec3, real2DLocation: Vec3, depth: float, posingData: PosingData) {
+
+    let wnd = this.webglWindow;
+
+    this.caluculateCameraMatrix(posingData); // TODO: 毎回実行する必要はないため高速化を考える
+
+    vec3.transformMat4(this.screenLocation, real2DLocation, wnd.transformMatrix);
+
+    let viewHalfWidth = wnd.width / 2;
+    let viewHalfHeight = wnd.height / 2;
+    this.screenLocation[0] = (this.screenLocation[0] - viewHalfWidth) / viewHalfWidth;
+    this.screenLocation[1] = -(this.screenLocation[1] - viewHalfHeight) / viewHalfHeight;
+    this.screenLocation[2] = 0.0;
+
+    vec3.transformMat4(this.invProjectedVec3, this.screenLocation, this.projectionInvMatrix);
+    this.invProjectedVec3[2] = -depth;
+
+    vec3.transformMat4(result, this.invProjectedVec3, this.cameraMatrix);
+  }
+
+  calculate2DLocationFrom3DLocation(result: Vec3, real3DLocation: Vec3, posingData: PosingData): float {
+
+    let wnd = this.webglWindow;
+
+    this.caluculateCameraMatrix(posingData); // TODO: 毎回実行する必要はないため高速化を考える
+
+    vec3.transformMat4(result, real3DLocation, this.viewMatrix);
+
+    const depth = result[2];
+
+    vec3.transformMat4(result, result, this.real3DProjectionMatrix);
+
+    result[0] *= (wnd.height / 2.0);
+    result[1] *= -(wnd.height / 2.0);
+
+    return depth;
+  }
+
+  pick3DLocationFromDepthImage(result: Vec3, location2d: Vec3, posingData: PosingData, pickingWindow: PickingWindow): boolean {
+
+    vec3.transformMat4(this.tempVec3, location2d, pickingWindow.transformMatrix);
+
+    if (this.tempVec3[0] < 0 || this.tempVec3[0] >= pickingWindow.width
+      || this.tempVec3[1] < 0 || this.tempVec3[1] >= pickingWindow.height) {
+
+      return false;
     }
 
-    private setShaderParameters(locationMatrix: Mat4, flipSide: boolean, shader: PosingFigureShader) {
+    let imageData = pickingWindow.context.getImageData(Math.floor(this.tempVec3[0]), Math.floor(this.tempVec3[1]), 1, 1);
+    let r = imageData.data[0];
+    let g = imageData.data[1];
+    let b = imageData.data[2];
 
-        let gl = this.render.gl;
+    if (r == 0 && g == 0 && b == 0) {
 
-        mat4.copy(this.modelMatrix, locationMatrix);
-
-        let wnd = this.webglWindow;
-        let cullingBackFace = !wnd.mirrorX;
-
-        if (flipSide) {
-
-            mat4.scale(this.modelMatrix, this.modelMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
-            //cullingBackFace = !cullingBackFace;
-        }
-
-        this.render.setCullingBackFace(cullingBackFace);
-
-        mat4.multiply(this.modelViewMatrix, this.viewMatrix, this.modelMatrix);
-
-        mat4.copy(this.normalMatrix, this.modelViewMatrix);
-        this.normalMatrix[12] = 0.0;
-        this.normalMatrix[13] = 0.0;
-        this.normalMatrix[14] = 0.0;
-
-        if (flipSide) {
-
-            mat4.scale(this.normalMatrix, this.normalMatrix, vec3.set(this.tempVec3, -1.0, -1.0, -1.0));
-        }
-
-        this.render.setShader(shader);
-
-        shader.setProjectionMatrix(this.projectionMatrix);
-        shader.setModelViewMatrix(this.modelViewMatrix);
-        shader.setNormalMatrix(this.normalMatrix);
+      return false;
     }
 
-    private drawZTestSphere(locationMatrix: Mat4, inputSideID: InputSideID, env: ToolEnvironment) {
+    let depth = (r / 255) + (g / Math.pow(255, 2)) + (b / Math.pow(255, 3));
 
-        let modelResource: ModelResource = this.zTestShpereModel;
+    depth *= pickingWindow.maxDepth;
 
-        let flipSide = (inputSideID == InputSideID.back);
-        this.setShaderParameters(locationMatrix, flipSide, this.posingFigureShader);
+    this.calculate3DLocationFrom2DLocation(result, location2d, depth, posingData);
 
-        if (this.isHeadDrawable(env.currentPosingData)) {
-            this.posingFigureShader.setAlpha(0.3);
-        }
-        else {
-            this.posingFigureShader.setAlpha(0.8);
-        }
-
-        this.drawModel(this.posingFigureShader, modelResource.model, this.imageResurces[0].image);
-
-        this.render.setCullingBackFace(true);
-    }
-
-    private drawZTestSphereDepth(locationMatrix: Mat4, inputSideID: InputSideID, env: ToolEnvironment) {
-
-        let flipSide = (inputSideID == InputSideID.back);
-        this.setShaderParameters(locationMatrix, flipSide, this.depthShader);
-
-        let modelResource1: ModelResource = this.zTestShpereModel;
-        this.drawModel(this.depthShader, this.zTestShpereModel.model, this.imageResurces[0].image);
-
-        let modelResource2: ModelResource = this.zTestShpereEdgeModel;
-        this.drawModel(this.depthShader, this.zTestShpereEdgeModel.model, this.imageResurces[0].image);
-    }
-
-    private drawAxis(locationMatrix: Mat4, scale: float, alpha: float, env: ToolEnvironment) {
-
-        mat4.copy(this.modelMatrix, locationMatrix);
-        mat4.scale(this.modelMatrix, this.modelMatrix, vec3.set(this.tempVec3, scale, scale, scale));
-
-        this.setShaderParameters(this.modelMatrix, false, this.posingFigureShader);
-
-        this.posingFigureShader.setAlpha(alpha);
-
-        this.drawModel(this.posingFigureShader, this.axisModel.model, this.imageResurces[0].image);
-    }
-
-    private drawModel(shader: PosingFigureShader, model: RenderModel, image: RenderImage) {
-
-        let gl = this.render.gl;
-
-        shader.setBuffers(model, [image]);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, image.texture);
-
-        this.render.drawElements(model);
-    }
-
-    private caluculateCameraMatrix(posingData: PosingData) {
-
-        let wnd = this.webglWindow;
-        //let real3DViewHalfWidth = posingData.real3DViewHalfWidth;
-        let real3DViewHalfWidth = posingData.real3DViewMeterPerPixel * (wnd.height / 2.0);
-
-        // Tareget position
-        vec3.set(this.modelLocation, 0.0, 0.0, 0.0);
-
-        // Camera position
-        vec3.set(this.lookatLocation, 0.0, -1.0, 0.0);
-        vec3.set(this.upVector, 0.0, 0.0, 1.0);
-        vec3.set(this.eyeLocation, 0.0, 0.0, 0.0);
-
-        // 2D scale
-        let viewScale = wnd.viewScale;
-        //let real2DViewHalfWidth = wnd.width / 2 / viewScale;
-        //let real2DViewHalfHeight = wnd.height / 2 / viewScale;
-
-        // Projection
-        //let aspect = wnd.height / wnd.width;
-        let orthoWidth = real3DViewHalfWidth / viewScale;
-        mat4.ortho(this.real3DProjectionMatrix, -real3DViewHalfWidth, real3DViewHalfWidth, -real3DViewHalfWidth, real3DViewHalfWidth, 0.1, 10.0);
-        mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, -orthoWidth, orthoWidth, 0.1, 10.0);
-
-        // 2D rendering
-        //mat4.identity(this.tmpMatrix);
-        //{
-        //    let viewOffsetX = -(wnd.viewLocation[0]) / real2DViewHalfWidth; // Normalize to fit to ortho matrix range (0.0-1.0)
-        //    let viewOffsetY = (wnd.viewLocation[1]) / real2DViewHalfHeight;
-        //    mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, aspect, 1.0, 1.0));
-        //    if (wnd.mirrorX) {
-        //        mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, -1.0, 1.0, 1.0));
-        //    }
-        //    if (wnd.mirrorY) {
-        //        mat4.scale(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, 1.0, -1.0, 1.0));
-        //    }
-        //    mat4.rotateZ(this.tmpMatrix, this.tmpMatrix, -wnd.viewRotation * Math.PI / 180.0);
-        //    mat4.translate(this.tmpMatrix, this.tmpMatrix, vec3.set(this.tempVec3, viewOffsetX / aspect, viewOffsetY, 0.0));
-        //}
-        wnd.caluclateGLViewMatrix(this.tmpMatrix);
-        mat4.multiply(this.projectionMatrix, this.tmpMatrix, this.projectionMatrix);
-
-        mat4.invert(this.projectionInvMatrix, this.projectionMatrix);
-
-        mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
-
-        mat4.invert(this.cameraMatrix, this.viewMatrix);
-    }
-
-    calculate3DLocationFrom2DLocation(result: Vec3, real2DLocation: Vec3, depth: float, posingData: PosingData) {
-
-        let wnd = this.webglWindow;
-
-        this.caluculateCameraMatrix(posingData);
-
-        vec3.transformMat4(this.screenLocation, real2DLocation, wnd.transformMatrix);
-
-        let viewHalfWidth = wnd.width / 2;
-        let viewHalfHeight = wnd.height / 2;
-        this.screenLocation[0] = (this.screenLocation[0] - viewHalfWidth) / viewHalfWidth;
-        this.screenLocation[1] = -(this.screenLocation[1] - viewHalfHeight) / viewHalfHeight;
-        this.screenLocation[2] = 0.0;
-
-        vec3.transformMat4(this.invProjectedVec3, this.screenLocation, this.projectionInvMatrix);
-        this.invProjectedVec3[2] = -depth;
-
-        vec3.transformMat4(result, this.invProjectedVec3, this.cameraMatrix);
-    }
-
-    calculate2DLocationFrom3DLocation(result: Vec3, real3DLocation: Vec3, posingData: PosingData) {
-
-        let wnd = this.webglWindow;
-
-        this.caluculateCameraMatrix(posingData);
-
-        vec3.transformMat4(result, real3DLocation, this.viewMatrix);
-        vec3.transformMat4(result, result, this.real3DProjectionMatrix);
-
-        result[0] *= (wnd.height / 2.0);
-        result[1] *= -(wnd.height / 2.0);
-    }
-
-    pick3DLocationFromDepthImage(result: Vec3, location2d: Vec3, posingData: PosingData, pickingWindow: PickingWindow): boolean {
-
-        vec3.transformMat4(this.tempVec3, location2d, pickingWindow.transformMatrix);
-
-        if (this.tempVec3[0] < 0 || this.tempVec3[0] >= pickingWindow.width
-            || this.tempVec3[1] < 0 || this.tempVec3[1] >= pickingWindow.height) {
-
-            return false;
-        }
-
-        let imageData = pickingWindow.context.getImageData(Math.floor(this.tempVec3[0]), Math.floor(this.tempVec3[1]), 1, 1);
-        let r = imageData.data[0];
-        let g = imageData.data[1];
-        let b = imageData.data[2];
-
-        if (r == 0 && g == 0 && b == 0) {
-
-            return false;
-        }
-
-        let depth = (r / 255) + (g / Math.pow(255, 2)) + (b / Math.pow(255, 3));
-
-        depth *= pickingWindow.maxDepth;
-
-        this.calculate3DLocationFrom2DLocation(result, location2d, depth, posingData);
-
-        return true;
-    }
+    return true;
+  }
 }
 
 export class PosingFigureShader extends RenderShader {
 
-    protected aPosition = -1;
-    protected aNormal = -1;
-    protected aTexCoord = -1;
+  protected aPosition = -1;
+  protected aNormal = -1;
+  protected aTexCoord = -1;
 
-    protected uTexture0: WebGLUniformLocation = null;
-    protected uNormalMatrix: WebGLUniformLocation = null;
-    protected uAlpha: WebGLUniformLocation = null;
+  protected uTexture0: WebGLUniformLocation = null;
+  protected uNormalMatrix: WebGLUniformLocation = null;
+  protected uAlpha: WebGLUniformLocation = null;
 
-    initializeVertexSourceCode() {
+  initializeVertexSourceCode() {
 
-        this.vertexShaderSourceCode = `
+    this.vertexShaderSourceCode = `
 
 ${this.floatPrecisionDefinitionCode}
 
@@ -891,11 +870,11 @@ gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
     vTexCoord = aTexCoord;
 }
 `;
-    }
+  }
 
-    initializeFragmentSourceCode() {
+  initializeFragmentSourceCode() {
 
-        this.fragmentShaderSourceCode = `
+    this.fragmentShaderSourceCode = `
 
 ${this.floatPrecisionDefinitionCode}
 
@@ -921,66 +900,66 @@ void main(void) {
 
 }
 `;
-    }
+  }
 
-    initializeAttributes() {
+  initializeAttributes() {
 
-        this.initializeAttributes_RenderShader();
-        this.initializeAttributes_PosingFigureShader();
-    }
+    this.initializeAttributes_RenderShader();
+    this.initializeAttributes_PosingFigureShader();
+  }
 
-    initializeAttributes_PosingFigureShader() {
+  initializeAttributes_PosingFigureShader() {
 
-        let gl = this.gl;
+    let gl = this.gl;
 
-        this.aPosition = this.getAttribLocation('aPosition');
-        this.aNormal = this.getAttribLocation('aNormal');
-        this.aTexCoord = this.getAttribLocation('aTexCoord');
+    this.aPosition = this.getAttribLocation('aPosition');
+    this.aNormal = this.getAttribLocation('aNormal');
+    this.aTexCoord = this.getAttribLocation('aTexCoord');
 
-        this.uTexture0 = this.getUniformLocation('uTexture0');
+    this.uTexture0 = this.getUniformLocation('uTexture0');
 
-        this.uNormalMatrix = this.getUniformLocation('uNormalMatrix');
-        this.uAlpha = this.getUniformLocation('uAlpha');
-    }
+    this.uNormalMatrix = this.getUniformLocation('uNormalMatrix');
+    this.uAlpha = this.getUniformLocation('uAlpha');
+  }
 
-    setBuffers(model: RenderModel, images: List<RenderImage>) {
+  setBuffers(model: RenderModel, images: List<RenderImage>) {
 
-        let gl = this.gl;
+    let gl = this.gl;
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
 
-        this.enableVertexAttributes();
-        this.resetVertexAttribPointerOffset();
+    this.enableVertexAttributes();
+    this.resetVertexAttribPointerOffset();
 
-        this.vertexAttribPointer(this.aPosition, 3, gl.FLOAT, model.vertexDataStride);
-        this.vertexAttribPointer(this.aNormal, 3, gl.FLOAT, model.vertexDataStride);
-        this.vertexAttribPointer(this.aTexCoord, 2, gl.FLOAT, model.vertexDataStride);
+    this.vertexAttribPointer(this.aPosition, 3, gl.FLOAT, model.vertexDataStride);
+    this.vertexAttribPointer(this.aNormal, 3, gl.FLOAT, model.vertexDataStride);
+    this.vertexAttribPointer(this.aTexCoord, 2, gl.FLOAT, model.vertexDataStride);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, images[0].texture);
-        gl.uniform1i(this.uTexture0, 0);
-    }
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, images[0].texture);
+    gl.uniform1i(this.uTexture0, 0);
+  }
 
-    setNormalMatrix(matrix: Mat4) {
+  setNormalMatrix(matrix: Mat4) {
 
-        this.gl.uniformMatrix4fv(this.uNormalMatrix, false, matrix);
-    }
+    this.gl.uniformMatrix4fv(this.uNormalMatrix, false, matrix);
+  }
 
-    setAlpha(alpha: float) {
+  setAlpha(alpha: float) {
 
-        this.gl.uniform1f(this.uAlpha, alpha);
-    }
+    this.gl.uniform1f(this.uAlpha, alpha);
+  }
 }
 
 export class DepthShader extends PosingFigureShader {
 
-    uMaxDepth: WebGLUniformLocation = null;
+  uMaxDepth: WebGLUniformLocation = null;
 
-    initializeFragmentSourceCode() {
+  initializeFragmentSourceCode() {
 
-        this.fragmentShaderSourceCode = `
+    this.fragmentShaderSourceCode = `
 
 ${this.floatPrecisionDefinitionCode}
 
@@ -1007,22 +986,22 @@ void main(void) {
 
 }
 `;
-    }
+  }
 
-    initializeAttributes() {
+  initializeAttributes() {
 
-        this.initializeAttributes_RenderShader();
-        this.initializeAttributes_PosingFigureShader();
-        this.initializeAttributes_DepthShader();
-    }
+    this.initializeAttributes_RenderShader();
+    this.initializeAttributes_PosingFigureShader();
+    this.initializeAttributes_DepthShader();
+  }
 
-    initializeAttributes_DepthShader() {
+  initializeAttributes_DepthShader() {
 
-        this.uMaxDepth = this.getUniformLocation('uMaxDepth');
-    }
+    this.uMaxDepth = this.getUniformLocation('uMaxDepth');
+  }
 
-    setMaxDepth(depth: float) {
+  setMaxDepth(depth: float) {
 
-        this.gl.uniform1f(this.uMaxDepth, depth);
-    }
+    this.gl.uniform1f(this.uMaxDepth, depth);
+  }
 }

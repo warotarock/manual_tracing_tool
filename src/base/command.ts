@@ -18,6 +18,8 @@ export class CommandBase {
 
   }
 
+  // バッファなど追加の更新の対象
+
   targetGroups: List<VectorStrokeGroup> = null;
 
   useGroup(group: VectorStrokeGroup) {
@@ -41,6 +43,8 @@ export class CommandBase {
       this.targetGroups = new List<VectorStrokeGroup>();
     }
   }
+
+  // 参照の更新
 
   private replacedReferenceInfos: ReplacedReferenceInfo[] = [];
 

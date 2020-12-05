@@ -4,6 +4,7 @@ import {
   VectorStroke,
   InputSideID,
   DirectionInputData,
+  PosingData,
 } from '../base/data';
 
 import {
@@ -14,6 +15,8 @@ import {
 } from '../base/tool';
 
 import { Logic_Edit_Line } from '../logics/edit_vector_layer';
+
+import { Maths } from '../logics/math';
 
 export class Tool_Posing3d_ToolBase extends ModalToolBase {
 
@@ -130,7 +133,7 @@ export class Tool_Posing3d_PointInputToolBase extends Tool_Posing3d_ToolBase {
   protected execute(e: ToolMouseEvent, env: ToolEnvironment) {
 
     let inputData = this.getInputData(env);
-    let hited = env.posing3DLogic.processMouseInputLocation(
+    env.posing3DLogic.calculateInputLocation3D(
       this.tempTargetLocation
       , e.location
       , inputData.inputSideID
@@ -138,10 +141,6 @@ export class Tool_Posing3d_PointInputToolBase extends Tool_Posing3d_ToolBase {
       , env.currentPosingData
       , env.posing3DView
     );
-
-    if (!hited) {
-      return;
-    }
 
     this.executeCommand(
       this.tempTargetLocation,
@@ -229,10 +228,6 @@ enum JointPartInputMode {
 
 export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInputToolBase {
 
-  private location3D = vec3.create();
-  private location2D = vec3.create();
-  private location2DTo = vec3.create();
-
   protected enableDirectionInput = true;
   protected enableRollInput = true;
 
@@ -240,15 +235,29 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
   protected mouseOnInputMode = JointPartInputMode.none;
   protected inputLocation = vec3.create();
   protected relativeMouseLocation = vec3.create();
+  protected rollInputRelativeLocation = vec3.create();
+  protected rollInputCenterLocation = vec3.create();
+  protected rollInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
+  protected inputAdditionalAngle = 0.0;
+  protected inputStartAngle = 0.0;
+  protected inputEndAngle = 0.0;
+  protected inputStartLocation = vec3.create();
+  protected beforeEditMatrix = mat4.create();
+  protected beforeEditAngle = 0.0;
 
   protected tmpMatrix = mat4.create();
+  protected tmpVec3 = vec3.create();
   protected vecZ = vec3.create();
-  protected relativeInputLocation = vec3.create();
-  protected rollInputRootMatrix = mat4.create();
-  protected rollInputLocation = vec3.fromValues(0.0, 0.0, 0.0);
-  protected lastMatrix = mat4.create();
-  protected startAngle = 0.0;
-  protected lastAngle = 0.0;
+  protected direction = vec3.create();
+  protected location3D = vec3.create();
+  protected location3DTo = vec3.create();
+  protected location2D = vec3.create();
+  protected location2DTo = vec3.create();
+  protected location2DHead = vec3.create();
+  protected partCenterLocation = vec3.create();
+  protected rollInputCenterLocation2D = vec3.create();
+  protected locationFront = vec3.create();
+  protected locationBack = vec3.create();
 
   protected getInputModeForMouseLocation(resultRelativeMouseLocation: Vec3, env: ToolEnvironment): JointPartInputMode {
 
@@ -303,7 +312,7 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
     if (jointPartInputMode == JointPartInputMode.rollInput) {
 
       let inputData = this.getInputData(env);
-      let hited = env.posing3DLogic.processMouseInputLocation(
+      env.posing3DLogic.calculateInputLocation3D(
         inputData.rollInputLocation
         , e.location
         , InputSideID.front
@@ -312,13 +321,11 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
         , env.posing3DView
       );
 
-      if (!hited) {
-        return;
-      }
-
-      mat4.copy(this.lastMatrix, inputData.matrix);
-      this.startAngle = this.calculateAngle(inputData);
-      this.lastAngle = inputData.rollInputAngle;
+      this.calculateInputParams(inputData.rollInputLocation, inputData.matrix);
+      this.inputStartAngle = this.calculateAngle(inputData.rollInputLocation, inputData.matrix);
+      this.beforeEditAngle = inputData.rollInputAngle;
+      mat4.copy(this.beforeEditMatrix, inputData.matrix);
+      vec3.copy(this.inputStartLocation, inputData.rollInputLocation);
     }
 
     if (jointPartInputMode != JointPartInputMode.none) {
@@ -353,7 +360,7 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
     else if (this.jointPartInputMode == JointPartInputMode.rollInput) {
 
       let inputData = this.getInputData(env);
-      let hited = env.posing3DLogic.processMouseInputLocation(
+      env.posing3DLogic.calculateInputLocation3D(
         inputData.rollInputLocation
         , e.location
         , InputSideID.front
@@ -362,10 +369,7 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
         , env.posing3DView
       );
 
-      if (hited) {
-
-        this.execute(e, env);
-      }
+      this.execute(e, env);
     }
   }
 
@@ -392,6 +396,8 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
 
     let circleRadius = this.getBoneInputCircleRadius(env);
 
+    Maths.copyTranslation(this.partCenterLocation, inputData.matrix);
+
     if (this.enableDirectionInput && inputData.directionInputDone) {
 
       env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, inputData.inputLocation, env.currentPosingData);
@@ -399,33 +405,141 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
       drawEnv.drawCircle(this.location2D, circleRadius, env.getViewScaledLength(strokeWidth), drawEnv.style.posing3DBoneHeadColor);
     }
 
-    if (this.enableRollInput && this.jointPartInputMode == JointPartInputMode.rollInput) {
+    if (this.jointPartInputMode == JointPartInputMode.directionInput) {
 
-      vec3.set(this.location3D, inputData.matrix[12], inputData.matrix[13], inputData.matrix[14]);
-      env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData);
+      env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.partCenterLocation, env.currentPosingData);
+
+      vec3.subtract(this.direction, inputData.inputLocation, this.partCenterLocation);
+      vec3.scale(this.direction, vec3.normalize(this.direction, this.direction), inputData.hitTestSphereRadius);
+      vec3.add(this.location3DTo, this.partCenterLocation, this.direction);
+      env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DHead, this.location3DTo, env.currentPosingData);
+
       env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.inputLocation, env.currentPosingData);
-      drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
 
-      vec3.set(this.location3D, this.rollInputRootMatrix[12], this.rollInputRootMatrix[13], this.rollInputRootMatrix[14]);
-      env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.location3D, env.currentPosingData);
-      env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.rollInputLocation, env.currentPosingData);
-      drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(2.0), drawEnv.style.posing3DBoneGrayColor);
+      drawEnv.drawLine(this.location2D, this.location2DHead, env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
+      drawEnv.drawLine(this.location2DHead, this.location2DTo, env.getViewScaledLength(2.0), drawEnv.style.posing3DBoneGrayColor);
+
       drawEnv.drawCircle(this.location2D, env.getViewScaledLength(2.0), env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
+      drawEnv.drawCircle(this.location2DHead, env.getViewScaledLength(2.0), env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
+    }
 
-      let strokeWidth = (this.mouseOnInputMode == JointPartInputMode.rollInput) ? 4.0 : 2.0;
-      drawEnv.drawCircle(this.location2DTo, env.getViewScaledLength(5.0), env.getViewScaledLength(strokeWidth), drawEnv.style.posing3DBoneForwardColor);
+    if (this.jointPartInputMode == JointPartInputMode.rollInput) {
+
+      const depth = env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.rollInputCenterLocation, env.currentPosingData);
+
+      vec3.transformMat4(this.location3D, vec3.set(this.tmpVec3, 1.0, 0.0, 0.0), this.beforeEditMatrix);
+
+      mat4.invert(this.tmpMatrix, this.beforeEditMatrix);
+      vec3.transformMat4(this.location3D, inputData.rollInputLocation, this.tmpMatrix);
+
+      const unitAngle = 5;
+      for (let count = 0; count <= 360; count += unitAngle) {
+
+        this.calculateRingRotated2DLocation(this.location2D,
+          this.location3D, this.beforeEditMatrix, Math.PI * 2 * count / 360, env.currentPosingData, env, this.tmpVec3);
+
+        this.calculateRingRotated2DLocation(this.location2DTo,
+          this.location3D, this.beforeEditMatrix, Math.PI * 2 * (count + unitAngle) / 360, env.currentPosingData, env, this.tmpVec3);
+
+        env.posing3DLogic.calculateInputLocation3DWSide(
+          this.locationFront,
+          this.locationBack,
+          this.location2D,
+          this.partCenterLocation,
+          inputData.hitTestSphereRadius,
+          env.currentPosingData,
+          env.posing3DView
+        );
+
+        if (vec3.distance(this.locationFront, this.tmpVec3) < vec3.distance(this.locationBack, this.tmpVec3)) {
+
+          drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(1.0), drawEnv.style.posing3DHelperGrayColor1);
+        }
+        else {
+
+          drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(1.0), drawEnv.style.posing3DHelperGrayColor2);
+        }
+      }
+
+      {
+        const piePoints: number[][] = [];
+        env.posing3DView.calculate2DLocationFrom3DLocation(this.rollInputCenterLocation2D, this.rollInputCenterLocation, env.currentPosingData);
+        piePoints.push([this.rollInputCenterLocation2D[0], this.rollInputCenterLocation2D[1], 0.0]);
+
+        this.calculateRingRotated2DLocation(this.location2D, this.location3D, this.beforeEditMatrix, 0.0, env.currentPosingData, env, this.tmpVec3);
+        drawEnv.beginPath(this.location2D);
+        for (let count = 0; count <= 100; count += 10) {
+
+          this.calculateRingRotated2DLocation(this.location2D,
+            this.location3D, this.beforeEditMatrix, -this.inputAdditionalAngle * count / 100, env.currentPosingData, env, this.tmpVec3);
+
+          drawEnv.lineTo(this.location2D);
+
+          piePoints.push([this.location2D[0], this.location2D[1], 0.0]);
+        }
+        drawEnv.stroke(env.getViewScaledLength(3.0), drawEnv.style.posing3DHelperGrayColor2);
+
+        piePoints.push([this.rollInputCenterLocation2D[0], this.rollInputCenterLocation2D[1], 0.0]);
+        this.fillArea(piePoints, drawEnv.style.posing3DHelperGrayColor2, drawEnv);
+
+        drawEnv.drawLine(this.location2D, this.rollInputCenterLocation2D, env.getViewScaledLength(1.0), drawEnv.style.posing3DHelperGrayColor1);
+      }
+
+      env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.rollInputCenterLocation, env.currentPosingData);
+      env.posing3DView.calculate2DLocationFrom3DLocation(this.location2DTo, inputData.rollInputLocation, env.currentPosingData);
+      drawEnv.drawLine(this.location2D, this.location2DTo, env.getViewScaledLength(3.0), drawEnv.style.posing3DBoneGrayColor);
+      drawEnv.drawCircle(this.location2DTo, env.getViewScaledLength(5.0), env.getViewScaledLength(4.0), drawEnv.style.posing3DBoneGrayColor);
+
+      // drawEnv.style.posing3DBoneForwardColor
     }
   }
 
-  private calculateAngle(inputData: DirectionInputData): float {
+  private fillArea(frontPoints: number[][], color: Vec4, drawEnv: ToolDrawingEnvironment) {
 
-    mat4.invert(this.tmpMatrix, this.lastMatrix);
-    vec3.transformMat4(this.relativeInputLocation, inputData.rollInputLocation, this.tmpMatrix);
+    if (frontPoints.length <= 2) {
+      return;
+    }
 
-    vec3.set(this.vecZ, 0.0, 0.0, this.relativeInputLocation[2]);
-    mat4.translate(this.rollInputRootMatrix, this.lastMatrix, this.vecZ);
+    drawEnv.beginPath();
+    drawEnv.moveTo(frontPoints[0]);
 
-    return Math.atan2(this.relativeInputLocation[1], this.relativeInputLocation[0]);
+    for (let index = 1; index < frontPoints.length; index++) {
+
+      drawEnv.lineTo(frontPoints[index]);
+    }
+
+    drawEnv.fill(color);
+  }
+
+  private calculateInputParams(location: Vec3, parentMatrix: Mat4) {
+
+    mat4.invert(this.tmpMatrix, parentMatrix);
+    vec3.transformMat4(this.rollInputRelativeLocation, location, this.tmpMatrix);
+
+    vec3.set(this.vecZ, 0.0, 0.0, this.rollInputRelativeLocation[2]);
+    vec3.transformMat4(this.rollInputCenterLocation, this.vecZ, parentMatrix);
+  }
+
+  private calculateAngle(location: Vec3, parentMatrix: Mat4): float {
+
+    mat4.invert(this.tmpMatrix, parentMatrix);
+    vec3.transformMat4(this.tmpVec3, location, this.tmpMatrix);
+
+    return Math.atan2(this.tmpVec3[1], this.tmpVec3[0]);
+  }
+
+  private calculateRingRotated3DLocation(result: Vec3, location: Vec3, parentMatrix: Mat4, angle: float) {
+
+    mat4.rotateZ(this.tmpMatrix, parentMatrix, angle);
+    vec3.transformMat4(result, location, this.tmpMatrix);
+  }
+
+  private calculateRingRotated2DLocation(result: Vec3, location: Vec3, parentMatrix: Mat4, angle: float, posingData: PosingData, env: ToolEnvironment, tempVec3: Vec3): float {
+
+    this.calculateRingRotated3DLocation(tempVec3, location, parentMatrix, angle);
+    const depth = env.posing3DView.calculate2DLocationFrom3DLocation(result, this.tmpVec3, posingData);
+
+    return depth;
   }
 
   protected execute(e: ToolMouseEvent, env: ToolEnvironment) { // @override
@@ -433,7 +547,7 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
     vec3.add(this.location2D, e.location, this.relativeMouseLocation);
 
     let inputData = this.getInputData(env);
-    let hited = env.posing3DLogic.processMouseInputLocation(
+    env.posing3DLogic.calculateInputLocation3D(
       this.inputLocation
       , this.location2D
       , InputSideID.front
@@ -441,10 +555,6 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
       , env.currentPosingData
       , env.posing3DView
     );
-
-    if (!hited) {
-      return;
-    }
 
     this.executeCommand(this.inputLocation, this.location2D, e, env);
   }
@@ -463,17 +573,14 @@ export class Tool_Posing3d_JointPartInputToolBase extends Tool_Posing3d_PointInp
     }
     else if (this.jointPartInputMode == JointPartInputMode.rollInput) {
 
-      let angle = this.calculateAngle(inputData);
+      this.calculateInputParams(inputData.rollInputLocation, this.beforeEditMatrix);
+
+      this.inputEndAngle = this.calculateAngle(inputData.rollInputLocation, this.beforeEditMatrix);
+      this.inputAdditionalAngle = Maths.getRoundedAngle(this.inputEndAngle - this.inputStartAngle);
+
+      inputData.rollInputAngle = this.beforeEditAngle + this.inputAdditionalAngle;
 
       inputData.rollInputDone = true;
-
-      inputData.rollInputAngle = this.lastAngle + (angle - this.startAngle);
-      if (inputData.rollInputAngle <= 0.0) {// TODO: 共通化する
-        inputData.rollInputAngle += Math.PI * 2.0;
-      }
-      if (inputData.rollInputAngle >= Math.PI * 2.0) {
-        inputData.rollInputAngle -= Math.PI * 2.0;
-      }
     }
 
     // Calculate
@@ -508,24 +615,12 @@ export class Tool_Posing3d_LocateHead extends Tool_Posing3d_LineInputToolBase {
   }
 
   tempVec3 = vec3.fromValues(0.0, 0.0, 0.0);
-  centerLocationSum = vec3.fromValues(0.0, 0.0, 0.0);
+  centerLocation = vec3.fromValues(0.0, 0.0, 0.0);
   centerLocation3D = vec3.fromValues(0.0, 0.0, 0.0);
   subLocation = vec3.fromValues(0.0, 0.0, 0.0);
   inputRadius = 0.0;
   inputRadiusAdjustRate = 1.0;
   minInputRadius = 5.0;
-
-  prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
-
-    if (env.currentPosingData == null) {
-      return false;
-    }
-
-    vec3.copy(this.centerLocationSum, e.location);
-    this.inputRadius = this.minInputRadius;
-
-    return true;
-  }
 
   mouseDown(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
@@ -541,6 +636,18 @@ export class Tool_Posing3d_LocateHead extends Tool_Posing3d_LineInputToolBase {
     }
   }
 
+  prepareModal(e: ToolMouseEvent, env: ToolEnvironment): boolean { // @override
+
+    if (env.currentPosingData == null) {
+      return false;
+    }
+
+    vec3.copy(this.centerLocation, e.location);
+    this.inputRadius = this.minInputRadius;
+
+    return true;
+  }
+
   mouseMove(e: ToolMouseEvent, env: ToolEnvironment) { // @override
 
     if (env.currentPosingData == null) {
@@ -551,7 +658,7 @@ export class Tool_Posing3d_LocateHead extends Tool_Posing3d_LineInputToolBase {
       return;
     }
 
-    vec3.subtract(this.subLocation, e.location, this.centerLocationSum);
+    vec3.subtract(this.subLocation, e.location, this.centerLocation);
     this.inputRadius = vec3.length(this.subLocation);
     if (this.inputRadius < this.minInputRadius) {
 
@@ -627,6 +734,8 @@ export class Tool_Posing3d_LocateHead extends Tool_Posing3d_LineInputToolBase {
     //console.log(radiusSum);
     */
 
+    const posingData = env.currentPosingData;
+
     let radiusSum = this.inputRadius * this.inputRadiusAdjustRate;
 
     // Expects model is located 2.0m away from camera at first, then calculate zoom rate as real3DViewHalfWidth
@@ -634,11 +743,11 @@ export class Tool_Posing3d_LocateHead extends Tool_Posing3d_LineInputToolBase {
     //     real3DViewHalfWidth[m] / headSphereSize[m] = real2DViewWidth[px] / radiusSum[px]
     //     real3DViewHalfWidth[m]                     = (real2DViewWidth[px] / radiusSum[px]) * headSphereSize[m]
     let real2DViewWidth = env.mainWindow.height / 2;
-    env.currentPosingData.real3DViewHalfWidth = (real2DViewWidth / radiusSum) * env.currentPosingModel.headSphereSize;
-    env.currentPosingData.real3DViewMeterPerPixel = env.currentPosingData.real3DViewHalfWidth / real2DViewWidth;
+    posingData.real3DViewHalfWidth = (real2DViewWidth / radiusSum) * env.currentPosingModel.headSphereSize;
+    posingData.real3DViewMeterPerPixel = posingData.real3DViewHalfWidth / real2DViewWidth;
 
     // debug
-    //env.currentPosingData.viewZoomRate = env.currentPosingModel.headSphereSize / 50.0;
+    //posingData.viewZoomRate = env.currentPosingModel.headSphereSize / 50.0;
     //this.centerLocationSum[0] = env.mainWindow.width / 2 + radiusSum;
     //this.centerLocationSum[0] = env.mainWindow.width / 2;
     //this.centerLocationSum[1] = env.mainWindow.height / 2;
@@ -648,26 +757,39 @@ export class Tool_Posing3d_LocateHead extends Tool_Posing3d_LineInputToolBase {
     //}
     // debug
 
-    env.posing3DView.calculate3DLocationFrom2DLocation(
-      this.centerLocation3D
-      , this.centerLocationSum
-      , 2.0 // 2.0m
-      , env.currentPosingData);
-
     //console.log(this.centerLocation);
 
-    // Set inputs
-    let headLocationInputData = env.currentPosingData.headLocationInputData;
+    {
+      const inputData = posingData.headLocationInputData;
 
-    vec3.copy(headLocationInputData.center, this.centerLocation3D);
-    headLocationInputData.radius = radiusSum;
-    headLocationInputData.editLine = this.editLine;
-    headLocationInputData.inputDone = true;
+      env.posing3DView.calculate3DLocationFrom2DLocation(
+        this.centerLocation3D
+        , this.centerLocation
+        , posingData.real3DModelDistance
+        , posingData);
 
-    env.currentPosingData.headRotationInputData.inputDone = false;
+      vec3.copy(inputData.center, this.centerLocation3D);
+      inputData.radius = radiusSum;
+      inputData.editLine = this.editLine;
+      inputData.inputDone = true;
+    }
 
-    // Calculate
-    env.posing3DLogic.calculateHeadLocation(env.currentPosingData, env.currentPosingModel);
+    env.posing3DLogic.calculateHeadLocation(posingData, env.currentPosingModel);
+
+    {
+      const inputData = posingData.headRotationInputData;
+
+      vec3.set(this.tempVec3, 0.0, 0.0, inputData.hitTestSphereRadius);
+      vec3.transformMat4(inputData.inputLocation, this.tempVec3, inputData.parentMatrix);
+      env.posing3DView.calculate2DLocationFrom3DLocation(
+        inputData.inputLocation2D, inputData.inputLocation, posingData
+      );
+
+      inputData.directionInputDone = true;
+
+      inputData.rollInputAngle = 0.0;
+      inputData.rollInputDone = false;
+    }
 
     env.setRedrawWebGLWindow();
     env.setRedrawSubtoolWindow();
@@ -733,7 +855,7 @@ export class Tool_Posing3d_LocateHips extends Tool_Posing3d_JointPartInputToolBa
 
 export class Tool_Posing3d_LocateLeftShoulder extends Tool_Posing3d_JointPartInputToolBase {
 
-  helpText = 'ヒジのあたりの位置を指定して肩を配置します。';
+  helpText = 'ヒジの位置を指定して肩を配置します。';
 
   isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -760,7 +882,7 @@ export class Tool_Posing3d_LocateRightShoulder extends Tool_Posing3d_LocateLeftS
 
 export class Tool_Posing3d_LocateLeftArm1 extends Tool_Posing3d_JointPartInputToolBase {
 
-  helpText = 'ヒジのあたりの位置を指定して上腕を配置します。';
+  helpText = 'ヒジの位置を指定して上腕を配置します。';
 
   isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -784,7 +906,7 @@ export class Tool_Posing3d_LocateLeftArm1 extends Tool_Posing3d_JointPartInputTo
 
 export class Tool_Posing3d_LocateRightArm1 extends Tool_Posing3d_LocateLeftArm1 {
 
-  helpText = 'ヒジのあたりの位置を指定して上腕を配置します。';
+  helpText = 'ヒジの位置を指定して上腕を配置します。';
 
   protected getInputData(env: ToolEnvironment): DirectionInputData {
 
@@ -799,7 +921,7 @@ export class Tool_Posing3d_LocateRightArm1 extends Tool_Posing3d_LocateLeftArm1 
 
 export class Tool_Posing3d_LocateLeftLeg1 extends Tool_Posing3d_JointPartInputToolBase {
 
-  helpText = 'ヒザのあたりの位置を指定して上脚を配置します。';
+  helpText = 'ヒザの位置を指定して上脚を配置します。';
 
   isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -823,7 +945,7 @@ export class Tool_Posing3d_LocateLeftLeg1 extends Tool_Posing3d_JointPartInputTo
 
 export class Tool_Posing3d_LocateRightLeg1 extends Tool_Posing3d_LocateLeftLeg1 {
 
-  helpText = 'ヒザのあたりの位置を指定して上脚を配置します。';
+  helpText = 'ヒザの位置を指定して上脚を配置します。';
 
   protected getInputData(env: ToolEnvironment): DirectionInputData {
 
@@ -833,7 +955,7 @@ export class Tool_Posing3d_LocateRightLeg1 extends Tool_Posing3d_LocateLeftLeg1 
 
 export class Tool_Posing3d_LocateLeftArm2 extends Tool_Posing3d_JointPartInputToolBase {
 
-  helpText = '手首のあたりの位置を指定して下腕を配置します。';
+  helpText = '手首の位置を指定して下腕を配置します。';
 
   isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -852,7 +974,7 @@ export class Tool_Posing3d_LocateLeftArm2 extends Tool_Posing3d_JointPartInputTo
 
 export class Tool_Posing3d_LocateRightArm2 extends Tool_Posing3d_JointPartInputToolBase {
 
-  helpText = '手首のあたりの位置を指定して下腕を配置します。';
+  helpText = '手首の位置を指定して下腕を配置します。';
 
   isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -871,7 +993,7 @@ export class Tool_Posing3d_LocateRightArm2 extends Tool_Posing3d_JointPartInputT
 
 export class Tool_Posing3d_LocateLeftLeg2 extends Tool_Posing3d_JointPartInputToolBase {
 
-  helpText = '足首のあたりの位置を指定して下脚を配置します。';
+  helpText = '足首の位置を指定して下脚を配置します。';
 
   isAvailable(env: ToolEnvironment): boolean { // @override
 
@@ -890,7 +1012,7 @@ export class Tool_Posing3d_LocateLeftLeg2 extends Tool_Posing3d_JointPartInputTo
 
 export class Tool_Posing3d_LocateRightLeg2 extends Tool_Posing3d_JointPartInputToolBase {
 
-  helpText = '足首のあたりの位置を指定して下脚を配置します。';
+  helpText = '足首の位置を指定して下脚を配置します。';
 
   isAvailable(env: ToolEnvironment): boolean { // @override
 

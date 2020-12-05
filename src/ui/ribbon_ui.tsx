@@ -203,7 +203,6 @@ function UI_RibbonUI_ToggleButton({ label, value, currentValue, onClick }: UI_Ri
   );
 }
 
-
 function UI_RibbonUI_Home({ uiRef }: { uiRef: UI_RibbonUIRef }) {
 
   const [, set_subToolIndex] = React.useState(-1);
@@ -232,7 +231,7 @@ function UI_RibbonUI_Home({ uiRef }: { uiRef: UI_RibbonUIRef }) {
       // TODO: リストを変更したときにイベントが発生しないＵＩに乗り換えるもしくは自作する
       selectBox_Cancel = true;
 
-      set_eyesSymmetry_enabled(vectorLayer.enableEyesSymmetry);
+      set_eyesSymmetry_enabled(vectorLayer.eyesSymmetryEnabled);
       set_eyesSymmetry_layerOptions(new_layerOptions);
       set_eyesSymmetry_side(vectorLayer.eyesSymmetryInputSide);
 
