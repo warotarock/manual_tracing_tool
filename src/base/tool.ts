@@ -943,6 +943,8 @@ export class ToolDrawingStyle {
   generalLinePointRadius = 2.0;
   selectedLinePointRadius = 3.0;
   viewZoomAdjustingSpeedRate = 0.2;
+
+  eyesSymmetryGuideColor = vec4.fromValues(0.0, 0.5, 1.0, 0.3);
 }
 
 export class ToolDrawingEnvironment {

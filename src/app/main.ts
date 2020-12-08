@@ -570,10 +570,17 @@ export class App_Main extends App_Event implements MainEditor {
     }
     this.lastTime = currentTime;
 
-    this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
-    if (this.selectCurrentLayerAnimationTime < 0) {
+    if (this.selectCurrentLayerAnimationTime > 0) {
 
-      this.selectCurrentLayerAnimationTime = 0;
+      this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
+
+      if (this.selectCurrentLayerAnimationTime <= 0) {
+
+        this.selectCurrentLayerAnimationTime = 0;
+
+        this.toolEnv.setRedrawMainWindow();
+        this.toolEnv.setRedrawWebGLWindow();
+      }
     }
 
     // Process animation
@@ -672,23 +679,22 @@ export class App_Main extends App_Event implements MainEditor {
   draw() {
 
     let isDrawingExist = false;
+    const currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
 
     this.mainWindow.caluclateViewMatrix(this.mainWindow.view2DMatrix);
     mat4.invert(this.mainWindow.invView2DMatrix, this.mainWindow.view2DMatrix);
 
     this.toolEnv.updateContext();
 
+    if (this.toolContext.redrawCurrentLayer) {
+      console.debug('redrawCurrentLayer');
+    }
+
     if (this.toolContext.redrawMainWindow) {
 
-      this.drawMainWindow(this.mainWindow, this.toolContext.redrawCurrentLayer);
+      this.drawMainWindow(this.mainWindow, this.toolContext.redrawCurrentLayer, currentLayerOnly);
 
       this.toolContext.redrawMainWindow = false;
-      this.toolContext.redrawCurrentLayer = false;
-
-      if (this.selectCurrentLayerAnimationTime > 0.0) {
-
-        this.toolEnv.setRedrawMainWindow();
-      }
 
       isDrawingExist = true;
     }
@@ -751,7 +757,7 @@ export class App_Main extends App_Event implements MainEditor {
 
     if (this.toolContext.redrawWebGLWindow) {
 
-      this.drawPosing3DView(this.webglWindow, this.layerWindow.layerWindowItems, this.mainWindow, null);
+      this.drawPosing3DView(this.webglWindow, this.layerWindow.layerWindowItems, this.mainWindow, currentLayerOnly);
 
       this.toolContext.redrawWebGLWindow = false;
 
@@ -773,6 +779,8 @@ export class App_Main extends App_Event implements MainEditor {
     }
 
     this.lazyProcess(this.lazy_DrawPathContext);
+
+    this.toolContext.redrawCurrentLayer = false;
   }
 
   protected collectDrawPaths() {
@@ -1123,14 +1131,13 @@ export class App_Main extends App_Event implements MainEditor {
     return canvasWindow;
   }
 
-  protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean) { // @override
+  protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean) { // @override
 
     if (this.currentViewKeyframe == null) {
       return;
     }
 
     let env = this.toolEnv;
-    let currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
     let isModalToolRunning = this.isModalToolRunning();
 
     // Draw edit mode ui
@@ -1230,6 +1237,7 @@ export class App_Main extends App_Event implements MainEditor {
     , drawPathContext: DrawPathContext
     , activeLayerBufferDrawn: boolean
   ) {
+
     // Draw layers to buffer if requested
 
     if (!activeLayerBufferDrawn) {
@@ -1858,7 +1866,7 @@ export class App_Main extends App_Event implements MainEditor {
   mirrorMatrix = mat4.create();
   oppositeTransformMatrix = mat4.create();
 
-  protected  calculateEyesSymetry(group: VectorStrokeGroup, vectorLayer: VectorLayer) {
+  protected calculateEyesSymetry(group: VectorStrokeGroup, vectorLayer: VectorLayer) {
 
     const env = this.toolEnv;
 

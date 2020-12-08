@@ -195,9 +195,9 @@ export class App_Event extends App_Document {
       this.menuButton_Click(id);
     };
 
-    this.uiSideBarContainerRef.onOpen = (cotentInfo) => {
+    this.uiSideBarContainerRef.contentOpen = (cotentInfo) => {
 
-      if (cotentInfo.id == 'ColorMixerWindow' && !this.colorMixerWindow_colorCanvas.isDrawingDone) {
+      if (cotentInfo.id == MainCommandButtonID[MainCommandButtonID.colorMixerWindow] && !this.colorMixerWindow_colorCanvas.isDrawingDone) {
 
         window.setTimeout(
           () => {
@@ -499,7 +499,7 @@ export class App_Event extends App_Document {
 
     if (key == 'n' && env.isCtrlKeyPressing()) {
 
-      // this.resetDocument();
+      this.resetDocument();
 
       return;
     }
@@ -1453,12 +1453,27 @@ export class App_Event extends App_Document {
         break;
 
       case MainCommandButtonID.layerWindow:
+        this.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.layerWindow]);
         break;
 
       case MainCommandButtonID.paletteWindow:
+        this.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.paletteWindow]);
+        break;
+
+      case MainCommandButtonID.colorMixerWindow:
+        this.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.colorMixerWindow]);
         break;
 
       case MainCommandButtonID.timeLineWindow:
+        // TOTO: きちんと実装する
+        if (this.timeLineWindow.canvas.parentElement.classList.contains('hidden')) {
+
+          this.timeLineWindow.canvas.parentElement.classList.remove('hidden');
+        }
+        else {
+
+          this.timeLineWindow.canvas.parentElement.classList.add('hidden');
+        }
         break;
     }
   }
@@ -1632,6 +1647,7 @@ export class App_Event extends App_Document {
     Layer.updateHierarchicalStatesRecursive(selectedLayer);
 
     env.setRedrawMainWindowEditorWindow();
+    env.setRedrawWebGLWindow();
     env.setRedrawLayerWindow();
     env.setRedrawSubtoolWindow();
   }

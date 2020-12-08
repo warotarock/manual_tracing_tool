@@ -31,7 +31,10 @@ export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
 
       commandButton_Click: (item: UI_CommandButtonsItem) => {
 
-        uiRef.commandButton_Click(item.index);
+        if (uiRef.commandButton_Click) {
+
+          uiRef.commandButton_Click(item.index);
+        }
       }
     } as UI_CommandButtonsRef
   });
@@ -48,7 +51,10 @@ export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
 
       commandButton_Click: (item: UI_CommandButtonsItem) => {
 
-        uiRef.commandButton_Click(item.index);
+        if (uiRef.commandButton_Click) {
+
+          uiRef.commandButton_Click(item.index);
+        }
       }
     } as UI_CommandButtonsRef
   });

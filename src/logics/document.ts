@@ -311,6 +311,15 @@ export class DocumentLogic {
           }
         }
 
+        if (new_units.length == 0) {
+
+          let new_unit = new VectorDrawingUnit();
+          new_units.push(new_unit);
+
+          let new_group = new VectorStrokeGroup();
+          new_unit.groups.push(new_group);
+        }
+
         keyframe.geometry.units = new_units;
 
         delete keyframe.geometry['groups'];

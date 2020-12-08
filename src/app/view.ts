@@ -571,7 +571,6 @@ export class App_View {
 
       this.selectCurrentLayerAnimationLayer = item.layer;
       this.selectCurrentLayerAnimationTime = this.selectCurrentLayerAnimationTimeMax;
-      this.toolEnv.setRedrawMainWindow();
 
       this.layerWindow_SetViewLocationToItem(item);
     }

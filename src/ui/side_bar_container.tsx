@@ -15,16 +15,22 @@ export interface UI_SideBarContainerRef {
 
   hide?: () => void;
   show?: () => void;
+  toggleContent?: (id: string) => void;
 
-  onOpen?: (cotentInfo: UI_SideBarContentInfo) => void;
+  contentOpen?: (cotentInfo: UI_SideBarContentInfo) => void;
+  contentClosed?: (cotentInfo: UI_SideBarContentInfo) => void;
 }
 
-export function UI_SideBarContainer(
-  { dockingTo, contents, uiRef }
-  : { dockingTo: 'left' | 'right', contents: UI_SideBarContentInfo[], uiRef: UI_SideBarContainerRef} ) {
+export interface UI_SideBarContainerParam {
+
+  dockingTo: 'left' | 'right';
+  contents: UI_SideBarContentInfo[];
+  uiRef: UI_SideBarContainerRef;
+}
+
+export function UI_SideBarContainer({ dockingTo, contents, uiRef }: UI_SideBarContainerParam ) {
 
   const containerRef = React.useRef<HTMLDivElement>(null);
-
   const [contentInfos, setContentInfos] = React.useState(contents);
 
   React.useEffect(() => {
@@ -34,9 +40,19 @@ export function UI_SideBarContainer(
       containerRef.current.parentElement.classList.remove('hidden');
     };
 
-    uiRef.hide =() => {
+    uiRef.hide = () => {
 
       containerRef.current.parentElement.classList.add('hidden');
+    };
+
+    uiRef.toggleContent = (id: string) => {
+
+      const content = contents.find(ct => ct.id == id);
+
+      if (content) {
+
+        content_Click(content);
+      }
     };
 
     return function cleanup() {
@@ -44,20 +60,32 @@ export function UI_SideBarContainer(
   });
 
   function leftRight(): string {
+
     return (dockingTo == 'left' ? 'left-panel' : 'right-panel');
   }
 
   function closed(contentInfo: UI_SideBarContentInfo): string {
+
     return (!contentInfo.isOpened ? 'closed' : '');
   }
 
-  function tab_Click(cotentInfo: UI_SideBarContentInfo) {
+  function content_Click(cotentInfo: UI_SideBarContentInfo) {
 
     cotentInfo.isOpened = !(cotentInfo.isOpened);
 
-    if (cotentInfo.isOpened && uiRef.onOpen) {
+    if (cotentInfo.isOpened) {
 
-      uiRef.onOpen(cotentInfo);
+      if (uiRef.contentOpen) {
+
+        uiRef.contentOpen(cotentInfo);
+      }
+    }
+    else {
+
+      if (uiRef.contentClosed) {
+
+        uiRef.contentClosed(cotentInfo);
+      }
     }
 
     setContentInfos(contentInfos.slice());
@@ -67,7 +95,7 @@ export function UI_SideBarContainer(
 
   return (
     <React.Fragment>
-      <div className={`side-panel-contents`}>
+      <div className={`side-panel-contents`} ref={containerRef}>
         {
           contentInfos.map(contentInfo => (
               <div key={contentInfo.key} className={`side-panel-content ${leftRight()}`}>
@@ -78,7 +106,7 @@ export function UI_SideBarContainer(
                   (contentInfo.key == 9999) ? null :
                   <div className={`tab-locator ${leftRight()} ${closed(contentInfo)}`}>
                     <div className={`side-panel-tab ${leftRight()} ${closed(contentInfo)}`}
-                    onClick={() => tab_Click(contentInfo)}
+                    onClick={() => content_Click(contentInfo)}
                     >
                       <i className="material-icons">{contentInfo.icon}</i>
                     </div>

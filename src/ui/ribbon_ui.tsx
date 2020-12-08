@@ -311,7 +311,7 @@ function UI_RibbonUI_Home({ uiRef }: { uiRef: UI_RibbonUIRef }) {
   return (
     <div className="ribbon-ui-home">
       <UI_RibbonUI_SubToolButton uiRef={uiRef}
-        icon="./dist/res/icon_draw.svg" label={["線を描く"]}
+        icon="./dist/res/icon_draw.svg" label={["線を描く", "B"]}
         subToolIndex={DrawLineToolSubToolID.drawLine}
       />
       <div className="draw-line-params">
@@ -330,7 +330,7 @@ function UI_RibbonUI_Home({ uiRef }: { uiRef: UI_RibbonUIRef }) {
       </div>
       <UI_RibbonUI_Separator />
       <UI_RibbonUI_SubToolButton uiRef={uiRef}
-        icon="./dist/res/icon_eracer.svg" label={["消しゴム"]}
+        icon="./dist/res/icon_eracer.svg" label={["消しゴム", "E"]}
         subToolIndex={DrawLineToolSubToolID.deletePointBrush}
       />
       <div className="draw-line-params">
@@ -343,7 +343,7 @@ function UI_RibbonUI_Home({ uiRef }: { uiRef: UI_RibbonUIRef }) {
       </div>
       <UI_RibbonUI_Separator />
       <UI_RibbonUI_SubToolButton uiRef={uiRef}
-        icon="./dist/res/icon_extrude_line.svg" label={["線の延長"]}
+        icon="./dist/res/icon_extrude_line.svg" label={["線の延長", "H"]}
         subToolIndex={DrawLineToolSubToolID.extrudeLine}
       />
       {/* <UI_RibbonUI_Button uiRef={uiRef}
@@ -356,11 +356,11 @@ function UI_RibbonUI_Home({ uiRef }: { uiRef: UI_RibbonUIRef }) {
       />
       <UI_RibbonUI_Separator /> */}
       <UI_RibbonUI_SubToolButton uiRef={uiRef}
-        icon="./dist/res/icon_scratch_line.svg" label={["線の修正"]}
+        icon="./dist/res/icon_scratch_line.svg" label={["線の修正", "G"]}
         subToolIndex={DrawLineToolSubToolID.scratchLine}
       />
       <UI_RibbonUI_SubToolButton uiRef={uiRef}
-        icon="./dist/res/icon_dummy.svg" label={["太さの", "修正"]}
+        icon="./dist/res/icon_dummy.svg" label={["太さの修正"]}
         subToolIndex={DrawLineToolSubToolID.scratchLineWidth}
       />
       <UI_RibbonUI_Separator />

@@ -250,7 +250,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
   // Main window
 
-  protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean) { // @virtual
+  protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean) { // @virtual
   }
 
   protected drawForeground(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
@@ -934,7 +934,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
       }
     }
 
-    this.drawMainWindow(this.mainWindow, false);
+    this.drawMainWindow(this.mainWindow, false, false);
 
     return pickedLayer;
   }
@@ -1123,7 +1123,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
         const strokeWidth = this.getCurrentViewScaleLineWidth(1.0);
 
-        render.setStrokeColorV(this.drawStyle.selectedVectorLineColor);
+        render.setStrokeColorV(this.drawStyle.eyesSymmetryGuideColor);
         render.setStrokeWidth(strokeWidth);
         render.beginPath();
         render.circle(this.location2D[0], this.location2D[1], raduis2D);
@@ -1134,7 +1134,7 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
 
   // WebGL window
 
-  protected drawPosing3DView(webglWindow: CanvasWindow, layerWindowItems: List<LayerWindowItem>, mainWindow: CanvasWindow, pickingWindow: CanvasWindow) {
+  protected drawPosing3DView(webglWindow: CanvasWindow, layerWindowItems: List<LayerWindowItem>, mainWindow: CanvasWindow, redrawActiveLayerOnly: boolean) {
 
     let env = this.toolEnv;
 
@@ -1154,7 +1154,8 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
       this.posing3dView.prepareDrawingStructures(posingLayer);
     }
 
-    if (env.currentPosingLayer != null && Layer.isVisible(env.currentPosingLayer)
+    if (env.currentPosingLayer != null
+      && Layer.isVisible(env.currentPosingLayer)
       && this.toolContext.mainToolID == MainToolID.posing
     ) {
       let posingLayer = env.currentPosingLayer;
@@ -1167,6 +1168,10 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
       let item = layerWindowItems[index];
 
       if (!PosingLayer.isPosingLayer(item.layer)) {
+        continue;
+      }
+
+      if (redrawActiveLayerOnly && !Layer.isSelected(item.layer)) {
         continue;
       }
 

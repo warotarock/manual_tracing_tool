@@ -596,6 +596,10 @@ $operation-ui-border: solid 1px $windowBorderColor;
   background-color: $windowBackground;
   z-index: 301;
 
+  &.hidden {
+    display: none;
+  }
+
   canvas {
     border: none;
     width: 100%;

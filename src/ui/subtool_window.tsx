@@ -54,7 +54,7 @@ export function UI_SubToolWindow({ uiRef }: UI_SubToolWindowParam) {
               >
                 <div className='spacer'></div>
                 {item.buttons.length > 0 ?
-                  <div className='command-button'
+                  <div className='command-button image-splite-system'
                     style={{ backgroundPosition: `-${(item.buttonStateID - 1) * 64 * itemScale}px 0` }}
                     onMouseDown={(e) => { if (e.button == 0) { uiRef.itemButton_Click(item); } } }
                   ></div>

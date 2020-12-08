@@ -14,6 +14,7 @@ import { UI_HeaderWindow } from './ui/header_window';
 import { UI_SideBarContainer } from './ui/side_bar_container';
 import { UI_FooterOperationPanel } from './ui/footer_operation_panel';
 import { UI_RibbonUI } from './ui/ribbon_ui';
+import { MainCommandButtonID } from './app/view.class';
 
 // 大改修計画
 // ・直近の仮題と対応
@@ -310,9 +311,9 @@ window.onload = () => {
       {
         dockingTo: 'right',
         contents: [
-          { key: 1, id: 'LayerWindow', component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: true },
-          { key: 2, id: 'PaletteSelectorWindow', component: UI_PaletteSelectorWindow, uiRef: _Main.uiPaletteSelectorWindowRef, icon: 'palette', isOpened: true },
-          { key: 3, id: 'ColorMixerWindow', component: UI_ColorMixerWindow, uiRef: _Main.uiColorMixerWindowRef, icon: 'colorize', isOpened: false}
+          { key: 1, id: MainCommandButtonID[MainCommandButtonID.layerWindow], component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: true },
+          { key: 2, id: MainCommandButtonID[MainCommandButtonID.paletteWindow], component: UI_PaletteSelectorWindow, uiRef: _Main.uiPaletteSelectorWindowRef, icon: 'palette', isOpened: true },
+          { key: 3, id: MainCommandButtonID[MainCommandButtonID.colorMixerWindow], component: UI_ColorMixerWindow, uiRef: _Main.uiColorMixerWindowRef, icon: 'colorize', isOpened: false}
         ],
         uiRef: _Main.uiSideBarContainerRef,
       })
