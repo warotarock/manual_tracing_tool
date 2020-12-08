@@ -38,7 +38,10 @@ export module Platform {
         referenceDirectoryPath: "./test",
         exportPath: "./",
         maxLastUsedFilePaths: 5,
-        lastUsedFilePaths: ['./test/test01_app_demo.json'],
+        lastUsedFilePaths: [
+          './test/test01_app_demo.v.ora',
+          './test/test02_eyes_symmetry.v.ora',
+        ],
         fileSections: []
       } as LocalSetting
     };
