@@ -1171,9 +1171,20 @@ export class App_Drawing extends App_View implements MainEditorDrawer {
         continue;
       }
 
-      if (redrawActiveLayerOnly && !Layer.isSelected(item.layer)) {
-        continue;
+      if (redrawActiveLayerOnly) {
+
+        if (!Layer.isSelected(item.layer)) {
+
+          continue;
+        }
       }
+      else {
+
+        if (!Layer.isVisible(item.layer)) {
+          continue;
+        }
+      }
+
 
       let posingLayer = <PosingLayer>item.layer;
 

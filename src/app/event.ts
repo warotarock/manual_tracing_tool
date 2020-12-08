@@ -1469,6 +1469,12 @@ export class App_Event extends App_Document {
         if (this.timeLineWindow.canvas.parentElement.classList.contains('hidden')) {
 
           this.timeLineWindow.canvas.parentElement.classList.remove('hidden');
+
+          setTimeout(() => {
+
+            this.resizeCanvasToCurrent(this.timeLineWindow);
+            this.toolEnv.setRedrawTimeLineWindow();
+          }, 100);
         }
         else {
 

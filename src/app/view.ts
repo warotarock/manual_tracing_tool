@@ -252,7 +252,7 @@ export class App_View {
     canvasWindow.canvas.height = canvasWindow.height;
   }
 
-  private resizeCanvasToCurrent(canvasWindow: CanvasWindow) {
+  protected resizeCanvasToCurrent(canvasWindow: CanvasWindow) {
 
     canvasWindow.width = canvasWindow.canvas.clientWidth;
     canvasWindow.height = canvasWindow.canvas.clientHeight;

@@ -382,10 +382,6 @@ export class Posing3DView {
 
   drawPosingModel(posingLayer: PosingLayer, env: ToolEnvironment) {
 
-    if (!Layer.isVisible(posingLayer)) {
-      return;
-    }
-
     let posingData = posingLayer.posingData;
     let posingModel = posingLayer.posingModel;
 

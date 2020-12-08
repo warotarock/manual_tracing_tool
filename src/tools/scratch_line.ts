@@ -39,7 +39,7 @@ class Tool_ScratchLine_EditPoint {
 
 export class Tool_ScratchLine extends ToolBase {
 
-  helpText = '右クリック(G)で線を選択し、左クリックで線を修正します。';
+  helpText = '右クリックまたはGで線を選択し、左クリックで線を修正します。';
 
   enableScratchEdit = true;
   enableExtrude = false;
