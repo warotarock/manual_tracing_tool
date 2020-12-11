@@ -17,7 +17,7 @@ export interface UI_HeaderWindowParam {
 
 export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
 
-  const [file_CommandButtonsRef, setFile_CommandButtonsRef] = React.useState(() => {
+  const [file_CommandButtonsRef] = React.useState(() => {
 
     return {
       items: [
@@ -39,7 +39,7 @@ export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
     } as UI_CommandButtonsRef
   });
 
-  const [view_CommandButtonsRef, setView_CommandButtonsRef] = React.useState(() => {
+  const [view_CommandButtonsRef] = React.useState(() => {
 
     return {
       items: [
@@ -70,6 +70,7 @@ export function UI_HeaderWindow({ uiRef }: UI_HeaderWindowParam) {
           uiRef.update = null;
       };
   });
+
   return (
     <React.Fragment>
 

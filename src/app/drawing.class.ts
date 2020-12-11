@@ -707,29 +707,30 @@ varying vec2 vWidth;
 void main(void) {
 
 	vec2 p  = vLocalPosition.xy;
-    vec2 P0 = vLinePoint1;
-    vec2 P1 = vControlPoint1;
-    vec2 P2 = vControlPoint2;
-    vec2 P3 = vLinePoint2;
+  vec2 P0 = vLinePoint1;
+  vec2 P1 = vControlPoint1;
+  vec2 P2 = vControlPoint2;
+  vec2 P3 = vLinePoint2;
 
-    float t;
-    float distance = distanceBezier(p, P0, P1, P2, P3, t);
-    float width = mix(vWidth.x, vWidth.y, t);
+  float t;
+  float distance = distanceBezier(p, P0, P1, P2, P3, t);
+  float width = mix(vWidth.x, vWidth.y, t);
 
-    if (distance > width) {
+  if (distance > width) {
 
-		discard;
-    }
+    // gl_FragColor = vec4(1.0, 0.5, 0.0, 0.1);
+  	discard;
+  }
 	else {
 
-        float col = 1.0 - smoothstep(width - 0.08, width, distance);
-        //float col = distance * 0.1;
+      float col = 1.0 - smoothstep(width - 0.08, width, distance);
+      //float col = distance * 0.1;
 
-        //gl_FragColor = vec4(0.0, 0.0, 0.0, 0.1);
-        //gl_FragColor = vec4(vLocalPosition.z, 0.0, 0.0, col);
-        //gl_FragColor = vec4(vWidth.y, 0.0, 0.0, col * uColor.a * 0.9 + 0.1);
-        gl_FragColor = vec4(uColor.rgb, col * uColor.a * 0.9 + 0.1);
-    }
+      //gl_FragColor = vec4(0.0, 0.0, 0.0, 0.1);
+      //gl_FragColor = vec4(vLocalPosition.z, 0.0, 0.0, col);
+      //gl_FragColor = vec4(vWidth.y, 0.0, 0.0, col * uColor.a * 0.9 + 0.1);
+      gl_FragColor = vec4(uColor.rgb, col * uColor.a * 0.9 + 0.1);
+  }
 }
 `;
   }
