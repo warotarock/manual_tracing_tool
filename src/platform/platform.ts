@@ -39,8 +39,8 @@ export module Platform {
         exportPath: "./",
         maxLastUsedFilePaths: 5,
         lastUsedFilePaths: [
-          './test/test01_app_demo.v.ora',
-          './test/test02_eyes_symmetry.v.ora',
+          './test/test01_app_demo.ora',
+          './test/test02_eyes_symmetry.ora',
         ],
         fileSections: []
       } as LocalSetting
