@@ -1,0 +1,2034 @@
+.selectable-item:hover, .file-open-dialog-container .files-container .file-list ul li:hover {
+  background-color: #e0e0ff !important;
+}
+
+.selectable-item.selected .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner {
+  background-color: #ceceff !important;
+}
+
+.selectable-item.selected .selectable-item-inner-sq, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner-sq {
+  background-color: #ceceff !important;
+}
+
+.selectable-item .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li .selectable-item-inner {
+  border-radius: 3px;
+}
+
+.app-button, .app-button-primary, .app-button-cancel {
+  min-width: 120px;
+  margin-left: 5px;
+  padding: 0;
+  font-size: 14px;
+  text-align: center;
+  line-height: 28px;
+  border: solid 1px #888;
+  border-radius: 3px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.app-button:focus, .app-button-primary:focus, .app-button-cancel:focus {
+  outline: none;
+}
+
+.app-button-primary {
+  background-color: #88f;
+  color: #fff;
+}
+
+.app-button-primary:hover {
+  background-color: #bbbbff;
+}
+
+.app-button-cancel {
+  background-color: #eee;
+}
+
+.app-button-cancel:hover {
+  background-color: #fbfbfb;
+}
+
+.OKCalcelButtons {
+  text-align: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+input[type=number] {
+  text-align: right;
+}
+
+.image-splite-system {
+  background-image: url(./res/system_image01.png);
+}
+
+.image-splite-layerbar {
+  background-image: url(./res/layerbar_image01.png);
+}
+
+.image-splite-document {
+  background-image: url(./res/toolbar_image01.png);
+}
+
+.image-splite-subtool {
+  background-image: url(./res/toolbar_image02.png);
+}
+
+.image-splite-posing3d {
+  background-image: url(./res/toolbar_image03.png);
+}
+
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url(./res/materialIcons-regular.woff2) format("woff2");
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.app-button, .app-button-primary, .app-button-cancel {
+  min-width: 120px;
+  margin-left: 5px;
+  padding: 0;
+  font-size: 14px;
+  text-align: center;
+  line-height: 28px;
+  border: solid 1px #888;
+  border-radius: 3px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.app-button:focus, .app-button-primary:focus, .app-button-cancel:focus {
+  outline: none;
+}
+
+.app-button-primary {
+  background-color: #88f;
+  color: #fff;
+}
+
+.app-button-primary:hover {
+  background-color: #bbbbff;
+}
+
+.app-button-cancel {
+  background-color: #eee;
+}
+
+.app-button-cancel:hover {
+  background-color: #fbfbfb;
+}
+
+.OKCalcelButtons {
+  text-align: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+input[type=number] {
+  text-align: right;
+}
+
+.selectable-item:hover, .file-open-dialog-container .files-container .file-list ul li:hover {
+  background-color: #e0e0ff !important;
+}
+
+.selectable-item.selected .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner {
+  background-color: #ceceff !important;
+}
+
+.selectable-item.selected .selectable-item-inner-sq, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner-sq {
+  background-color: #ceceff !important;
+}
+
+.selectable-item .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li .selectable-item-inner {
+  border-radius: 3px;
+}
+
+.app-button, .app-button-primary, .app-button-cancel {
+  min-width: 120px;
+  margin-left: 5px;
+  padding: 0;
+  font-size: 14px;
+  text-align: center;
+  line-height: 28px;
+  border: solid 1px #888;
+  border-radius: 3px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.app-button:focus, .app-button-primary:focus, .app-button-cancel:focus {
+  outline: none;
+}
+
+.app-button-primary {
+  background-color: #88f;
+  color: #fff;
+}
+
+.app-button-primary:hover {
+  background-color: #bbbbff;
+}
+
+.app-button-cancel {
+  background-color: #eee;
+}
+
+.app-button-cancel:hover {
+  background-color: #fbfbfb;
+}
+
+.OKCalcelButtons {
+  text-align: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+input[type=number] {
+  text-align: right;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  left: 100%;
+  height: 100%;
+  background-color: #e6e6e8;
+}
+
+body {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body canvas#debug {
+  width: 500px;
+  height: 500px;
+}
+
+body .screen-main {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+body .screen-sub {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+}
+
+body .screen-sub.hidden {
+  display: none;
+}
+
+body .screen-sub .default-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 10px;
+}
+
+body .screen-sub .default-container:focus {
+  outline: none;
+}
+
+header {
+  position: absolute;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 164px;
+  border-bottom: solid 1px #888;
+}
+
+header .header-row1 {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 0 5px 0 5px;
+}
+
+header .header-row2 {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+header .file-commands {
+  padding: 0;
+}
+
+header .file-name {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  border: none;
+  padding-top: 6px;
+  padding-left: 30px;
+  padding-right: 30px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+header .file-name input {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  height: 18px;
+  border: none;
+  padding: 3px 5px 0px 5px;
+  border-bottom: solid 1px #888;
+  background-color: #e6e6e8;
+}
+
+header .view-commands {
+  padding: 0;
+}
+
+main {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 163px;
+  bottom: 42px;
+  padding: 0;
+}
+
+main .main-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+main .main-container .side-panel {
+  position: absolute;
+  top: 10px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  pointer-events: none;
+}
+
+main .main-container .side-panel.left-panel {
+  left: 0;
+  z-index: 200;
+}
+
+main .main-container .side-panel.right-panel {
+  right: 0;
+  z-index: 200;
+}
+
+main .main-container .side-panel .side-panel-contents {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+main .main-container .side-panel .side-panel-contents > div:not(:first-child) {
+  margin-top: 4px;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content.right-panel {
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: reverse;
+      -ms-flex-flow: row-reverse;
+          flex-flow: row-reverse;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .tab-locator {
+  position: relative;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .tab-locator .side-panel-tab {
+  position: absolute;
+  width: 25px;
+  height: 54px;
+  background-color: #f6f6f8;
+  text-align: center;
+  pointer-events: auto;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .tab-locator .side-panel-tab i {
+  font-size: 22px;
+  line-height: 34px;
+  vertical-align: middle;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .tab-locator .side-panel-tab:hover {
+  background-color: #e0e0ff;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .tab-locator .side-panel-tab.left-panel {
+  left: 0;
+  border-top: solid;
+  border-right: solid;
+  border-bottom: solid;
+  border-width: 1px;
+  border-color: #888;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .tab-locator .side-panel-tab.left-panel.closed {
+  left: 0px;
+  position: unset;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .tab-locator .side-panel-tab.right-panel {
+  right: 0;
+  border-top: solid;
+  border-left: solid;
+  border-bottom: solid;
+  border-width: 1px;
+  border-color: #888;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .tab-locator .side-panel-tab.right-panel.closed {
+  right: 0px;
+  position: unset;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .content-container {
+  pointer-events: auto;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .content-container.left-panel {
+  width: 240px;
+  border-top: solid;
+  border-right: solid;
+  border-bottom: solid;
+  border-width: 1px;
+  border-color: #888;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .content-container.right-panel {
+  width: 242px;
+  border-top: solid;
+  border-left: solid;
+  border-bottom: solid;
+  border-width: 1px;
+  border-color: #888;
+}
+
+main .main-container .side-panel .side-panel-contents .side-panel-content .content-container.closed {
+  display: none;
+}
+
+main .main-container .center-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  padding: 0;
+  z-index: 100;
+}
+
+footer {
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  height: 40px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  z-index: 101;
+  border-top: solid 1px #888;
+  background-color: #e6e6e8;
+}
+
+footer .help-text {
+  width: 100%;
+  padding: 3px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.nameInputTextBox {
+  width: 250px;
+  padding-left: 5px;
+}
+
+.selectable-item:hover, .file-open-dialog-container .files-container .file-list ul li:hover {
+  background-color: #e0e0ff !important;
+}
+
+.selectable-item.selected .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner {
+  background-color: #ceceff !important;
+}
+
+.selectable-item.selected .selectable-item-inner-sq, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner-sq {
+  background-color: #ceceff !important;
+}
+
+.selectable-item .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li .selectable-item-inner {
+  border-radius: 3px;
+}
+
+.app-button, .app-button-primary, .app-button-cancel {
+  min-width: 120px;
+  margin-left: 5px;
+  padding: 0;
+  font-size: 14px;
+  text-align: center;
+  line-height: 28px;
+  border: solid 1px #888;
+  border-radius: 3px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.app-button:focus, .app-button-primary:focus, .app-button-cancel:focus {
+  outline: none;
+}
+
+.app-button-primary {
+  background-color: #88f;
+  color: #fff;
+}
+
+.app-button-primary:hover {
+  background-color: #bbbbff;
+}
+
+.app-button-cancel {
+  background-color: #eee;
+}
+
+.app-button-cancel:hover {
+  background-color: #fbfbfb;
+}
+
+.OKCalcelButtons {
+  text-align: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+input[type=number] {
+  text-align: right;
+}
+
+.modalDialogWindow {
+  background-color: #fff;
+  -webkit-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  display: none;
+  padding: 20px;
+}
+
+.layerPropertyModal {
+  width: 400px;
+  height: 380px;
+  position: absolute;
+  bottom: 100px;
+}
+
+.layerPropertyModal div {
+  margin-top: 15px;
+}
+
+.layerPropertyModal input {
+  margin-left: 10px;
+}
+
+.layerPropertyModal input[type=radio] {
+  margin-left: 15px;
+}
+
+.layerPropertyModal input[type=checkbox] {
+  margin-left: 0px;
+}
+
+.layerPropertyModal #layerPropertyModal_layerAlpha {
+  width: 200px;
+}
+
+.layerPropertyModal #layerPropertyModal_fillColorAlpha {
+  width: 200px;
+}
+
+.messageDialogModal {
+  min-width: 400px;
+  height: 100px;
+}
+
+.messageDialogModal #messageDialogModal_message {
+  text-align: center;
+  width: 400px;
+  padding: 15px;
+}
+
+.openFileDialogModal {
+  width: 400px;
+  height: 100px;
+}
+
+.openFileDialogModal.openFileDialogModal_file {
+  background-color: #ddd;
+  margin-left: 5px;
+  margin-top: 5px;
+  width: 100%;
+}
+
+.paletteColorModal {
+  width: 660px;
+  height: 280px;
+  position: absolute;
+  bottom: 100px;
+}
+
+.paletteColorModal input {
+  margin-left: 15px;
+  margin-top: 15px;
+}
+
+.paletteColorModal #paletteColorModal_colors {
+  margin-top: 10px;
+  width: 460px;
+  float: left;
+}
+
+.paletteColorModal #paletteColorModal_colors div.colorItem {
+  width: 80px;
+  height: 30px;
+  margin-left: 10px;
+  margin-top: 10px;
+  float: left;
+  /*border-style: solid;*/
+}
+
+.paletteColorModal #paletteColorModal_colors div.colorItem input[type="radio"] {
+  margin-left: 0px;
+  margin-top: 0px;
+  width: 30px;
+  height: 20px;
+}
+
+.paletteColorModal #paletteColorModal_colors div.colorItem input[type="color"] {
+  margin-left: 0px;
+  margin-top: 0px;
+  width: 30px;
+  height: 30px;
+}
+
+.paletteColorModal #paletteColorModal_colorMixer {
+  margin-top: 10px;
+  width: 200px;
+  height: 200px;
+  float: left;
+}
+
+.paletteColorModal #paletteColorModal_colorMixer canvas {
+  margin-top: 10px;
+  width: 200px;
+  height: 200px;
+}
+
+.operationOptionModal {
+  width: 400px;
+  height: 115px;
+}
+
+.operationOptionModal input {
+  margin-left: 15px;
+  margin-top: 10px;
+}
+
+.operationOptionModal div {
+  margin-bottom: 15px;
+}
+
+.operationOptionModal div label input.lineWidthMin {
+  width: 50px;
+  margin-left: 5px;
+  margin-right: 8px;
+}
+
+.operationOptionModal div label input.lineWidthMax {
+  width: 50px;
+  margin-left: 5px;
+}
+
+.newLayerCommandOptionModal {
+  width: 400px;
+  height: 250px;
+}
+
+.newLayerCommandOptionModal input {
+  margin-left: 15px;
+  margin-top: 10px;
+}
+
+.newLayerCommandOptionModal div {
+  margin-bottom: 15px;
+}
+
+.documentSettingModal {
+  width: 400px;
+  height: 230px;
+}
+
+.documentSettingModal div {
+  margin-bottom: 10px;
+}
+
+.documentSettingModal div label {
+  margin-left: 10px;
+}
+
+.documentSettingModal div label input.lineWidthMax {
+  width: 50px;
+  margin-left: 5px;
+}
+
+.documentSettingModal input {
+  margin-left: 15px;
+  margin-top: 10px;
+}
+
+.documentSettingModal div label input.location {
+  width: 60px;
+}
+
+.exportImageFileModal {
+  width: 400px;
+  height: 220px;
+}
+
+.exportImageFileModal div {
+  margin-bottom: 15px;
+}
+
+.exportImageFileModal div label input.scale {
+  width: 50px;
+}
+
+.newKeyframeModal {
+  width: 400px;
+  height: 230px;
+}
+
+.newKeyframeModal div label input {
+  margin-left: 15px;
+  margin-top: 15px;
+}
+
+.deleteKeyframeModal {
+  width: 400px;
+  height: 140px;
+}
+
+.deleteKeyframeModal div label input {
+  margin-left: 15px;
+  margin-top: 15px;
+}
+
+.selectable-item:hover, .file-open-dialog-container .files-container .file-list ul li:hover {
+  background-color: #e0e0ff !important;
+}
+
+.selectable-item.selected .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner {
+  background-color: #ceceff !important;
+}
+
+.selectable-item.selected .selectable-item-inner-sq, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner-sq {
+  background-color: #ceceff !important;
+}
+
+.selectable-item .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li .selectable-item-inner {
+  border-radius: 3px;
+}
+
+.app-button, .app-button-primary, .app-button-cancel {
+  min-width: 120px;
+  margin-left: 5px;
+  padding: 0;
+  font-size: 14px;
+  text-align: center;
+  line-height: 28px;
+  border: solid 1px #888;
+  border-radius: 3px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.app-button:focus, .app-button-primary:focus, .app-button-cancel:focus {
+  outline: none;
+}
+
+.app-button-primary {
+  background-color: #88f;
+  color: #fff;
+}
+
+.app-button-primary:hover {
+  background-color: #bbbbff;
+}
+
+.app-button-cancel {
+  background-color: #eee;
+}
+
+.app-button-cancel:hover {
+  background-color: #fbfbfb;
+}
+
+.OKCalcelButtons {
+  text-align: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+input[type=number] {
+  text-align: right;
+}
+
+.selectable-item:hover, .file-open-dialog-container .files-container .file-list ul li:hover {
+  background-color: #e0e0ff !important;
+}
+
+.selectable-item.selected .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner {
+  background-color: #ceceff !important;
+}
+
+.selectable-item.selected .selectable-item-inner-sq, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner-sq {
+  background-color: #ceceff !important;
+}
+
+.selectable-item .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li .selectable-item-inner {
+  border-radius: 3px;
+}
+
+.app-button, .app-button-primary, .app-button-cancel {
+  min-width: 120px;
+  margin-left: 5px;
+  padding: 0;
+  font-size: 14px;
+  text-align: center;
+  line-height: 28px;
+  border: solid 1px #888;
+  border-radius: 3px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.app-button:focus, .app-button-primary:focus, .app-button-cancel:focus {
+  outline: none;
+}
+
+.app-button-primary {
+  background-color: #88f;
+  color: #fff;
+}
+
+.app-button-primary:hover {
+  background-color: #bbbbff;
+}
+
+.app-button-cancel {
+  background-color: #eee;
+}
+
+.app-button-cancel:hover {
+  background-color: #fbfbfb;
+}
+
+.OKCalcelButtons {
+  text-align: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+input[type=number] {
+  text-align: right;
+}
+
+.ui-scroll-view-container {
+  overflow: hidden;
+}
+
+.ui-scroll-view-container.horizontal {
+  width: 100%;
+}
+
+.ui-scroll-view-container.vertical {
+  height: 100%;
+}
+
+.command-buttons-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 4px;
+}
+
+.command-buttons-container > div {
+  width: 31px;
+  height: 30px;
+}
+
+.command-buttons-container > div:not(:first-child) {
+  -webkit-margin-start: 4px;
+          margin-inline-start: 4px;
+}
+
+.command-buttons-container > div:hover button {
+  background-color: #e0e0ff;
+}
+
+.command-buttons-container > div > button {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  outline: none;
+  background-size: 32px;
+  background-color: transparent;
+}
+
+.command-buttons-container > div > button.no-border {
+  border: none;
+}
+
+.command-buttons-container > div > button:not(.no-border) {
+  border: 1px solid #888;
+  border-radius: 5px;
+}
+
+.command-buttons-container > div > button.selected {
+  background-color: #ddf;
+}
+
+.command-buttons-container > div > button i {
+  font-size: 24px;
+  line-height: 24px;
+  vertical-align: middle;
+}
+
+.ui-checkbox-container {
+  display: inline-block;
+  border: solid 1px #888;
+  background-color: #fff;
+  border-radius: 2px;
+}
+
+.ui-checkbox-container .content {
+  width: 23px;
+  height: 23px;
+  text-align: center;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.ui-checkbox-container .content i {
+  font-size: 14px;
+  line-height: 23px;
+  vertical-align: middle;
+}
+
+.main-canvas-window {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  position: relative;
+  background-color: #fff;
+}
+
+.main-canvas-window .main-canvas {
+  position: absolute;
+  border: none;
+  z-index: 2;
+}
+
+.main-canvas-window .editor-canvas {
+  position: absolute;
+  border: none;
+  z-index: 3;
+  cursor: crosshair;
+}
+
+.main-canvas-window .webgl-canvas {
+  position: absolute;
+  border: none;
+  z-index: 1;
+}
+
+.test-window {
+  margin-top: 4px;
+  border: 1px solid #eee;
+}
+
+.tool-ribbon {
+  z-index: 300;
+  width: 100%;
+  height: 125px;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  border-top: solid 1px #888;
+  border-bottom: solid 1px #888;
+  padding: 5px 5px 0 5px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  background-color: #f6f6f8;
+}
+
+.tool-ribbon .tool-ribbon-rows {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .menu-buttons {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .menu-buttons .button {
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  min-width: 80px;
+  height: 25px;
+  border-left: solid 1px #888;
+  border-top: solid 1px #888;
+  text-align: center;
+  font-size: 14px;
+  line-height: 25px;
+  vertical-align: middle;
+  cursor: default;
+  color: #000;
+  background-color: #f6f6f8;
+  -webkit-padding-start: 10px;
+          padding-inline-start: 10px;
+  -webkit-padding-end: 10px;
+          padding-inline-end: 10px;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .menu-buttons .button:hover {
+  background-color: #e0e0ff;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .menu-buttons .button:first-child {
+  border-top-left-radius: 5px;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .menu-buttons .button:last-child {
+  border-right: solid 1px #888;
+  border-top-right-radius: 5px;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .menu-buttons .button.selected {
+  color: #fff;
+  background: #000;
+  border-color: #000;
+  border-width: 1px;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .menu-buttons .button.selected:hover {
+  color: #e0e0ff;
+  border-color: #000;
+  background: #555;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .headerCommandButton {
+  -webkit-margin-start: 8px;
+          margin-inline-start: 8px;
+}
+
+.tool-ribbon .tool-ribbon-rows .menu-buttons-row .headerCommandButton img {
+  width: 13px;
+  height: 13px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  border-left: solid 1px #888;
+  border-right: solid 1px #888;
+  border-top: solid 1px #888;
+  padding: 3px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .ribbon-ui-home, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .ribbon-ui-edit, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .ribbon-ui-draw3d {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  position: relative;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .ui-scroll-view-container {
+  position: absolute;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  left: 0;
+  right: 0;
+  top: 0px;
+  bottom: 0;
+  white-space: nowrap;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .checkbox-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .checkbox-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .select-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .select-item {
+  display: inline-block;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  height: 67.5px;
+  vertical-align: middle;
+  padding: 3px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .item:not(:last-child), .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .checkbox-item:not(:last-child), .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .checkbox-item:not(:last-child), .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .select-item:not(:last-child), .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .select-item:not(:last-child) {
+  border-right: solid 1px #ccc;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .item .item-inner, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .checkbox-item .item-inner, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .checkbox-item .item-inner, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .select-item .item-inner, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .select-item .item-inner {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  background-size: 115.2px;
+  background-repeat: no-repeat;
+  height: 100%;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .item .item-inner .spacer, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .checkbox-item .item-inner .spacer, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .checkbox-item .item-inner .spacer, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .select-item .item-inner .spacer, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .select-item .item-inner .spacer {
+  width: 72px;
+  height: 100%;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .item .item-inner .command-button, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .checkbox-item .item-inner .command-button, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .checkbox-item .item-inner .command-button, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .subtool-window .group-container .contents .select-item .item-inner .command-button, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .subtool-window .select-item .item-inner .command-button {
+  width: 57.6px;
+  height: 100%;
+  background-size: 230.4px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .separator {
+  width: 1px;
+  border-right: solid 1px #ccc;
+  -webkit-margin-start: 3px;
+          margin-inline-start: 3px;
+  -webkit-margin-end: 3px;
+          margin-inline-end: 3px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .tool-button {
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  min-width: 70px;
+  height: 100%;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 3px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  -webkit-margin-end: 3px;
+          margin-inline-end: 3px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .tool-button .tool-button-inner {
+  padding: 3px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .tool-button .tool-button-inner .icon {
+  height: 38px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .tool-button .tool-button-inner .icon img {
+  width: 38px;
+  pointer-events: none;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .tool-button .tool-button-inner .label {
+  text-align: center;
+  font-size: 12px;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .number-input {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  height: 24px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .number-input:not(:first-child) {
+  -webkit-padding-before: 5px;
+          padding-block-start: 5px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .number-input .label {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  font-size: 12px;
+  line-height: 24px;
+  vertical-align: middle;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .number-input input {
+  width: 45px;
+  font-size: 12px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .draw-line-params {
+  width: 100px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  padding: 5px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  padding: 0 5px 5px 5px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container > .label {
+  font-size: 12px;
+  padding-left: 2px;
+  text-align: center;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  padding-left: 5px;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .item:not(:first-child), .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item:not(:first-child), .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item:not(:first-child) {
+  -webkit-margin-start: 10px;
+          margin-inline-start: 10px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .item .label, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .label, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .label {
+  margin-top: 5px;
+  margin-bottom: 3px;
+  font-size: 12px;
+  padding-left: 5px;
+  padding-right: 5px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .item .toggle, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .toggle, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .toggle {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .item .toggle .button, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .toggle .button, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .toggle .button {
+  border: solid 1px #888;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  overflow: hidden;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .item .toggle .button:first-child, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .toggle .button:first-child, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .toggle .button:first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .item .toggle .button:last-child, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .toggle .button:last-child, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .toggle .button:last-child {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  border-left: none;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .item .toggle .button > div, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .toggle .button > div, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .toggle .button > div {
+  padding: 3px 8px 3px 8px;
+  font-size: 12px;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .item .toggle .button .selectable-item-inner-sq, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .toggle .button .selectable-item-inner-sq, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .toggle .button .selectable-item-inner-sq {
+  background-color: #fff;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .checkbox {
+  text-align: center;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+.tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item.eyes-symmetry {
+  width: 200px;
+}
+
+.footer-ui {
+  position: absolute;
+  left: 155px;
+  right: 10px;
+  bottom: 0;
+  height: 0;
+  z-index: 300;
+  overflow: visible;
+}
+
+.footer-ui .sub-command-buttons-container {
+  position: absolute;
+  left: 0;
+  width: 180px;
+  bottom: 0;
+  height: 125px;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  border-top: solid 1px #888;
+  border-left: solid 1px #888;
+  border-right: solid 1px #888;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  padding: 5px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  background-color: #f6f6f8;
+}
+
+.footer-ui .sub-command-buttons-container .sub-command-buttons {
+  width: 100%;
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
+  -ms-grid-rows: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  justify-items: center;
+}
+
+.footer-ui .sub-command-buttons-container .sub-command-buttons button {
+  border: 1px solid #888;
+  border-radius: 5px;
+  width: 1.5em;
+  height: 1.5em;
+  padding: 0.15em 0 0 0.12em;
+  font-size: 32px;
+  overflow: hidden;
+  text-align: left;
+  background-color: #f0f0f0;
+}
+
+.footer-ui .sub-command-buttons-container .sub-command-buttons button:hover {
+  background-color: #e0e0ff;
+}
+
+.footer-ui .sub-command-buttons-container .sub-command-buttons button:focus {
+  outline: none;
+}
+
+.footer-ui .sub-command-buttons-container .sub-command-buttons button i {
+  font-size: 1.2em;
+}
+
+.layer-window {
+  overflow: hidden;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  background-color: #f6f6f8;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  height: 300px;
+}
+
+.layer-window .ui-scroll-view-container {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  height: unset;
+}
+
+.layer-window .layer-window-items .item, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .checkbox-item, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .select-item {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  cursor: default;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  height: 30px;
+}
+
+.layer-window .layer-window-items .item:hover, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item:hover, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .checkbox-item:hover, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item:hover, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .select-item:hover {
+  background-color: #e0e0ff;
+}
+
+.layer-window .layer-window-items .item.current, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .current.checkbox-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .current.checkbox-item, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .current.select-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .current.select-item {
+  background-color: #ddf;
+}
+
+.layer-window .layer-window-items .item.selected, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .selected.checkbox-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .selected.checkbox-item, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .selected.select-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .selected.select-item {
+  background-color: #ddf;
+}
+
+.layer-window .layer-window-items .item .visibility-icon-container, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .visibility-icon-container, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .checkbox-item .visibility-icon-container, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .visibility-icon-container, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .select-item .visibility-icon-container {
+  padding-left: 3px;
+  padding-top: 4px;
+  width: 24px;
+}
+
+.layer-window .layer-window-items .item .visibility-icon-container .visibility-icon, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .visibility-icon-container .visibility-icon, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .checkbox-item .visibility-icon-container .visibility-icon, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .visibility-icon-container .visibility-icon, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .select-item .visibility-icon-container .visibility-icon {
+  background-size: 176px;
+  background-position-y: -44px;
+  width: 22px;
+  height: 22px;
+}
+
+.layer-window .layer-window-items .item .layer-name, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item .layer-name, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .checkbox-item .layer-name, .layer-window .layer-window-items .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item .layer-name, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .layer-window .layer-window-items .select-item .layer-name {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  font-size: 14.0px;
+  line-height: 30px;
+  vertical-align: middle;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.palette-selector-window {
+  background-color: #f6f6f8;
+}
+
+.palette-selector-window .items-container {
+  padding: 2px;
+}
+
+.palette-selector-window .items-container .items {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-columns: 1fr 1fr 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  border-color: #000;
+  border-left: solid 1px;
+  border-top: solid 1px;
+}
+
+.palette-selector-window .items-container .items .item-container {
+  margin: 0px;
+}
+
+.palette-selector-window .items-container .items .item-container:hover .item:not(.selected)::after, .palette-selector-window .items-container .items .item-container:hover .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item:not(.selected)::after, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .palette-selector-window .items-container .items .item-container:hover .checkbox-item:not(.selected)::after, .palette-selector-window .items-container .items .item-container:hover .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item:not(.selected)::after, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .palette-selector-window .items-container .items .item-container:hover .select-item:not(.selected)::after {
+  position: absolute;
+  content: ' ';
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  border: solid 3px #ddf;
+  z-index: 5;
+}
+
+.palette-selector-window .items-container .items .item-container .item, .palette-selector-window .items-container .items .item-container .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .checkbox-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .palette-selector-window .items-container .items .item-container .checkbox-item, .palette-selector-window .items-container .items .item-container .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .select-item, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .palette-selector-window .items-container .items .item-container .select-item {
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  height: 17px;
+  position: relative;
+  border-color: #000;
+  border-right: solid 1px;
+  border-bottom: solid 1px;
+}
+
+.palette-selector-window .items-container .items .item-container .item.selected::after, .palette-selector-window .items-container .items .item-container .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .selected.checkbox-item::after, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .palette-selector-window .items-container .items .item-container .selected.checkbox-item::after, .palette-selector-window .items-container .items .item-container .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .selected.select-item::after, .tool-ribbon .tool-ribbon-rows .ribbon-ui-row .group-container .contents .palette-selector-window .items-container .items .item-container .selected.select-item::after {
+  position: absolute;
+  content: ' ';
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: solid 3px #99f;
+  z-index: 5;
+}
+
+.color-mixer-window {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  padding: 0px 0 8px 0;
+  background-color: #f6f6f8;
+}
+
+.color-mixer-window .colorCanvas {
+  border: none;
+  width: 100%;
+  height: 100px;
+  cursor: crosshair;
+}
+
+.color-mixer-window .colorMixerValueSlide {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  height: 22px;
+  padding: 2px 10px 0 4px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.color-mixer-window .colorMixerValueSlide div.label {
+  width: 20px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.color-mixer-window .colorMixerValueSlide input[type=number] {
+  width: 50px;
+  height: 14px;
+  font-size: 12px;
+  border: none;
+  background-color: #f8f8f8;
+  margin-top: 2px;
+  margin-left: 2px;
+}
+
+.color-mixer-window .colorMixerValueSlide div.range {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  padding-left: 4px;
+}
+
+.time-line-window {
+  position: absolute;
+  left: 340px;
+  right: 5px;
+  bottom: 0;
+  height: 46px;
+  overflow: hidden;
+  border-top: solid 1px #888;
+  border-left: solid 1px #888;
+  border-right: solid 1px #888;
+  background-color: #f6f6f8;
+  z-index: 301;
+}
+
+.time-line-window.hidden {
+  display: none;
+}
+
+.time-line-window canvas {
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+
+.file-open-dialog-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  background-color: #e6e6e8;
+}
+
+.file-open-dialog-container .input-file {
+  display: none;
+}
+
+.file-open-dialog-container .sections-container {
+  width: 230px;
+  margin-right: 8px;
+}
+
+.file-open-dialog-container .sections-container .section-label {
+  padding: 2px 0 2px 5px;
+  font-size: 12px;
+  color: #eee;
+  background-color: #888;
+}
+
+.file-open-dialog-container .sections-container .section-list {
+  border: solid 1px #888;
+  background-color: #f6f6f8;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.file-open-dialog-container .sections-container .section-list .section-item {
+  padding: 3px;
+}
+
+.file-open-dialog-container .sections-container .section-list .section-item:hover .section-item-inner .button {
+  opacity: 100%;
+}
+
+.file-open-dialog-container .sections-container .section-list .section-item .section-item-inner {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 2px 5px 2px 8px;
+  border-radius: 3px;
+}
+
+.file-open-dialog-container .sections-container .section-list .section-item .section-item-inner .name {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  line-height: 28px;
+}
+
+.file-open-dialog-container .sections-container .section-list .section-item .section-item-inner .name i {
+  margin-right: 4px;
+  font-size: 22px;
+  vertical-align: text-bottom;
+}
+
+.file-open-dialog-container .sections-container .section-list .section-item .section-item-inner .name span {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.file-open-dialog-container .sections-container .section-list .section-item .section-item-inner .button {
+  -webkit-margin-start: 4px;
+          margin-inline-start: 4px;
+  font-size: 22px;
+  opacity: 0;
+  line-height: 28px;
+  vertical-align: text-bottom;
+}
+
+.file-open-dialog-container .files-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+}
+
+.file-open-dialog-container .files-container .section-info {
+  padding: 5px 2px 5px 8px;
+}
+
+.file-open-dialog-container .files-container .section-info i {
+  margin-right: 4px;
+  font-size: 22px;
+  vertical-align: text-bottom;
+}
+
+.file-open-dialog-container .files-container .section-info span {
+  font-size: 14px;
+  vertical-align: text-bottom;
+}
+
+.file-open-dialog-container .files-container .file-list {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  border: solid 1px #888;
+  background-color: #f6f6f8;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  overflow-y: scroll;
+}
+
+.file-open-dialog-container .files-container .file-list ul {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.file-open-dialog-container .files-container .file-list ul li {
+  list-style: none;
+  background-color: #fefefe;
+  padding: 3px;
+}
+
+.file-open-dialog-container .files-container .file-list ul li:nth-child(odd) {
+  background-color: #f8f8f8;
+}
+
+.file-open-dialog-container .files-container .file-list ul li:nth-child(odd):hover {
+  background-color: #e0e0ff;
+}
+
+.file-open-dialog-container .files-container .file-list ul li .selectable-item-inner {
+  padding: 8px 5px 8px 12px;
+  border-radius: 3px;
+}
+
+.file-open-dialog-container .files-container .file-list ul li .selectable-item-inner i {
+  font-size: 31.5px;
+  vertical-align: middle;
+  margin-right: 12px;
+}
+
+.file-open-dialog-container .files-container .file-list ul li .selectable-item-inner span.name {
+  font-size: 21px;
+  min-width: 50%;
+  vertical-align: middle;
+}
+
+.file-open-dialog-container .files-container .file-list ul li .selectable-item-inner span.path {
+  margin-left: 10px;
+  font-size: 14px;
+  color: #555;
+  vertical-align: middle;
+}
+
+.file-open-dialog-container .files-container .file-commands {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  margin-top: 5px;
+}
+
+.file-open-dialog-container .files-container .file-commands .file-info {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  padding: 0px 2px 0px 8px;
+  background-color: #f6f6f8;
+  font-size: 14px;
+  line-height: 28px;
+  border: solid 1px #888;
+}
+
+.file-open-dialog-container .files-container .file-commands button {
+  margin-left: 5px;
+}
+
+.selectable-item:hover, .file-open-dialog-container .files-container .file-list ul li:hover {
+  background-color: #e0e0ff !important;
+}
+
+.selectable-item.selected .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner {
+  background-color: #ceceff !important;
+}
+
+.selectable-item.selected .selectable-item-inner-sq, .file-open-dialog-container .files-container .file-list ul li.selected .selectable-item-inner-sq {
+  background-color: #ceceff !important;
+}
+
+.selectable-item .selectable-item-inner, .file-open-dialog-container .files-container .file-list ul li .selectable-item-inner {
+  border-radius: 3px;
+}
+
+.app-button, .app-button-primary, .app-button-cancel {
+  min-width: 120px;
+  margin-left: 5px;
+  padding: 0;
+  font-size: 14px;
+  text-align: center;
+  line-height: 28px;
+  border: solid 1px #888;
+  border-radius: 3px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.app-button:focus, .app-button-primary:focus, .app-button-cancel:focus {
+  outline: none;
+}
+
+.app-button-primary {
+  background-color: #88f;
+  color: #fff;
+}
+
+.app-button-primary:hover {
+  background-color: #bbbbff;
+}
+
+.app-button-cancel {
+  background-color: #eee;
+}
+
+.app-button-cancel:hover {
+  background-color: #fbfbfb;
+}
+
+.OKCalcelButtons {
+  text-align: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+input[type=number] {
+  text-align: right;
+}
+
+.ui-scroll-view-container {
+  overflow: hidden;
+}
+
+.ui-scroll-view-container.horizontal {
+  width: 100%;
+}
+
+.ui-scroll-view-container.vertical {
+  height: 100%;
+}
+
+.command-buttons-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 4px;
+}
+
+.command-buttons-container > div {
+  width: 31px;
+  height: 30px;
+}
+
+.command-buttons-container > div:not(:first-child) {
+  -webkit-margin-start: 4px;
+          margin-inline-start: 4px;
+}
+
+.command-buttons-container > div:hover button {
+  background-color: #e0e0ff;
+}
+
+.command-buttons-container > div > button {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  outline: none;
+  background-size: 32px;
+  background-color: transparent;
+}
+
+.command-buttons-container > div > button.no-border {
+  border: none;
+}
+
+.command-buttons-container > div > button:not(.no-border) {
+  border: 1px solid #888;
+  border-radius: 5px;
+}
+
+.command-buttons-container > div > button.selected {
+  background-color: #ddf;
+}
+
+.command-buttons-container > div > button i {
+  font-size: 24px;
+  line-height: 24px;
+  vertical-align: middle;
+}
+
+.ui-checkbox-container {
+  display: inline-block;
+  border: solid 1px #888;
+  background-color: #fff;
+  border-radius: 2px;
+}
+
+.ui-checkbox-container .content {
+  width: 23px;
+  height: 23px;
+  text-align: center;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.ui-checkbox-container .content i {
+  font-size: 14px;
+  line-height: 23px;
+  vertical-align: middle;
+}
+/*# sourceMappingURL=index.css.map */
