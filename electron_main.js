@@ -1,70 +1,143 @@
-const {app, BrowserWindow, ipcMain, dialog } = require('electron')
+const env = true ? 'debug' : 'release'
+const { app, BrowserWindow, ipcMain, dialog} = require('electron')
+const path = require('path')
+const fs = require('fs');
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
+if (env == 'debug') {
+  const reloader = require('electron-reload');
+  reloader(__dirname + '/dist');
+}
+
 let win
 
-function createWindow () {
-  // Create the browser window.
-  win = new BrowserWindow({x: 0, y: 0, width: 1080, height: 1080, webPreferences: { nodeIntegration: true }}) //, frame: false
+async function createWindow () {
 
-  // and load the index.html of the app.
+  const { windowPosition } = await loadAppData()
+
+  win = new BrowserWindow({
+    x: windowPosition.left,
+    y: windowPosition.top,
+    width: windowPosition.width,
+    height: windowPosition.height,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      worldSafeExecuteJavaScript: true,
+      preload: path.join(__dirname, 'electron_preload.js')
+    }
+    //frame: false
+  })
+
   win.loadURL(`file://${__dirname}/index.html`)
 
-  // Open the DevTools.
   win.webContents.openDevTools()
 
   //win.maximize();
   win.setMenu(null);
 
-  // Emitted when the window is closed.
   win.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
     win = null
+  })
+
+  win.on('close', async () => {
+    await saveAppData()
   })
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', createWindow)
+app.on('ready', () => {
+  createWindow().then()
+})
 
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
+app.on('activate', () => {
+  if (win === null) {
+    createWindow().then()
+  }
+})
+
+app.on('window-all-closed', async () => {
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
 
-app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (win === null) {
-    createWindow()
-  }
-})
+function getUserDirectoryPath() {
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
-
-let reloader = require('electron-reload');
-if (reloader) {
-  reloader(__dirname + '/dist');
+  return path.join(app.getPath('appData'), 'mtt', '020')
 }
 
-ipcMain.handle('select-file-place-folder', async (event, recentPath) => {
+function getAppDataPath() {
+
+  return path.join(getUserDirectoryPath(), 'app-data.json')
+}
+
+async function loadAppData() {
+
+  const userDirectoryPath = getUserDirectoryPath()
+  if (!fs.existsSync(userDirectoryPath)) {
+    fs.mkdirSync(userDirectoryPath, { recursive: true })
+  }
+
+  let windowPosition = { top: 0, left: 0, width: 1080, height: 1080 }
+
+  try {
+    const appDataPath = getAppDataPath()
+    const appDataJson = await fs.promises.readFile(appDataPath)
+    if (appDataJson) {
+        const appData = JSON.parse(appDataJson)
+        if (appData) {
+          windowPosition = appData.windowPosition
+        }
+    }
+  }
+  catch (e) {
+  }
+
+  return { windowPosition }
+}
+
+async function saveAppData() {
+
+  const windowBounds = win.getNormalBounds()
+
+  const appDataPath = getAppDataPath()
+
+  const appData = {
+    windowPosition: {
+      top: windowBounds.y,
+      left: windowBounds.x,
+      width: windowBounds.width,
+      height: windowBounds.height,
+    },
+    appDataPath: appDataPath
+   }
+
+  await fs.promises.writeFile(appDataPath, JSON.stringify(appData))
+}
+
+ipcMain.handle('readUserDataFile', (event, { fileName }) => {
+
+  const filePath = path.join(getUserDirectoryPath(), fileName)
+
+  return fs.readFileSync(filePath, { encoding: 'utf8' })
+})
+
+ipcMain.handle('writeUserDataFile', (event, { fileName, data }) => {
+
+  const filePath = path.join(getUserDirectoryPath(), fileName)
+
+  return fs.writeFileSync(filePath, data)
+})
+
+ipcMain.handle('openFileDialog', async (event, { defaultPath} ) => {
 
   let openDialogResult = await dialog.showOpenDialog(win, {
     properties: ['openDirectory'],
-    defaultPath: recentPath,
+    defaultPath: defaultPath,
     filters: [
       { name: 'Vector files', extensions: ['json', 'ora'] },
     ]
-  });
+  })
 
-  return openDialogResult;
-});
+  return openDialogResult
+})

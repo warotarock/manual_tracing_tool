@@ -39,7 +39,7 @@
         <div id="left-side-panel" class="side-panel left-panel"></div>
 
         <div class="center-panel">
-          <div class="main-canvas-window">
+          <div class="main-canvas-container">
             <canvas id="webglCanvas" class="webgl-canvas"></canvas>
             <canvas id="mainCanvas" class="main-canvas"></canvas>
             <canvas id="editorCanvas" class="editor-canvas"></canvas>
@@ -52,7 +52,7 @@
 
         <div id="right-side-panel" class="side-panel right-panel"></div>
 
-        <div id="footer-ui" class="footer-ui"></div>
+        <div id="footer-ui" class="footer-ui-container"></div>
       </div>
     </main>
     <footer>
@@ -79,137 +79,6 @@
     </div>
   </div>
 
-  <div id="layerPropertyModal" class="modalDialogWindow layerPropertyModal">
-    <label id="layerPropertyModal_layerTypeName">
-      レイヤータイプ
-    </label>
-    <div>
-      <label>
-        名前
-        <input type="text" id="layerPropertyModal_layerName" class="nameInputTextBox" onfocus="this.select();" />
-      </label>
-    </div>
-    <div>
-      <label>
-        レイヤー色
-        <input type="color" id="layerPropertyModal_layerColor">
-      </label>
-      <input type="range" id="layerPropertyModal_layerAlpha" min="0" max="500">
-    </div>
-    <div>
-    </div>
-    <label>
-      <label>
-        塗りつぶし色
-        <input type="color" id="layerPropertyModal_fillColor">
-      </label>
-      <input type="range" id="layerPropertyModal_fillColorAlpha" min="0" max="500">
-    </label>
-    <div>
-      線<br />
-      <label>
-        <input type="radio" name="layerPropertyModal_drawLineType" value="1">
-        なし
-      </label>
-      <label>
-        <input type="radio" name="layerPropertyModal_drawLineType" value="2">
-        レイヤー色
-      </label>
-      <label>
-        <input type="radio" name="layerPropertyModal_drawLineType" value="3">
-        パレット
-      </label>
-      <br />
-    </div>
-    <div>
-      塗りつぶし<br />
-      <label>
-        <input type="radio" name="layerPropertyModal_fillAreaType" value="1">
-        なし
-      </label>
-      <label>
-        <input type="radio" name="layerPropertyModal_fillAreaType" value="2">
-        塗りつぶし色
-      </label>
-      <label>
-        <input type="radio" name="layerPropertyModal_fillAreaType" value="3">
-        パレット
-      </label>
-    </div>
-    <div>
-      設定<br />
-      <label>
-        <input type="checkbox" id="layerPropertyModal_isRenderTarget" value="1">エクスポート
-      </label><br />
-      <label>
-        <input type="checkbox" id="layerPropertyModal_isMaskedBelowLayer" value="1">下のレイヤーでマスク
-      </label>
-    </div>
-  </div>
-
-  <div id="paletteColorModal" class="modalDialogWindow paletteColorModal">
-    <label id="paletteColorModal_targetName">
-      線色/塗りつぶし色
-    </label>
-    <label>
-      <input type="color" id="paletteColorModal_currentColor">
-    </label>
-    <label>
-      <input type="range" id="paletteColorModal_currentAlpha" min="0" max="500">
-    </label><br />
-    <div id="paletteColorModal_colors">
-      <!--<div>
-                <input type="radio" name="paletteColorModal_colorIndex">
-                <input type="color">
-            </div>-->
-    </div>
-    <div id="paletteColorModal_colorMixer">
-      <canvas id="paletteColorModal_colorCanvas"></canvas>
-    </div>
-  </div>
-
-  <div id="operationOptionModal" class="modalDialogWindow operationOptionModal">
-    <div>
-      <label>
-        線の太さ
-        &emsp;基本<input type="number" id="operationOptionModal_LineWidth" class="lineWidthMax" step="0.1" />
-        &emsp;最小<input type="number" id="operationOptionModal_LineMinWidth" class="lineWidthMin" step="0.1" />
-      </label>
-      <br />
-    </div>
-    <div>
-      編集単位
-      <label>
-        <input type="radio" name="operationOptionModal_operationUnit" value="3">
-        線
-      </label>
-      <label>
-        <input type="radio" name="operationOptionModal_operationUnit" value="1">
-        点
-      </label>
-      <label>
-        <input type="radio" name="operationOptionModal_operationUnit" value="2">
-        辺
-      </label>
-      <br />
-    </div>
-    <!--<div>
-            絞り込み<br />
-            <label>
-                <input type="checkbox" name="operationOptionModal_activeLineOnly" value="1">
-                アクティブな線の点のみ
-            </label><br />
-            <label>
-                <input type="checkbox" name="operationOptionModal_activeLayerOnly" value="1">
-                アクティブなレイヤーのみ
-            </label><br />
-            <label>
-                <input type="checkbox" name="operationOptionModal_selectedPointOnly" value="1">
-                選択中の点のみ
-            </label><br />
-        </div>-->
-  </div>
-
   <div id="newLayerCommandOptionModal" class="modalDialogWindow newLayerCommandOptionModal">
     <div>
       レイヤーの種類<br />
@@ -227,11 +96,11 @@
         ベクター参照
       </label>
       <br /> -->
-      <!-- <label>
+      <label>
         <input type="radio" name="newLayerCommandOptionModal_layerType" value="3">
         自動塗りつぶし
       </label>
-      <br /> -->
+      <br />
       <label>
         <input type="radio" name="newLayerCommandOptionModal_layerType" value="5">
         画像ファイル
@@ -254,47 +123,17 @@
     </div>
   </div>
 
-  <div id="documentSettingModal" class="modalDialogWindow documentSettingModal">
-    <div>
-      ビュー<br />
-      <label>
-        基本の拡大率
-        <input type="number" id="documentSettingModal_ViewScale" class="lineWidthMax" step="0.01" />
-      </label>
-      <br />
-    </div>
-    <div>
-      描画設定<br />
-      <label>
-        線の基本太さ（倍率で指定）
-        <input type="number" id="documentSettingModal_LineWidth" class="lineWidthMax" step="0.1" />
-      </label>
-      <br />
-    </div>
-    <div>
-      エクスポート範囲<br />
-      <label>
-        左上
-        <input type="number" id="documentSettingModal_FrameLeft" class="location" step="1" />
-      </label>
-      <label>
-        <input type="number" id="documentSettingModal_FrameTop" class="location" step="1" />
-      </label><br />
-      <label>
-        右下
-        <input type="number" id="documentSettingModal_FrameRight" class="location" step="1" />
-      </label>
-      <label>
-        <input type="number" id="documentSettingModal_FrameBottom" class="location" step="1" />
-      </label><br />
-    </div>
-  </div>
-
   <div id="exportImageFileModal" class="modalDialogWindow exportImageFileModal">
     <div>
       <label>
         ファイル名（拡張子を除く）<br />
         <input type="text" id="exportImageFileModal_fileName" class="nameInputTextBox" onfocus="this.select();" />
+      </label><br />
+    </div>
+    <div>
+      <label>
+        エクスポート先<br />
+        <input type="text" id="exportImageFileModal_directory" class="nameInputTextBox" onfocus="this.select();" />
       </label><br />
     </div>
     <div>
@@ -377,7 +216,10 @@
     </div>
   </div>
 
-  <div id="file-open-dialog" class="screen-sub hidden"></div>
+  <div id="modal-window" class="overlay-container hidden">
+  </div>
+
+  <div id="file-open-dialog" class="overlay-container hidden"></div>
 </body>
 
 </html>

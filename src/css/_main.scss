@@ -1,6 +1,4 @@
-﻿@import "base";
-
-html {
+﻿html {
   margin: 0;
   padding: 0;
   left: 100%;
@@ -15,6 +13,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden; // これを入れないとmainが何かはみでて横スクロールバーが出る
+  user-select: none;
 
   canvas#debug {
     width: 500px;
@@ -25,9 +24,11 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
-  .screen-sub {
+  .overlay-container {
     position: absolute;
     top: 0;
     right: 0;
@@ -39,7 +40,7 @@ body {
       display: none;
     }
 
-    .default-container {
+    .dialog-screen-container {
       position: absolute;
       top: 0;
       right: 0;
@@ -51,26 +52,41 @@ body {
         outline: none;
       }
     }
+
+    .modal-window-overlay {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background-color:rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:focus {
+        outline: none;
+      }
+    }
   }
 }
 
-header {
-  position: absolute;
-  box-sizing: border-box;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 164px;
+input {
+  user-select: unset;
+}
 
-  border-bottom: $windowBorder;
+header {
+  box-sizing: border-box;
 
   .header-row1 {
     display: flex;
     padding: 0 $padding-basic 0 $padding-basic;
+    border-bottom: $windowBorder;
   }
 
   .header-row2 {
     display: flex;
+    border-bottom: $windowBorder;
   }
 
   .file-commands {
@@ -101,12 +117,8 @@ header {
 }
 
 main {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 163px;
-  bottom: 42px;
   padding: 0;
+  flex: 1;
 
   .main-container {
     position: relative;
@@ -115,7 +127,7 @@ main {
 
     .side-panel {
       position: absolute;
-      top: 10px;
+      top: 20px;
       display: flex;
       pointer-events: none;
 
@@ -240,15 +252,46 @@ main {
       flex-direction: column;
       padding: 0;
       z-index: $zindex-center-panel;
+
+      .main-canvas-container {
+        flex: 1;
+        position: relative;
+        background-color: $canvasBackground;
+
+        .main-canvas {
+          position: absolute;
+          border: none;
+          z-index: 2;
+        }
+
+        .editor-canvas {
+          position: absolute;
+          border: none;
+          z-index: 3;
+          cursor: crosshair;
+        }
+
+        .webgl-canvas {
+          position: absolute;
+          border: none;
+          z-index: 1;
+        }
+      }
+    }
+
+    .footer-ui-container {
+      position: absolute;
+      left: 0;
+      right: 10px;
+      bottom: 0;
+      height: 0;
+      z-index: $zindex-footer-ui;
+      overflow: visible;
     }
   }
 }
 
 footer {
-  position: absolute;
-  left: 1px;
-  right: 1px;
-  bottom: 1px;
   height: 40px;
   display: flex;
   z-index: $zindex-center-panel + 1;
@@ -261,9 +304,4 @@ footer {
     text-align: center;
     font-size: 12px;
   }
-}
-
-.nameInputTextBox {
-  width: 250px;
-  padding-left: $margin-basic;
 }

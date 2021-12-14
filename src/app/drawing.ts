@@ -1,1839 +1,603 @@
-import { List, int, float } from '../base/conversion';
+import { float, int } from './logics/conversion'
+import { AutoFillLayer, DocumentBackGroundTypeID, DocumentData, ImageFileReferenceLayer, Layer, VectorLayer } from './document_data'
+import { OperationUnitID } from './tool/constants'
+import { ToolDrawingStyle } from "./drawing/drawing_style"
+import { Logic_GPULine } from './logics/gpu_line'
+import { Platform } from '../platform/platform'
+import { Posing3DView } from './posing3d/posing3d_view'
+import { CanvasRender, CanvasWindow } from './render/render2d'
+import { WebGLRender } from './render/render3d'
+import { DrawingEyesSymmetryLogic } from './drawing/drawing_eyes_symmetry'
+import { DrawingImageFileReferenceLayerLogic } from './drawing/drawing_image_file_reference_layer'
+import { DrawingPosing3DLogic } from './drawing/drawing_posing3d'
+import { DrawingStrokeLogic } from './drawing/drawing_stroke'
+import { DrawingVectorLayerLogic } from './drawing/drawing_vector_layer'
+import { DrawPathContext, DrawPathOperationTypeID, DrawPathModeID, DrawPathStep } from './drawing/draw_path'
+import { DrawPathBufferingLogic } from './drawing/draw_path_buffering'
+import { DrawPathCollectingLogic } from './drawing/draw_path_collecting'
+import { MainCanvasEditorDrawer } from './editor/editor_drawer'
+import { OperatorCursorLogic } from './editor/operator_cursor'
+import { BezierDistanceLineShader, BezierLineShader, GPULineShader, PolyLineShader } from './rendering/rendering_shaders'
+import { RenderingVectorLayerLogic } from './rendering/rendering_vector_layer'
+import { ViewKeyframeLayer, ViewKeyframe } from './view/view_keyframe'
+import { App_View } from '../app/view'
 
-import {
-  ToolEnvironment,
-  MainToolID,
-  MainEditorDrawer,
-  ToolDrawingStyle,
-  OperationUnitID,
-  ViewKeyframe,
-  ViewKeyframeLayer
-} from '../base/tool';
+export class App_Drawing {
 
-import {
-  DocumentData,
-  Layer, LayerTypeID, DrawLineTypeID, FillAreaTypeID,
-  VectorLayer, VectorGeometry, VectorStroke, VectorPoint, VectorLineModifyFlagID, LinePointModifyFlagID,
-  ImageFileReferenceLayer,
-  PosingLayer,
-  EyesSymmetryInputSideID
-} from '../base/data';
+  // Sub logics
 
-import { Logic_GPULine } from '../logics/gpu_line';
-import { ColorLogic } from '../logics/color';
-import { LayoutLogic, RectangleLayoutArea } from '../logics/layout';
+  drawingStroke = new DrawingStrokeLogic()
+  editorDrawer = new MainCanvasEditorDrawer()
+  operatorCursor = new OperatorCursorLogic()
+  drawingVectorLayer = new DrawingVectorLayerLogic()
+  drawingIFRLayer = new DrawingImageFileReferenceLayerLogic()
+  drawingEyesSymmetry = new DrawingEyesSymmetryLogic()
+  drawingPosing3D = new DrawingPosing3DLogic()
+  renderingVectorLayer = new RenderingVectorLayerLogic()
 
-import { CanvasRender, CanvasWindow, CanvasRenderLineCap, CanvasRenderBlendMode } from '../renders/render2d';
-import { WebGLRender } from '../renders/render3d';
-import { Posing3DView, ImageResource } from '../posing3d/posing3d_view';
+  drawGPURender = new WebGLRender()
+  polyLineShader = new PolyLineShader()
+  bezierLineShader = new BezierLineShader()
+  bezierDistanceLineShader = new BezierDistanceLineShader()
+  lineShader: GPULineShader = this.bezierDistanceLineShader
 
-import { App_View } from '../app/view';
-import {
-  LayerWindowItem,
-  LayerWindow,
-  TimeLineWindow,
-  PaletteSelectorWindow,
-  PaletteSelectorWindowButtonID,
-  ColorCanvasWindow
-} from '../app/view.class';
+  posing3DViewRender = new WebGLRender()
+  posing3DView = new Posing3DView()
 
-import { PolyLineShader, BezierLineShader, BezierDistanceLineShader, GPULineShader } from './drawing.class';
-import { Maths } from '../logics/math';
+  logic_GPULine = new Logic_GPULine()
 
-export class App_Drawing extends App_View implements MainEditorDrawer {
+  drawPathCollecting = new DrawPathCollectingLogic()
+  drawPathBuffering = new DrawPathBufferingLogic()
+  drawPath_logging = false
 
-  canvasRender = new CanvasRender();
+  currentViewKeyframe: ViewKeyframe = null
+  previousKeyframe: ViewKeyframe = null
+  nextKeyframe: ViewKeyframe = null
 
-  drawGPURender = new WebGLRender();
-  polyLineShader = new PolyLineShader();
-  bezierLineShader = new BezierLineShader();
-  bezierDistanceLineShader = new BezierDistanceLineShader();
-  lineShader: GPULineShader = this.bezierDistanceLineShader;
-  //lineShader: GPULineShader = this.polyLineShader;
+  drawPathContext = new DrawPathContext()
+  lazy_DrawPathContext = new DrawPathContext()
 
-  posing3DViewRender = new WebGLRender();
-  posing3dView = new Posing3DView();
+  canvasRender = new CanvasRender()
+  drawStyle = new ToolDrawingStyle()
 
-  logic_GPULine = new Logic_GPULine();
+  layerPickingPositions = [[0.0, 0.0], [0.0, -2.0], [2.0, 0.0], [0.0, 2.0], [-2.0, 0.0]]
 
-  // Resources
+  private appView: App_View = null
 
-  drawStyle = new ToolDrawingStyle();
+  private tempColor4 = vec4.create()
 
-  systemImage: ImageResource = null;
-  subToolImages = new List<ImageResource>();
-  layerButtonImage: ImageResource = null;
+  link(appView: App_View) {
 
-  // Work variable
+    this.appView = appView
+    this.drawingStroke.link(this.canvasRender, this.drawStyle)
+    this.editorDrawer.link(this.canvasRender, this.drawStyle, this.drawingStroke, this.appView.mainWindow)
+    this.operatorCursor.link(this.canvasRender, this.drawStyle, this.drawingStroke)
+    this.drawingVectorLayer.link(this.drawStyle, this.drawingStroke)
+    this.drawingIFRLayer.link(this.canvasRender)
+    this.drawingEyesSymmetry.link(this.canvasRender, this.drawStyle, this.drawingStroke)
+    this.drawingPosing3D.link(this.posing3DViewRender, this.posing3DView)
+    this.renderingVectorLayer.link(this.drawGPURender, this.lineShader, this.drawingVectorLayer, this.logic_GPULine)
+  }
 
-  chestInvMat4 = mat4.create();
-  hipsInvMat4 = mat4.create();
+  // Initializing
 
-  editOtherLayerLineColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
-  editOtherLayerFillColor = vec4.fromValues(1.0, 1.0, 1.0, 0.5);
+  initializeDrawingDevices(webglWindow: CanvasWindow, drawGPUWindow: CanvasWindow) {
 
-  tempEditorLinePointColor1 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-  tempEditorLinePointColor2 = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+    // this.canvasRender.setContext(this.layerWindow)
+    // this.canvasRender.setFontSize(18.0)
 
-  layerPickingPositions = [[0.0, 0.0], [0.0, -2.0], [2.0, 0.0], [0.0, 2.0], [-2.0, 0.0]];
+    if (this.posing3DViewRender.initializeWebGL(webglWindow.canvas, true)) {
 
-  scale = vec3.create();
-  eyeLocation = vec3.create();
-  lookatLocation = vec3.create();
-  upVector = vec3.create();
-  modelLocation = vec3.create();
-  modelMatrix = mat4.create();
-  viewMatrix = mat4.create();
-  modelViewMatrix = mat4.create();
-  projectionMatrix = mat4.create();
-
-  operatorCurosrLineDash = [2.0, 2.0];
-  operatorCurosrLineDashScaled = [0.0, 0.0];
-  operatorCurosrLineDashNone = [];
-
-  protected initializeDrawingDevices() {
-
-    // this.canvasRender.setContext(this.layerWindow);
-    // this.canvasRender.setFontSize(18.0);
-
-    if (this.posing3DViewRender.initializeWebGL(this.webglWindow.canvas, true)) {
-
-      alert('３Ｄポージング機能を初期化できませんでした。');
+      console.log('３Ｄポージング機能を初期化できませんでした。')
     }
 
-    //this.pickingWindow.initializeContext();
+    //this.pickingWindow.initializeContext()
 
-    this.posing3dView.initialize(this.posing3DViewRender, this.webglWindow, null);
+    this.posing3DView.initialize(this.posing3DViewRender, webglWindow)
 
-    if (this.drawGPURender.initializeWebGL(this.drawGPUWindow.canvas, false)) {
+    if (this.drawGPURender.initializeWebGL(drawGPUWindow.canvas, false)) {
 
-      alert('３Ｄ描画機能を初期化できませんでした。');
+      console.log('３Ｄ描画機能を初期化できませんでした。')
     }
 
     try {
 
-      this.drawGPURender.initializeShader(this.polyLineShader);
-      this.drawGPURender.initializeShader(this.bezierLineShader);
-      this.drawGPURender.initializeShader(this.bezierDistanceLineShader);
+      this.drawGPURender.initializeShader(this.polyLineShader)
+      this.drawGPURender.initializeShader(this.bezierLineShader)
+      this.drawGPURender.initializeShader(this.bezierDistanceLineShader)
     }
     catch (errorMessage) {
 
-      alert('シェーダの初期化に失敗しました。' + errorMessage);
+      console.log('シェーダの初期化に失敗しました。' + errorMessage)
     }
   }
 
   // Common drawing methods
 
-  protected clearWindow(canvasWindow: CanvasWindow) {
+  clearWindow(canvasWindow: CanvasWindow) {
 
-    this.canvasRender.setContext(canvasWindow);
+    this.canvasRender.setContext(canvasWindow)
 
-    this.canvasRender.resetTransform();
+    this.canvasRender.resetTransform()
 
-    this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height);
+    this.canvasRender.clearRect(0, 0, canvasWindow.canvas.width, canvasWindow.canvas.height)
 
-    this.canvasRender.setTransform(canvasWindow);
+    this.canvasRender.cancelLocalTransform()
   }
 
-  protected drawFullWindowImage(dstWindow: CanvasWindow, srcWindow: CanvasWindow) {
+  drawFullWindowImage(dstWindow: CanvasWindow, srcWindow: CanvasWindow) {
 
-    this.canvasRender.setContext(dstWindow);
+    this.canvasRender.setContext(dstWindow)
 
-    this.canvasRender.resetTransform();
+    this.canvasRender.resetTransform()
 
     this.canvasRender.drawImage(srcWindow.canvas
       , 0, 0, srcWindow.width, srcWindow.height
-      , 0, 0, dstWindow.width, dstWindow.height);
+      , 0, 0, dstWindow.width, dstWindow.height)
 
-    this.canvasRender.setTransform(dstWindow);
+    this.canvasRender.cancelLocalTransform()
   }
 
-  private drawButtonBackground(layoutArea: RectangleLayoutArea, isSelected: boolean) {
+  // Document drawing
 
-    let dstX = layoutArea.left;
-    let dstY = layoutArea.top;
-    let scale = 1.0;
-    let dstWidth = layoutArea.getWidth() * scale;
-    let dstHeight = layoutArea.getHeight() * scale;
+  drawForeground(
+    viewKeyFrameLayer: ViewKeyframeLayer,
+    documentData: DocumentData,
+    isExporting: boolean,
+    isModalToolRunning: boolean,
+    isEditMode: boolean
+  ) {
 
-    if (isSelected) {
-
-      this.canvasRender.setFillColorV(this.toolDrawEnv.style.selectedButtonColor);
-
-      this.canvasRender.fillRect(dstX, dstY, dstWidth, dstHeight);
-    }
-  }
-
-  private drawButtonImage(layoutArea: RectangleLayoutArea) {
-
-    let srcWidth = 64.0;
-    let srcHeight = 64.0;
-    let srcX = 0.0;
-    let srcY = (<int>layoutArea.iconID - 1) * srcHeight;
-    let dstX = layoutArea.left;
-    let dstY = layoutArea.top;
-    let scale = 1.0;
-    let dstWidth = layoutArea.getWidth() * scale;
-    let dstHeight = layoutArea.getHeight() * scale;
-
-    let srcImage = this.layerButtonImage;
-
-    this.canvasRender.drawImage(srcImage.image.imageData
-      , srcX, srcY, srcWidth, srcHeight
-      , dstX, dstY, dstWidth, dstHeight);
-  }
-
-  // Document
-
-  protected drawExportImage(canvasWindow: CanvasWindow) { // @virtual
-
-  }
-
-  // MainEditorDrawer implementations
-
-  drawMouseCursor(radius: float) { // @implements MainEditorDrawer
-
-    this.canvasRender.beginPath();
-
-    this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
-    this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
-
-    this.canvasRender.circle(
-      this.mainWindow.toolMouseEvent.location[0]
-      , this.mainWindow.toolMouseEvent.location[1]
-      , radius
-    );
-
-    this.canvasRender.stroke();
-  }
-
-  drawMouseCursorCircle(radius: float) { // @implements MainEditorDrawer
-
-    this.canvasRender.beginPath();
-
-    this.canvasRender.setStrokeColorV(this.drawStyle.mouseCursorCircleColor);
-    this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
-
-    this.canvasRender.circle(
-      this.mainWindow.toolMouseEvent.location[0]
-      , this.mainWindow.toolMouseEvent.location[1]
-      , radius
-    );
-
-    this.canvasRender.stroke();
-  }
-
-  drawEditorEditLineStroke(line: VectorStroke) { // @implements MainEditorDrawer
-
-    this.drawEditLineStroke(line);
-  }
-
-  drawEditorVectorLineStroke(line: VectorStroke, color: Vec4, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
-
-    this.drawVectorLineStroke(line, color, 1.0, strokeWidthBolding, useAdjustingLocation, false);
-  }
-
-  drawEditorVectorLinePoints(line: VectorStroke, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
-
-    this.drawVectorLinePoints(line, color, useAdjustingLocation);
-  }
-
-  drawEditorVectorLinePoint(point: VectorPoint, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
-
-    this.drawVectorLinePoint(point, color, useAdjustingLocation);
-  }
-
-  drawEditorVectorLineSegment(line: VectorStroke, startIndex: int, endIndex: int, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
-
-    this.drawVectorLineSegment(line, startIndex, endIndex, 1.0, 0.0, useAdjustingLocation);
-  }
-
-  // Main window
-
-  protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean) { // @virtual
-  }
-
-  protected drawForeground(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
-
-    let layer = viewKeyFrameLayer.layer;
+    const layer = viewKeyFrameLayer.layer
 
     if (VectorLayer.isVectorLayer(layer)) {
 
-      let vectorLayer = <VectorLayer>layer;
-      let geometry = viewKeyFrameLayer.vectorLayerKeyframe.geometry;
+      const vectorLayer = <VectorLayer>layer
 
-      this.drawForeground_VectorLayer(vectorLayer, geometry, documentData, isExporting, isModalToolRunning);
+      this.drawingVectorLayer.drawForeground(
+        vectorLayer,
+        viewKeyFrameLayer.vectorLayerKeyframe.geometry,
+        documentData,
+        isEditMode,
+        isExporting,
+        isModalToolRunning
+      )
 
       if (vectorLayer.eyesSymmetryEnabled && vectorLayer.eyesSymmetryGeometry != null) {
 
-        this.drawForeground_VectorLayer(vectorLayer, vectorLayer.eyesSymmetryGeometry, documentData, isExporting, isModalToolRunning);
+        this.drawingVectorLayer.drawForeground(
+          vectorLayer,
+          vectorLayer.eyesSymmetryGeometry,
+          documentData,
+          isEditMode,
+          isExporting,
+          isModalToolRunning
+        )
       }
     }
     else if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
 
-      let ifrLayer = <ImageFileReferenceLayer>layer;
+      const ifrLayer = <ImageFileReferenceLayer>layer
 
-      this.drawForeground_ImageFileReferenceLayer(ifrLayer, isModalToolRunning);
+      this.drawingIFRLayer.drawImageFileReferenceLayer(ifrLayer, isModalToolRunning)
     }
   }
 
-  private drawForeground_VectorLayer(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+  drawBackground(
+    viewKeyFrameLayer: ViewKeyframeLayer,
+    documentData: DocumentData,
+    isExporting: boolean,
+    isModalToolRunning: boolean,
+    isEditMode: boolean
+  ) {
 
-    if (layer.drawLineType == DrawLineTypeID.none) {
-      return;
-    }
-
-    let env = this.toolEnv;
-    let useAdjustingLocation = isModalToolRunning;
-
-    let widthRate = documentData.lineWidthBiasRate;
-    let lineColor = this.getLineColor(layer, documentData, env, true);
-
-    for (let unit of geometry.units) {
-
-      for (let group of unit.groups) {
-
-        for (let line of group.lines) {
-
-          this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
-        }
-      }
-    }
-  }
-
-  private drawForeground_ImageFileReferenceLayer(layer: ImageFileReferenceLayer, isModalToolRunning: boolean) {
-
-    if (layer.imageResource == null
-      || layer.imageResource.image == null
-      || layer.imageResource.image.imageData == null) {
-
-      return;
-    }
-
-    let image = layer.imageResource.image.imageData;
-
-    let location = (isModalToolRunning ? layer.adjustingLocation : layer.location);
-    let rotation = (isModalToolRunning ? layer.adjustingRotation[0] : layer.rotation[0]);
-    let scale = (isModalToolRunning ? layer.adjustingScale : layer.scale);
-
-    mat4.identity(this.tempMat4);
-    mat4.translate(this.tempMat4, this.tempMat4, location);
-    mat4.rotateZ(this.tempMat4, this.tempMat4, rotation);
-    mat4.scale(this.tempMat4, this.tempMat4, scale);
-
-    this.canvasRender.setLocalTransForm(this.tempMat4);
-
-    this.canvasRender.setGlobalAlpha(layer.layerColor[3]);
-
-    this.canvasRender.drawImage(image
-      , 0.0, 0.0
-      , image.width, image.height
-      , 0.0, 0.0
-      , image.width, image.height
-    );
-
-    this.canvasRender.cancelLocalTransForm();
-    this.canvasRender.setGlobalAlpha(1.0);
-  }
-
-  protected drawBackground(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
-
-    let layer = viewKeyFrameLayer.layer;
+    const layer = viewKeyFrameLayer.layer
 
     if (VectorLayer.isVectorLayer(layer)) {
 
-      let vectorLayer = <VectorLayer>layer;
-      let geometry = viewKeyFrameLayer.vectorLayerKeyframe.geometry;
+      const vectorLayer = <VectorLayer>layer
+      const geometry = viewKeyFrameLayer.vectorLayerKeyframe.geometry
 
-      this.drawBackground_VectorLayer(vectorLayer, geometry, documentData, isExporting, isModalToolRunning);
+      this.drawingVectorLayer.drawBackground(
+        vectorLayer,
+        geometry,
+        documentData,
+        Layer.isSelected(layer),
+        isEditMode,
+        isExporting,
+        isModalToolRunning
+      )
+    }
+    else if (AutoFillLayer.isAutoFillLayer(layer)) {
+
+      const autoFillLayer = <AutoFillLayer>layer
+      const geometry = autoFillLayer.geometry
+
+      this.drawingVectorLayer.drawBackground(
+        autoFillLayer,
+        geometry,
+        documentData,
+        Layer.isSelected(layer),
+        isEditMode,
+        isExporting,
+        isModalToolRunning
+      )
     }
   }
 
-  private drawBackground_VectorLayer(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
+  drawForegroundForEditMode(
+    vectorLayer: VectorLayer,
+    viewKeyFrameLayer: ViewKeyframeLayer,
+    documentData: DocumentData,
+    operationUnitID: OperationUnitID,
+    drawStrokes: boolean,
+    drawPoints: boolean,
+    isModalToolRunning: boolean,
+    isEditMode: boolean
+  ) {
 
-    let env = this.toolEnv;
-    let useAdjustingLocation = isModalToolRunning;
+    const isSelectedLayer = Layer.isSelected(vectorLayer)
 
-    let isSelectedLayer = Layer.isSelected(layer);
-
-    let fillColor = this.getFillColor(layer, documentData, env, !isSelectedLayer);
-
-    for (let unit of geometry.units) {
-
-      for (let group of unit.groups) {
-
-        let continuousFill = false;
-        for (let line of group.lines) {
-
-          if (layer.fillAreaType != FillAreaTypeID.none) {
-
-            this.drawVectorLineFill(line, fillColor, useAdjustingLocation, continuousFill);
-
-            continuousFill = line.continuousFill;
-          }
-        }
-      }
-    }
-  }
-
-  protected drawLayerByCanvas(viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
-
-    let layer = viewKeyFrameLayer.layer;
-
-    if (VectorLayer.isVectorLayer(layer)) {
-
-      let vectorLayer = <VectorLayer>layer;
-      this.drawVectorLayer(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry, documentData, isExporting, isModalToolRunning);
-    }
-    else if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
-
-      let ifrLayer = <ImageFileReferenceLayer>layer;
-      this.drawForeground_ImageFileReferenceLayer(ifrLayer, isModalToolRunning);
-    }
-    else {
-
-      // No drawing
-    }
-  }
-
-  protected drawVectorLayer(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isExporting: boolean, isModalToolRunning: boolean) {
-
-    let context = this.toolContext;
-    let env = this.toolEnv;
-
-    let isSelectedLayer = Layer.isSelected(layer);
-    let isEditMode = env.isEditMode();
-
-    // drawing parameters
-
-    let widthRate = context.document.lineWidthBiasRate;
-
-    let lineColor = this.getLineColor(layer, documentData, env, true);
-    let fillColor = this.getFillColor(layer, documentData, env, true);
-
-    vec4.copy(this.editOtherLayerLineColor, lineColor);
-    this.editOtherLayerLineColor[3] *= 0.3;
-
-    if (isEditMode) {
-
-      lineColor = this.editOtherLayerLineColor;
-    }
-
-    // drawing geometry lines
-
-    let useAdjustingLocation = isModalToolRunning;
-
-    for (let unit of geometry.units) {
-
-      for (let group of unit.groups) {
-
-        let continuousFill = false;
-        for (let line of group.lines) {
-
-          if (layer.fillAreaType != FillAreaTypeID.none) {
-
-            this.drawVectorLineFill(line, fillColor, useAdjustingLocation, continuousFill);
-
-            continuousFill = line.continuousFill;
-          }
-        }
-      }
-    }
-
-    for (let unit of geometry.units) {
-
-      for (let group of unit.groups) {
-
-        if (layer.drawLineType != DrawLineTypeID.none) {
-
-          for (let line of group.lines) {
-
-            this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, isExporting);
-          }
-        }
-      }
-    }
-  }
-
-  protected drawForegroundForEditMode(vectorLayer: VectorLayer, viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, drawStrokes: boolean, drawPoints: boolean, isModalToolRunning: boolean) {
-
-    let isSelectedLayer = Layer.isSelected(vectorLayer);
-
-    this.drawVectorLayerForEditMode(vectorLayer, viewKeyFrameLayer.vectorLayerKeyframe.geometry,
-      documentData, isSelectedLayer, drawStrokes, drawPoints, isModalToolRunning);
+    this.drawingVectorLayer.drawForegroundForEditMode(
+      vectorLayer,
+      viewKeyFrameLayer.vectorLayerKeyframe.geometry,
+      documentData,
+      operationUnitID,
+      isEditMode,
+      isSelectedLayer,
+      drawStrokes,
+      drawPoints,
+      isModalToolRunning
+    )
 
     if (vectorLayer.eyesSymmetryEnabled && vectorLayer.eyesSymmetryGeometry != null) {
 
-      this.drawVectorLayerForEditMode(vectorLayer, vectorLayer.eyesSymmetryGeometry,
-        documentData, false, drawStrokes, drawPoints, isModalToolRunning);
+      this.drawingVectorLayer.drawForegroundForEditMode(
+        vectorLayer,
+        vectorLayer.eyesSymmetryGeometry,
+        documentData,
+        operationUnitID,
+        isEditMode,
+        false,
+        drawStrokes,
+        drawPoints,
+        isModalToolRunning
+      )
     }
   }
 
-  protected drawVectorLayerForEditMode(layer: VectorLayer, geometry: VectorGeometry, documentData: DocumentData, isSelectedLayer: boolean, drawStrokes: boolean, drawPoints: boolean, isModalToolRunning: boolean) {
+  drawExportImage(canvasWindow: CanvasWindow, documentData: DocumentData, viewKeyframe: ViewKeyframe, imageLeft: int, imageTop: int, imageWidth: int, imageHeight: int, scale: float, backGroundType: DocumentBackGroundTypeID) {
 
-    let context = this.toolContext;
-    let env = this.toolEnv;
+    this.clearWindow(canvasWindow)
 
-    // drawing parameters
-    let widthRate = context.document.lineWidthBiasRate;
+    if (backGroundType == DocumentBackGroundTypeID.lastPaletteColor) {
 
-    let lineColor = this.getLineColor(layer, documentData, env, !isSelectedLayer);
+      this.canvasRender.setContext(canvasWindow)
+      this.canvasRender.resetTransform()
+      this.canvasRender.setFillColorV(documentData.paletteColors[documentData.paletteColors.length - 1].color)
+      this.canvasRender.fillRect(0, 0, imageWidth, imageHeight)
+    }
 
-    // drawing geometry lines
+    canvasWindow.viewLocation[0] = imageLeft
+    canvasWindow.viewLocation[1] = imageTop
+    canvasWindow.viewScale = scale
+    canvasWindow.viewRotation = 0.0
+    canvasWindow.centerLocationRate[0] = 0.0
+    canvasWindow.centerLocationRate[1] = 0.0
 
-    let useAdjustingLocation = isModalToolRunning;
+    const drawPathContext = new DrawPathContext()
 
-    for (let unit of geometry.units) {
+    this.drawPathCollecting.collectDrawPaths(
+      drawPathContext,
+      documentData,
+      viewKeyframe
+    )
 
-      for (let group of unit.groups) {
+    drawPathContext.drawPathModeID = DrawPathModeID.export
+    drawPathContext.startIndex = 0
+    drawPathContext.endIndex = drawPathContext.steps.length - 1
 
-        for (let line of group.lines) {
+    this.drawPathBuffering.prepareDrawPathBuffers(drawPathContext, canvasWindow, true)
 
-          if (!isSelectedLayer) {
+    this.drawDrawPaths(canvasWindow, drawPathContext, true, canvasWindow)
+  }
 
-            if (layer.drawLineType != DrawLineTypeID.none) {
+  // Layer picking
 
-              this.drawVectorLineStroke(line, this.editOtherLayerLineColor, widthRate, 0.0, useAdjustingLocation, false);
+  pickLayer(canvasWindow: CanvasWindow, viewKeyframe: ViewKeyframe, documentData: DocumentData, pickLocationX: float, pickLocationY: float): Layer {
+
+    let pickedLayer = null
+    for (const viewKeyframeLayer of viewKeyframe.layers) {
+
+      const layer = viewKeyframeLayer.layer
+
+      if (!Layer.isVisible(layer) || !VectorLayer.isVectorLayer(layer)) {
+        continue
+      }
+
+      const vectorLayer = <VectorLayer>layer
+
+      this.clearWindow(canvasWindow)
+
+      this.canvasRender.setContext(canvasWindow)
+
+      this.drawingVectorLayer.drawBackground(
+        vectorLayer,
+        viewKeyframeLayer.vectorLayerKeyframe.geometry,
+        documentData,
+        Layer.isSelected(layer),
+        false,
+        false,
+        false
+      )
+
+      this.drawingVectorLayer.drawForeground(
+        vectorLayer,
+        viewKeyframeLayer.vectorLayerKeyframe.geometry,
+        documentData,
+        false,
+        false,
+        false
+      )
+
+      this.canvasRender.pickColor(this.tempColor4, pickLocationX, pickLocationY)
+
+      if (this.tempColor4[3] > 0.0) {
+
+        pickedLayer = layer
+        break
+      }
+    }
+
+    return pickedLayer
+  }
+
+  // Draw path
+
+  collectDrawPaths(documentData: DocumentData) {
+
+    this.drawPathCollecting.collectDrawPaths(
+      this.drawPathContext,
+      documentData,
+      this.currentViewKeyframe
+    )
+
+    this.lazy_DrawPathContext.steps = this.drawPathContext.steps
+  }
+
+  drawDrawPaths(canvasWindow: CanvasWindow, drawPathContext: DrawPathContext, clearState: boolean, transformWindow: CanvasWindow = null) {
+
+    const startTime = Platform.getCurrentTime()
+    const documentData = drawPathContext.documentData
+    const isFullRendering = drawPathContext.isFullRendering()
+    const isExporting = drawPathContext.isExporting()
+    const isIncremental = drawPathContext.isIncremental()
+    const isEditMode = drawPathContext.isEditMode()
+
+    if (transformWindow == null) {
+
+      transformWindow = this.appView.mainWindow
+    }
+
+    let bufferCanvasWindow = canvasWindow
+
+    if (clearState) {
+
+      drawPathContext.clearDrawingStates()
+
+      drawPathContext.bufferStack.push(canvasWindow)
+
+      this.canvasRender.setContext(canvasWindow)
+    }
+    else {
+
+      bufferCanvasWindow = drawPathContext.bufferStack.pop()
+
+      this.canvasRender.setContext(bufferCanvasWindow)
+    }
+
+    if (this.drawPath_logging) {
+
+      console.debug('  DrawPath start clearState', clearState)
+    }
+
+    for (let i = drawPathContext.startIndex; i <= drawPathContext.endIndex; i++) {
+
+      const drawPathStep = drawPathContext.steps[i]
+
+      drawPathContext.lastDrawPathIndex = i
+
+      const viewKeyFrameLayer = drawPathStep.viewKeyframeLayer
+      const layer = viewKeyFrameLayer ? viewKeyFrameLayer.layer : null
+
+      if (this.drawPath_logging) {
+
+        console.debug('  DrawPath', i, drawPathStep._debugText, layer ? layer.name : '', 'stack:', drawPathContext.bufferStack.length)
+      }
+
+      if (drawPathStep.operationType == DrawPathOperationTypeID.beginDrawing) {
+
+        if (!isExporting) {
+
+          this.clearWindow(canvasWindow)
+        }
+
+        // transformWindow.copyTransformTo(canvasWindow)
+        // this.canvasRender.setTransform(canvasWindow)
+        this.canvasRender.copyTransformFromWindow(transformWindow)
+      }
+      else if (drawPathStep.operationType == DrawPathOperationTypeID.drawForeground
+        || drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
+
+        if (isExporting && !layer.isRenderTarget) {
+
+          continue
+        }
+        else if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
+
+          continue
+        }
+
+        // Draw layer to current buffer
+        this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep)
+
+        if (drawPathStep.operationType == DrawPathOperationTypeID.drawForeground) {
+
+          if (isFullRendering) {
+
+            // GPU rendering
+            if (VectorLayer.isVectorLayer(layer)) {
+
+              transformWindow.copyTransformTo(this.appView.drawGPUWindow)
+              this.appView.drawGPUWindow.viewScale *= (this.appView.drawGPUWindow.width / transformWindow.width)
+
+              this.renderingVectorLayer.renderForeground_VectorLayer(
+                this.appView.drawGPUWindow,
+                viewKeyFrameLayer,
+                documentData,
+                isEditMode,
+                drawPathContext.isModalToolRunning)
             }
           }
           else {
 
-            if (this.toolContext.operationUnitID == OperationUnitID.linePoint) {
-
-              if (drawStrokes) {
-
-                this.drawVectorLineStroke(line, lineColor, widthRate, 0.0, useAdjustingLocation, false);
-              }
-
-              if (drawPoints) {
-
-                this.drawVectorLinePoints(line, lineColor, useAdjustingLocation);
-              }
-            }
-            else if (this.toolContext.operationUnitID == OperationUnitID.line
-              || this.toolContext.operationUnitID == OperationUnitID.lineSegment) {
-
-              if (drawStrokes) {
-
-                let color: Vec3;
-                if ((line.isSelected && line.modifyFlag != VectorLineModifyFlagID.selectedToUnselected)
-                  || line.modifyFlag == VectorLineModifyFlagID.unselectedToSelected) {
-
-                  color = this.drawStyle.selectedVectorLineColor;
-                }
-                else {
-
-                  color = lineColor;
-                }
-
-                let lineWidthBolding = (line.isCloseToMouse ? 2.0 : 0.0);
-
-                this.drawVectorLineStroke(line, color, widthRate, lineWidthBolding, useAdjustingLocation, false);
-              }
-            }
+            // CPU drawing
+            this.drawForeground(
+              viewKeyFrameLayer,
+              documentData,
+              isExporting,
+              drawPathContext.isModalToolRunning,
+              isEditMode
+            )
           }
         }
+        else if (drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
+
+          this.drawBackground(
+            viewKeyFrameLayer,
+            documentData,
+            isExporting,
+            drawPathContext.isModalToolRunning,
+            isEditMode
+          )
+        }
+
+        this.canvasRender.setCompositeOperation('source-over')
+      }
+      else if (drawPathStep.operationType == DrawPathOperationTypeID.prepareRendering) {
+
+        if (isFullRendering) {
+
+          this.renderingVectorLayer.renderClearBuffer(this.appView.drawGPUWindow)
+        }
+      }
+      else if (drawPathStep.operationType == DrawPathOperationTypeID.flushRendering) {
+
+        if (isFullRendering) {
+
+          this.canvasRender.setContext(bufferCanvasWindow)
+
+          this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep)
+
+          this.drawFullWindowImage(bufferCanvasWindow, this.appView.drawGPUWindow)
+
+          this.canvasRender.setCompositeOperation('source-over')
+        }
+      }
+      else if (drawPathStep.operationType == DrawPathOperationTypeID.prepareBuffer) {
+
+        if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
+
+          continue
+        }
+
+        // Prepare buffer
+
+        const buffer = drawPathStep.getBuffer()
+
+        drawPathContext.bufferStack.push(bufferCanvasWindow)
+
+        bufferCanvasWindow = buffer.canvasWindow
+
+        this.canvasRender.setContext(bufferCanvasWindow)
+        this.clearWindow(bufferCanvasWindow)
+
+        // transformWindow.copyTransformTo(bufferCanvasWindow)
+        // this.canvasRender.setTransform(bufferCanvasWindow)
+        this.canvasRender.copyTransformFromWindow(transformWindow)
+      }
+      else if (drawPathStep.operationType == DrawPathOperationTypeID.flushBuffer) {
+
+        if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
+
+          continue
+        }
+
+        // Flush buffered image to upper buffer
+
+        const before_BufferCanvasWindow = drawPathContext.bufferStack.pop()
+
+        this.canvasRender.setContext(before_BufferCanvasWindow)
+
+        this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep)
+
+        this.drawFullWindowImage(before_BufferCanvasWindow, bufferCanvasWindow)
+
+        //this.canvasRender.setContext(before_BufferCanvasWindow)
+        //this.canvasRender.resetTransform()
+        //this.canvasRender.drawImage(bufferCanvasWindow.canvas
+        //    , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height
+        //    , 0, 0, before_BufferCanvasWindow.width, before_BufferCanvasWindow.height)
+
+        //this.canvasRender.setTransform(before_BufferCanvasWindow)
+
+        bufferCanvasWindow = before_BufferCanvasWindow
+      }
+
+      const lastTime = Platform.getCurrentTime()
+
+      if ((isIncremental && lastTime - startTime >= drawPathContext.lazyProcess.maxTime)
+        || i == drawPathContext.endIndex) {
+
+        drawPathContext.bufferStack.push(bufferCanvasWindow)
+        break
       }
     }
   }
 
-  protected drawVectorLineStroke(stroke: VectorStroke, color: Vec4, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean, isExporting: boolean) {
+  private drawDrawPaths_isLayerDrawTarget(layer: Layer, currentLayerOnly: boolean) {
 
-    if (!isExporting && !this.isStrokeInViewRectangle(stroke)
-      //&& this.toolEnv.isShiftKeyPressing() // for clipping test
-    ) {
-      return;
-    }
+    if (currentLayerOnly) {
 
-    this.canvasRender.setStrokeColorV(color);
-
-    this.drawVectorLineSegment(stroke, 0, stroke.points.length - 1, strokeWidthBiasRate, strokeWidthBolding, useAdjustingLocation);
-  }
-
-  protected drawVectorLinePoints(stroke: VectorStroke, color: Vec4, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
-
-    if (!this.isStrokeInViewRectangle(stroke)) {
-      return;
-    }
-
-    this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
-
-    // make color darker or lighter than original to visible on line color
-    ColorLogic.rgbToHSVv(this.tempEditorLinePointColor1, color);
-    if (this.tempEditorLinePointColor1[2] > 0.5) {
-
-      this.tempEditorLinePointColor1[2] -= this.drawStyle.linePointVisualBrightnessAdjustRate;
+      if (!this.isdrawTargetForCurrentLayerOnly(layer)) {
+        return false
+      }
     }
     else {
 
-      this.tempEditorLinePointColor1[2] += this.drawStyle.linePointVisualBrightnessAdjustRate;
-    }
-    ColorLogic.hsvToRGBv(this.tempEditorLinePointColor2, this.tempEditorLinePointColor1);
-
-    this.tempEditorLinePointColor2[3] = color[3];
-
-    for (let point of stroke.points) {
-
-      this.drawVectorLinePoint(point, this.tempEditorLinePointColor2, useAdjustingLocation);
-    }
-  }
-
-  protected lineWidthAdjust(width: float) {
-
-    //return Math.floor(width * 5) / 5;
-    return width;
-  }
-
-  protected drawVectorLineFill(line: VectorStroke, color: Vec4, useAdjustingLocation: boolean, isFillContinuing: boolean) {
-
-    if (line.points.length <= 1) {
-      return;
-    }
-
-    if (!isFillContinuing) {
-
-      this.canvasRender.setLineCap(CanvasRenderLineCap.round)
-      this.canvasRender.beginPath()
-      this.canvasRender.setFillColorV(color);
-    }
-
-    let startIndex = 0;
-    let endIndex = line.points.length - 1;
-
-    // search first visible point
-    let firstIndex = -1;
-    for (let i = startIndex; i <= endIndex; i++) {
-
-      let point = line.points[i];
-
-      if (point.modifyFlag != LinePointModifyFlagID.delete) {
-
-        firstIndex = i;
-        break;
+      if (!Layer.isVisible(layer)) {
+        return false
       }
     }
 
-    if (firstIndex == -1) {
+    return true
+  }
 
-      return;
-    }
+  private drawDrawPaths_setCompositeOperation(drawPathContext: DrawPathContext, drawPathStep: DrawPathStep) {
 
-    // set first location
-    let firstPoint = line.points[firstIndex];
-    let firstLocation = (useAdjustingLocation ? firstPoint.adjustingLocation : firstPoint.location);
-    if (isFillContinuing) {
+    if (!drawPathContext.currentLayerOnly) {
 
-      this.canvasRender.lineTo(firstLocation[0], firstLocation[1]);
+      this.canvasRender.setCompositeOperation(drawPathStep.compositeOperation)
     }
     else {
 
-      this.canvasRender.moveTo(firstLocation[0], firstLocation[1]);
-    }
-
-    let currentLineWidth = this.lineWidthAdjust(firstPoint.lineWidth);
-    this.canvasRender.setStrokeWidth(currentLineWidth);
-
-    for (let i = 1; i < line.points.length; i++) {
-
-      let point = line.points[i];
-
-      if (point.modifyFlag == LinePointModifyFlagID.delete) {
-
-        continue;
-      }
-
-      let location = (useAdjustingLocation ? point.adjustingLocation : point.location);
-      this.canvasRender.lineTo(location[0], location[1]);
-    }
-
-    if (!line.continuousFill) {
-
-      this.canvasRender.fill();
+      this.canvasRender.setCompositeOperation('source-over')
     }
   }
 
-  protected drawVectorLineSegment(line: VectorStroke, startIndex: int, endIndex: int, strokeWidthBiasRate: float, strokeWidthBolding: float, useAdjustingLocation: boolean) { // @implements MainEditorDrawer
+  isdrawTargetForCurrentLayerOnly(layer: Layer) {
 
-    if (line.points.length < 2) {
-      return;
-    }
-
-    //line.points[0].lengthFrom = 0.0;
-    //line.points[0].lengthTo = 0.5;
-    //line.points[line.points.length - 2].lineWidth = 2.3;
-    //line.points[line.points.length - 2].lengthFrom = 0.3;
-    //line.points[line.points.length - 2].lengthTo = 0.6;
-
-    this.canvasRender.setLineCap(CanvasRenderLineCap.round)
-
-    // let firstPoint = line.points[startIndex];
-    let currentLineWidth = -1.0;
-
-    let strokeStarted = false;
-    let drawingRemainging = false;
-
-    for (let pointIndex = startIndex; pointIndex < endIndex;) {
-
-      let fromPoint = line.points[pointIndex];
-      let fromLocation = (useAdjustingLocation ? fromPoint.adjustingLocation : fromPoint.location);
-      let toPoint = line.points[pointIndex + 1];
-      let toLocation = (useAdjustingLocation ? toPoint.adjustingLocation : toPoint.location);
-
-      let lineWidth = (useAdjustingLocation ? fromPoint.adjustingLineWidth : fromPoint.lineWidth);
-      // let isVisibleWidth = (lineWidth > 0.0);
-      //let isVisibleSegment = (fromPoint.lengthFrom != 0.0 || fromPoint.lengthTo != 0.0);
-
-      let lengthFrom = (useAdjustingLocation ? fromPoint.adjustingLengthFrom : 1.0);
-      let lengthTo = (useAdjustingLocation ? fromPoint.adjustingLengthTo : 0.0);
-
-      if (lineWidth != currentLineWidth) {
-
-        if (drawingRemainging) {
-
-          this.canvasRender.stroke();
-
-          strokeStarted = false;
-          drawingRemainging = false;
-        }
-
-        this.canvasRender.setStrokeWidth(lineWidth * strokeWidthBiasRate + this.getCurrentViewScaleLineWidth(strokeWidthBolding));
-        currentLineWidth = lineWidth;
-      }
-
-      if (lengthFrom == 1.0) {
-
-        // draw segment's full length
-        if (!strokeStarted) {
-
-          this.canvasRender.beginPath();
-          this.canvasRender.moveTo(fromLocation[0], fromLocation[1]);
-        }
-
-        this.canvasRender.lineTo(toLocation[0], toLocation[1]);
-        strokeStarted = true;
-        drawingRemainging = true;
-      }
-      else {
-
-        // draw segment's from-side part
-        if (lengthFrom > 0.0) {
-
-          if (!strokeStarted) {
-
-            this.canvasRender.beginPath();
-            this.canvasRender.moveTo(fromLocation[0], fromLocation[1]);
-          }
-
-          vec3.lerp(this.toLocation, fromLocation, toLocation, lengthFrom);
-          this.canvasRender.lineTo(this.toLocation[0], this.toLocation[1]);
-          this.canvasRender.stroke();
-          strokeStarted = false;
-          drawingRemainging = false;
-        }
-
-        // draw segment's to-side part
-        if (lengthTo > 0.0 && lengthTo < 1.0) {
-
-          if (drawingRemainging) {
-
-            this.canvasRender.stroke();
-          }
-
-          vec3.lerp(this.fromLocation, fromLocation, toLocation, lengthTo);
-          this.canvasRender.beginPath();
-          this.canvasRender.moveTo(this.fromLocation[0], this.fromLocation[1]);
-          this.canvasRender.lineTo(toLocation[0], toLocation[1]);
-          strokeStarted = true;
-          drawingRemainging = true;
-        }
-      }
-
-      pointIndex++;
-    }
-
-    if (drawingRemainging) {
-
-      this.canvasRender.stroke();
-    }
-  }
-
-  protected drawVectorLinePoint(point: VectorPoint, color: Vec4, useAdjustingLocation: boolean) {
-
-    let viewScale = this.canvasRender.getViewScale();
-
-    let radius = this.drawStyle.generalLinePointRadius / viewScale;
-
-    let location: Vec3;
-
-    if (useAdjustingLocation) {
-
-      location = point.adjustingLocation;
-    }
-    else {
-
-      location = point.location;
-    }
-
-    if (!this.canvasRender.isInViewRectangle(location[0], location[1], location[0], location[1], radius)) {
-      return;
-    }
-
-    if (point.isSelected) {
-
-      radius = this.drawStyle.selectedLinePointRadius / viewScale;
-      this.canvasRender.setStrokeColorV(this.drawStyle.selectedVectorLineColor);
-      this.canvasRender.setFillColorV(this.drawStyle.selectedVectorLineColor);
-    }
-    else {
-
-      this.canvasRender.setStrokeColorV(color);
-      this.canvasRender.setFillColorV(color);
-    }
-
-    // this.canvasRender.beginPath()
-    // this.canvasRender.circle(location[0], location[1], radius);
-    // this.canvasRender.fill();
-
-    this.canvasRender.setStrokeWidth(radius * 2);
-    this.canvasRender.beginPath();
-    this.canvasRender.moveTo(location[0], location[1]);
-    this.canvasRender.lineTo(location[0] + 0.1, location[1]);
-    this.canvasRender.stroke();
-  }
-
-  protected drawEditLineStroke(line: VectorStroke) {
-
-    this.drawVectorLineStroke(line, this.drawStyle.editingLineColor, 1.0, 2.0, false, false);
-  }
-
-  protected drawEditLinePoints(stroke: VectorStroke, color: Vec4) {
-
-    if (!this.isStrokeInViewRectangle(stroke)) {
-      return;
-    }
-
-    this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
-
-    this.canvasRender.setStrokeColorV(color);
-    this.canvasRender.setFillColorV(color);
-
-    for (let point of stroke.points) {
-
-      this.drawVectorLinePoint(point, color, false);
-    }
-  }
-
-  protected getLineColor(layer: VectorLayer, documentData: DocumentData, env: ToolEnvironment, hideWhenEditMode: boolean) {
-
-    let color: Vec4;
-    if (layer.drawLineType == DrawLineTypeID.layerColor) {
-
-      color = layer.layerColor;
-    }
-    else if (layer.drawLineType == DrawLineTypeID.paletteColor) {
-
-      let paletteColor = documentData.paletteColors[layer.line_PaletteColorIndex];
-      color = paletteColor.color;
-    }
-    else {
-
-      color = layer.layerColor;
-    }
-
-    if (hideWhenEditMode && env.isEditMode()) {
-
-      vec4.copy(this.editOtherLayerLineColor, color);
-      this.editOtherLayerLineColor[3] *= env.drawStyle.editModeOtherLayerAlphaAdjustRate;
-
-      color = this.editOtherLayerLineColor;
-    }
-
-    return color;
-  }
-
-  protected getFillColor(layer: VectorLayer, documentData: DocumentData, env: ToolEnvironment, hideWhenEditMode: boolean) {
-
-    let color: Vec4;
-    if (layer.fillAreaType == FillAreaTypeID.fillColor) {
-
-      color = layer.fillColor;
-    }
-    else if (layer.fillAreaType == FillAreaTypeID.paletteColor) {
-
-      let paletteColor = documentData.paletteColors[layer.fill_PaletteColorIndex];
-      color = paletteColor.color;
-    }
-    else {
-
-      color = layer.fillColor;
-    }
-
-    if (hideWhenEditMode && env.isEditMode()) {
-
-      vec4.copy(this.editOtherLayerLineColor, color);
-      this.editOtherLayerLineColor[3] *= env.drawStyle.editModeOtherLayerAlphaAdjustRate;
-
-      color = this.editOtherLayerLineColor;
-    }
-
-    return color;
-  }
-
-  protected getCurrentViewScaleLineWidth(width: float) {
-
-    return width / this.canvasRender.getViewScale();
-  }
-
-  protected getViewScaledSize(width: float) {
-
-    return width / this.canvasRender.getViewScale();
-  }
-
-  protected isStrokeInViewRectangle(stroke: VectorStroke): boolean {
-
-    if (stroke.range == 0.0) {
-
-      return true;
-    }
-
-    if (stroke.points.length == 0) {
-
-      return false;
-    }
-
-    return this.canvasRender.isInViewRectangle(stroke.left, stroke.top, stroke.right, stroke.bottom, stroke.range);
-  }
-
-  protected pickLayer(canvasWindow: CanvasWindow, viewKeyframe: ViewKeyframe, pickLocationX: float, pickLocationY: float): Layer {
-
-    let documentData = this.toolContext.document;
-
-    let pickedLayer = null;
-    for (let viewKeyframeLayer of viewKeyframe.layers) {
-
-      let layer = viewKeyframeLayer.layer;
-
-      if (!Layer.isVisible(layer) || !VectorLayer.isVectorLayer(layer)) {
-        continue;
-      }
-
-      let vectorLayer = <VectorLayer>layer;
-
-      this.clearWindow(canvasWindow);
-
-      this.canvasRender.setContext(canvasWindow);
-
-      this.drawVectorLayer(vectorLayer, viewKeyframeLayer.vectorLayerKeyframe.geometry, documentData, false, false);
-
-      this.canvasRender.pickColor(this.tempColor4, canvasWindow, pickLocationX, pickLocationY);
-
-      if (this.tempColor4[3] > 0.0) {
-
-        pickedLayer = layer;
-        break;
-      }
-    }
-
-    this.drawMainWindow(this.mainWindow, false, false);
-
-    return pickedLayer;
-  }
-
-  protected drawOperatorCursor() {
-
-    this.canvasRender.beginPath();
-
-    this.canvasRender.setStrokeColorV(this.drawStyle.operatorCursorCircleColor);
-    this.canvasRender.setStrokeWidth(this.getCurrentViewScaleLineWidth(1.0));
-
-    let viewScale = this.getViewScaledSize(1.0);
-
-    this.operatorCurosrLineDashScaled[0] = this.operatorCurosrLineDash[0] * viewScale;
-    this.operatorCurosrLineDashScaled[1] = this.operatorCurosrLineDash[1] * viewScale;
-    this.canvasRender.setLineDash(this.operatorCurosrLineDashScaled);
-
-    this.canvasRender.circle(
-      this.toolContext.operatorCursor.location[0]
-      , this.toolContext.operatorCursor.location[1]
-      , this.toolContext.operatorCursor.radius * viewScale
-    );
-
-    this.canvasRender.stroke();
-
-    let centerX = this.toolContext.operatorCursor.location[0];
-    let centerY = this.toolContext.operatorCursor.location[1];
-    let clossBeginPosition = this.toolContext.operatorCursor.radius * viewScale * 1.5;
-    let clossEndPosition = this.toolContext.operatorCursor.radius * viewScale * 0.5;
-
-    this.canvasRender.drawLine(centerX - clossBeginPosition, centerY, centerX - clossEndPosition, centerY);
-    this.canvasRender.drawLine(centerX + clossBeginPosition, centerY, centerX + clossEndPosition, centerY);
-    this.canvasRender.drawLine(centerX, centerY - clossBeginPosition, centerX, centerY - clossEndPosition);
-    this.canvasRender.drawLine(centerX, centerY + clossBeginPosition, centerX, centerY + clossEndPosition);
-
-    this.canvasRender.setLineDash(this.operatorCurosrLineDashNone);
-  }
-
-  // Rendering
-
-  protected renderClearBuffer(wnd: CanvasWindow) {
-
-    let render = this.drawGPURender;
-
-    render.setViewport(0.0, 0.0, wnd.width, wnd.height);
-
-    render.setDepthTest(true)
-    render.setCulling(true);
-
-    render.clearColorBufferDepthBuffer(0.0, 0.0, 0.0, 0.0);
-  }
-
-  protected renderForeground_VectorLayer(wnd: CanvasWindow, viewKeyFrameLayer: ViewKeyframeLayer, documentData: DocumentData, useAdjustingLocation: boolean) {
-
-    let env = this.toolEnv;
-    let render = this.drawGPURender;
-    let shader = this.lineShader;
-
-    let keyframe = viewKeyFrameLayer.vectorLayerKeyframe;
-    let layer = <VectorLayer>viewKeyFrameLayer.layer;
-
-    render.setViewport(0.0, 0.0, wnd.width, wnd.height);
-
-    // Calculate camera matrix
-    vec3.set(this.lookatLocation, 0.0, 0.0, 0.0);
-    vec3.set(this.upVector, 0.0, 1.0, 0.0);
-    vec3.set(this.eyeLocation, 0.0, 0.0, 1.0);
-
-    mat4.lookAt(this.viewMatrix, this.eyeLocation, this.lookatLocation, this.upVector);
-
-    let aspect = wnd.height / wnd.width;
-    let orthoWidth = wnd.width / 2 / wnd.viewScale * aspect; // TODO: 計算が怪しい（なぜか縦横両方に同じ値を掛けないと合わない）ので後で検討する
-    mat4.ortho(this.projectionMatrix, -orthoWidth, orthoWidth, orthoWidth, -orthoWidth, 0.1, 1.0);
-
-    wnd.caluclateGLViewMatrix(this.tempMat4);
-    mat4.multiply(this.projectionMatrix, this.tempMat4, this.projectionMatrix);
-
-    render.setDepthTest(false)
-    render.setCulling(false);
-
-    render.setShader(shader);
-
-    // Set shader parameters
-    vec3.set(this.modelLocation, 0.0, 0.0, 0.0);
-
-    mat4.identity(this.modelMatrix);
-    mat4.translate(this.modelMatrix, this.modelMatrix, this.modelLocation);
-
-    mat4.multiply(this.modelViewMatrix, this.viewMatrix, this.modelMatrix);
-
-    shader.setModelViewMatrix(this.modelViewMatrix);
-    shader.setProjectionMatrix(this.projectionMatrix);
-
-    let lineColor = this.getLineColor(layer, documentData, env, false);
-
-    //if (env.isEditMode()) {
-    //    vec4.copy(this.editOtherLayerLineColor, lineColor);
-    //    this.editOtherLayerLineColor[3] *= 0.3;
-    //    lineColor = this.editOtherLayerLineColor;
-    //}
-
-    for (let unit of keyframe.geometry.units) {
-
-      for (let group of unit.groups) {
-
-        // Calculate line point buffer data
-
-        if (!group.buffer.isStored) {
-
-          // console.debug(`Calculate line point buffer data`);
-
-          this.logic_GPULine.copyGroupPointDataToBuffer(group, documentData.lineWidthBiasRate, useAdjustingLocation);
-
-          let vertexUnitSize = shader.getVertexUnitSize();
-          let vertexCount = shader.getVertexCount(group.buffer.pointCount, group.buffer.lines.length); // 本当は辺の数だけでよいので若干無駄は生じるが、計算を簡単にするためこれでよいことにする
-
-          this.logic_GPULine.allocateBuffer(group.buffer, vertexCount, vertexUnitSize, render.gl);
-
-          shader.calculateBufferData(group.buffer, this.logic_GPULine);
-
-          if (group.buffer.usedDataArraySize > 0) {
-
-            this.logic_GPULine.bufferData(group.buffer, render.gl);
-          }
-        }
-
-        // Draw lines
-
-        if (group.buffer.isStored) {
-
-          this.lineShader.setBuffers(group.buffer.buffer, lineColor);
-
-          let drawCount = this.lineShader.getDrawArrayTryanglesCount(group.buffer.usedDataArraySize);
-
-          render.drawArrayTryangles(drawCount);
-        }
-      }
-    }
-  }
-
-  // EyesSymmetry support
-
-  protected location2D = vec3.create();
-  protected location3D = vec3.create();
-  protected direction = vec3.create();
-  protected localLocation = vec3.create();
-  protected radiusLocation = vec3.create();
-  protected radiusLocationWorld = vec3.create();
-  protected radiusLocation2D = vec3.create();
-
-  protected drawEditor_EyesSymmetry(render: CanvasRender, env: ToolEnvironment) {
-
-    let vectorLayer: VectorLayer = null;
-
-    for (const item of this.layerWindow.layerWindowItems) {
-
-      if (VectorLayer.isVectorLayerWithOwnData(item.layer)) {
-
-        vectorLayer = <VectorLayer>item.layer;
-
-        if (vectorLayer == null
-          || vectorLayer.eyesSymmetryEnabled == false
-          || vectorLayer.posingLayer == null
-          || !vectorLayer.isVisible
-          || !vectorLayer.isSelected
-        ) {
-          continue;
-        }
-
-        const posingData = vectorLayer.posingLayer.posingData;
-
-        if (!posingData.headLocationInputData.inputDone) {
-          continue;
-        }
-
-        this.toolEnv.posing3DLogic.getEyeSphereLocation(this.eyeLocation, posingData, vectorLayer.eyesSymmetryInputSide);
-        env.posing3DView.calculate2DLocationFrom3DLocation(this.location2D, this.eyeLocation, posingData);
-
-        const eyeSize = this.toolEnv.posing3DLogic.getEyeSphereSize();
-        vec3.transformMat4(this.localLocation, this.eyeLocation, env.posing3DView.viewMatrix);
-        vec3.set(this.direction, eyeSize, 0.0, 0.0);
-        vec3.add(this.radiusLocation, this.localLocation, this.direction);
-        vec3.transformMat4(this.radiusLocationWorld, this.radiusLocation, env.posing3DView.cameraMatrix);
-        env.posing3DView.calculate2DLocationFrom3DLocation(this.radiusLocation2D, this.radiusLocationWorld, posingData);
-        const raduis2D = vec3.distance(this.location2D, this.radiusLocation2D);
-
-        const strokeWidth = this.getCurrentViewScaleLineWidth(1.0);
-
-        render.setStrokeColorV(this.drawStyle.eyesSymmetryGuideColor);
-        render.setStrokeWidth(strokeWidth);
-        render.beginPath();
-        render.circle(this.location2D[0], this.location2D[1], raduis2D);
-        render.stroke();
-      }
-    }
-  }
-
-  // WebGL window
-
-  protected drawPosing3DView(webglWindow: CanvasWindow, layerWindowItems: List<LayerWindowItem>, mainWindow: CanvasWindow, redrawActiveLayerOnly: boolean) {
-
-    let env = this.toolEnv;
-
-    this.posing3DViewRender.setViewport(0.0, 0.0, webglWindow.width, webglWindow.height);
-    this.posing3dView.clear(env);
-
-    mainWindow.copyTransformTo(webglWindow);
-
-    for (let item of layerWindowItems) {
-
-      if (!PosingLayer.isPosingLayer(item.layer)) {
-        continue;
-      }
-
-      let posingLayer = <PosingLayer>item.layer;
-
-      this.posing3dView.prepareDrawingStructures(posingLayer);
-    }
-
-    if (env.currentPosingLayer != null
-      && Layer.isVisible(env.currentPosingLayer)
-      && this.toolContext.mainToolID == MainToolID.posing
-    ) {
-      let posingLayer = env.currentPosingLayer;
-
-      this.posing3dView.drawManipulaters(posingLayer, env);
-    }
-
-    for (let index = layerWindowItems.length - 1; index >= 0; index--) {
-
-      let item = layerWindowItems[index];
-
-      if (!PosingLayer.isPosingLayer(item.layer)) {
-        continue;
-      }
-
-      if (redrawActiveLayerOnly) {
-
-        if (!Layer.isSelected(item.layer)) {
-
-          continue;
-        }
-      }
-      else {
-
-        if (!Layer.isVisible(item.layer)) {
-          continue;
-        }
-      }
-
-
-      let posingLayer = <PosingLayer>item.layer;
-
-      this.posing3dView.drawPosingModel(posingLayer, env);
-    }
-  }
-
-  // Operation UI
-
-  protected drawOperationUIPanel_Layout(canvasWindow: CanvasWindow) {
-
-    const area = this.mainOperationUI_Area;
-
-    area.width = 150; // [px]
-    area.height = 302; // [px]
-
-    area.left = -0.5;
-    area.right = area.left + area.width;
-    area.top = 0.5 + canvasWindow.height - area.height;
-    area.bottom = area.top + area.height;
-
-    const windowBorderRadius = 30; // [px]
-    const windowBorderRadiusUnit = 90 / 10;
-
-    // 外形の計算
-    this.mainOperationUI_PanelBorderPoints = [];
-
-    this.mainOperationUI_PanelBorderPoints.push([area.left, area.top]);
-    this.mainOperationUI_PanelBorderPoints.push([area.right - windowBorderRadius, area.top]);
-
-    for (let r = 90 - windowBorderRadiusUnit; r >= 0; r -= windowBorderRadiusUnit) {
-
-      this.mainOperationUI_PanelBorderPoints.push([
-        area.right - windowBorderRadius + Math.cos(r * Math.PI / 180) * windowBorderRadius,
-        area.top + windowBorderRadius - Math.sin(r * Math.PI / 180) * windowBorderRadius
-      ]);
-    }
-
-    this.mainOperationUI_PanelBorderPoints.push([area.right, area.bottom]);
-    this.mainOperationUI_PanelBorderPoints.push([area.left, area.bottom]);
-
-    LayoutLogic.gridLayout(area, { columns: 2, columnGap: 5, rows: 4 ,rowGap: 5 });
-  }
-
-  protected drawOperationUI(canvasWindow: CanvasWindow) {
-
-    const render = this.canvasRender;
-
-    render.resetTransform();
-
-    render.setStrokeWidth(1.0);
-    render.setStrokeColorV(this.drawStyle.windowBorderColor);
-    render.setFillColorV(this.drawStyle.windowBackGroundColor);
-
-    // 背景
-    render.fillPath(this.mainOperationUI_PanelBorderPoints);
-
-    // 枠線
-    render.strokePath(this.mainOperationUI_PanelBorderPoints);
-
-    // ボタン
-    for (const area of this.mainOperationUI_Area.children) {
-
-      if (area.iconID != -1) {
-
-        if (area.hover) {
-
-          render.setFillColorV(this.drawStyle.layerWindowItemActiveLayerColor);
-          render.fillRoundRect(area.left, area.top, area.width, area.width, 10);
-        }
-
-        // render.strokeRect(area.left, area.top, area.width, area.width);
-        render.setStrokeWidth(3.0);
-        render.strokeRoundRect(area.left, area.top, area.width, area.width, 10);
-
-        const icon = this.mainOperationUI_Icons[area.iconID];
-        render.drawImage(icon.image, 0, 0, 24, 24, area.left, area.top, area.width, area.width);
-      }
-    }
-  }
-
-  // Layer window
-
-  protected layerWindow_CaluculateLayout(wnd: LayerWindow) { // @override
-
-    // layer item buttons
-    wnd.layerWindowLayoutArea.copyRectangle(wnd);
-    wnd.layerWindowLayoutArea.bottom = wnd.height - 1.0;
-
-    // this.layerWindow_CaluculateLayout_CommandButtons(wnd, wnd.layerWindowLayoutArea);
-
-    if (wnd.layerWindowCommandButtons.length > 0) {
-
-      let lastButton = wnd.layerWindowCommandButtons[wnd.layerWindowCommandButtons.length - 1];
-      wnd.layerWindowLayoutArea.top = lastButton.getHeight() + 1.0;// lastButton.bottom + 1.0;
-    }
-
-    // layer items
-    this.layerWindow_CaluculateLayout_LayerWindowItem(wnd, wnd.layerWindowLayoutArea);
-  }
-
-  protected layerWindow_CaluculateLayout_LayerWindowItem(wnd: LayerWindow, layoutArea: RectangleLayoutArea) {
-
-    let currentY = layoutArea.top;
-
-    let itemHeight = wnd.layerItemHeight;
-
-    let margine = itemHeight * 0.1;
-    let iconWidth = (itemHeight - margine * 2);
-    let textLeftMargin = itemHeight * 0.3;
-
-    for (let item of wnd.layerWindowItems) {
-
-      item.left = 0.0;
-      item.top = currentY;
-      item.right = wnd.width - 1;
-      item.bottom = currentY + itemHeight - 1;
-
-      item.marginLeft = margine;
-      item.marginTop = margine;
-      item.marginRight = margine;
-      item.marginBottom = margine;
-
-      item.visibilityIconWidth = iconWidth;
-      item.textLeft = item.left + margine + iconWidth + textLeftMargin;
-
-      currentY += itemHeight;
-    }
-
-    wnd.layerItemsBottom = currentY;
-  }
-
-  protected drawLayerWindow(wnd: LayerWindow) {
-
-    // this.canvasRender.setContext(wnd);
-
-    this.drawLayerWindow_LayerItems(wnd);
-
-    // this.drawLayerWindow_LayerWindowButtons(wnd);
-  }
-
-  protected drawLayerWindow_LayerWindowButtons(wnd: LayerWindow) {
-
-    // this.layerWindow_CaluculateLayout_CommandButtons(wnd, wnd.layerWindowLayoutArea);
-
-    if (wnd.layerWindowCommandButtons.length > 0) {
-
-      let button = wnd.layerWindowCommandButtons[0];
-
-      this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
-      this.canvasRender.fillRect(0.0, button.top, wnd.width - 1, button.getHeight());
-    }
-
-    for (let button of wnd.layerWindowCommandButtons) {
-
-      this.drawButtonImage(button);
-    }
-  }
-
-  protected drawLayerWindow_LayerItems(wnd: LayerWindow) {
-
-    for (let item of wnd.layerWindowItems) {
-
-      this.drawLayerWindowItem(item, wnd.layerItemFontSize);
-    }
-  }
-
-  protected drawLayerWindowItem(item: LayerWindowItem, fontSize: float) {
-
-    let layer = item.layer;
-
-    // let left = item.left;
-    // let top = item.top;
-    // let bottom = item.bottom;
-
-    // let itemWidth = item.getWidth();
-    // let itemHeight = item.getHeight();
-
-    // let bottomMargin = itemHeight * 0.3;
-
-    // let depthOffset = 10.0 * item.hierarchyDepth;
-
-    item.isVisible = Layer.isVisible(layer);
-    item.isCurrentLayer = (Layer.isSelected(layer) && layer == this.toolContext.currentLayer);
-    item.isSelected = (Layer.isSelected(layer) && !item.isCurrentLayer);
-
-    /*
-    if (item.isCurrentLayer) {
-
-      this.canvasRender.setFillColorV(this.drawStyle.layerWindowItemActiveLayerColor);
-    }
-    else if (item.isSelected) {
-
-      this.canvasRender.setFillColorV(this.drawStyle.layerWindowItemSelectedColor);
-    }
-    else {
-
-      this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
-    }
-    this.canvasRender.fillRect(left, top, itemWidth, itemHeight);
-
-    // Visible/Unvisible icon
-    let srcImage = this.systemImage.image;
-    let iconIndex = (Layer.isVisible(item.layer) ? 0.0 : 1.0);
-    let srcWidth = srcImage.width * 0.125;
-    let srcHeight = srcImage.height * 0.125;
-    let srcX = srcWidth * iconIndex;
-    let srcY = srcImage.height * 0.25;
-    let dstX = item.marginLeft;
-    let dstY = top + item.marginTop;
-    let dstWidth = item.visibilityIconWidth;
-    let dstHeigh = item.visibilityIconWidth;
-    this.canvasRender.drawImage(this.systemImage.image.imageData
-      , srcX, srcY, srcWidth, srcHeight
-      , dstX, dstY, dstWidth, dstHeigh);
-
-    // Text
-    this.canvasRender.setFontSize(fontSize);
-    this.canvasRender.setFillColor(0.0, 0.0, 0.0, 1.0);
-    this.canvasRender.fillText(layer.name, item.textLeft + depthOffset, bottom - bottomMargin);
-    */
-  }
-
-  // Timeline window
-
-  protected drawTimeLineWindow_CommandButtons(wnd: TimeLineWindow, animationPlaying: boolean) {
-
-    // Play / Stop
-    {
-      let srcX = 0;
-      let srcY = 196;
-      let srcW = 128;
-      let srcH = 128;
-      let dstW = 45;
-      let dstH = 45;
-      let dstX = wnd.getTimeLineLeft() / 2 - dstW / 2 + 1;
-      let dstY = wnd.height / 2 - dstH / 2 + 1;
-
-      if (animationPlaying) {
-
-        srcX = 128;
-      }
-
-      this.canvasRender.drawImage(this.systemImage.image.imageData, srcX, srcY, srcW, srcH, dstX, dstY, dstW, dstH);
-    }
-  }
-
-  protected drawTimeLineWindow_TimeLine(wnd: TimeLineWindow, documentData: DocumentData, viewKeyframes: List<ViewKeyframe>, currentVectorLayer: VectorLayer) {
-
-    let aniSetting = documentData.animationSettingData;
-
-    let left = wnd.getTimeLineLeft();
-    let right = wnd.getTimeLineRight();
-    let bottom = wnd.height;
-    let frameUnitWidth = wnd.getFrameUnitWidth(aniSetting);
-
-    let frameNumberHeight = 16.0;
-    let frameLineBottom = wnd.height - 1.0 - frameNumberHeight;
-    let frameLineHeight = 10.0;
-    let secondFrameLineHeight = 30.0;
-
-    // Current frame
-
-    let currentFrameX = left - aniSetting.timeLineWindowViewLocationX + aniSetting.currentTimeFrame * frameUnitWidth;
-    this.canvasRender.setStrokeWidth(1.0);
-    this.canvasRender.setFillColorV(this.drawStyle.timeLineCurrentFrameColor);
-    this.canvasRender.fillRect(currentFrameX, 0.0, frameUnitWidth, bottom);
-
-    //aniSetting.maxFrame = 60;
-    //aniSetting.loopStartFrame = 10;
-    //aniSetting.loopEndFrame = 24;
-
-    // Document keyframes
-
-    let minFrame = wnd.getFrameByLocation(left, aniSetting);
-    if (minFrame < 0) {
-      minFrame = 0;
-    }
-
-    let maxFrame = wnd.getFrameByLocation(right, aniSetting);
-    if (maxFrame > aniSetting.maxFrame) {
-      maxFrame = aniSetting.maxFrame;
-    }
-
-    this.canvasRender.setStrokeWidth(1.0);
-    this.canvasRender.setFillColorV(this.drawStyle.timeLineKeyFrameColor);
-
-    for (let viewKeyframe of viewKeyframes) {
-
-      let frame = viewKeyframe.frame;
-
-      if (frame < minFrame) {
-        continue;
-      }
-
-      if (frame > maxFrame) {
-        break;
-      }
-
-      let frameX = wnd.getFrameLocation(frame, aniSetting);
-      this.canvasRender.fillRect(frameX, 0.0, frameUnitWidth - 1.0, frameLineBottom);
-    }
-
-    // Loop part
-    this.canvasRender.setFillColorV(this.drawStyle.timeLineOutOfLoopingColor);
-    {
-      let frameX = wnd.getFrameLocation(aniSetting.loopStartFrame, aniSetting);
-      if (frameX > left) {
-
-        this.canvasRender.fillRect(left, 0.0, frameX - left, bottom);
-      }
-    }
-    {
-      let frameX = wnd.getFrameLocation(aniSetting.loopEndFrame, aniSetting);
-      if (frameX < right) {
-
-        this.canvasRender.fillRect(frameX, 0.0, right - frameX, bottom);
-      }
-    }
-
-    // Layer keyframes
-
-    this.canvasRender.setStrokeWidth(1.0);
-    this.canvasRender.setFillColorV(this.drawStyle.timeLineLayerKeyFrameColor);
-
-    if (currentVectorLayer != null) {
-
-      let viewKeyFrame = ViewKeyframe.findViewKeyframe(viewKeyframes, aniSetting.currentTimeFrame);
-      let layerIndex = -1;
-      if (viewKeyFrame != null) {
-
-        layerIndex = ViewKeyframe.findViewKeyframeLayerIndex(viewKeyFrame, currentVectorLayer);
-      }
-
-      if (layerIndex != -1) {
-
-        for (let viewKeyframe of viewKeyframes) {
-
-          let frame = viewKeyframe.frame;
-
-          if (frame < minFrame) {
-            continue;
-          }
-
-          if (frame > maxFrame) {
-            break;
-          }
-
-          let viewKeyFrameLayer = viewKeyframe.layers[layerIndex];
-
-          if (viewKeyFrameLayer.vectorLayerKeyframe.frame == frame) {
-
-            let frameX = wnd.getFrameLocation(frame, aniSetting);
-            this.canvasRender.fillRect(frameX + 2.0, 0.0, frameUnitWidth - 5.0, frameLineBottom);
-          }
-        }
-      }
-    }
-
-    // Left panel
-
-    this.canvasRender.setGlobalAlpha(1.0);
-
-    this.canvasRender.setStrokeWidth(1.0);
-    this.canvasRender.setStrokeColorV(this.drawStyle.timeLineUnitFrameColor);
-    this.canvasRender.drawLine(left, 0.0, left, wnd.height);
-
-    // Frame measure
-    {
-      let x = left;
-      for (let frame = minFrame; frame <= maxFrame; frame++) {
-
-        if (frame % aniSetting.animationFrameParSecond == 0 || frame == maxFrame) {
-
-          this.canvasRender.drawLine(x, frameLineBottom - secondFrameLineHeight, x, frameLineBottom);
-        }
-
-        this.canvasRender.drawLine(x, frameLineBottom - frameLineHeight, x, frameLineBottom);
-
-        x += frameUnitWidth;
-      }
-    }
-
-    this.canvasRender.drawLine(left, frameLineBottom, right, frameLineBottom);
-  }
-
-  // PaletteSelector window
-
-  protected paletteSelector_CaluculateLayout() {
-
-    this.paletteSelector_CaluculateLayout_CommandButtons();
-
-    this.paletteSelector_CaluculateLayout_PaletteItems();
-  }
-
-  private paletteSelector_CaluculateLayout_CommandButtons() {
-
-    let wnd = this.paletteSelectorWindow;
-    let context = this.toolContext;
-    let env = this.toolEnv;
-
-    let x = 0.0;
-    let y = 0.0;
-    let unitWidth = wnd.buttonWidth * wnd.buttonScale;
-    let unitHeight = wnd.buttonHeight * wnd.buttonScale;
-
-    for (let layoutArea of wnd.commandButtonAreas) {
-
-      layoutArea.left = x;
-      layoutArea.top = y;
-      layoutArea.right = x + unitWidth - 1;
-      layoutArea.bottom = y + unitHeight - 1;
-
-      x += unitWidth;
-    }
-
-    wnd.commandButtonsBottom = y + unitHeight + wnd.buttonBottomMargin;
-  }
-
-  private paletteSelector_CaluculateLayout_PaletteItems() {
-
-    let wnd = this.paletteSelectorWindow;
-    let context = this.toolContext;
-    let env = this.toolEnv;
-
-    let x = wnd.leftMargin;
-    let y = wnd.commandButtonsBottom;
-    let itemWidth = wnd.itemWidth * wnd.itemScale;
-    let itemHeight = wnd.itemHeight * wnd.itemScale;
-
-    let viewWidth = wnd.width;
-
-    wnd.itemAreas = new List<RectangleLayoutArea>();
-
-    for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
-
-      let layoutArea = new RectangleLayoutArea();
-      layoutArea.index = paletteColorIndex;
-      layoutArea.left = x;
-      layoutArea.top = y;
-      layoutArea.right = x + itemWidth + wnd.itemRightMargin - 1;
-      layoutArea.bottom = y + itemHeight + wnd.itemBottomMargin - 1;
-      wnd.itemAreas.push(layoutArea);
-
-      x += itemWidth + wnd.itemRightMargin;
-
-      if (x + itemWidth >= viewWidth - wnd.rightMargin) {
-
-        x = wnd.leftMargin;
-        y += itemHeight + wnd.itemBottomMargin;
-      }
-    }
-  }
-
-  protected drawPaletteSelectorWindow_CommandButtons(wnd: PaletteSelectorWindow) {
-
-    for (let layoutArea of wnd.commandButtonAreas) {
-
-      let isSelected = (<int>wnd.currentTargetID == layoutArea.index);
-
-      this.uiPaletteSelectorWindowRef.setCommandButtonState(layoutArea.index - 1, isSelected);
-
-      // this.drawButtonBackground(layoutArea, isSelected);
-
-      // this.drawButtonImage(layoutArea);
-    }
-  }
-
-  protected drawPaletteSelectorWindow_PaletteItems(wnd: PaletteSelectorWindow, documentData: DocumentData, currentVectorLayer: VectorLayer) {
-
-    // this.canvasRender.setContext(wnd);
-
-    // let viewWidth = wnd.width;
-
-    let currentPaletteColorIndex = -1;
-    if (currentVectorLayer != null) {
-
-      if (wnd.currentTargetID == PaletteSelectorWindowButtonID.lineColor) {
-
-        currentPaletteColorIndex = currentVectorLayer.line_PaletteColorIndex;
-      }
-      else if (wnd.currentTargetID == PaletteSelectorWindowButtonID.fillColor) {
-
-        currentPaletteColorIndex = currentVectorLayer.fill_PaletteColorIndex;
-      }
-    }
-
-    for (let layoutArea of wnd.itemAreas) {
-
-      let paletteColorIndex = layoutArea.index;
-
-      if (paletteColorIndex > documentData.paletteColors.length) {
-        break;
-      }
-
-      // let x = layoutArea.left;
-      // let y = layoutArea.top;
-      // let itemWidth = layoutArea.getWidth() - wnd.itemRightMargin;
-      // let itemHeight = layoutArea.getHeight() - wnd.itemBottomMargin;
-
-      let paletteColor = documentData.paletteColors[paletteColorIndex];
-
-      // this.canvasRender.setFillColorV(paletteColor.color);
-      // this.canvasRender.setStrokeColorV(this.drawStyle.paletteSelectorItemEdgeColor);
-
-      // this.canvasRender.fillRect(x + 0.5, y + 0.5, itemWidth, itemHeight);
-
-      // this.canvasRender.setStrokeWidth(1.0);
-      // this.canvasRender.drawRectangle(x + 0.5, y + 0.5, itemWidth, itemHeight);
-
-      paletteColor.isSelected = (paletteColorIndex == currentPaletteColorIndex);
-
-      // if (paletteColorIndex == currentPaletteColorIndex) {
-
-      //   this.canvasRender.setStrokeColorV(this.drawStyle.paletteSelectorItemSelectedColor);
-      //   this.canvasRender.setStrokeWidth(2.5);
-      //   this.canvasRender.drawRectangle(x + 0.5 - 2.0, y + 0.5 - 2.0, itemWidth + 4.0, itemHeight + 4.0);
-      // }
-    }
-  }
-
-  // ColorMixer window
-
-  private hsv = vec4.create();
-
-  protected drawColorMixerWindow_SetInputControls() {
-
-    let color = this.getPaletteSelectorWindow_CurrentColor();
-
-    if (color != null) {
-
-      this.uiColorMixerWindowRef.update(color);
-    }
-
-    // let wnd = this.paletteSelectorWindow;
-    // let context = this.toolContext;
-    // let env = this.toolEnv;
-    // let documentData = context.document;
-
-    // let color = this.getPaletteSelectorWindow_CurrentColor();
-
-    // if (color != null) {
-
-    //   this.setColorMixerValue(this.ID.colorMixer_red, color[0]);
-    //   this.setColorMixerValue(this.ID.colorMixer_green, color[1]);
-    //   this.setColorMixerValue(this.ID.colorMixer_blue, color[2]);
-    //   this.setColorMixerValue(this.ID.colorMixer_alpha, color[3]);
-
-    //   ColorLogic.rgbToHSVv(this.hsv, color)
-
-    //   this.setColorMixerValue(this.ID.colorMixer_hue, this.hsv[0]);
-    //   this.setColorMixerValue(this.ID.colorMixer_sat, this.hsv[1]);
-    //   this.setColorMixerValue(this.ID.colorMixer_val, this.hsv[2]);
-    // }
-    // else {
-
-    //   this.setColorMixerValue(this.ID.colorMixer_red, 0.0);
-    //   this.setColorMixerValue(this.ID.colorMixer_green, 0.0);
-    //   this.setColorMixerValue(this.ID.colorMixer_blue, 0.0);
-    //   this.setColorMixerValue(this.ID.colorMixer_alpha, 0.0);
-
-    //   this.setColorMixerValue(this.ID.colorMixer_hue, 0.0);
-    //   this.setColorMixerValue(this.ID.colorMixer_sat, 0.0);
-    //   this.setColorMixerValue(this.ID.colorMixer_val, 0.0);
-    // }
-  }
-
-  // Palette modal drawing
-
-  private colorW = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-  private colorB = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-
-  protected drawPaletteColorMixer(wnd: ColorCanvasWindow) {
-
-    let width = wnd.width;
-    let height = wnd.height;
-    // let left = 0.0;
-    // let top = 0.0;
-    // let right = width - 1.0;
-    // let bottom = height - 1.0;
-    //let minRadius = 10.0;
-    //let maxRadius = width * 1.0;
-
-    // console.log("drawPaletteColorMixer.onOpen", width, height);
-
-    if (width == 0 || height == 0) {
-      return;
-    }
-
-    this.canvasRender.setContext(wnd);
-    this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-    this.canvasRender.setFillColorV(this.colorW);
-    this.canvasRender.fillRect(0.0, 0.0, width, height);
-
-    //this.canvasRender.setBlendMode(CanvasRenderBlendMode.add);
-    //this.canvasRender.setFillRadialGradient(left, top, minRadius, maxRadius, this.color11, this.color12);
-    //this.canvasRender.fillRect(0.0, 0.0, width, height);
-    //this.canvasRender.setFillRadialGradient(right, top, minRadius, maxRadius, this.color21, this.color22);
-    //this.canvasRender.fillRect(0.0, 0.0, width, height);
-    //this.canvasRender.setFillRadialGradient(right, bottom, minRadius, maxRadius, this.color31, this.color32);
-    //this.canvasRender.fillRect(0.0, 0.0, width, height);
-    //this.canvasRender.setFillRadialGradient(left, bottom, minRadius, maxRadius, this.color41, this.color42);
-    //this.canvasRender.fillRect(0.0, 0.0, width, height);
-    //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-
-    //this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-    //this.canvasRender.setFillLinearGradient(left, top, left, bottom, this.colorW, this.colorB);
-    //this.canvasRender.fillRect(0.0, 0.0, width, height);
-
-    this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
-    let divisionW = 40.0;
-    let divisionH = 25.0;
-    let unitWidth = width / divisionW;
-    let unitHeight = height / divisionH;
-
-    let drawX = 0.0;
-
-    for (let x = 0; x <= divisionW; x++) {
-
-      let drawY = 0.0;
-
-      for (let y = 1; y <= divisionH; y++) {
-
-        let h = x / divisionW;
-        let s = 0.0;
-        let v = 0.0;
-        let iy = y / divisionH;
-        if (iy <= 0.5) {
-          s = iy * 2.0;
-          v = 1.0;
-        }
-        else {
-          s = 1.0;
-          v = 1.0 - (iy - 0.5) * 2.0;
-        }
-
-        ColorLogic.hsvToRGB(this.tempColor4, h, s, v);
-        this.tempColor4[3] = 1.0;
-        this.canvasRender.setFillColorV(this.tempColor4);
-        this.canvasRender.fillRect(drawX, drawY, unitWidth + 1.0, unitHeight + 1.0);
-
-        drawY += unitHeight;
-      }
-
-      drawX += unitWidth;
-
-      wnd.isDrawingDone = true;
-    }
-
-    this.canvasRender.setBlendMode(CanvasRenderBlendMode.default);
+    //return (layer != this.selectCurrentLayerAnimationLayer)
+    return (Layer.isSelected(layer))
   }
 }

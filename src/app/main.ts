@@ -1,58 +1,31 @@
-import { StringIsNullOrEmpty, int, long, List } from '../base/conversion';
-
-import {
-  DocumentData, DocumentBackGroundTypeID, DocumentFileType,
-  Layer, LayerTypeID,
-  VectorLayer, FillAreaTypeID, DrawLineTypeID,
-  ImageFileReferenceLayer,
-  PosingModel,
-  GroupLayer,
-  VectorGeometry,
-  VectorStrokeGroup,
-  VectorDrawingUnit,
-  VectorStroke,
-  VectorPoint
-} from '../base/data';
-
-import {
-  MainEditor,
-  MainToolID,
-  ToolContext,
-  ToolEnvironment, ToolDrawingEnvironment,
-  DrawPathContext,
-  DrawPathStep,
-  DrawPathOperationTypeID,
-  TempVirtualLayer,
-  TempVirtualLayerTypeID,
-  ViewKeyframeLayer,
-  DrawPathModeID,
-  OperationUnitID
-} from '../base/tool';
-
-import { CanvasWindow } from '../renders/render2d';
-
-import {
-  Command_Layer_CommandBase,
-  Command_Layer_AddVectorLayerToCurrentPosition,
-  Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition,
-  Command_Layer_AddGroupLayerToCurrentPosition,
-  Command_Layer_AddPosingLayerToCurrentPosition,
-  Command_Layer_AddImageFileReferenceLayerToCurrentPosition,
-  Command_Layer_AddAutoFillLayerToCurrentPosition
-} from '../commands/edit_layer';
-
-import {
-  NewLayerTypeID
-} from '../app/view.class';
-
-import { ImageResource, ModelFile, ModelResource } from '../posing3d/posing3d_view';
-
-import { App_Event } from './event';
-import { Platform } from '../platform/platform';
-import { DocumentLogic } from '../logics/document';
-import { CommandHistory } from '../base/command';
-import { Logic_Edit_Line } from '../logics/edit_vector_layer';
-
+import { float, int, Strings } from './logics/conversion'
+import { AutoFillLayer, DocumentBackGroundTypeID, DocumentData, ImageFileReferenceLayer, Layer, PosingModel,
+  VectorLayer
+} from './document_data'
+import { OperationUnitID } from './tool/constants'
+import { Platform } from '../platform/platform'
+import { CanvasWindow } from './render/render2d'
+import { App_Document } from './document'
+import { DocumentDeserializingLogic } from './document_logic'
+import { App_Drawing } from './drawing'
+import { DrawPathContext, DrawPathModeID, DrawPathOperationTypeID } from './drawing/draw_path'
+import { App_Event, AppEvent_Main_Interface } from './event'
+import { LoadingSystemResourceLogic } from './loading/loading_system_resource'
+import { UserSettingLogic } from './preferences/user_setting'
+import { App_Tool } from './tool'
+import { App_View } from './view'
+import { ViewKeyframeLayer } from './view/view_keyframe'
+import { DeleteKeyframeTypeID } from './dialog/delete_keyframe_command_dialog'
+import { DialogWindow_Main_Interface } from './dialog/dialog'
+import { NewKeyframeTypeID } from './dialog/new_keyframe_command_dialog'
+import { OpenFileDialogTargetID } from './dialog/open_file_dialog'
+import { DocumentContext } from './context/document_context'
+import { ModalToolBase, SubToolID } from './tool/sub_tool'
+import { SubToolContext, SubToolContext_Main_Interface } from './context/subtool_context'
+import { SubToolDrawingContext } from './context/subtool_drawing_context'
+import { Command_Layer_CommandBase } from './commands/edit_layer'
+import { LocalSetting } from './preferences/local_setting'
+import { CanvasRulerOrientation } from './editor/canvas_ruler'
 
 export enum MainProcessStateID {
 
@@ -65,478 +38,290 @@ export enum MainProcessStateID {
   running
 }
 
-export class App_Main extends App_Event implements MainEditor {
+export class App_Main implements SubToolContext_Main_Interface, AppEvent_Main_Interface, DialogWindow_Main_Interface {
 
-  // Main process management
+  appView = new App_View()
+  appDrawing = new App_Drawing()
+  appTool = new App_Tool()
+  appdocument = new App_Document()
+  appEvent = new App_Event()
 
-  mainProcessState = MainProcessStateID.startup;
-  isDeferredWindowResizeWaiting = false;
-  deferredWindowResizeWaitingDuration = 250;
-  deferredWindowResizeWaitingEndTime = 0;
-  lastTime: long = 0;
-  elapsedTime: long = 0;
+  docContext: DocumentContext = null
+  subtoolContext: SubToolContext = null
+  subtoolDrawingContext: SubToolDrawingContext = null
 
-  loadingDocument: DocumentData = null;
-  loadingDocumentImageResources: List<ImageResource> = null;
+  loadingSystemResource = new LoadingSystemResourceLogic()
+  userSetting = new UserSettingLogic()
 
-  // Backward interface implementations
+  mainProcessState = MainProcessStateID.startup
+  isDeferredWindowResizeWaiting = false
+  deferredWindowResizeWaitingDuration = 250
+  deferredWindowResizeWaitingEndTime = 0
+  lastTime = 0
+  elapsedTime = 0
 
-  protected isWhileLoading(): boolean { // @override
+  lastUsedDocumentFilePath: string = null
 
-    return (this.mainProcessState == MainProcessStateID.systemResourceLoading
-      || this.mainProcessState == MainProcessStateID.documentResourceLoading);
-  }
+  isFirstStartup = true
 
-  protected setDefferedWindowResize() { // @override
+  linkSubLogics() {
 
-    this.isDeferredWindowResizeWaiting = true;
-    this.deferredWindowResizeWaitingEndTime = Platform.getCurrentTime() + this.deferredWindowResizeWaitingDuration;
-  }
+    this.appView.link(this.appDrawing.canvasRender, this.appDrawing.drawStyle, this)
 
-  protected isEventDisabled(): boolean { // @override
+    this.appDrawing.link(this.appView)
 
-    if (this.isWhileLoading()) {
-      return true;
-    }
+    this.appTool.link(this.appView, this.appDrawing)
 
-    if (this.isModalShown()) {
-      return true;
-    }
+    this.appdocument.link(this.appView, this.appDrawing, this.appTool, this.userSetting)
 
-    return false;
-  }
+    this.appEvent.link(this.appView, this.appDrawing, this.appTool, this.appdocument, this.userSetting, this)
 
-  protected resetDocument() { // @override
-
-    let documentData = this.createDefaultDocumentData();
-
-    this.initializeContext(documentData);
-
-    this.updateLayerStructure();
-
-    this.setCurrentLayer(null);
-    this.setCurrentFrame(0);
-    this.setCurrentLayer(documentData.rootLayer.childLayers[0]);
-
-    this.setHeaderDefaultDocumentFileName();
-
-    this.toolEnv.setRedrawAllWindows();
-  }
-
-  protected saveDocument() { // @override
-
-    let documentData = this.toolContext.document;
-
-    let filePath = this.getInputElementText(this.ID.fileName);
-
-    if (StringIsNullOrEmpty(filePath)) {
-
-      this.showMessageBox('ファイル名が指定されていません。');
-      return;
-    }
-
-    this.saveDocumentData(filePath, documentData, false);
-
-    this.saveSettings();
-
-    this.showMessageBox('保存しました。');
-  }
-
-  protected updateForLayerProperty() { // @override
-
-    this.updateLayerStructureInternal(true, true, true, true);
-
-    this.prepareDrawPathBuffers();
+    this.loadingSystemResource.link(this.appDrawing.posing3DViewRender, this.appdocument.posing3DModel)
   }
 
   // Initializing devices not depending media resoures
 
   onInitializeSystemDevices() {
 
-    this.loadSettings();
+    this.userSetting.loadSettings()
 
-    this.initializeViewDevices();
+    this.appView.initializeViewDevices()
 
-    this.initializeDrawingDevices();
+    this.appDrawing.initializeDrawingDevices(this.appView.webglWindow, this.appView.drawGPUWindow)
 
-    this.layerWindow_CaluculateLayout(this.layerWindow);
-    //this.subtoolWindow_CaluculateLayout(this.subtoolWindow);
-    this.paletteSelector_CaluculateLayout();
+    this.linkSubLogics()
 
-    this.startLoadingSystemResources();
+    this.startLoadingSystemResources()
   }
 
   // Loading system resources
 
   private startLoadingSystemResources() {
 
-    // Start loading
+    this.loadingSystemResource.startLoadingSystemResources(this.appView.modelFile, this.appView.imageResurces)
 
-    this.loadModels(this.modelFile, './dist/res/' + this.modelFile.fileName);
-
-    for (let imageResource of this.imageResurces) {
-
-      this.loadTexture(imageResource, './dist/res/' + imageResource.fileName);
-    }
-
-    this.mainProcessState = MainProcessStateID.systemResourceLoading;
+    this.mainProcessState = MainProcessStateID.systemResourceLoading
   }
 
   processLoadingSystemResources() {
 
-    // Check loading states
+    // Loading state polling
 
-    if (!this.modelFile.loaded) {
-      return;
-    }
-
-    for (let imageResource of this.imageResurces) {
-
-      if (!imageResource.loaded) {
-        return;
-      }
+    if (this.loadingSystemResource.isLoading()) {
+      return
     }
 
     // Loading finished
 
-    if (this.localSetting.lastUsedFilePaths.length == 0
-      && StringIsNullOrEmpty(this.localSetting.lastUsedFilePaths[0])) {
+    if (this.userSetting.localSetting.lastUsedFilePaths.length == 0) {
 
-      let newDocument = this.createDefaultDocumentData();
+      const documentData = this.appdocument.createDefaultDocumentData()
 
-      this.start(newDocument);
+      this.start(documentData)
     }
     else {
 
-      let lastURL = this.localSetting.lastUsedFilePaths[0];
+      const lastURL = this.userSetting.localSetting.lastUsedFilePaths[0]
 
-      let newDocument = new DocumentData();
-      this.startLoadingDocumentURL(newDocument, lastURL);
+      const documentData = new DocumentData()
+      this.appdocument.loadingDocument.startLoadingDocumentFromURL(documentData, lastURL)
 
-      this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, newDocument);
+      this.mainProcessState = MainProcessStateID.documentJSONLoading
 
-      this.setHeaderDocumentFileName(lastURL);
+      this.appView.headerWindow.setHeaderDocumentFileName(lastURL)
     }
   }
 
   // Loading document resources
 
-  private setDocumentLoadingState(state: MainProcessStateID, documentData: DocumentData) {
+  startReloadDocument(filepath: string) { // @override
 
-    this.mainProcessState = state;
-    this.loadingDocument = documentData;
+    const documentData = new DocumentData()
+
+    this.appdocument.loadingDocument.startLoadingDocumentFromURL(documentData, filepath)
+
+    this.mainProcessState = MainProcessStateID.documentJSONLoading
+    this.lastUsedDocumentFilePath = filepath
   }
 
-  protected startReloadDocument(filepath: string) { // @override
+  startReloadDocumentFromFile(file: File, url: string) { // @override
 
-    let documentData = new DocumentData();
+    if (Strings.isNullOrEmpty(url)) {
 
-    this.startLoadingDocumentURL(documentData, filepath);
-
-    this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, documentData);
-  }
-
-  protected startReloadDocumentFromFile(file: File, url: string) { // @override
-
-    if (StringIsNullOrEmpty(url) && file == null) {
-
-      throw ('both of url and file are null or empty');
+      throw new Error('ERROR 0001:both of url and file are null or empty')
     }
 
-    // Get document type from name
-    let fileType = this.getDocumentFileTypeFromName(url);
+    const isAvailable = this.appdocument.loadingDocument.startLoadingDocumentFromFile(file, url)
 
-    if (fileType == DocumentFileType.none) {
+    if (isAvailable) {
 
-      console.debug('error: not supported file type.');
-      return;
-    }
-
-    if (fileType == DocumentFileType.json && !StringIsNullOrEmpty(url)) {
-
-      let documentData = new DocumentData();
-
-      this.startLoadingDocumentURL(documentData, url);
-
-      this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, documentData);
-    }
-    else if (fileType == DocumentFileType.ora && file != null) {
-
-      let documentData = new DocumentData();
-
-      this.startLoadDocumentOraFile(documentData, file, url);
-
-      this.setDocumentLoadingState(MainProcessStateID.documentJSONLoading, documentData);
+      this.mainProcessState = MainProcessStateID.documentJSONLoading
+      this.lastUsedDocumentFilePath = url
     }
     else {
 
-      console.debug('error: not supported file type.');
-      return;
+      console.debug('error: not supported file type.')
     }
   }
 
-  protected startReloadDocumentFromText(documentData: DocumentData, textData: string, filePath: string) { // @override
+  processLoadingDocumentFile() {
 
-    let data = JSON.parse(textData);
-    this.storeLoadedDocumentJSON(documentData, data, filePath);
-  }
+    if (this.appdocument.loadingDocument.hasErrorOnLoadingDocument()) {
 
-  processLoadingDocumentJSON() {
+      //this.showMessageBox('ドキュメントの読み込みに失敗しました。デフォルトのドキュメントを開きます。')
 
-    if (this.loadingDocument.hasErrorOnLoading) {
+      this.appdocument.loadingDocument.loading_DocumentData = this.appdocument.createDefaultDocumentData()
 
-      //this.showMessageBox('ドキュメントの読み込みに失敗しました。デフォルトのドキュメントを開きます。');
+      this.setHeaderDefaultDocumentFileName()
 
-      this.loadingDocument = this.createDefaultDocumentData();
+      this.mainProcessState = MainProcessStateID.documentResourceLoading
 
-      this.setHeaderDefaultDocumentFileName();
-
-      this.mainProcessState = MainProcessStateID.running;
+      return
     }
 
-    if (!this.loadingDocument.loaded) {
-      return;
+    if (!this.appdocument.loadingDocument.isDocumentLoaded()) {
+      return
     }
 
-    this.fixLoadedDocumentData(this.loadingDocument);
+    this.appdocument.fixLoadedDocumentData(this.appdocument.loadingDocument.loading_DocumentData, this.appView.modelFile)
 
-    this.startLoadingDocumentResources(this.loadingDocument);
+    this.appdocument.loadingDocument.startLoadingDocumentResources(this.appdocument.loadingDocument.loading_DocumentData)
 
-    this.setDocumentLoadingState(MainProcessStateID.documentResourceLoading, this.loadingDocument);
+    this.appdocument.loadingDocument.finishDocumentDataLoading()
+
+    this.mainProcessState = MainProcessStateID.documentResourceLoading
   }
 
   startLoadingDocumentResourcesProcess(document: DocumentData) { // @implements MainEditor
 
-    this.startLoadingDocumentResources(document);
+    this.appdocument.loadingDocument.startLoadingDocumentResources(document)
 
-    this.setDocumentLoadingState(MainProcessStateID.documentResourceLoading, this.loadingDocument);
+    this.mainProcessState = MainProcessStateID.documentResourceLoading
   }
 
   processLoadingDocumentResources() {
 
     // Check loading states
 
-    for (let imageResource of this.loadingDocumentImageResources) {
-
-      if (!imageResource.loaded) {
-        return;
-      }
+    if (this.appdocument.loadingDocument.isDocumentResourceLoading()) {
+      return
     }
 
     // Loading finished
 
-    if (this.toolContext != null && this.toolContext.document != null) {
+    if (this.appdocument.loadingDocument.isDocumentLoading()
+      && this.docContext != null
+      && this.docContext.document != null
+    ) {
 
-      DocumentLogic.releaseDocumentResources(this.toolContext.document, this.drawGPURender.gl);
+      this.appdocument.serializing.releaseDocumentResources(this.docContext.document, this.appDrawing.drawGPURender)
 
-      this.toolContext.document = null;
+      this.docContext.document = null
     }
 
-    this.finishLayerLoading_Recursive(this.loadingDocument.rootLayer);
+    this.appdocument.deserializing.finishResourceLoading(this.appdocument.loadingDocument.loadingResoure_DocumentData)
 
-    this.start(this.loadingDocument);
+    this.start(this.appdocument.loadingDocument.loadingResoure_DocumentData)
 
-    this.loadingDocument == null;
-  }
+    if (!this.isFirstStartup) {
 
-  private startLoadingDocumentResources(document: DocumentData) {
-
-    this.loadingDocumentImageResources = new List<ImageResource>();
-
-    for (let layer of document.rootLayer.childLayers) {
-
-      this.startLoadingDocumentResourcesRecursive(layer, this.loadingDocumentImageResources);
+      this.userSetting.saveSettings()
     }
-  }
-
-  private startLoadingDocumentResourcesRecursive(layer: Layer, loadingDocumentImageResources: List<ImageResource>) {
-
-    if (ImageFileReferenceLayer.isImageFileReferenceLayer(layer)) {
-
-      // Create an image resource
-
-      let ifrLayer = <ImageFileReferenceLayer>layer;
-
-      if (ifrLayer.imageResource == null) {
-
-        ifrLayer.imageResource = new ImageResource();
-      }
-
-      // Load an image file
-
-      let imageResource = ifrLayer.imageResource;
-
-      if (!imageResource.loaded && !StringIsNullOrEmpty(ifrLayer.imageFilePath)) {
-
-        let refFileBasePath = this.localSetting.referenceDirectoryPath;
-
-        if (!StringIsNullOrEmpty(refFileBasePath)) {
-
-          imageResource.fileName = refFileBasePath + '/' + ifrLayer.imageFilePath;
-        }
-        else {
-
-          imageResource.fileName = ifrLayer.imageFilePath;
-        }
-
-        this.loadTexture(imageResource, imageResource.fileName);
-
-        loadingDocumentImageResources.push(imageResource);
-      }
-    }
-
-    for (let chldLayer of layer.childLayers) {
-
-      this.startLoadingDocumentResourcesRecursive(chldLayer, loadingDocumentImageResources);
-    }
-  }
-
-  private loadTexture(imageResource: ImageResource, url: string) {
-
-    let image = new Image();
-
-    imageResource.image.imageData = image;
-
-    image.addEventListener('load',
-      () => {
-        if (imageResource.isGLTexture) {
-          this.posing3DViewRender.initializeImageTexture(imageResource.image);
-        }
-        imageResource.loaded = true;
-        imageResource.image.width = image.width;
-        imageResource.image.height = image.height;
-      }
-    );
-
-    image.src = url;
-  }
-
-  private loadModels(modelFile: ModelFile, url: string) {
-
-    let xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
-    xhr.responseType = 'json';
-
-    xhr.addEventListener('load',
-      () => {
-
-        let data: any;
-        if (xhr.responseType == 'json') {
-          data = xhr.response;
-        }
-        else {
-          data = JSON.parse(xhr.response);
-        }
-
-        for (let modelData of data.static_models) {
-
-          let modelResource = new ModelResource();
-          modelResource.modelName = modelData.name;
-
-          this.posing3DViewRender.initializeModelBuffer(modelResource.model, modelData.vertices, modelData.indices, 4 * modelData.vertexStride); // 4 = size of float
-
-          modelFile.modelResources.push(modelResource);
-          modelFile.modelResourceDictionary[modelData.name] = modelResource;
-        }
-
-        for (let modelData of data.skin_models) {
-
-          modelFile.posingModelDictionary[modelData.name] = this.createPosingModel(modelData);
-        }
-
-        modelFile.loaded = true;
-      }
-    );
-
-    xhr.send();
   }
 
   // Starting ups after loading resources
 
-  protected start(documentData: DocumentData) {
+  start(documentData: DocumentData) {
 
-    this.initializeContext(documentData);
-    this.initializeTools();
-    this.initializeViewState();
+    this.initializeDocumentContext(documentData)
 
-    this.drawPaletteColorMixer(this.colorMixerWindow_colorCanvas);
+    this.appTool.initializeTools()
 
-    this.updateLayerStructureInternal(true, true, false, false);
+    this.appView.initializeViewState()
 
-    this.setCurrentMainTool(MainToolID.drawLine);
+    this.updateLayerStructureInternal(true, true, false, false)
 
-    this.setCurrentOperationUnitID(this.toolContext.operationUnitID);
+    this.appTool.setCurrentOperationUnitID(this.docContext.operationUnitID)
 
-    this.setCurrentLayer(documentData.rootLayer.childLayers[0]);
+    this.appTool.selectLayer(documentData.rootLayer.childLayers[0])
 
-    this.updateLayerStructureInternal(false, false, true, true);
+    this.updateLayerStructureInternal(false, false, true, true)
 
-    this.mainWindow.viewScale = documentData.defaultViewScale;
-    this.mainWindow.viewRotation = 0.0;
-    this.mainWindow.mirrorX = false;
-    this.mainWindow.mirrorY = false;
-    this.viewOperation.copyLastViewLocation(false, this.mainWindow);
+    this.appView.mainWindow.viewScale = documentData.defaultViewScale
+    this.appView.mainWindow.viewRotation = 0.0
+    this.appView.mainWindow.mirrorX = false
+    this.appView.mainWindow.mirrorY = false
 
-    this.toolEnv.updateContext();
+    this.appView.viewOperation.copyLastViewLocation(false, this.appView.mainWindow)
+
+    this.subtoolContext.updateContext()
+
+    if (!Strings.isNullOrEmpty(this.lastUsedDocumentFilePath)) {
+
+      this.appView.headerWindow.setHeaderDocumentFileName(this.lastUsedDocumentFilePath)
+
+      this.userSetting.registerLastUsedFile(this.lastUsedDocumentFilePath)
+
+      this.lastUsedDocumentFilePath = null
+    }
 
     // 初回描画
-    this.resizeWindowsAndBuffers(); // TODO: これをしないとキャンバスの高さが足りなくなる。最初のリサイズのときは高さがなぜか少し小さい。2回リサイズする必要は本来ないはずなのでなんとかしたい。
 
-    this.toolEnv.setLazyRedraw();
+    this.subtoolContext.setLazyRedraw()
 
-    this.updateHeaderButtons();
+    this.appView.ribbonUIWindow.updateTabAndRibbon(this.docContext)
 
-    this.updateFooterMessage();
+    this.resizeWindowsAndBuffers() // TODO: これをしないとキャンバスの高さが足りなくなる。最初のリサイズのときは高さがなぜか少し小さい。2回リサイズする必要は本来ないはずなのでなんとかしたい。
 
-    this.toolEnv.setRedrawAllWindows();
+    this.subtoolContext.setRedrawAllWindows()
 
-    this.setEvents();
+    this.appTool.updateFooterMessage()
 
-    this.mainProcessState = MainProcessStateID.running;
+    this.appEvent.setEvents()
+
+    this.mainProcessState = MainProcessStateID.running
+    this.isFirstStartup = false
   }
 
-  protected initializeContext(documentData: DocumentData) {
+  initializeDocumentContext(documentData: DocumentData) {
 
-    this.toolContext = new ToolContext();
+    this.docContext = new DocumentContext()
+    this.docContext.document = documentData
+    this.docContext.drawStyle = this.appDrawing.drawStyle
+    this.docContext.mainWindow = this.appView.mainWindow
+    this.docContext.posing3DView = this.appDrawing.posing3DView
+    this.docContext.posing3DLogic = this.appdocument.posing3DLogic
+    this.docContext.lazy_DrawPathContext = this.appDrawing.lazy_DrawPathContext
 
-    this.toolContext.mainEditor = this;
-    this.toolContext.drawStyle = this.drawStyle;
-    this.toolContext.commandHistory = new CommandHistory();
+    this.subtoolContext = new SubToolContext(this, this.docContext)
+    this.subtoolDrawingContext = new SubToolDrawingContext(this.appDrawing.editorDrawer, this.appDrawing.canvasRender, this.appDrawing.drawStyle)
 
-    this.toolContext.document = documentData;
+    this.appDrawing.lazy_DrawPathContext.lazyProcess.resetLazyProcess()
 
-    this.toolContext.mainWindow = this.mainWindow;
-    this.toolContext.posing3DView = this.posing3dView;
-    this.toolContext.posing3DLogic = this.posing3DLogic;
-
-    this.toolContext.lazy_DrawPathContext = this.lazy_DrawPathContext;
-
-    this.toolEnv = new ToolEnvironment(this.toolContext);
-    this.toolDrawEnv = new ToolDrawingEnvironment();
-    this.toolDrawEnv.setEnvironment(this, this.canvasRender, this.drawStyle);
-
-    this.lazy_DrawPathContext.lazyProcess.resetLazyDrawProcess();
+    this.appdocument.linkContexts(this.docContext, this.subtoolContext)
+    this.appTool.linkContexts(this.docContext, this.subtoolContext)
+    this.appEvent.linkContexts(this.docContext, this.subtoolContext)
   }
 
-  protected onWindowBlur() { // @override
+  onWindowBlur() { // @override
 
-    // console.debug('Window blur');
+    // console.debug('Window blur')
 
     if (this.mainProcessState == MainProcessStateID.running) {
 
-      this.mainProcessState = MainProcessStateID.pause;
-      // console.debug('  mainProcessState -> pause');
+      this.mainProcessState = MainProcessStateID.pause
+      // console.debug('  mainProcessState -> pause')
     }
   }
 
-  protected onWindowFocus() { // @override
+  onWindowFocus() { // @override
 
-    // console.debug('Window focus');
+    // console.debug('Window focus')
 
     if (this.mainProcessState == MainProcessStateID.pause) {
 
-      this.mainProcessState = MainProcessStateID.running;
-      // console.debug('  mainProcessState -> running');
+      this.mainProcessState = MainProcessStateID.running
+      // console.debug('  mainProcessState -> running')
     }
   }
 
@@ -544,694 +329,326 @@ export class App_Main extends App_Event implements MainEditor {
 
   run() {
 
-    let context = this.toolContext;
-    let env = this.toolEnv;
-
     if (this.isDeferredWindowResizeWaiting
       && Platform.getCurrentTime() > this.deferredWindowResizeWaitingEndTime) {
 
-      this.isDeferredWindowResizeWaiting = false;
+      this.isDeferredWindowResizeWaiting = false
 
-      this.resizeWindowsAndBuffers();
+      this.resizeWindowsAndBuffers()
 
-      this.toolEnv.setRedrawAllWindows();
+      this.subtoolContext.setRedrawAllWindows()
     }
 
     // Process animation time
 
-    let currentTime = Platform.getCurrentTime();
+    const currentTime = Platform.getCurrentTime()
     if (this.lastTime == 0) {
 
-      this.elapsedTime = 100;
+      this.elapsedTime = 100
     }
     else {
 
-      this.elapsedTime = currentTime - this.lastTime;
+      this.elapsedTime = currentTime - this.lastTime
     }
-    this.lastTime = currentTime;
+    this.lastTime = currentTime
 
-    if (this.selectCurrentLayerAnimationTime > 0) {
-
-      this.selectCurrentLayerAnimationTime -= this.elapsedTime / 1000.0;
-
-      if (this.selectCurrentLayerAnimationTime <= 0) {
-
-        this.selectCurrentLayerAnimationTime = 0;
-
-        this.toolEnv.setRedrawMainWindow();
-        this.toolEnv.setRedrawWebGLWindow();
-      }
-    }
+    this.appView.layerHighlight.processHighlightingAnimation(this.elapsedTime, this.subtoolContext)
 
     // Process animation
 
-    if (context.animationPlaying) {
+    if (this.docContext.animationPlaying) {
 
-      let aniSetting = context.document.animationSettingData;
+      const aniSetting = this.docContext.document.animationSettingData
 
-      aniSetting.currentTimeFrame += 1;
+      aniSetting.currentTimeFrame += 1
 
       if (aniSetting.currentTimeFrame >= aniSetting.loopEndFrame) {
 
-        aniSetting.currentTimeFrame = aniSetting.loopStartFrame;
+        aniSetting.currentTimeFrame = aniSetting.loopStartFrame
       }
 
-      this.setCurrentFrame(aniSetting.currentTimeFrame);
+      this.appTool.setCurrentFrame(aniSetting.currentTimeFrame)
 
-      env.setRedrawMainWindow();
-      env.setRedrawTimeLineWindow();
+      this.subtoolContext.setRedrawMainWindow()
+      this.subtoolContext.setRedrawTimeLineWindow()
     }
   }
 
   resizeWindowsAndBuffers() {
 
-    this.resizeWindows();
+    this.appView.resizeWindows()
 
-    this.drawOperationUIPanel_Layout(this.editorWindow);
+    this.appView.operationPanel.updateLayout(this.appView.editorWindow)
 
-    this.prepareDrawPathBuffers();
+    this.appView.canvasRulerH.updateLayout(this.appView.mainWindow, CanvasRulerOrientation.horizontalTop)
+    this.appView.canvasRulerV.updateLayout(this.appView.mainWindow, CanvasRulerOrientation.verticalLeft)
+
+    this.appView.canvasFrame.updateLayout(this.appView.mainWindow)
+
+    this.prepareDrawPathBuffers()
   }
 
-  // Document data operations
+  prepareDrawPathBuffers() {
 
-  updateLayerStructure() { // @implements MainEditor
+    this.appDrawing.drawPathBuffering.prepareDrawPathBuffers(
+      this.appDrawing.drawPathContext,
+      this.appView.mainWindow
+    )
 
-    this.updateLayerStructureInternal(true, true, true, true);
-
-    this.prepareDrawPathBuffers();
+    this.appDrawing.drawPathBuffering.prepareDrawingBuffer(
+      this.appDrawing.lazy_DrawPathContext.buffer,
+      this.appView.mainWindow
+    )
   }
 
-  updateLayerStructureInternal(updateLayerWindowItems: boolean, updateViewKeyframes: boolean, updateHierarchicalStates: boolean, updateDrawPash: boolean) { // @implements MainEditor
+  updateLayerStructureInternal(updateLayerWindowItems: boolean, updateViewKeyframes: boolean, updateHierarchicalStates: boolean, updateDrawPash: boolean) {
 
-    let documentData = this.toolContext.document;
+    const documentData = this.docContext.document
 
     // Update document data
     if (updateHierarchicalStates) {
 
-      Layer.updateHierarchicalStatesRecursive(documentData.rootLayer);
+      Layer.updateHierarchicalStatesRecursive(documentData.rootLayer)
     }
 
     // Update view level context
     if (updateViewKeyframes) {
 
-      this.collectViewKeyframeContext();
+      this.appView.viewKeyframe.collectViewKeyframeContext(this.docContext, documentData)
 
       // TODO: this.currentViewKeyframeを更新するために必要 updateContextCurrentRefferences() で必要なため。
-      const skipCollectDrawPaths = (updateDrawPash == false);
-      this.setCurrentFrame(documentData.animationSettingData.currentTimeFrame, skipCollectDrawPaths);
+      const skipCollectDrawPaths = (updateDrawPash == false)
+      this.appTool.setCurrentFrame(documentData.animationSettingData.currentTimeFrame, skipCollectDrawPaths)
     }
 
     if (updateLayerWindowItems) {
 
-      this.layerWindow_CollectItems(documentData);
-      this.layerWindow_CaluculateLayout(this.layerWindow);
-      this.collectPosingLayerOptions();
+      this.appView.viewLayerList.collectItems(this.docContext, documentData)
+
+      this.appView.posingLayerOptions = this.appView.viewLayerList.collectPosingLayerOptions(this.docContext)
     }
 
     // Update draw path
     if (updateDrawPash) {
 
-      this.collectDrawPaths();
+      this.appDrawing.collectDrawPaths(documentData)
     }
 
     // Update tool context
-    this.updateContextCurrentRefferences();
+    this.appTool.updateContextCurrentRefferences()
   }
 
-  private setHeaderDefaultDocumentFileName() {
+  setHeaderDefaultDocumentFileName() {
 
-    let fileName = DocumentLogic.getDefaultDocumentFileName(this.localSetting);
-    this.setHeaderDocumentFileName(fileName);
-  }
-
-  getPosingModelByName(name: string): PosingModel { // @implements MainEditor
-
-    return this.modelFile.posingModelDictionary[name];
+    const fileName = DocumentDeserializingLogic.getDefaultDocumentFileName(this.userSetting.localSetting)
+    this.appView.headerWindow.setHeaderDocumentFileName(fileName)
   }
 
   // Main drawing process
 
-  activeLayerBufferDrawn = false;
-
-  drawPathContext = new DrawPathContext();
-  lazy_DrawPathContext = new DrawPathContext();
+  activeLayerBufferDrawn = false
 
   draw() {
 
-    let isDrawingExist = false;
-    const currentLayerOnly = (this.selectCurrentLayerAnimationTime > 0.0);
+    const currentLayerOnly = this.appView.layerHighlight.isAnimating()
 
-    this.mainWindow.caluclateViewMatrix(this.mainWindow.view2DMatrix);
-    mat4.invert(this.mainWindow.invView2DMatrix, this.mainWindow.view2DMatrix);
+    this.appView.mainWindow.caluclateViewMatrix(this.appView.mainWindow.view2DMatrix)
+    mat4.invert(this.appView.mainWindow.invView2DMatrix, this.appView.mainWindow.view2DMatrix)
 
-    this.toolEnv.updateContext();
+    this.subtoolContext.updateContext()
 
-    if (this.toolContext.redrawCurrentLayer) {
-      console.debug('redrawCurrentLayer');
+    if (this.docContext.redrawMainWindow) {
+
+      this.drawMainWindow(this.appView.mainWindow, this.docContext.redrawCurrentLayer, currentLayerOnly)
+
+      this.docContext.redrawMainWindow = false
     }
 
-    if (this.toolContext.redrawMainWindow) {
+    if (this.docContext.redrawEditorWindow) {
 
-      this.drawMainWindow(this.mainWindow, this.toolContext.redrawCurrentLayer, currentLayerOnly);
+      this.appDrawing.clearWindow(this.appView.editorWindow)
 
-      this.toolContext.redrawMainWindow = false;
+      this.drawEditorWindow(this.appView.editorWindow, this.appView.mainWindow)
 
-      isDrawingExist = true;
+      this.docContext.redrawEditorWindow = false
     }
 
-    if (this.toolContext.redrawEditorWindow) {
+    if (this.docContext.redrawLayerWindow) {
 
-      this.clearWindow(this.editorWindow);
+      // this.clearWindow(this.view.layerWindow)
+      this.appView.layerWindow.update(this.docContext, this.docContext.currentLayer)
 
-      this.drawEditorWindow(this.editorWindow, this.mainWindow);
+      this.appView.layerWindow.uiRef.update(this.docContext.items)
 
-      this.toolContext.redrawEditorWindow = false;
+      this.appView.updateRibbonUI_Layer(this.docContext)
+
+      this.docContext.redrawLayerWindow = false
     }
 
-    if (this.toolContext.redrawLayerWindow) {
+    if (this.docContext.redrawRibbonUI) {
 
-      // this.clearWindow(this.layerWindow);
-      this.drawLayerWindow(this.layerWindow);
+      //this.clearWindow(this.subtoolWindow)
+      this.appView.subToolWindow.updateViewItemState(this.subtoolContext)
+      this.appView.updateRibbonUI(this.docContext, true)
 
-      this.uiLayerwindowRef.update(this.layerWindow.layerWindowItems);
-
-      this.updateUIDraw3D();
-
-      this.toolContext.redrawLayerWindow = false;
+      this.docContext.redrawRibbonUI = false
     }
 
-    if (this.toolContext.redrawSubtoolWindow) {
+    if (this.docContext.redrawPaletteSelectorWindow) {
 
-      //this.clearWindow(this.subtoolWindow);
-      this.subtoolWindow_Draw();
+      // this.clearWindow(this.view.paletteSelectorWindow)
+      this.drawPaletteSelectorWindow()
 
-      this.toolContext.redrawSubtoolWindow = false;
+      this.appView.paletteSelectorWindow.uiRef.update(this.docContext.document.paletteColors)
+
+      this.docContext.redrawPaletteSelectorWindow = false
     }
 
-    if (this.toolContext.redrawPaletteSelectorWindow) {
+    if (this.docContext.redrawColorMixerWindow) {
 
-      // this.clearWindow(this.paletteSelectorWindow);
-      this.drawPaletteSelectorWindow();
+      this.drawColorMixerWindow()
 
-      this.uiPaletteSelectorWindowRef.update(this.toolContext.document.paletteColors);
-
-      this.toolContext.redrawPaletteSelectorWindow = false;
+      this.docContext.redrawColorMixerWindow = false
     }
 
-    if (this.toolContext.redrawColorMixerWindow) {
+    if (this.docContext.redrawTimeLineWindow) {
 
-      this.drawColorMixerWindow();
+      this.appDrawing.clearWindow(this.appView.timeLineWindow)
+      this.drawTimeLineWindow()
 
-      this.toolContext.redrawColorMixerWindow = false;
+      this.docContext.redrawTimeLineWindow = false
     }
 
-    if (this.toolContext.redrawTimeLineWindow) {
+    if (this.docContext.redrawWebGLWindow) {
 
-      this.clearWindow(this.timeLineWindow);
-      this.drawTimeLineWindow();
+      this.appDrawing.drawingPosing3D.drawPosing3DView(
+        this.appView.webglWindow,
+        this.docContext.items,
+        this.appView.mainWindow,
+        this.docContext,
+        currentLayerOnly
+      )
 
-      this.toolContext.redrawTimeLineWindow = false;
-
-      isDrawingExist = true;
+      this.docContext.redrawWebGLWindow = false
     }
 
-    if (this.toolContext.redrawWebGLWindow) {
+    if (this.docContext.redrawHeaderWindow) {
 
-      this.drawPosing3DView(this.webglWindow, this.layerWindow.layerWindowItems, this.mainWindow, currentLayerOnly);
+      this.appView.ribbonUIWindow.updateTabAndRibbon(this.docContext)
 
-      this.toolContext.redrawWebGLWindow = false;
-
-      isDrawingExist = true;
+      this.docContext.redrawHeaderWindow = false
     }
 
-    if (this.toolContext.redrawHeaderWindow) {
+    if (this.docContext.redrawFooterWindow) {
 
-      this.updateHeaderButtons();
+      this.appView.footerWindow.updateFooterText()
 
-      this.toolContext.redrawHeaderWindow = false;
+      this.docContext.redrawFooterWindow = false
     }
 
-    if (this.toolContext.redrawFooterWindow) {
+    this.lazyProcess()
 
-      this.updateFooterText();
-
-      this.toolContext.redrawFooterWindow = false;
-    }
-
-    this.lazyProcess(this.lazy_DrawPathContext);
-
-    this.toolContext.redrawCurrentLayer = false;
+    this.docContext.redrawCurrentLayer = false
   }
 
-  protected collectDrawPaths() {
+  drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean) {
 
-    let documentData = this.toolContext.document;
-
-    let drawPathSteps = new List<DrawPathStep>();
-
-    // Insert a step for begin
-    {
-      let drawPathStep = new DrawPathStep();
-      drawPathStep.layer = documentData.rootLayer;
-      drawPathStep.setType(DrawPathOperationTypeID.beginDrawing);
-      drawPathSteps.push(drawPathStep);
+    if (this.appDrawing.currentViewKeyframe == null) {
+      return
     }
 
-    // Collect virtual-grouped layer info
-    let vLayers = new List<TempVirtualLayer>();
-    this.collectDrawPaths_CollectVirtualLayerRecursive(vLayers, documentData.rootLayer.childLayers);
-
-    // Collect steps recursive
-    this.collectDrawPasths_CollectPathRecursive(drawPathSteps, vLayers);
-
-    // Insert a step for end
-    {
-      let drawPathStep = new DrawPathStep();
-      drawPathStep.layer = documentData.rootLayer;
-      drawPathStep.setType(DrawPathOperationTypeID.endDrawing);
-      drawPathSteps.push(drawPathStep);
-    }
-
-    // Attach layers to paths
-    if (this.currentViewKeyframe != null) {
-
-      this.collectDrawPasths_CollectViewKeyframe(drawPathSteps, this.currentViewKeyframe.layers);
-    }
-
-    this.drawPathContext.steps = drawPathSteps;
-
-    // Collecct selected part
-    this.collectDrawPasths_CollectSelectionInfo(this.drawPathContext);
-
-    this.lazy_DrawPathContext.steps = this.drawPathContext.steps;
-
-    // Debug output
-    {
-      console.debug(`DrawPath collectDrawPaths`);
-
-      let stepIndex = 0;
-
-      for (let step of this.drawPathContext.steps) {
-
-        console.debug(` ${stepIndex}: ${step._debugText} ${(step.layer && step.layer.name) ? step.layer.name : ''}`);
-
-        stepIndex++;
-      }
-    }
-  }
-
-  protected collectDrawPaths_CollectVirtualLayerRecursive(result: List<TempVirtualLayer>, layers: List<Layer>) {
-
-    for (let i = 0; i < layers.length; i++) {
-
-      let layer = layers[i];
-
-      let vLayer = new TempVirtualLayer();
-      vLayer.type = TempVirtualLayerTypeID.normal;
-      vLayer.layer = layer;
-
-      this.collectDrawPaths_CollectVirtualLayerRecursive(vLayer.children, layer.childLayers);
-
-      if (layer.isMaskedByBelowLayer) {
-
-        // Creates vitual group, inserts the layer and following layers into the group
-
-        let virtualGroup_vLayer = new TempVirtualLayer();
-        virtualGroup_vLayer.type = TempVirtualLayerTypeID.virtualGroup;
-        virtualGroup_vLayer.layer = layer;
-
-        // the layer
-        virtualGroup_vLayer.children.push(vLayer);
-
-        // following layers
-        let nextIndex = i + 1;
-        while (nextIndex < layers.length) {
-
-          let nextLayer = layers[nextIndex];
-
-          let next_vLayer = new TempVirtualLayer();
-          next_vLayer.type = TempVirtualLayerTypeID.normal;
-          next_vLayer.layer = nextLayer;
-
-          this.collectDrawPaths_CollectVirtualLayerRecursive(next_vLayer.children, nextLayer.childLayers);
-
-          virtualGroup_vLayer.children.push(next_vLayer);
-
-          if (nextLayer.isMaskedByBelowLayer) {
-
-            nextIndex++;
-          }
-          else {
-
-            i = nextIndex;
-
-            break;
-          }
-        }
-
-        result.push(virtualGroup_vLayer);
-      }
-      else {
-
-        result.push(vLayer);
-      }
-    }
-  }
-
-  protected collectDrawPasths_CollectPathRecursive(result: List<DrawPathStep>, vLayers: List<TempVirtualLayer>) {
-
-    let isGPUDrawContinuing = false;
-
-    for (let i = vLayers.length - 1; i >= 0; i--) {
-
-      let vLayer = vLayers[i];
-
-      if (vLayer.type == TempVirtualLayerTypeID.virtualGroup
-        || GroupLayer.isGroupLayer(vLayer.layer)) {
-
-        // Insert a step to begin buffering
-        {
-          let drawPathStep = new DrawPathStep();
-          drawPathStep.layer = vLayer.layer;
-          drawPathStep.setType(DrawPathOperationTypeID.prepareBuffer);
-          drawPathStep.compositeOperation = (vLayer.layer.isMaskedByBelowLayer ? 'source-atop' : 'source-over');
-          result.push(drawPathStep);
-        }
-
-        // Insert steps for group children
-        this.collectDrawPasths_CollectPathRecursive(result, vLayer.children);
-
-        // insert a step to finish buffering
-        {
-          let drawPathStep = new DrawPathStep();
-          drawPathStep.layer = vLayer.layer;
-          drawPathStep.setType(DrawPathOperationTypeID.flushBuffer);
-          result.push(drawPathStep);
-        }
-      }
-      else if (VectorLayer.isVectorLayer(vLayer.layer)) {
-
-        const vectorLayer = <VectorLayer>vLayer.layer;
-
-        // Insert a step to draw fill
-        if (vectorLayer.fillAreaType != FillAreaTypeID.none) {
-
-          let drawPathStep = new DrawPathStep();
-          drawPathStep.layer = vLayer.layer;
-          drawPathStep.setType(DrawPathOperationTypeID.drawBackground);
-          drawPathStep.compositeOperation = this.collectDrawPasths_getCompositeOperationString(vLayer.layer);
-          result.push(drawPathStep);
-        }
-
-        // Insert steps to draw line
-        if (vectorLayer.drawLineType != DrawLineTypeID.none) {
-
-          // Insert a step to clear gl buffer
-          if (!isGPUDrawContinuing) {
-
-            let drawPathStep = new DrawPathStep();
-            drawPathStep.layer = vLayer.layer;
-            drawPathStep.setType(DrawPathOperationTypeID.prepareRendering);
-            result.push(drawPathStep);
-          }
-
-          // Insert a step to draw
-          {
-            let drawPathStep = new DrawPathStep();
-            drawPathStep.layer = vLayer.layer;
-            drawPathStep.setType(DrawPathOperationTypeID.drawForeground);
-            drawPathStep.compositeOperation = this.collectDrawPasths_getCompositeOperationString(vLayer.layer);
-            result.push(drawPathStep);
-          }
-
-          // Insert a step to flush gl buffer if the next layer dont need draw lines
-          isGPUDrawContinuing = false;
-          if (vectorLayer.fillAreaType == FillAreaTypeID.none && i > 0) {
-
-            let next_layer = vLayers[i - 1].layer;
-
-            if (VectorLayer.isVectorLayer(next_layer)) {
-
-              let next_vectorLayer = <VectorLayer>next_layer;
-
-              if (next_vectorLayer.drawLineType != DrawLineTypeID.none
-                && next_vectorLayer.fillAreaType == FillAreaTypeID.none) {
-
-                isGPUDrawContinuing = true;
-              }
-            }
-          }
-
-          if (!isGPUDrawContinuing) {
-
-            let drawPathStep = new DrawPathStep();
-            drawPathStep.layer = vLayer.layer;
-            drawPathStep.setType(DrawPathOperationTypeID.flushRendering);
-            drawPathStep.compositeOperation = this.collectDrawPasths_getCompositeOperationString(vLayer.layer);
-            result.push(drawPathStep);
-          }
-        }
-      }
-      else {
-
-        let drawPathStep = new DrawPathStep();
-        drawPathStep.layer = vLayer.layer;
-        drawPathStep.setType(DrawPathOperationTypeID.drawForeground);
-        result.push(drawPathStep);
-      }
-    }
-  }
-
-  protected collectDrawPasths_CollectSelectionInfo(drawPathContext: DrawPathContext) {
-
-    let firstSelectedIndex = -1;
-    let lastSelectedIndex = -1;
-
-    let bufferNestStartIndex = -1;
-    let bufferNestLevel = 0;
-    let isSelectedNest = false;
-
-    for (let i = 0; i < drawPathContext.steps.length; i++) {
-
-      let drawPathStep = drawPathContext.steps[i];
-
-      if (Layer.isSelected(drawPathStep.layer)) {
-
-        // Detect selected range for level = 0
-        if (bufferNestLevel == 0) {
-
-          if (firstSelectedIndex == -1) {
-
-            firstSelectedIndex = i;
-          }
-
-          lastSelectedIndex = i;
-        }
-        else {
-
-          // Set flag for level > 0
-          isSelectedNest = true;
-        }
-      }
-
-      if (drawPathStep.operationType == DrawPathOperationTypeID.prepareBuffer) {
-
-        if (bufferNestLevel == 0) {
-
-          bufferNestStartIndex = i;
-        }
-
-        bufferNestLevel++;
-      }
-      else if (drawPathStep.operationType == DrawPathOperationTypeID.flushBuffer) {
-
-        bufferNestLevel--;
-
-        // Detect selected range for level > 0
-        if (bufferNestLevel == 0) {
-
-          if (isSelectedNest) {
-
-            if (firstSelectedIndex == -1) {
-
-              firstSelectedIndex = bufferNestStartIndex;
-            }
-
-            lastSelectedIndex = i;
-
-            isSelectedNest = false;
-          }
-        }
-      }
-    }
-
-    drawPathContext.activeDrawPathStartIndex = firstSelectedIndex;
-    drawPathContext.activeDrawPathEndIndex = lastSelectedIndex;
-
-    //console.debug('CollectSelectionInfo', firstSelectedIndex, lastSelectedIndex);
-  }
-
-  protected collectDrawPasths_CollectViewKeyframe(drawPathSteps: List<DrawPathStep>, viewKeyframeLayers: Array<ViewKeyframeLayer>) {
-
-    for (let drawPathStep of drawPathSteps) {
-
-      drawPathStep.viewKeyframeLayer = null;
-
-      for (let viewKeyframeLayer of viewKeyframeLayers) {
-
-        if (viewKeyframeLayer.layer == drawPathStep.layer) {
-
-          drawPathStep.viewKeyframeLayer = viewKeyframeLayer;
-          break;
-        }
-      }
-    }
-  }
-
-  protected collectDrawPasths_getCompositeOperationString(layer: Layer) {
-
-    return (layer.isMaskedByBelowLayer ? 'source-atop' : 'source-over');
-  }
-
-  protected prepareDrawPathBuffers() {
-
-    let baseCanvasWindow = this.mainWindow;
-
-    if (this.prepareDrawPathBuffers_IsChanged(this.lazy_DrawPathContext.lazyProcess.buffer, baseCanvasWindow)) {
-
-      this.lazy_DrawPathContext.lazyProcess.buffer = this.prepareDrawPathBuffers_CreateCanvasWindow(baseCanvasWindow);
-    }
-
-    for (let drawPathStep of this.drawPathContext.steps) {
-
-      if (drawPathStep.operationType == DrawPathOperationTypeID.prepareBuffer) {
-
-        if (this.prepareDrawPathBuffers_IsChanged(drawPathStep.layer.bufferCanvasWindow, baseCanvasWindow)) {
-
-          drawPathStep.layer.bufferCanvasWindow = this.prepareDrawPathBuffers_CreateCanvasWindow(baseCanvasWindow);
-        }
-      }
-    }
-  }
-
-  protected prepareDrawPathBuffers_IsChanged(bufferCanvasWindow: CanvasWindow, baseCanvasWindow: CanvasWindow) {
-
-    return (bufferCanvasWindow == null
-      || bufferCanvasWindow.width != baseCanvasWindow.width
-      || bufferCanvasWindow.height != baseCanvasWindow.height);
-  }
-
-  protected prepareDrawPathBuffers_CreateCanvasWindow(baseCanvasWindow: CanvasWindow) {
-
-    let canvasWindow = new CanvasWindow();
-    canvasWindow.createCanvas();
-    canvasWindow.setCanvasSize(baseCanvasWindow.width, baseCanvasWindow.height);
-    canvasWindow.initializeContext();
-
-    return canvasWindow;
-  }
-
-  protected drawMainWindow(canvasWindow: CanvasWindow, redrawActiveLayerOnly: boolean, currentLayerOnly: boolean) { // @override
-
-    if (this.currentViewKeyframe == null) {
-      return;
-    }
-
-    let env = this.toolEnv;
-    let isModalToolRunning = this.isModalToolRunning();
+    this.appDrawing.drawPathContext.isEditModeDraw = this.subtoolContext.isEditMode()
+    this.appDrawing.drawPathContext.isModalToolRunning = this.appTool.isModalToolRunning()
+    this.appDrawing.drawPathContext.currentLayerOnly = currentLayerOnly
+    this.appDrawing.drawPathContext.redrawActiveLayerOnly = redrawActiveLayerOnly
+    this.appDrawing.drawPathContext.drawCPUOnly = this.docContext.drawCPUOnly
 
     // Draw edit mode ui
-    if (env.isDrawMode()) {
+    if (this.subtoolContext.isDrawMode()) {
 
-      this.drawMainWindow_drawDrawMode(canvasWindow, redrawActiveLayerOnly, currentLayerOnly, isModalToolRunning, this.toolContext.drawCPUOnly);
+      this.drawMainWindow_drawDrawMode(canvasWindow, this.appDrawing.drawPathContext)
     }
-    else if (env.isEditMode()) {
+    else if (this.subtoolContext.isEditMode()) {
 
-      this.drawMainWindow_drawEditMode(canvasWindow, redrawActiveLayerOnly, currentLayerOnly, isModalToolRunning);
+      this.drawMainWindow_drawEditMode(canvasWindow, this.appDrawing.drawPathContext)
     }
+
+    this.drawMainWindow_drawFrames()
   }
 
-  protected drawMainWindow_drawDrawMode(
-    canvasWindow: CanvasWindow,
-    redrawActiveLayerOnly: boolean,
-    currentLayerOnly: boolean,
-    isModalToolRunning: boolean,
-    drawCPUOnly: boolean) {
-
-    let drawPathContext = this.drawPathContext;
+  drawMainWindow_drawDrawMode(canvasWindow: CanvasWindow, drawPathContext: DrawPathContext) {
 
     // TODO: 必要なときだけ実行する
-    this.collectDrawPasths_CollectSelectionInfo(drawPathContext);
+    this.appDrawing.drawPathCollecting.collectDrawPasths_CollectSelectionInfo(drawPathContext)
 
-    let activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex;
-    let activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex;
-    let maxStepIndex = drawPathContext.steps.length - 1;
+    const activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex
+    const drawCPUOnly = drawPathContext.drawCPUOnly
+    const isModalToolRunning = drawPathContext.isModalToolRunning
+    const redrawActiveLayerOnly = drawPathContext.redrawActiveLayerOnly
+    const activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex
+    const maxStepIndex = drawPathContext.steps.length - 1
 
-    if (this.lazy_DrawPathContext.lazyProcess.isRendered && !isModalToolRunning && !drawCPUOnly) {
+    if (this.appDrawing.lazy_DrawPathContext.lazyProcess.isRendered && !isModalToolRunning && !drawCPUOnly) {
 
-      drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
+      drawPathContext.drawPathModeID = DrawPathModeID.editorPreview
     }
     else {
 
-      drawPathContext.drawPathModeID = DrawPathModeID.editor;
+      drawPathContext.drawPathModeID = DrawPathModeID.editor
     }
-    // drawPathContext.drawPathModeID = DrawPathModeID.editor;
-
-    drawPathContext.isModalToolRunning = isModalToolRunning;
-    drawPathContext.currentLayerOnly = currentLayerOnly;
 
     if (redrawActiveLayerOnly && activeRangeStartIndex != -1) {
 
-      this.clearWindow(canvasWindow);
+      this.appDrawing.clearWindow(canvasWindow)
 
       // Draw back layers
       if (activeRangeStartIndex > 0) {
 
-        drawPathContext.startIndex = 0;
-        drawPathContext.endIndex = activeRangeStartIndex - 1;
+        drawPathContext.startIndex = 0
+        drawPathContext.endIndex = activeRangeStartIndex - 1
 
         this.drawMainWindow_drawPathStepsToBuffer(
           canvasWindow
-          , this.backLayerRenderWindow
+          , this.appView.backLayerRenderWindow
           , drawPathContext
           , this.activeLayerBufferDrawn
-        );
+        )
       }
 
       // Draw current layers
-      drawPathContext.startIndex = activeRangeStartIndex;
-      drawPathContext.endIndex = activeRangeEndIndex;
-      this.drawDrawPaths(canvasWindow, drawPathContext, true);
+      drawPathContext.startIndex = activeRangeStartIndex
+      drawPathContext.endIndex = activeRangeEndIndex
+      this.appDrawing.drawDrawPaths(canvasWindow, drawPathContext, true)
 
       // Draw fore layers
       if (activeRangeEndIndex < maxStepIndex) {
 
-        drawPathContext.startIndex = activeRangeEndIndex + 1;
-        drawPathContext.endIndex = maxStepIndex;
+        drawPathContext.startIndex = activeRangeEndIndex + 1
+        drawPathContext.endIndex = maxStepIndex
 
         this.drawMainWindow_drawPathStepsToBuffer(
           canvasWindow
-          , this.foreLayerRenderWindow
+          , this.appView.foreLayerRenderWindow
           , drawPathContext
           , this.activeLayerBufferDrawn
-        );
+        )
       }
 
-      this.activeLayerBufferDrawn = true;
+      this.activeLayerBufferDrawn = true
     }
     else {
 
       // Draw all layers
-      drawPathContext.startIndex = 0;
-      drawPathContext.endIndex = maxStepIndex;
+      drawPathContext.startIndex = 0
+      drawPathContext.endIndex = maxStepIndex
 
-      this.drawDrawPaths(canvasWindow, drawPathContext, true);
+      this.appDrawing.drawDrawPaths(canvasWindow, drawPathContext, true)
 
-      this.activeLayerBufferDrawn = false;
+      this.activeLayerBufferDrawn = false
     }
   }
 
-  protected drawMainWindow_drawPathStepsToBuffer(
+  drawMainWindow_drawPathStepsToBuffer(
     canvasWindow: CanvasWindow
     , bufferCanvasWindow: CanvasWindow
     , drawPathContext: DrawPathContext
@@ -1242,59 +659,59 @@ export class App_Main extends App_Event implements MainEditor {
 
     if (!activeLayerBufferDrawn) {
 
-      this.clearWindow(bufferCanvasWindow);
+      this.appDrawing.clearWindow(bufferCanvasWindow)
 
-      canvasWindow.copyTransformTo(bufferCanvasWindow);
+      canvasWindow.copyTransformTo(bufferCanvasWindow)
 
-      this.drawDrawPaths(bufferCanvasWindow, drawPathContext, true);
+      this.appDrawing.drawDrawPaths(bufferCanvasWindow, drawPathContext, true)
     }
 
     // Draw layers from buffer
 
-    this.drawFullWindowImage(canvasWindow, bufferCanvasWindow);
+    this.appDrawing.drawFullWindowImage(canvasWindow, bufferCanvasWindow)
   }
 
-  protected drawMainWindow_drawEditMode(
-    canvasWindow: CanvasWindow,
-    redrawActiveLayerOnly: boolean,
-    currentLayerOnly: boolean,
-    isModalToolRunning: boolean) {
+  drawMainWindow_drawEditMode(canvasWindow: CanvasWindow, drawPathContext: DrawPathContext) {
 
-    let drawPathContext = this.drawPathContext;
-    let activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex;
-    let activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex;
-    let maxStepIndex = drawPathContext.steps.length - 1;
+    const activeRangeStartIndex = drawPathContext.activeDrawPathStartIndex
+    const activeRangeEndIndex = drawPathContext.activeDrawPathEndIndex
+    const isModalToolRunning = drawPathContext.isModalToolRunning
+    const currentLayerOnly = drawPathContext.currentLayerOnly
+    const redrawActiveLayerOnly = drawPathContext.redrawActiveLayerOnly
+    const isEditMode = drawPathContext.isEditMode()
+    const maxStepIndex = drawPathContext.steps.length - 1
 
     // TODO: 必要なときだけ実行する
-    this.collectDrawPasths_CollectSelectionInfo(drawPathContext);
+    this.appDrawing.drawPathCollecting.collectDrawPasths_CollectSelectionInfo(drawPathContext)
 
-    this.canvasRender.setContext(canvasWindow);
+    this.appDrawing.canvasRender.setContext(canvasWindow)
 
-    this.clearWindow(canvasWindow);
+    this.appDrawing.clearWindow(canvasWindow)
 
-    //redrawActiveLayerOnly = false;
+    //redrawActiveLayerOnly = false
 
     if (redrawActiveLayerOnly && activeRangeStartIndex != -1) {
 
       // Draw back layers
       if (activeRangeStartIndex > 0) {
 
-        drawPathContext.startIndex = 0;
-        drawPathContext.endIndex = activeRangeStartIndex - 1;
+        drawPathContext.startIndex = 0
+        drawPathContext.endIndex = activeRangeStartIndex - 1
 
         this.drawMainWindow_drawEditModeToBuffer(
           canvasWindow,
-          this.backLayerRenderWindow,
+          this.appView.backLayerRenderWindow,
           drawPathContext,
           this.activeLayerBufferDrawn,
           currentLayerOnly,
-          isModalToolRunning
-        );
+          isModalToolRunning,
+          isEditMode
+        )
       }
 
       // Draw current layers
-      drawPathContext.startIndex = activeRangeStartIndex;
-      drawPathContext.endIndex = activeRangeEndIndex;
+      drawPathContext.startIndex = activeRangeStartIndex
+      drawPathContext.endIndex = activeRangeEndIndex
 
       this.drawMainWindow_drawEditModeToBuffer(
         canvasWindow,
@@ -1302,32 +719,34 @@ export class App_Main extends App_Event implements MainEditor {
         drawPathContext,
         false,
         currentLayerOnly,
-        isModalToolRunning
-      );
+        isModalToolRunning,
+        isEditMode
+      )
 
       // Draw fore layers
       if (activeRangeEndIndex < maxStepIndex) {
 
-        drawPathContext.startIndex = activeRangeEndIndex + 1;
-        drawPathContext.endIndex = maxStepIndex;
+        drawPathContext.startIndex = activeRangeEndIndex + 1
+        drawPathContext.endIndex = maxStepIndex
 
         this.drawMainWindow_drawEditModeToBuffer(
           canvasWindow,
-          this.foreLayerRenderWindow,
+          this.appView.foreLayerRenderWindow,
           drawPathContext,
           this.activeLayerBufferDrawn,
           currentLayerOnly,
-          isModalToolRunning
-        );
+          isModalToolRunning,
+          isEditMode
+        )
       }
 
-      this.activeLayerBufferDrawn = true;
+      this.activeLayerBufferDrawn = true
     }
     else {
 
       // Draw all layers
-      drawPathContext.startIndex = 0;
-      drawPathContext.endIndex = maxStepIndex;
+      drawPathContext.startIndex = 0
+      drawPathContext.endIndex = maxStepIndex
 
       this.drawMainWindow_drawEditModeToBuffer(
         canvasWindow,
@@ -1335,852 +754,458 @@ export class App_Main extends App_Event implements MainEditor {
         drawPathContext,
         false,
         currentLayerOnly,
-        isModalToolRunning
-      );
+        isModalToolRunning,
+        isEditMode
+      )
 
-      this.activeLayerBufferDrawn = false;
+      this.activeLayerBufferDrawn = false
     }
   }
 
-  protected drawMainWindow_drawEditModeToBuffer(
+  drawMainWindow_drawEditModeToBuffer(
     canvasWindow: CanvasWindow,
     bufferCanvasWindow: CanvasWindow,
     drawPathContext: DrawPathContext,
     activeLayerBufferDrawn: boolean,
     currentLayerOnly: boolean,
-    isModalToolRunning: boolean
+    isModalToolRunning: boolean,
+    isEditMode: boolean
   ) {
 
-    let documentData = this.toolContext.document;
-    let drawStrokes = true;//!isFullRendering;
-    let drawPoints = true;
+    const documentData = this.docContext.document
+    const drawStrokes = true //!isFullRendering
+    const drawPoints = true
 
     if (!activeLayerBufferDrawn) {
 
       if (bufferCanvasWindow != null) {
 
-        this.clearWindow(bufferCanvasWindow);
+        this.appDrawing.clearWindow(bufferCanvasWindow)
 
-        canvasWindow.copyTransformTo(bufferCanvasWindow);
-        this.canvasRender.setContextTransformByWindow(bufferCanvasWindow);
+        canvasWindow.copyTransformTo(bufferCanvasWindow)
+        this.appDrawing.canvasRender.copyTransformFromWindow(bufferCanvasWindow)
       }
 
       for (let i = drawPathContext.startIndex; i <= drawPathContext.endIndex; i++) {
 
-        let drawPathStep = drawPathContext.steps[i];
+        const drawPathStep = drawPathContext.steps[i]
 
         if (drawPathStep.operationType != DrawPathOperationTypeID.drawForeground
           && drawPathStep.operationType != DrawPathOperationTypeID.drawBackground) {
 
-          continue;
+          continue
         }
 
-        let viewKeyFrameLayer = drawPathStep.viewKeyframeLayer;
-        let layer = viewKeyFrameLayer ? viewKeyFrameLayer.layer : null;
+        const viewKeyFrameLayer = drawPathStep.viewKeyframeLayer
+        const layer = viewKeyFrameLayer ? viewKeyFrameLayer.layer : null
 
-        //console.debug('  DrawPath EditMode', i, drawPathStep._debugText, layer ? layer.name : '');
+        //console.debug('  DrawPath EditMode', i, drawPathStep._debugText, layer ? layer.name : '')
 
         if (currentLayerOnly) {
 
           //if (layer != this.selectCurrentLayerAnimationLayer) {
-          if (!this.isdrawTargetForCurrentLayerOnly(layer)) {
-            continue;
+          if (!this.appDrawing.isdrawTargetForCurrentLayerOnly(layer)) {
+            continue
           }
         }
         else {
 
           if (!Layer.isVisible(layer)) {
-            continue;
+            continue
           }
         }
 
         if (VectorLayer.isVectorLayer(layer)) {
 
-          let vectorLayer = <VectorLayer>layer;
+          const vectorLayer = <VectorLayer>layer
 
           if (drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
 
-            this.drawBackground(
+            this.appDrawing.drawBackground(
               viewKeyFrameLayer,
-              this.toolContext.document,
+              documentData,
               false,
-              isModalToolRunning
-            );
+              isModalToolRunning,
+              isEditMode
+            )
           }
 
-          this.drawForegroundForEditMode(
-            vectorLayer
-            , viewKeyFrameLayer
-            , documentData
-            , drawStrokes
-            , drawPoints
-            , isModalToolRunning
-          );
+          this.appDrawing.drawForegroundForEditMode(
+            vectorLayer,
+            viewKeyFrameLayer,
+            documentData,
+            this.docContext.operationUnitID,
+            drawStrokes,
+            drawPoints,
+            isModalToolRunning,
+            isEditMode
+          )
+        }
+        else if (AutoFillLayer.isAutoFillLayer(layer)) {
+
+          this.appDrawing.drawBackground(
+            viewKeyFrameLayer,
+            documentData,
+            false,
+            isModalToolRunning,
+            isEditMode
+          )
         }
         else {
 
-          this.drawForeground(viewKeyFrameLayer, this.toolContext.document
-            , false, drawPathContext.isModalToolRunning);
+          this.appDrawing.drawForeground(
+            viewKeyFrameLayer,
+            documentData,
+            false,
+            drawPathContext.isModalToolRunning,
+            isEditMode
+          )
         }
       }
     }
 
     if (bufferCanvasWindow != null) {
 
-      this.drawFullWindowImage(canvasWindow, bufferCanvasWindow);
+      this.appDrawing.drawFullWindowImage(canvasWindow, bufferCanvasWindow)
     }
   }
 
-  drawPath_logging = false;
+  drawMainWindow_drawFrames() {
 
-  protected drawDrawPaths(canvasWindow: CanvasWindow, drawPathContext: DrawPathContext, clearState: boolean) {
+    if (this.docContext.document.documentFrame_HideOuterArea) {
 
-    let bufferCanvasWindow = canvasWindow;
-    let startTime = Platform.getCurrentTime();
-    let isFullRendering = drawPathContext.isFullRendering();
-
-    if (clearState) {
-
-      drawPathContext.clearDrawingStates();
-
-      drawPathContext.bufferStack.push(canvasWindow);
-
-      this.canvasRender.setContext(canvasWindow);
-    }
-    else {
-
-      bufferCanvasWindow = drawPathContext.bufferStack.pop();
-
-      this.canvasRender.setContext(bufferCanvasWindow);
+      this.appView.canvasFrame.draw(this.appDrawing.canvasRender, this.appView.mainWindow, this.docContext.document)
     }
 
-    if (this.drawPath_logging) {
+    this.appView.canvasRulerH.draw(this.appDrawing.canvasRender, this.appView.mainWindow, this.docContext.document)
+    this.appView.canvasRulerV.draw(this.appDrawing.canvasRender, this.appView.mainWindow, this.docContext.document)
 
-      console.debug('  DrawPath start clearState', clearState);
-    }
-
-    for (let i = drawPathContext.startIndex; i <= drawPathContext.endIndex; i++) {
-
-      let drawPathStep = drawPathContext.steps[i];
-
-      drawPathContext.lastDrawPathIndex = i;
-
-      let viewKeyFrameLayer = drawPathStep.viewKeyframeLayer;
-      let layer = viewKeyFrameLayer ? viewKeyFrameLayer.layer : null;
-
-      if (this.drawPath_logging) {
-
-        console.debug('  DrawPath', i, drawPathStep._debugText, layer ? layer.name : '', 'stack:', drawPathContext.bufferStack.length);
-      }
-
-      if (drawPathStep.operationType == DrawPathOperationTypeID.beginDrawing) {
-
-        this.clearWindow(canvasWindow);
-
-        this.mainWindow.copyTransformTo(canvasWindow);
-        this.canvasRender.setTransform(canvasWindow);
-      }
-      else if (drawPathStep.operationType == DrawPathOperationTypeID.drawForeground
-        || drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
-
-        if (drawPathContext.drawPathModeID == DrawPathModeID.export) {
-
-          if (!Layer.isVisible(layer) || !layer.isRenderTarget) {
-            continue;
-          }
-        }
-        else if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
-
-          continue;
-        }
-
-        // Draw layer to current buffer
-        this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep);
-
-        if (drawPathStep.operationType == DrawPathOperationTypeID.drawForeground) {
-
-          if (isFullRendering && VectorLayer.isVectorLayer(layer)) {
-
-            // GPU rendering
-            this.mainWindow.copyTransformTo(this.drawGPUWindow);
-            this.drawGPUWindow.viewScale *= (this.drawGPUWindow.width / this.mainWindow.width);
-
-            this.renderForeground_VectorLayer(this.drawGPUWindow
-              , viewKeyFrameLayer
-              , this.toolContext.document
-              , drawPathContext.isModalToolRunning);
-          }
-          else {
-
-            // CPU drawing
-            this.drawForeground(viewKeyFrameLayer, this.toolContext.document
-              , isFullRendering, drawPathContext.isModalToolRunning);
-          }
-        }
-        else if (drawPathStep.operationType == DrawPathOperationTypeID.drawBackground) {
-
-          this.drawBackground(viewKeyFrameLayer, this.toolContext.document
-            , isFullRendering, drawPathContext.isModalToolRunning);
-        }
-
-        this.canvasRender.setCompositeOperation('source-over');
-      }
-      else if (drawPathStep.operationType == DrawPathOperationTypeID.prepareRendering) {
-
-        if (isFullRendering) {
-
-          this.renderClearBuffer(this.drawGPUWindow);
-        }
-      }
-      else if (drawPathStep.operationType == DrawPathOperationTypeID.flushRendering) {
-
-        if (isFullRendering) {
-
-          let renderCanvasWindow = this.drawGPUWindow;
-
-          this.canvasRender.setContext(bufferCanvasWindow);
-
-          this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep);
-
-          this.drawFullWindowImage(bufferCanvasWindow, renderCanvasWindow);
-
-          //this.canvasRender.resetTransform();
-          //this.canvasRender.drawImage(renderCanvasWindow.canvas
-          //    , 0, 0, renderCanvasWindow.width, renderCanvasWindow.height
-          //    , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height);
-
-          //this.canvasRender.setTransform(bufferCanvasWindow);
-
-          this.canvasRender.setCompositeOperation('source-over');
-        }
-      }
-      else if (drawPathStep.operationType == DrawPathOperationTypeID.prepareBuffer) {
-
-        if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
-
-          continue;
-        }
-
-        // Prepare buffer
-
-        this.canvasRender.setContext(layer.bufferCanvasWindow);
-        this.clearWindow(layer.bufferCanvasWindow);
-
-        bufferCanvasWindow.copyTransformTo(layer.bufferCanvasWindow);
-        this.canvasRender.setTransform(layer.bufferCanvasWindow);
-
-        drawPathContext.bufferStack.push(bufferCanvasWindow);
-
-        bufferCanvasWindow = layer.bufferCanvasWindow;
-      }
-      else if (drawPathStep.operationType == DrawPathOperationTypeID.flushBuffer) {
-
-        if (!this.drawDrawPaths_isLayerDrawTarget(layer, drawPathContext.currentLayerOnly)) {
-
-          continue;
-        }
-
-        // Flush buffered image to upper buffer
-
-        let before_BufferCanvasWindow = drawPathContext.bufferStack.pop();
-
-        this.canvasRender.setContext(before_BufferCanvasWindow);
-
-        this.drawDrawPaths_setCompositeOperation(drawPathContext, drawPathStep);
-
-        this.drawFullWindowImage(before_BufferCanvasWindow, bufferCanvasWindow);
-
-        //this.canvasRender.setContext(before_BufferCanvasWindow);
-        //this.canvasRender.resetTransform();
-        //this.canvasRender.drawImage(bufferCanvasWindow.canvas
-        //    , 0, 0, bufferCanvasWindow.width, bufferCanvasWindow.height
-        //    , 0, 0, before_BufferCanvasWindow.width, before_BufferCanvasWindow.height);
-
-        //this.canvasRender.setTransform(before_BufferCanvasWindow);
-
-        bufferCanvasWindow = before_BufferCanvasWindow;
-      }
-
-      let lastTime = Platform.getCurrentTime();
-
-      if (lastTime - startTime >= drawPathContext.lazyProcess.maxTime
-        || i == drawPathContext.endIndex) {
-
-        drawPathContext.bufferStack.push(bufferCanvasWindow);
-        break;
-      }
-    }
+    this.appView.canvasRulerH.drawCorner(this.appDrawing.canvasRender)
   }
 
-  private drawDrawPaths_isLayerDrawTarget(layer: Layer, currentLayerOnly: boolean) {
+  drawEditorWindow(editorWindow: CanvasWindow, mainWindow: CanvasWindow) {
 
-    if (currentLayerOnly) {
+    mainWindow.updateViewMatrix()
+    mainWindow.copyTransformTo(editorWindow)
 
-      if (!this.isdrawTargetForCurrentLayerOnly(layer)) {
-        return false;
-      }
-    }
-    else {
+    this.appDrawing.canvasRender.setContext(editorWindow)
 
-      if (!Layer.isVisible(layer)) {
-        return false;
-      }
+    if (this.subtoolContext.needsDrawOperatorCursor()) {
+
+      this.appDrawing.operatorCursor.drawOperatorCursor(this.docContext.operatorCursor)
     }
 
-    return true;
-  }
+    this.appDrawing.drawingEyesSymmetry.drawEyesSymmetries(this.docContext.items, this.subtoolContext)
 
-  private drawDrawPaths_setCompositeOperation(drawPathContext: DrawPathContext, drawPathStep: DrawPathStep) {
+    const current_SubTool = this.appTool.getCurrentSubTool()
+    if (current_SubTool != null) {
 
-    if (!drawPathContext.currentLayerOnly) {
+      this.subtoolContext.updateContext()
 
-      this.canvasRender.setCompositeOperation(drawPathStep.compositeOperation);
-    }
-    else {
+      this.subtoolDrawingContext.setCanvasWindow(editorWindow)
 
-      this.canvasRender.setCompositeOperation('source-over');
-    }
-  }
-
-  private isdrawTargetForCurrentLayerOnly(layer: Layer) {
-
-    //return (layer != this.selectCurrentLayerAnimationLayer);
-    return (Layer.isSelected(layer));
-  }
-
-  protected drawLayers(canvasWindow: CanvasWindow, startIndex: int, endIndex: int, isExporting: boolean, currentLayerOnly: boolean, isModalToolRunning: boolean) {
-
-    this.canvasRender.setContext(canvasWindow);
-
-    for (let i = startIndex; i >= endIndex; i--) {
-
-      let viewKeyFrameLayer = this.currentViewKeyframe.layers[i];
-      let layer = viewKeyFrameLayer.layer;
-
-      if (isExporting) {
-
-        if (!Layer.isVisible(layer) || !layer.isRenderTarget) {
-          continue;
-        }
-      }
-      else if (currentLayerOnly) {
-
-        if (layer != this.selectCurrentLayerAnimationLayer) {
-          continue;
-        }
-      }
-      else {
-
-        if (!Layer.isVisible(layer)) {
-          continue;
-        }
-      }
-
-      this.drawLayerByCanvas(viewKeyFrameLayer, this.toolContext.document
-        , isExporting, isModalToolRunning)
-    }
-  }
-
-  protected drawEditorWindow(editorWindow: CanvasWindow, mainWindow: CanvasWindow) {
-
-    mainWindow.updateViewMatrix();
-    mainWindow.copyTransformTo(editorWindow);
-
-    this.canvasRender.setContext(editorWindow);
-
-    if (this.toolEnv.needsDrawOperatorCursor()) {
-
-      this.drawOperatorCursor();
+      current_SubTool.onDrawEditor(this.subtoolContext, this.subtoolDrawingContext)
     }
 
-    this.drawEditor_EyesSymmetry(this.canvasRender, this.toolEnv);
-
-    if (this.currentTool != null) {
-
-      this.toolEnv.updateContext();
-      this.toolDrawEnv.setVariables(editorWindow);
-      this.currentTool.onDrawEditor(this.toolEnv, this.toolDrawEnv);
-    }
-
-    this.drawOperationUI(editorWindow);
+    this.appView.operationPanel.draw(this.appDrawing.canvasRender)
   }
 
-  protected drawExportImage(canvasWindow: CanvasWindow) { // @override
+  drawTimeLineWindow() {
 
-    this.drawLayers(canvasWindow, this.currentViewKeyframe.layers.length - 1, 0, true, false, false);
+    this.appView.timeLineWindow.drawCommandButton(
+      this.appView.timeLineWindow,
+      this.docContext.animationPlaying
+    )
+
+    this.appView.timeLineWindow.drawTimeLine(
+      this.appView.timeLineWindow,
+      this.docContext.document,
+      this.docContext.keyframes,
+      this.subtoolContext.currentVectorLayer
+    )
   }
 
-  protected drawTimeLineWindow() {
+  drawPaletteSelectorWindow() {
 
-    this.drawTimeLineWindow_CommandButtons(
-      this.timeLineWindow,
-      this.toolContext.animationPlaying);
+    this.appView.paletteSelectorWindow.updateCommandButtons()
 
-    this.drawTimeLineWindow_TimeLine(
-      this.timeLineWindow,
-      this.toolContext.document,
-      this.viewLayerContext.keyframes,
-      this.toolEnv.currentVectorLayer
-    );
+    this.appView.paletteSelectorWindow.updatePaletteItems(this.docContext)
   }
 
-  protected drawPaletteSelectorWindow() {
+  drawColorMixerWindow() {
 
-    this.drawPaletteSelectorWindow_CommandButtons(
-      this.paletteSelectorWindow);
+    const color = this.appView.paletteSelectorWindow.getCurrentLayerTargetColorRef(this.docContext)
 
-    this.drawPaletteSelectorWindow_PaletteItems(
-      this.paletteSelectorWindow,
-      this.toolContext.document,
-      this.toolEnv.currentVectorLayer);
-  }
-
-  protected drawColorMixerWindow() {
-
-    this.drawColorMixerWindow_SetInputControls();
+    this.appView.colorMixerWindow.updateInputControls(color)
   }
 
   // Lazy process
 
-  protected lazyProcess(drawPathContext: DrawPathContext) {
+  lazyProcess() {
 
-    const lazyProcess = drawPathContext.lazyProcess;
+    const drawPathContext = this.appDrawing.lazy_DrawPathContext
+    const lazyProcess = this.appDrawing.lazy_DrawPathContext.lazyProcess
 
     if (lazyProcess.isFinished) {
 
-      return;
+      return
     }
 
-    if (lazyProcess.needsStartingLazyDraw) {
+    if (lazyProcess.needsStartingLazyProcess) {
 
-      lazyProcess.startLazyDrawProcess();
-      return;
+      lazyProcess.startLazyProcess()
+      return
     }
 
     if (lazyProcess.isLazyDrawWaiting()) {
 
-      return;
+      return
     }
 
-    if (lazyProcess.isFirstDraw) {
+    if (lazyProcess.isFirstTime) {
 
-      this.lazyProcess_EyesSymetry();
+      this.lazyProcess_EyesSymmetry()
 
-      lazyProcess.isFirstDraw = false;
+      lazyProcess.isFirstTime = false
 
-      this.toolEnv.setRedrawMainWindow();
+      this.subtoolContext.setRedrawMainWindow()
     }
 
-    if (!this.toolContext.drawCPUOnly) {
+    if (!this.docContext.drawCPUOnly) {
 
-      this.lazyProcess_DrawPath(drawPathContext);
+      this.lazyProcess_DrawPath(drawPathContext)
     }
   }
 
-  protected lazyProcess_DrawPath(drawPathContext: DrawPathContext) {
+  lazyProcess_DrawPath(drawPathContext: DrawPathContext) {
 
-    const env = this.toolEnv;
-    const lazyProcess = drawPathContext.lazyProcess;
+    const lazyProcess = drawPathContext.lazyProcess
 
     // Draw steps
-    drawPathContext.drawPathModeID = DrawPathModeID.editorPreview;
-    drawPathContext.startIndex = lazyProcess.processedIndex + 1;
-    drawPathContext.endIndex = drawPathContext.steps.length - 1;
-    drawPathContext.isModalToolRunning = env.isModalToolRunning();
-    drawPathContext.currentLayerOnly = false;
+    drawPathContext.drawPathModeID = DrawPathModeID.editorPreview
+    drawPathContext.startIndex = lazyProcess.processedIndex + 1
+    drawPathContext.endIndex = drawPathContext.steps.length - 1
+    drawPathContext.isModalToolRunning = this.subtoolContext.isModalToolRunning()
+    drawPathContext.currentLayerOnly = false
 
-    lazyProcess.maxTime = 10; // TODO: 適当な値を設定する
+    lazyProcess.maxTime = 10 // TODO: 適当な値を設定する
 
-    const last_lazyDraw_ProcessedIndex = lazyProcess.processedIndex;
-    const clearState = lazyProcess.isLazyDrawBigining();
-    const bufferCanvas = lazyProcess.buffer;
+    const last_lazyDraw_ProcessedIndex = lazyProcess.processedIndex
+    const clearState = lazyProcess.isLazyDrawBigining()
+    const canvasWindow = drawPathContext.buffer.canvasWindow
 
-    this.drawDrawPaths(bufferCanvas, drawPathContext, clearState);
+    this.appDrawing.drawDrawPaths(canvasWindow, drawPathContext, clearState)
 
-    console.debug(`LazyDraw${clearState ? ' begin' : ' draw'} from ${last_lazyDraw_ProcessedIndex} to ${lazyProcess.processedIndex} -? buffer[${drawPathContext.bufferStack.length}]`);
+    console.debug(`LazyDraw${clearState ? ' begin' : ' draw'} from ${last_lazyDraw_ProcessedIndex} to ${lazyProcess.processedIndex} -? buffer[${drawPathContext.bufferStack.length}]`)
+
+    if (!drawPathContext.isLastDrawExist()) {
+      return
+    }
 
     // Save states for drawing steps
-    if (drawPathContext.isLastDrawExist()) {
+    lazyProcess.processedIndex = drawPathContext.lastDrawPathIndex
 
-      lazyProcess.processedIndex = drawPathContext.lastDrawPathIndex;
+    if (drawPathContext.isFinished()) {
 
-      const isFinished = (lazyProcess.processedIndex >= drawPathContext.steps.length - 1);
+      lazyProcess.finishLazyProcess()
 
-      if (isFinished) {
+      console.debug('LazyDraw finished at', lazyProcess.processedIndex)
 
-        lazyProcess.finishLazyDrawProcess();
+      this.appDrawing.clearWindow(this.appView.mainWindow)
 
-        console.debug('LazyDraw finished at', lazyProcess.processedIndex);
+      this.appDrawing.canvasRender.resetTransform()
 
-        this.clearWindow(this.mainWindow);
+      this.appDrawing.canvasRender.drawImage(canvasWindow.canvas
+        , 0, 0, this.appView.mainWindow.width, this.appView.mainWindow.height
+        , 0, 0, this.appView.mainWindow.width, this.appView.mainWindow.height)
 
-        this.canvasRender.resetTransform();
+      if (this.subtoolContext.isEditMode()) {
 
-        this.canvasRender.drawImage(bufferCanvas.canvas
-          , 0, 0, this.mainWindow.width, this.mainWindow.height
-          , 0, 0, this.mainWindow.width, this.mainWindow.height);
-
-        if (env.isEditMode()) {
-
-          this.drawMainWindow_drawEditMode(this.mainWindow, true, false, false);
-        }
+        this.appDrawing.drawPathContext.isEditModeDraw = true
+        this.appDrawing.drawPathContext.redrawActiveLayerOnly = true
+        this.appDrawing.drawPathContext.currentLayerOnly = false
+        this.appDrawing.drawPathContext.isModalToolRunning = false
+        this.drawMainWindow_drawEditMode(this.appView.mainWindow, this.appDrawing.drawPathContext)
       }
     }
-    else {
-
-      lazyProcess.processedIndex = drawPathContext.steps.length;
-    }
   }
 
-  protected lazyProcess_EyesSymetry() {
+  lazyProcess_EyesSymmetry() {
 
-    // console.debug('lazyProcess_EyesSymetry');
+    // console.debug('lazyProcess_EyesSymmetry')
 
-    const env = this.toolEnv;
+    const viewKeyframeLayers = this.appView.viewKeyframe.collectVectorViewKeyframeLayersForEdit(this.appDrawing.currentViewKeyframe)
 
-    let viewKeyframeLayers = this.collectViewKeyframeLayers();
+    // console.debug('viewKeyframeLayers', viewKeyframeLayers.length)
 
-    // console.debug('viewKeyframeLayers', viewKeyframeLayers.length);
+    this.appdocument.eyesSymmetry.updateEyesSymetries(viewKeyframeLayers)
+  }
 
-    ViewKeyframeLayer.forEachGroup(viewKeyframeLayers, (group: VectorStrokeGroup, vectorLayer: VectorLayer) => {
+  // MainController implementations
 
-      // console.debug('group.isUpdated', group.isUpdated);
+  isWhileLoading(): boolean { // @implements MainController
 
-      if (!group.isUpdated) {
-        return;
+    return (
+      this.mainProcessState == MainProcessStateID.systemResourceLoading
+      || this.mainProcessState == MainProcessStateID.documentResourceLoading
+    )
+  }
+
+  setDefferedWindowResize() { // @implements MainController
+
+    this.isDeferredWindowResizeWaiting = true
+    this.deferredWindowResizeWaitingEndTime = Platform.getCurrentTime() + this.deferredWindowResizeWaitingDuration
+  }
+
+  isEventDisabled(): boolean { // @implements MainController
+
+    return (
+      this.isWhileLoading()
+      || this.appView.dialog.isDialogOpened()
+    )
+  }
+
+  resetDocument() { // @implements MainController
+
+    const documentData = this.appdocument.createDefaultDocumentData()
+
+    this.initializeDocumentContext(documentData)
+
+    this.updateLayerStructure()
+
+    this.appTool.setCurrentLayer(null)
+
+    this.appTool.setCurrentFrame(0)
+
+    this.appTool.selectLayer(documentData.rootLayer.childLayers[0])
+
+    this.setHeaderDefaultDocumentFileName()
+
+    this.subtoolContext.setRedrawAllWindows()
+  }
+
+  saveDocument() { // @implements MainController
+
+    const documentData = this.docContext.document
+
+    const filePath = this.appView.dom.getInputElementText(this.appView.ID.fileName)
+
+    if (Strings.isNullOrEmpty(filePath)) {
+
+      this.appView.dialog.messageBox('ファイル名が指定されていません。')
+      return
+    }
+
+    this.appdocument.saveDocumentData(filePath, documentData, false)
+
+    this.userSetting.saveSettings()
+
+    this.appView.dialog.messageBox('保存しました。')
+  }
+
+  // MainEditor implementations
+
+  openFileDialog(targetID: OpenFileDialogTargetID) { // @implements MainEditor
+
+    if (targetID == OpenFileDialogTargetID.imageFileReferenceLayerFilePath) {
+
+      if (!ImageFileReferenceLayer.isImageFileReferenceLayer(this.docContext.currentLayer)) {
+        throw new Error('ERROR 0002:OpenFileDialog Invalid execution for current layer.')
       }
 
-      if (VectorLayer.isVectorLayerWithOwnData(vectorLayer) && vectorLayer.eyesSymmetryEnabled) {
-
-        this.calculateEyesSymetry(group, vectorLayer);
-      }
-
-      group.isUpdated = false;
-    });
+      // this.appView.dialog.openFileDialogModal(targetID)
+      this.appView.modalWindow.open(this.appView.modalWindow.openImageReference)
+    }
   }
 
-  locationFront = vec3.create();
-  locationBack = vec3.create();
-  eyeMatrix = mat4.create();
-  invMatrix = mat4.create();
-  mirrorMatrix = mat4.create();
-  oppositeTransformMatrix = mat4.create();
+  setCurrentOperationUnitID(operationUnitID: OperationUnitID) { // @implements MainEditor
 
-  protected calculateEyesSymetry(group: VectorStrokeGroup, vectorLayer: VectorLayer) {
-
-    const env = this.toolEnv;
-
-    const posingData = vectorLayer.posingLayer.posingData;
-
-    this.toolEnv.posing3DLogic.getEyeSphereLocation(this.eyeLocation, posingData, vectorLayer.eyesSymmetryInputSide);
-
-    // 反転処理の行列を計算
-    mat4.invert(this.invMatrix, posingData.headMatrix);
-    mat4.identity(this.mirrorMatrix);
-    mat4.scale(this.mirrorMatrix, this.mirrorMatrix, vec3.set(this.tempVec3, -1.0, 1.0 ,1.0));
-
-    mat4.multiply(this.tempMat4, posingData.headMatrix, this.mirrorMatrix);
-    mat4.multiply(this.oppositeTransformMatrix, this.tempMat4, this.invMatrix);
-
-    const eyeSize = this.toolEnv.posing3DLogic.getEyeSphereSize();
-
-    // console.debug('calculateEyesSymetry', eyeSize, this.centimeter(this.eyeLocation));
-
-    vectorLayer.eyesSymmetryGeometry = new VectorGeometry();
-    const drawingUnit = new VectorDrawingUnit();
-    const strokeGroup = new VectorStrokeGroup();
-
-    for (const stroke of group.lines) {
-
-      const symmetryStroke = new VectorStroke();
-
-      for (const point of stroke.points) {
-
-        const hited = env.posing3DLogic.calculateInputLocation3DWSide(
-          this.locationFront,
-          this.locationBack,
-          point.location,
-          this.eyeLocation,
-          eyeSize,
-          posingData,
-          env.posing3DView
-        );
-
-        if (hited) {
-
-          vec3.copy(point.location3D, this.locationFront);
-
-          const symmetryPoint = VectorPoint.clone(point);
-          vec3.transformMat4(symmetryPoint.location3D, point.location3D, this.oppositeTransformMatrix);
-
-          env.posing3DView.calculate2DLocationFrom3DLocation(symmetryPoint.location, symmetryPoint.location3D, posingData);
-          vec3.copy(symmetryPoint.adjustingLocation, symmetryPoint.location);
-
-          symmetryStroke.points.push(symmetryPoint);
-
-          // console.debug(this.centimeter(point.location3D));
-        }
-      }
-
-      if (symmetryStroke.points.length > 0) {
-
-        Logic_Edit_Line.calculateParameters(symmetryStroke);
-
-        strokeGroup.lines.push(symmetryStroke);
-        // console.debug(`symmetryStroke`, symmetryStroke.points.length);
-      }
-    }
-
-    drawingUnit.groups.push(strokeGroup);
-    // console.debug(`strokeGroup`, strokeGroup.lines.length);
-
-    vectorLayer.eyesSymmetryGeometry.units.push(drawingUnit);
-    // console.debug(`drawingUnit`, drawingUnit.groups.length);
-
-    // console.debug(`eyesSymmetryGeometry`, vectorLayer.eyesSymmetryGeometry.units.length);
+    this.appTool.setCurrentOperationUnitID(operationUnitID)
   }
 
-  centimeter(vec: Vec3): string {
+  setCurrentLayer(layer: Layer) { // @implements MainEditor
 
-    return `(${(vec[0] * 100).toFixed(4)}, ${(vec[1] * 100).toFixed(4)}, ${(vec[2] * 100).toFixed(4)})`;
+    this.appTool.selectLayer(layer)
   }
 
-  // Subtool window
+  startModalTool(subtoolID: SubToolID) { // @implements MainEditor
 
-  subToolItemSelectedColor = vec4.fromValues(0.9, 0.9, 1.0, 1.0);
-  subToolItemSeperatorLineColor = vec4.fromValues(0.0, 0.0, 0.0, 0.5);
-
-  private subtoolWindow_Draw() {
-
-    //this.canvasRender.setContext(subtoolWindow);
-
-    //let context = this.toolContext;
-
-    //let currentMainTool = this.getCurrentMainTool();
-
-    //let scale = subtoolWindow.subToolItemScale;
-    //let fullWidth = subtoolWindow.width - 1;
-    //let unitWidth = subtoolWindow.subToolItemUnitWidth;
-    //let unitHeight = subtoolWindow.subToolItemUnitHeight;
-
-    //let lastY = 0.0;
-
-    for (let viewItem of this.subToolViewItems) {
-
-      let tool = viewItem.tool;
-
-      //if (srcImage == null) {
-      //    continue;
-      //}
-
-      // TODO: 再構築時と同じ処理をしているため共通化する
-      viewItem.isAvailable = tool.isAvailable(this.toolEnv);
-      if (viewItem.buttons.length > 0) {
-
-        // TODO: 複数ボタンが必要か検討
-        viewItem.buttonStateID = tool.getOptionButtonState(0, this.toolEnv);
-      }
-
-      // TODO: 以降、React移行により削除
-      //let srcY = tool.toolBarImageIndex * unitHeight;
-      //let dstY = viewItem.top;
-
-      //// Draw subtool image
-      //if (tool == this.currentTool) {
-
-      //    this.canvasRender.setFillColorV(this.subToolItemSelectedColor);
-      //}
-      //else {
-
-      //    this.canvasRender.setFillColorV(this.drawStyle.layerWindowBackgroundColor);
-      //}
-      //this.canvasRender.fillRect(0, dstY, fullWidth, unitHeight * scale);
-
-      //if (tool.isAvailable(this.toolEnv)) {
-
-      //    this.canvasRender.setGlobalAlpha(1.0);
-      //}
-      //else {
-
-      //    this.canvasRender.setGlobalAlpha(0.5);
-      //}
-
-      //this.canvasRender.drawImage(srcImage.image.imageData
-      //    , 0, srcY, unitWidth, unitHeight
-      //    , 0, dstY, unitWidth * scale, unitHeight * scale);
-
-      //// Draw subtool option buttons
-      //for (let button of viewItem.buttons) {
-
-      //    let buttonWidth = 128 * scale;
-      //    let buttonHeight = 128 * scale;
-
-      //    button.left = unitWidth * scale * 0.8;
-      //    button.top = dstY;
-      //    button.right = button.left + buttonWidth - 1;
-      //    button.bottom = button.top + buttonHeight - 1;
-
-      //    if (viewItem.buttonStateID == InputSideID.front) {
-
-      //        this.canvasRender.drawImage(this.systemImage.image.imageData
-      //            , 0, 0, 128, 128
-      //            , button.left, button.top, buttonWidth, buttonHeight);
-      //    }
-      //    else {
-
-      //        this.canvasRender.drawImage(this.systemImage.image.imageData
-      //            , 128, 0, 128, 128
-      //            , button.left, button.top, buttonWidth, buttonHeight);
-      //    }
-      //}
-
-      //this.canvasRender.setStrokeWidth(0.0);
-      //this.canvasRender.setStrokeColorV(this.subToolItemSeperatorLineColor);
-      //this.canvasRender.drawLine(0, dstY, fullWidth, dstY);
-
-      //lastY = dstY + unitHeight * scale;
-    }
-
-    //this.canvasRender.setGlobalAlpha(1.0);
-
-    //this.canvasRender.drawLine(0, lastY, fullWidth, lastY);
-
-    this.updateUISubToolWindow(true);
+    this.appTool.startModalTool(subtoolID)
   }
 
-  // View operations
+  endModalTool() { // @implements MainEditor
 
-  protected onModalWindowClosed() { // @override
-
-    if (this.currentModalDialogID == this.ID.layerPropertyModal) {
-
-      this.onClosedLayerPropertyModal();
-
-      this.updateForLayerProperty();
-    }
-    else if (this.currentModalDialogID == this.ID.paletteColorModal) {
-
-      this.onClosedPaletteColorModal();
-    }
-    else if (this.currentModalDialogID == this.ID.operationOptionModal) {
-
-      this.toolContext.drawLineBaseWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineWidth, 1.0);
-      this.toolContext.drawLineMinWidth = this.getInputElementNumber(this.ID.operationOptionModal_LineMinWidth, 0.1);
-
-      let operationUnitID = this.getRadioElementIntValue(this.ID.operationOptionModal_operationUnit, OperationUnitID.linePoint);
-
-      this.setCurrentOperationUnitID(operationUnitID);
-    }
-    else if (this.currentModalDialogID == this.ID.newLayerCommandOptionModal) {
-
-      this.onNewLayerCommandOptionModal();
-    }
-    else if (this.currentModalDialogID == this.ID.openFileDialogModal) {
-
-      this.onClosedFileDialogModal();
-    }
-    else if (this.currentModalDialogID == this.ID.documentSettingModal) {
-
-      this.onClosedDocumentSettingModal();
-    }
-    else if (this.currentModalDialogID == this.ID.exportImageFileModal) {
-
-      this.onClosedExportImageFileModal();
-    }
-    else if (this.currentModalDialogID == this.ID.newKeyframeModal) {
-
-      this.onClosedNewKeyframeModal();
-    }
-    else if (this.currentModalDialogID == this.ID.deleteKeyframeModal) {
-
-      this.onClosedDeleteKeyframeModal();
-    }
-
-    this.currentModalDialogID = this.ID.none;
-    this.currentModalDialogResult = this.ID.none;
-
-    this.toolEnv.setRedrawMainWindowEditorWindow();
-    this.toolEnv.setRedrawLayerWindow();
-    this.toolEnv.setRedrawSubtoolWindow();
+    this.appTool.endModalTool()
   }
 
-  protected onClosedExportImageFileModal() {
+  cancelModalTool() { // @implements MainEditor
 
-    if (this.currentModalDialogResult != this.ID.exportImageFileModal_ok) {
-      return;
-    }
-
-    let fileName = this.getInputElementText(this.ID.exportImageFileModal_fileName);
-
-    if (StringIsNullOrEmpty(fileName)) {
-      return;
-    }
-
-    let backGroundType = <DocumentBackGroundTypeID>(this.getRadioElementIntValue(this.ID.exportImageFileModal_backGroundType, 1));
-    let scale = this.getInputElementNumber(this.ID.exportImageFileModal_scale, 1.0);
-
-    this.exportImageFile(fileName, this.toolContext.document, scale, backGroundType);
+    this.appTool.cancelModalTool()
   }
 
-  protected onNewLayerCommandOptionModal() {
+  isModalToolRunning(): boolean { // @implements MainEditor
 
-    if (this.currentModalDialogResult != this.ID.newLayerCommandOptionModal_ok) {
-
-      return;
-    }
-
-    var newLayerType = this.getRadioElementIntValue(this.ID.newLayerCommandOptionModal_layerType, NewLayerTypeID.vectorLayer);
-
-    // Select command
-
-    let layerCommand: Command_Layer_CommandBase = null;
-
-    if (newLayerType == NewLayerTypeID.vectorLayer) {
-
-      layerCommand = new Command_Layer_AddVectorLayerToCurrentPosition();
-    }
-    else if (newLayerType == NewLayerTypeID.vectorLayer_Fill) {
-
-      let command = new Command_Layer_AddVectorLayerToCurrentPosition();
-      command.createForFillColor = true;
-
-      layerCommand = command;
-    }
-    else if (newLayerType == NewLayerTypeID.autoFill) {
-
-      let command = new Command_Layer_AddAutoFillLayerToCurrentPosition();
-
-      layerCommand = command;
-    }
-    else if (newLayerType == NewLayerTypeID.vectorLayerReferenceLayer) {
-
-      layerCommand = new Command_Layer_AddVectorLayerReferenceLayerToCurrentPosition();
-    }
-    else if (newLayerType == NewLayerTypeID.groupLayer) {
-
-      layerCommand = new Command_Layer_AddGroupLayerToCurrentPosition();
-    }
-    else if (newLayerType == NewLayerTypeID.posingLayer) {
-
-      layerCommand = new Command_Layer_AddPosingLayerToCurrentPosition();
-    }
-    else if (newLayerType == NewLayerTypeID.imageFileReferenceLayer) {
-
-      layerCommand = new Command_Layer_AddImageFileReferenceLayerToCurrentPosition();
-    }
-
-    if (layerCommand == null) {
-
-      return;
-    }
-
-    // Execute command
-
-    this.executeLayerCommand(layerCommand);
+    return this.appTool.isModalToolRunning()
   }
 
-  public openDocumentSettingDialog() { // @implements MainEditor @override
+  collectVectorViewKeyframeLayers(): ViewKeyframeLayer[] { // @implements MainEditor
 
-    this.openDocumentSettingModal();
+    return this.appDrawing.currentViewKeyframe.layers
+  }
+
+  collectVectorViewKeyframeLayersForEdit(): ViewKeyframeLayer[] { // @implements MainEditor
+
+    return this.appView.viewKeyframe.collectVectorViewKeyframeLayersForEdit(this.appDrawing.currentViewKeyframe, true)
+  }
+
+  updateLayerStructure() { // @implements MainEditor
+
+    this.updateLayerStructureInternal(true, true, true, true)
+
+    this.prepareDrawPathBuffers()
+  }
+
+  getPosingModelByName(name: string): PosingModel { // @implements MainEditor
+
+    return this.appView.modelFile.posingModelDictionary.get(name)
+  }
+
+  // DialogMain implementations
+
+  getLocalSetting(): LocalSetting { // @implements DialogMain
+
+    return this.userSetting.localSetting
+  }
+
+  getDocumentData(): DocumentData { // @implements DialogMain
+
+    return this.docContext.document
+  }
+
+  updateForLayerProperty() { // @implements DialogMain
+
+    this.updateLayerStructureInternal(true, true, true, true)
+
+    this.prepareDrawPathBuffers()
+  }
+
+  exportImageFile(fileName: string, exportPath: string, scale: float, imageType: int, backGroundType: DocumentBackGroundTypeID) { // @implements DialogMain
+
+    this.appdocument.exportImageFile(fileName, exportPath, scale, imageType, backGroundType)
+  }
+
+  executeLayerCommand(layerCommand: Command_Layer_CommandBase) { // @implements DialogMain
+
+    this.appdocument.executeLayerCommand(layerCommand)
+  }
+
+  executeNewKeyframe(typeID: NewKeyframeTypeID) { // @implements DialogMain
+
+    this.appdocument.executeNewKeyframe(typeID)
+  }
+
+  executeDeleteKeyframe(typeID: DeleteKeyframeTypeID) { // @implements DialogMain
+
+    this.appdocument.executeDeleteKeyframe(typeID)
   }
 }

@@ -1,2143 +1,2059 @@
-import { float, StringIsNullOrEmpty, int } from '../base/conversion';
-import { Layer, DocumentData, PaletteColor } from '../base/data';
-import { EditModeID, MainToolID, InputableWindow, DrawLineToolSubToolID, ModalToolID, ToolMouseEvent } from '../base/tool';
+import { App_Document } from '../app/document'
+import { float, int, Strings } from './logics/conversion'
+import { Layer, PaletteColor } from './document_data'
+import { EditModeID } from './tool/constants'
+import { SubToolContext } from './context/subtool_context'
+import { Command_DeleteSelectedPoints } from './commands/delete_points'
+import { LayoutLogic, RectangleLayoutArea } from './logics/layout'
+import { CanvasWindow } from './render/render2d'
+import { UI_CommandButtonsItem } from './ui/command_buttons'
+import { UI_FooterOperationPanel_ID } from './ui/footer_operation_panel'
+import { UI_SelectBoxOption } from './ui/selectbox'
+import { ViewOperationMode } from './view/view_operation'
+import { OperationPanelButtonID } from './editor/operation_panel'
+import { PaletteSelectorWindowButtonID } from './window/palette_selector_window'
+import { SubToolViewItem } from './window/subtool_window'
+import { MainCommandButtonID, RibbonUIControlID } from './window/constants'
+import { ViewLayerListItem } from './view/view_layer_list'
+import { LayerWindowButtonID } from './window/layer_window'
+import { App_Drawing } from './drawing'
+import { App_View } from './view'
+import { App_Tool } from './tool'
+import { UserSettingLogic } from './preferences/user_setting'
+import { DocumentContext } from './context/document_context'
+import { MainToolID, MainToolTabID } from './tool/main_tool'
+import { ToolPointerEvent } from './tool/tool_pointer_event'
+import { PointerInputWindow } from './view/pointer_input'
+import { Command_CopyGeometry, Command_PasteGeometry } from './commands/edit_copy'
+import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown,
+  Command_VectorLayer_SetProperty } from './commands/edit_layer'
+import { Command_SetReferenceImageToLayer } from './commands/image_reference_layer'
+import { SubToolID } from './tool/sub_tool'
 
-import { ColorLogic } from '../logics/color';
+export interface AppEvent_Main_Interface {
 
-import { CanvasWindow } from '../renders/render2d';
+  resetDocument()
+  saveDocument()
+  startReloadDocument(filepath: string)
+  startReloadDocumentFromFile(file: File, url: string)
+  isEventDisabled(): boolean
+  isWhileLoading(): boolean
+  onWindowBlur()
+  onWindowFocus()
+  setDefferedWindowResize()
+  executeLayerCommand(layerCommand: Command_Layer_CommandBase)
+  updateForLayerProperty()
+}
 
-import { Command_DeleteSelectedPoints } from '../commands/delete_points';
-import { Command_CopyGeometry, Command_PasteGeometry } from '../commands/edit_copy';
-import { Command_Layer_CommandBase, Command_Layer_Delete, Command_Layer_MoveUp, Command_Layer_MoveDown, Command_VectorLayer_SetProperty } from '../commands/edit_layer';
+export class App_Event {
 
-import { SubToolViewItem, LayerWindowButtonID, PaletteSelectorWindowButtonID, LayerWindowItem, MainCommandButtonID, RibbonUIControlID } from '../app/view.class';
-import { App_Document } from '../app/document';
-import { OperationUI_ID } from '../app/view';
-import { UI_CommandButtonsItem } from '../ui/command_buttons';
-import { LayoutLogic, RectangleLayoutArea } from '../logics/layout';
-import { ViewOperation, ViewOperationMode } from '../view_operations';
-import { UI_FooterOperationPanel_ID } from '../ui/footer_operation_panel';
-import { UI_SideBarContentInfo } from '../ui/side_bar_container';
-import { UI_PaletteSelectorWindow } from '../ui/palette_selector_window';
-import { UI_SelectBoxOption } from '../ui/selectbox';
+  isEventSetDone = false
+  lastHoverLayoutArea: RectangleLayoutArea = null
 
-export class App_Event extends App_Document {
+  private appView: App_View = null
+  private appDrawing: App_Drawing = null
+  private appTool: App_Tool = null
+  private appdocument: App_Document = null
+  private appMain: AppEvent_Main_Interface = null
+  private userSetting: UserSettingLogic = null
 
-  isEventSetDone = false;
-  lastHoverLayoutArea: RectangleLayoutArea = null;
-  viewOperation = new ViewOperation();
+  private docContext: DocumentContext = null
+  private toolContext: SubToolContext = null
 
-  // Backward interface definitions
+  private tempVec3 = vec3.create()
+  private tempColor4 = vec4.create()
 
-  protected onWindowBlur() { // @virtual
+  link(view: App_View, drawing: App_Drawing, apptool: App_Tool, appdocument: App_Document, userSetting: UserSettingLogic, main: AppEvent_Main_Interface) {
+
+    this.appView = view
+    this.appDrawing = drawing
+    this.appTool = apptool
+    this.appdocument = appdocument
+    this.appMain = main
+    this.userSetting = userSetting
   }
 
-  protected onWindowFocus() { // @virtual
+  linkContexts(docContext: DocumentContext, toolContext: SubToolContext) {
+
+    this.docContext = docContext
+    this.toolContext = toolContext
   }
 
-  protected openDocumentSettingDialog() { // @virtual
-  }
-
-  protected setDefferedWindowResize() { // @virtual
-  }
-
-  protected onModalWindowClosed() { // @virtual
-  }
-
-  // Events
-
-  protected setEvents() {
+  setEvents() {
 
     if (this.isEventSetDone) {
-      return;
+      return
     }
 
-    this.isEventSetDone = true;
+    this.isEventSetDone = true
 
-    this.setCanvasWindowMouseEvent(this.editorWindow, this.mainWindow
+    this.setCanvasWindowMouseEvent(this.appView.editorWindow, this.appView.mainWindow
       , this.mainWindow_mousedown
       , this.mainWindow_mousemove
       , this.mainWindow_mouseup
       , this.mainWindow_mousewheel
       , false
-    );
+    )
 
-    this.uiPaletteSelectorWindowRef.commandButton_Click = ((item) => {
+    this.appView.paletteSelectorWindow.uiRef.commandButton_Click = ((item) => {
 
         this.paletteSelectorWindow_CommandButton_Click(item)
-    });
+    })
 
-    this.uiPaletteSelectorWindowRef.item_Click = ((paletteColorIndex, item) => {
+    this.appView.paletteSelectorWindow.uiRef.item_Click = ((paletteColorIndex, item) => {
 
         this.paletteSelectorWindow_Item_Click(paletteColorIndex, item)
-    });
+    })
 
-    this.setCanvasWindowMouseEvent(this.timeLineWindow, this.timeLineWindow
+    this.setCanvasWindowMouseEvent(this.appView.timeLineWindow, this.appView.timeLineWindow
       , this.timeLineWindow_mousedown
       , this.timeLineWindow_mousemove
-      , this.timeLineWindow_mouseup
+      , null
       , this.timeLineWindow_mousewheel
       , false
-    );
+    )
 
-    this.setCanvasWindowMouseEvent(this.colorMixerWindow_colorCanvas, this.colorMixerWindow_colorCanvas
+    this.setCanvasWindowMouseEvent(this.appView.colorMixerWindow.colorCanvas, this.appView.colorMixerWindow.colorCanvas
       , this.colorMixerWindow_colorCanvas_mousedown
       , this.colorMixerWindow_colorCanvas_mousedown
       , null
       , null
       , true
-    );
+    )
 
     document.addEventListener('keydown', (e: KeyboardEvent) => {
 
-      if (this.isWhileLoading()) {
-        return;
+      if (this.appMain.isWhileLoading()) {
+        return
       }
 
-      if (this.isModalShown()) {
-        return;
+      if (this.appView.dialog.isDialogOpened()) {
+        return
       }
 
       if (document.activeElement.nodeName == 'INPUT') {
-        return;
+        return
       }
 
-      this.document_keydown(e);
-    });
+      this.document_keydown(e)
+    })
 
     document.addEventListener('keyup', (e: KeyboardEvent) => {
 
-      if (this.isModalShown()) {
-        return;
+      if (this.appView.dialog.isDialogOpened()) {
+        return
       }
 
       if (document.activeElement.nodeName == 'INPUT') {
-        return;
+        return
       }
 
-      this.document_keyup(e);
-    });
+      this.document_keyup(e)
+    })
 
-    window.addEventListener('resize', (e: Event) => {
+    window.addEventListener('resize', () => {
 
-      this.htmlWindow_resize();
-    });
+      this.htmlWindow_resize()
+    })
 
     window.addEventListener('contextmenu', (e: Event) => {
 
-      return this.htmlWindow_contextmenu(e);
-    });
+      return this.htmlWindow_contextmenu(e)
+    })
 
     window.addEventListener('blur', () => {
 
-      this.onWindowBlur();
-    });
+      this.appMain.onWindowBlur()
+    })
 
     window.addEventListener('focus', () => {
 
-      this.onWindowFocus();
-    });
+      this.appMain.onWindowFocus()
+    })
 
     document.addEventListener('dragover', (e: DragEvent) => {
 
-      e.stopPropagation();
-      e.preventDefault();
+      e.stopPropagation()
+      e.preventDefault()
 
-      let available = false;
+      let available = false
       if (e.dataTransfer.types.length > 0) {
 
-        for (let type of e.dataTransfer.types) {
+        for (const type of e.dataTransfer.types) {
 
           if (type == 'Files') {
 
-            available = true;
-            break;
+            available = true
+            break
           }
         }
       }
 
       if (available) {
 
-        e.dataTransfer.dropEffect = 'move';
+        e.dataTransfer.dropEffect = 'move'
       }
       else {
 
-        e.dataTransfer.dropEffect = 'none';
+        e.dataTransfer.dropEffect = 'none'
       }
-    });
+    })
 
     document.addEventListener('drop', (e: DragEvent) => {
 
-      this.document_drop(e);
-    });
+      this.document_drop(e)
+    })
 
-    // Menu buttons
+    // React components
 
-    this.getElement(this.ID.menu_btnOperationOption).addEventListener('mousedown', (e: Event) => {
+    this.appView.ribbonUIWindow.uiRibbonUITabsRef.item_Click = (tabID) => {
 
-      if (this.isEventDisabled()) {
-        return;
+      if (this.appMain.isEventDisabled()) {
+        return
       }
 
-      this.openOperationOptionModal();
-      e.preventDefault();
-    });
+      this.ribbonUI_TabClick(tabID)
+    }
 
-    // React conponents
+    this.appView.headerWindow.uiHeaderWindowRef.commandButton_Click = (id) => {
 
-    this.uiMenuButtonsRef.item_Click = (mainToolID) => {
+      this.menuButton_Click(id)
+    }
 
-      this.mainTool_ItemClick(mainToolID);
-    };
+    this.appView.uiSideBarContainerRef.contentOpen = (cotentInfo) => {
 
-    this.uiHeaderWindowRef.commandButton_Click = (id) => {
-
-      this.menuButton_Click(id);
-    };
-
-    this.uiSideBarContainerRef.contentOpen = (cotentInfo) => {
-
-      if (cotentInfo.id == MainCommandButtonID[MainCommandButtonID.colorMixerWindow] && !this.colorMixerWindow_colorCanvas.isDrawingDone) {
+      if (cotentInfo.id == MainCommandButtonID[MainCommandButtonID.colorMixerWindow]
+        && !this.appView.colorMixerWindow.colorCanvas.isDrawingDone
+      ) {
 
         window.setTimeout(
           () => {
 
-            this.resizeFromStyle(this.colorMixerWindow_colorCanvas);
+            this.appView.domResizing.resizeByStyle(this.appView.colorMixerWindow.colorCanvas)
 
-            this.drawPaletteColorMixer(this.colorMixerWindow_colorCanvas);
+            this.appView.colorMixerWindow.drawPaletteColorMixer()
           },
           100
         )
       }
-    };
-
-    this.uiRibbonUIRef.subtoolButton_Click = (subToolIndex) => {
-
-      this.subtoolWindow_selectItem(subToolIndex);
-    };
-
-    this.uiRibbonUIRef.toggleButton_Click = (id, value) => {
-
-      this.ribbonUI_toggleButton_Click(id, value);
-    };
-
-    this.uiRibbonUIRef.numberInput_Change = (id, value) => {
-
-      this.ribbonUI_numberInput_Change(id, value);
-    };
-
-    this.uiRibbonUIRef.checkBox_Change = (id, checked, value) => {
-
-      this.ribbonUI_checkBox_Change(id, checked, value);
-    };
-
-    this.uiRibbonUIRef.selectBox_Change = (id, selected_Option) => {
-
-      this.ribbonUI_selectBox_Change(id, selected_Option);
-    };
-
-    this.uiFooterOperationpanelRef.button_Click = (id) => {
-
-      this.footerOperationpanel_Button_Click(id);
-    };
-
-    this.uiSubToolWindowRef.item_Click = (item) => {
-
-      this.subtoolWindow_Item_Click(item);
     }
 
-    this.uiSubToolWindowRef.itemButton_Click = (item) => {
+    this.appView.ribbonUIWindow.uiRibbonUIRef.button_Click = (id) => {
 
-      this.subtoolWindow_Button_Click(item);
+      this.ribbonUI_button_Click(id)
     }
 
-    this.uiLayerwindowRef.commandButton_Click = ((item) => {
+    this.appView.ribbonUIWindow.uiRibbonUIRef.subtoolButton_Click = (subtoolID) => {
 
-      this.layerWindow_mousedown_LayerCommandButton(item);
-    });
-
-    this.uiLayerwindowRef.item_Click = (item) => {
-
-      this.layerWindow_Item_Click(item);
+      this.subtoolButton_Click(subtoolID)
     }
 
-    this.uiLayerwindowRef.visibility_Click = (item) => {
+    this.appView.ribbonUIWindow.uiRibbonUIRef.toggleButton_Click = (id, value) => {
 
-      this.layerWindow_Visibility_Click(item);
+      this.ribbonUI_toggleButton_Click(id, value)
+    }
+
+    this.appView.ribbonUIWindow.uiRibbonUIRef.textInput_Change = (id, value) => {
+
+      this.ribbonUI_textInput_Change(id, value)
+    }
+
+    this.appView.ribbonUIWindow.uiRibbonUIRef.numberInput_Change = (id, value) => {
+
+      this.ribbonUI_numberInput_Change(id, value)
+    }
+
+    this.appView.ribbonUIWindow.uiRibbonUIRef.checkBox_Change = (id, checked, value) => {
+
+      this.ribbonUI_checkBox_Change(id, checked, value)
+    }
+
+    this.appView.ribbonUIWindow.uiRibbonUIRef.selectBox_Change = (id, selected_Option) => {
+
+      this.ribbonUI_selectBox_Change(id, selected_Option)
+    }
+
+    this.appView.ribbonUIWindow.uiRibbonUIRef.documentFrame_Change = (left, top, width, height) => {
+
+      this.documentFrame_Change(left, top, width, height)
+    }
+
+    this.appView.ribbonUIWindow.uiRibbonUIRef.documentViewSettings_change = (new_defaultViewScale) => {
+
+      this.documentViewSettings_change(new_defaultViewScale)
+    }
+
+    this.appView.footerWindow.uiFooterOperationpanelRef.button_Click = (id) => {
+
+      this.footerOperationpanel_Button_Click(id)
+    }
+
+    this.appView.subToolWindow.uiSubToolWindowRef.item_Click = (item) => {
+
+      this.subtoolWindow_Item_Click(item)
+    }
+
+    this.appView.subToolWindow.uiSubToolWindowRef.itemButton_Click = (item) => {
+
+      this.subtoolWindow_Button_Click(item)
+    }
+
+    this.appView.layerWindow.uiRef.commandButton_Click = ((item) => {
+
+      this.layerWindow_mousedown_LayerCommandButton(item)
+    })
+
+    this.appView.layerWindow.uiRef.item_Click = (item) => {
+
+      this.layerWindow_Item_Click(item)
+    }
+
+    this.appView.layerWindow.uiRef.visibility_Click = (item) => {
+
+      this.layerWindow_Visibility_Click(item)
+    }
+
+    this.appView.modalWindow.openImageReference.uiRef.onClose = (filePath: string, image: HTMLImageElement) => {
+
+      this.modal_ImageFileReference_Closed(filePath, image)
     }
 
     // Modal window
 
     document.addEventListener('custombox:content:open', () => {
 
-      this.onModalWindowShown();
-    });
+      this.appView.dialog.onDialogShown()
+    })
 
     document.addEventListener('custombox:content:close', () => {
 
-      this.onModalWindowClosed();
-    });
+      this.onModalWindowClosed()
+    })
 
-    this.setEvents_ModalCloseButton(this.ID.messageDialogModal_ok);
+    this.setEvents_ModalCloseButton(this.appView.ID.messageDialogModal_ok)
 
-    this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_ok);
-    this.setEvents_ModalCloseButton(this.ID.openFileDialogModal_cancel);
+    this.setEvents_ModalCloseButton(this.appView.ID.openFileDialogModal_ok)
+    this.setEvents_ModalCloseButton(this.appView.ID.openFileDialogModal_cancel)
 
-    this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_ok);
-    this.setEvents_ModalCloseButton(this.ID.newLayerCommandOptionModal_cancel);
+    this.setEvents_ModalCloseButton(this.appView.ID.newLayerCommandOptionModal_ok)
+    this.setEvents_ModalCloseButton(this.appView.ID.newLayerCommandOptionModal_cancel)
 
-    this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_ok);
-    this.setEvents_ModalCloseButton(this.ID.exportImageFileModal_cancel);
+    this.setEvents_ModalCloseButton(this.appView.ID.exportImageFileModal_ok)
+    this.setEvents_ModalCloseButton(this.appView.ID.exportImageFileModal_cancel)
 
-    this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_ok);
-    this.setEvents_ModalCloseButton(this.ID.newKeyframeModal_cancel);
+    this.setEvents_ModalCloseButton(this.appView.ID.newKeyframeModal_ok)
+    this.setEvents_ModalCloseButton(this.appView.ID.newKeyframeModal_cancel)
 
-    this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_ok);
-    this.setEvents_ModalCloseButton(this.ID.deleteKeyframeModal_cancel);
+    this.setEvents_ModalCloseButton(this.appView.ID.deleteKeyframeModal_ok)
+    this.setEvents_ModalCloseButton(this.appView.ID.deleteKeyframeModal_cancel)
 
-    this.uiColorMixerWindowRef.color_Change = (newColor: Vec4) => {
+    this.appView.colorMixerWindow.uiRef.color_Change = (newColor: Vec4) => {
 
-      this.colorMixerWindow_changeColor(newColor);
-    };
+      this.colorMixerWindow_changeColor(newColor)
+    }
 
-    this.uiFileOpenDialogRef.value_Change = (filePath: string) => {
+    this.appView.uiDialogDocumentFilerRef.value_Change = (filePath: string) => {
 
-      this.startReloadDocument(filePath);
+      this.appMain.startReloadDocument(filePath)
     }
   }
 
-  protected setCanvasWindowMouseEvent(
+  setCanvasWindowMouseEvent(
     eventCanvasWindow: CanvasWindow,
-    drawCanvasWindew: InputableWindow,
-    mousedown: Function,
-    mousemove: Function,
-    mouseup: Function,
-    mousewheel: Function,
+    drawCanvasWindew: PointerInputWindow,
+    mousedown: () => void,
+    mousemove: () => void,
+    mouseup: () => void,
+    mousewheel: () => void,
     isModal: boolean
   ) {
 
-    const toolMouseEvent = drawCanvasWindew.toolMouseEvent;
-
-    const eventElement = eventCanvasWindow.canvas;
+    const pointerEvent = drawCanvasWindew.pointerEvent
+    const eventElement = eventCanvasWindow.canvas
 
     if (mousedown != null) {
 
       eventElement.addEventListener('pointerdown', (e: PointerEvent) => {
 
-        if (this.isEventDisabled() && !isModal) {
-          return;
+        if (this.appMain.isEventDisabled() && !isModal) {
+          return
         }
 
-        if (toolMouseEvent.pointerID == -1) {
+        if (pointerEvent.pointerID == -1) {
 
-          toolMouseEvent.pointerID = e.pointerId;
+          pointerEvent.pointerID = e.pointerId
 
-          eventElement.setPointerCapture(e.pointerId);
+          eventElement.setPointerCapture(e.pointerId)
         }
 
-        this.processPointerEvent(drawCanvasWindew, e, true, false, false);
+        this.appView.activeCanvasWindow = drawCanvasWindew
+        this.appView.pointerInput.processPointerEvent(drawCanvasWindew, e, this.toolContext, this.appView.viewCoordinate, true, false, false)
 
-        mousedown.call(this);
+        mousedown.call(this)
 
-        e.preventDefault();
-      });
+        e.preventDefault()
+      })
     }
 
     if (mousemove != null) {
 
       eventElement.addEventListener('pointermove', (e: PointerEvent) => {
 
-        if (this.isEventDisabled() && !isModal) {
-          return;
+        if (this.appMain.isEventDisabled() && !isModal) {
+          return
         }
 
-        this.processPointerEvent(drawCanvasWindew, e, false, false, true);
+        this.appView.pointerInput.processPointerEvent(drawCanvasWindew, e, this.toolContext, this.appView.viewCoordinate, false, false, true)
 
-        mousemove.call(this);
+        mousemove.call(this)
 
-        e.preventDefault();
-      });
+        e.preventDefault()
+      })
     }
 
     if (mouseup != null) {
 
-      eventElement.addEventListener('pointerup', (e: PointerEvent) => {
+      const func = (e: PointerEvent) => {
 
-        if (this.isEventDisabled() && !isModal) {
-          return;
+        if (this.appMain.isEventDisabled() && !isModal) {
+          return
         }
 
-        toolMouseEvent.pointerID = -1;
+        pointerEvent.pointerID = -1
 
-        this.processPointerEvent(drawCanvasWindew, e, false, true, false);
+        this.appView.pointerInput.processPointerEvent(drawCanvasWindew, e, this.toolContext, this.appView.viewCoordinate, false, true, false)
 
-        mouseup.call(this);
+        mouseup.call(this)
 
-        e.preventDefault();
-      });
+        e.preventDefault()
+      }
+
+      eventElement.addEventListener('pointerup', func)
+
+      eventElement.addEventListener('pointerleave', func)
     }
 
     if (mousewheel != null) {
 
       eventCanvasWindow.canvas.addEventListener('wheel', (e: MouseEvent) => {
 
-        if (this.isEventDisabled() && !isModal) {
-          return;
+        if (this.appMain.isEventDisabled() && !isModal) {
+          return
         }
 
-        this.getWheelInfo(toolMouseEvent, e);
+        this.appView.pointerInput.getWheelInfo(pointerEvent, e)
 
-        mousewheel.call(this);
+        mousewheel.call(this)
 
-        e.preventDefault();
-      });
+        e.preventDefault()
+      })
     }
 
     eventCanvasWindow.canvas.addEventListener('touchstart', (e: TouchEvent) => {
 
       // Prevent page navigation by touch event
-      e.preventDefault();
-    });
+      e.preventDefault()
+    })
 
     eventCanvasWindow.canvas.addEventListener('touchmove', (e: TouchEvent) => {
 
       // Prevent page navigation by touch event
-      e.preventDefault();
-    });
+      e.preventDefault()
+    })
 
     eventCanvasWindow.canvas.addEventListener('touchend', (e: TouchEvent) => {
 
       // Prevent page navigation by touch event
-      e.preventDefault();
-    });
+      e.preventDefault()
+    })
   }
 
-  protected setEvents_ModalCloseButton(id: string) {
+  setEvents_ModalCloseButton(id: string) {
 
-    this.getElement(id).addEventListener('click', (e: Event) => {
+    this.appView.dom.getElement(id).addEventListener('click', (e: Event) => {
 
-      this.currentModalDialogResult = id;
+      this.appView.dialog.currentModalDialogResult = id
 
-      this.closeModal();
+      this.appView.dialog.closeDialog()
 
-      e.preventDefault();
-    });
+      e.preventDefault()
+    })
   }
 
-  protected document_keydown(e: KeyboardEvent) {
+  document_keydown(e: KeyboardEvent) {
 
-    const env = this.toolEnv;
-    const wnd = this.mainWindow;
-    const context = this.toolContext;
+    const docContext = this.docContext
+    const toolContext = this.toolContext
+    const wnd = this.appView.mainWindow
 
-    let key = e.key;
+    let key = e.key
     if (key.length == 1) {
-      key = key.toLowerCase();
+      key = key.toLowerCase()
     }
 
-    e.preventDefault();
+    e.preventDefault()
 
-    this.toolContext.shiftKey = e.shiftKey;
-    this.toolContext.altKey = e.altKey;
-    this.toolContext.ctrlKey = e.ctrlKey;
+    docContext.shiftKey = e.shiftKey
+    docContext.altKey = e.altKey
+    docContext.ctrlKey = e.ctrlKey
 
-    env.updateContext();
+    toolContext.updateContext()
 
-    if (this.activeCanvasWindow == this.timeLineWindow) {
+    if (this.appView.activeCanvasWindow == this.appView.timeLineWindow) {
 
       if (this.document_keydown_timeLineWindow(key)) {
 
-        return;
+        return
       }
+    }
+
+    if (this.appTool.executeMainToolKeyDown(key)) {
+      return
     }
 
     if (key == ' ') {
 
-      if (this.activeCanvasWindow == this.mainWindow) {
+      if (this.appView.activeCanvasWindow == this.appView.mainWindow) {
 
-        this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, null, env);
+        this.appView.viewOperation.startViewOperation(ViewOperationMode.move, wnd, null, toolContext)
       }
 
-      return;
+      return
     }
 
-    if (key == '.' && env.needsDrawOperatorCursor()) {
+    if (key == '.' && toolContext.needsDrawOperatorCursor()) {
 
-      this.setOperatorCursorLocationToMouse();
+      this.setOperatorCursorLocationToMouse()
     }
 
-    if (this.isModalToolRunning()) {
+    if (this.appTool.isModalToolRunning()) {
 
-      this.document_keydown_modalTool(key, e);
+      this.document_keydown_modalTool(key, e)
 
-      return;
+      return
     }
-    else if (env.isEditMode()) {
+    else if (toolContext.isEditMode()) {
 
-      if (this.currentTool.keydown(e, env)) {
-        return;
+      if (this.appTool.getCurrentSubTool().keydown(e, toolContext)) {
+        return
       }
     }
 
     if (key == 'Tab') {
 
       // Change mode
-      if (env.isDrawMode()) {
+      if (toolContext.isDrawMode()) {
 
-        this.setCurrentEditMode(EditModeID.editMode);
+        this.appTool.setCurrentMainToolTabForEditMode(EditModeID.editMode)
       }
       else {
 
-        this.setCurrentEditMode(EditModeID.drawMode);
+        this.appTool.setCurrentMainToolTabForEditMode(EditModeID.drawMode)
       }
 
-      env.setRedrawLayerWindow();
-      env.setRedrawSubtoolWindow();
+      toolContext.setRedrawLayerWindow()
+      toolContext.setRedrawRibbonUI()
 
-      return;
+      return
     }
 
-    if (key == 'n' && env.isCtrlKeyPressing()) {
+    if (key == 'n' && toolContext.isCtrlKeyPressing()) {
 
-      this.resetDocument();
+      this.appMain.resetDocument()
 
-      return;
+      return
     }
 
     if (key == 'b') {
 
-      this.inputKey_draw_down();
-      return;
+      if (toolContext.isDrawMode()) {
+
+        this.appTool.setCurrentSubTool(SubToolID.scratchLine)
+
+        this.appTool.executeSubToolKeyDown(e)
+        return
+      }
     }
 
     if (key == 'e') {
 
-      this.inputKey_eraser_down();
-      return;
+      this.inputKey_eraser_down()
+      return
     }
 
     if (key == 'p') {
-      return;
+      return
     }
 
     if (key == 'z') {
 
-      this.inputKey_undo_down();
-      return;
+      this.inputKey_undo_down()
+      return
     }
 
     if (key == 'y') {
 
-      this.inputKey_redo_down();
-      return;
+      this.inputKey_redo_down()
+      return
     }
 
-    if (env.isCtrlKeyPressing() && key == 'c') {
+    if (toolContext.isCtrlKeyPressing() && key == 'c') {
 
-      this.inputKey_copy_down();
-      return;
+      this.inputKey_copy_down()
+      return
     }
 
-    if (env.isCtrlKeyPressing() && key == 'v') {
+    if (toolContext.isCtrlKeyPressing() && key == 'v') {
 
-      this.inputKey_paste_down();
-      return;
+      this.inputKey_paste_down()
+      return
     }
 
-    if (!env.isCtrlKeyPressing() && (key == 'c' || key == 'v')) {
+    if (!toolContext.isCtrlKeyPressing() && (key == 'c' || key == 'v')) {
 
-      let addFrame = 1;
+      let addFrame = 1
       if (key == 'c') {
-        addFrame = -addFrame;
+        addFrame = -addFrame
       }
 
-      let frame = this.findNextViewKeyframeFrame(context.document.animationSettingData.currentTimeFrame, addFrame);
+      const frame = this.appView.viewKeyframe.findNextViewKeyframeFrame(this.docContext, docContext.document.animationSettingData.currentTimeFrame, addFrame)
 
-      this.setCurrentFrame(frame);
+      this.appTool.setCurrentFrame(frame)
 
-      env.setRedrawMainWindowEditorWindow();
-      env.setRedrawTimeLineWindow();
+      toolContext.setRedrawMainWindowEditorWindow()
+      toolContext.setRedrawTimeLineWindow()
     }
 
     if (key == 'Delete' || key == 'x') {
 
-      const withCut = (key == 'x' && env.isCtrlKeyPressing());
+      const withCut = (key == 'x' && toolContext.isCtrlKeyPressing())
 
-      this.inputKey_delete_down(withCut);
-      return;
+      this.inputKey_delete_down(withCut)
+      return
     }
 
     if (key == 'Home' || key == 'q') {
 
-      this.viewOperation.reseTotHome(this.mainWindow, env);
+      this.appView.viewOperation.reseTotHome(this.appView.mainWindow, toolContext)
 
-      return;
+      return
     }
 
     if (key == 't' || key == 'r') {
 
-      if (env.isDrawMode()) {
+      if (toolContext.isDrawMode()) {
 
-        const clockwise = (key == 't');
+        const clockwise = (key == 't')
 
-        this.viewOperation.addViewRotation(10.0, clockwise, wnd, env);
-        return;
+        this.appView.viewOperation.addViewRotation(10.0, clockwise, wnd, toolContext)
+        return
       }
     }
 
     if (key == 'm') {
 
-      this.mainWindow.mirrorX = !this.mainWindow.mirrorX;
-      env.setRedrawMainWindowEditorWindow();
-      return;
+      this.appView.mainWindow.mirrorX = !this.appView.mainWindow.mirrorX
+      toolContext.setRedrawMainWindowEditorWindow()
+      return
     }
 
     if (key == 'f' || key == 'd') {
 
-      let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate;
+      let addScale = 1.0 + this.appDrawing.drawStyle.viewZoomAdjustingSpeedRate
 
       if (key == 'd') {
 
-        addScale = 1 / addScale;
+        addScale = 1 / addScale
       }
 
-      this.viewOperation.addViewScale(addScale, wnd, env);
+      this.appView.viewOperation.addViewScale(addScale, wnd, toolContext)
 
-      return;
+      return
     }
 
-    if (env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight' || key == 'ArrowUp' || key == 'ArrowDown')) {
+    if (toolContext.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight' || key == 'ArrowUp' || key == 'ArrowDown')) {
 
-      let x = 0.0;
-      let y = 0.0;
+      let x = 0.0
+      let y = 0.0
       if (key == 'ArrowLeft') {
-        x = -10.0;
+        x = -10.0
       }
       if (key == 'ArrowRight') {
-        x = 10.0;
+        x = 10.0
       }
       if (key == 'ArrowUp') {
-        y = -10.0;
+        y = -10.0
       }
       if (key == 'ArrowDown') {
-        y = 10.0;
+        y = 10.0
       }
 
-      this.mainWindow.calculateViewUnitMatrix(wnd.view2DMatrix);
-      mat4.invert(wnd.invView2DMatrix, wnd.view2DMatrix);
-      vec3.set(this.tempVec3, x, y, 0.0);
-      vec3.transformMat4(this.tempVec3, this.tempVec3, wnd.invView2DMatrix);
+      this.appView.mainWindow.calculateViewUnitMatrix(wnd.view2DMatrix)
+      mat4.invert(wnd.invView2DMatrix, wnd.view2DMatrix)
+      vec3.set(this.tempVec3, x, y, 0.0)
+      vec3.transformMat4(this.tempVec3, this.tempVec3, wnd.invView2DMatrix)
 
-      vec3.add(this.mainWindow.viewLocation, this.mainWindow.viewLocation, this.tempVec3);
+      vec3.add(this.appView.mainWindow.viewLocation, this.appView.mainWindow.viewLocation, this.tempVec3)
 
-      let leftLimit = this.mainWindow.width * (-0.5);
-      let rightLimit = this.mainWindow.width * 1.5
-      let topLimit = this.mainWindow.height * (-0.5);
-      let bottomLimit = this.mainWindow.height * 1.5
+      const leftLimit = this.appView.mainWindow.width * (-0.5)
+      const rightLimit = this.appView.mainWindow.width * 1.5
+      const topLimit = this.appView.mainWindow.height * (-0.5)
+      const bottomLimit = this.appView.mainWindow.height * 1.5
 
-      if (this.mainWindow.viewLocation[0] < leftLimit) {
-        this.mainWindow.viewLocation[0] = leftLimit;
+      if (this.appView.mainWindow.viewLocation[0] < leftLimit) {
+        this.appView.mainWindow.viewLocation[0] = leftLimit
       }
-      if (this.mainWindow.viewLocation[0] > rightLimit) {
-        this.mainWindow.viewLocation[0] = rightLimit;
+      if (this.appView.mainWindow.viewLocation[0] > rightLimit) {
+        this.appView.mainWindow.viewLocation[0] = rightLimit
       }
-      if (this.mainWindow.viewLocation[1] < topLimit) {
-        this.mainWindow.viewLocation[1] = topLimit;
+      if (this.appView.mainWindow.viewLocation[1] < topLimit) {
+        this.appView.mainWindow.viewLocation[1] = topLimit
       }
-      if (this.mainWindow.viewLocation[1] > bottomLimit) {
-        this.mainWindow.viewLocation[1] = bottomLimit;
+      if (this.appView.mainWindow.viewLocation[1] > bottomLimit) {
+        this.appView.mainWindow.viewLocation[1] = bottomLimit
       }
 
-      env.setRedrawMainWindowEditorWindow();
+      toolContext.setRedrawMainWindowEditorWindow()
 
-      return;
+      return
     }
 
-    if (!env.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight')) {
+    if (!toolContext.isCtrlKeyPressing() && (key == 'ArrowLeft' || key == 'ArrowRight')) {
 
-      let addFrame = 1;
+      let addFrame = 1
       if (key == 'ArrowLeft') {
-        addFrame = -addFrame;
+        addFrame = -addFrame
       }
 
-      this.setCurrentFrame(context.document.animationSettingData.currentTimeFrame + addFrame);
+      this.appTool.setCurrentFrame(docContext.document.animationSettingData.currentTimeFrame + addFrame)
 
-      env.setRedrawMainWindowEditorWindow();
-      env.setRedrawTimeLineWindow();
+      toolContext.setRedrawMainWindowEditorWindow()
+      toolContext.setRedrawTimeLineWindow()
     }
 
     if (key == 'i') {
 
-      return;
+      return
     }
 
     if (key == 'a') {
 
-      if (env.isEditMode()) {
+      if (toolContext.isEditMode()) {
 
-        this.tool_SelectAllPoints.executeToggleSelection(env);
-        this.activateCurrentTool();
+        this.appTool.tool_SelectAllPoints.executeToggleSelection(toolContext)
+        this.appTool.activateCurrentTool()
       }
       else {
 
-        this.selectNextOrPreviousLayer(false);
-        this.startShowingCurrentLayer();
-        env.setRedrawLayerWindow();
-        env.setRedrawSubtoolWindow();
+        this.appTool.selectNextOrPreviousLayer(false)
+        this.appView.layerHighlight.startShowingCurrentLayer(this.docContext, this.toolContext)
+        toolContext.setRedrawLayerWindow()
+        toolContext.setRedrawRibbonUI()
       }
 
-      return;
+      return
     }
 
     if (key == 'h') {
 
-      if (env.isEditMode()) {
+      if (!toolContext.isEditMode()) {
 
-      }
-      else {
+        this.appTool.setCurrentSubTool(SubToolID.extrudeLine)
 
-
-        this.setCurrentMainTool(MainToolID.drawLine);
-        this.setCurrentSubTool(<int>DrawLineToolSubToolID.extrudeLine);
-        this.currentTool.keydown(e, env);
-        env.setRedrawMainWindowEditorWindow();
-        env.setRedrawSubtoolWindow();
+        this.appTool.executeSubToolKeyDown(e)
       }
 
-      return;
+      return
     }
 
     if (key == 'w') {
 
-      let pickedLayer: Layer = null;
-      for (let pickingPosition of this.layerPickingPositions) {
+      let pickedLayer: Layer = null
+      for (const pickingPosition of this.appDrawing.layerPickingPositions) {
 
-        let pickX = this.mainWindow.toolMouseEvent.offsetX + pickingPosition[0];
-        let pickY = this.mainWindow.toolMouseEvent.offsetY + pickingPosition[1];
+        const pickX = this.appView.mainWindow.pointerEvent.offsetX + pickingPosition[0]
+        const pickY = this.appView.mainWindow.pointerEvent.offsetY + pickingPosition[1]
 
-        pickedLayer = this.pickLayer(this.mainWindow, this.currentViewKeyframe, pickX, pickY);
+        pickedLayer = this.appDrawing.pickLayer(this.appView.mainWindow, this.appDrawing.currentViewKeyframe, docContext.document, pickX, pickY)
 
         if (pickedLayer != null) {
-          break;
+          break
         }
       }
 
       if (pickedLayer != null) {
 
-        this.setCurrentLayer(pickedLayer);
-        env.setRedrawLayerWindow();
-        env.setRedrawSubtoolWindow();
-        this.startShowingCurrentLayer();
+        this.appTool.selectLayer(pickedLayer)
+        this.appView.layerHighlight.startShowingCurrentLayer(this.docContext, this.toolContext)
       }
       else {
 
-        env.setRedrawMainWindowEditorWindow();
+        toolContext.setRedrawMainWindowEditorWindow()
       }
 
-      return;
-    }
-
-    if (key == 'l') {
+      return
     }
 
     if (key == 'o') {
 
-      if (env.isCtrlKeyPressing()) {
+      if (toolContext.isCtrlKeyPressing()) {
 
-        this.uiFileOpenDialogRef.show();
+        this.appView.uiDialogDocumentFilerRef.show(this.userSetting)
       }
       else {
 
-        this.currentTool.keydown(e, env);
+        this.appTool.executeSubToolKeyDown(e)
       }
 
-      return;
+      return
     }
 
     if (key == 'g' || key == 'r' || key == 's') {
 
-      if (key == 's' && env.isCtrlKeyPressing()) {
+      if (key == 's' && toolContext.isCtrlKeyPressing()) {
 
-        this.saveDocument();
-        return;
+        this.appMain.saveDocument()
+        return
       }
 
-      if (env.isDrawMode()) {
+      if (toolContext.isDrawMode()) {
 
-        if (this.currentTool.keydown(e, env)) {
+        if (this.appTool.executeSubToolKeyDown(e)) {
 
           // Switch to scratch line tool
         }
         else if (key == 'g') {
 
-          this.setCurrentMainTool(MainToolID.drawLine);
-          this.setCurrentSubTool(<int>DrawLineToolSubToolID.scratchLine);
-          this.currentTool.keydown(e, env);
-          env.setRedrawMainWindowEditorWindow();
-          env.setRedrawSubtoolWindow();
+          this.inputKey_draw_down()
         }
         else if (key == 's') {
 
-          this.selectNextOrPreviousLayer(true);
-          this.startShowingCurrentLayer();
-          env.setRedrawLayerWindow();
-          env.setRedrawSubtoolWindow();
+          this.appTool.selectNextOrPreviousLayer(true)
+          this.appView.layerHighlight.startShowingCurrentLayer(this.docContext, this.toolContext)
+          toolContext.setRedrawLayerWindow()
+          toolContext.setRedrawRibbonUI()
         }
 
-        return;
+        return
       }
+      else if (toolContext.isEditMode()) {
 
-      if (env.isEditMode()) {
+        if (toolContext.isCurrentLayerVectorLayer() || toolContext.isCurrentLayerGroupLayer()) {
 
-        let modalToolID = ModalToolID.grabMove;
+          let modalToolID = SubToolID.edit_GrabMove
 
-        if (key == 'r') {
+          if (key == 'r') {
 
-          modalToolID = ModalToolID.rotate;
-        }
-        else if (key == 's') {
+            modalToolID = SubToolID.edit_Rotate
+          }
+          else if (key == 's') {
 
-          modalToolID = ModalToolID.scale;
-        }
+            modalToolID = SubToolID.edit_Scale
+          }
 
-        if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
-
-          this.startVectorLayerModalTool(modalToolID);
-        }
-        else if (env.isCurrentLayerImageFileReferenceLayer()) {
-
-          this.startImageFileReferenceLayerModalTool(modalToolID);
+          this.appTool.startModalTool(modalToolID)
         }
 
-        return;
+        return
       }
     }
 
     if (key == 'Enter') {
 
-      this.currentTool.keydown(e, env);
-    }
-
-    if (key == '1') {
-
-      let layerItem = this.layerWindow_FindCurrentItem();
-      this.openLayerPropertyModal(layerItem.layer);
-    }
-
-    /*
-    if (key == '2') {
-
-        let layerItem = this.findCurrentLayerLayerWindowItem();
-        this.openPaletteColorModal(
-            OpenPaletteColorModalMode.LineColor, this.toolContext.document, layerItem.layer);
-    }
-
-    if (key == '3') {
-
-        let layerItem = this.findCurrentLayerLayerWindowItem();
-        this.openPaletteColorModal(
-            OpenPaletteColorModalMode.FillColor, this.toolContext.document, layerItem.layer);
-    }
-    */
-
-    if (key == '4') {
-
-      this.openDocumentSettingModal();
+      this.appTool.executeSubToolKeyDown(e)
     }
 
     if (key == '5') {
 
-      this.openNewLayerCommandOptionModal();
-    }
-
-    if (key == '^') {
-
-      this.openOperationOptionModal();
+      this.appView.dialog.newLayerCommandOptionDialog()
     }
 
     if (key == '\\') {
 
-      this.openExportImageFileModal();
+      this.appView.dialog.exportImageFileDialog()
     }
 
     if (key == '-') {
 
-      context.drawCPUOnly = !this.toolContext.drawCPUOnly;
-      env.setRedrawMainWindow();
+      docContext.drawCPUOnly = !this.docContext.drawCPUOnly
+      toolContext.setRedrawMainWindow()
     }
   }
 
-  protected inputKey_undo_down() {
+  inputKey_undo_down() {
 
-    const env = this.toolEnv;
+    this.docContext.commandHistory.undo(this.toolContext)
 
-    this.toolContext.commandHistory.undo(env);
+    this.appTool.activateCurrentTool()
 
-    this.activateCurrentTool();
-
-    env.setRedrawMainWindowEditorWindow();
+    this.toolContext.setRedrawMainWindowEditorWindow()
   }
 
-  protected inputKey_redo_down() {
+  inputKey_redo_down() {
 
-    const env = this.toolEnv;
+    this.docContext.commandHistory.redo(this.toolContext)
 
-    this.toolContext.commandHistory.redo(env);
+    this.appTool.activateCurrentTool()
 
-    this.activateCurrentTool();
-
-    env.setRedrawMainWindowEditorWindow();
+    this.toolContext.setRedrawMainWindowEditorWindow()
   }
 
-  protected inputKey_copy_down() {
+  inputKey_copy_down() {
 
-    const env = this.toolEnv;
-
-    if (!env.isEditMode()) {
-      return;
+    if (!this.toolContext.isEditMode()) {
+      return
     }
 
-    if (this.toolContext.currentVectorGroup != null) {
+    if (this.docContext.currentVectorGroup != null) {
 
-      let command = new Command_CopyGeometry();
-      if (command.prepareEditData(env)) {
+      const command = new Command_CopyGeometry()
 
-        command.execute(env);
+      if (command.prepareEditData(this.toolContext)) {
+
+        command.execute(this.toolContext)
       }
     }
   }
 
-  protected inputKey_paste_down() {
+  inputKey_paste_down() {
 
-    const env = this.toolEnv;
-    const context = this.toolContext;
-
-    if (context.currentVectorGroup == null) {
-      return;
+    if (this.docContext.currentVectorGroup == null) {
+      return
     }
 
-    let command = new Command_PasteGeometry();
-    if (command.prepareEditData(env)) {
+    const command = new Command_PasteGeometry()
 
-      this.tool_SelectAllPoints.executeClearSelectAll(env);
+    if (command.prepareEditData(this.toolContext)) {
 
-      context.commandHistory.executeCommand(command, env);
+      this.appTool.tool_SelectAllPoints.executeClearSelectAll(this.toolContext)
+
+      this.docContext.commandHistory.executeCommand(command, this.toolContext)
     }
 
-    env.setRedrawCurrentLayer();
+    this.toolContext.setRedrawCurrentLayer()
   }
 
-  protected inputKey_delete_down(withCut: boolean) {
+  inputKey_delete_down(withCut: boolean) {
 
-    const env = this.toolEnv;
-
-    if (!env.isEditMode()) {
-      return;
+    if (!this.toolContext.isEditMode()) {
+      return
     }
 
-    if (env.isCurrentLayerVectorLayer() || env.isCurrentLayerContainerLayer()) {
+    if (this.toolContext.isCurrentLayerVectorLayer() || this.toolContext.isCurrentLayerGroupLayer()) {
 
-      let command = new Command_DeleteSelectedPoints();
-      if (command.prepareEditTargets(env)) {
+      const command = new Command_DeleteSelectedPoints()
+
+      if (command.prepareEditTargets(this.toolContext)) {
 
         if (withCut) {
 
-          let copyCommand = new Command_CopyGeometry();
-          if (copyCommand.prepareEditData(env)) {
+          const copyCommand = new Command_CopyGeometry()
+          if (copyCommand.prepareEditData(this.toolContext)) {
 
-            copyCommand.execute(env);
+            copyCommand.execute(this.toolContext)
           }
         }
 
-        env.commandHistory.executeCommand(command, env);
+        this.toolContext.commandHistory.executeCommand(command, this.toolContext)
 
-        env.setRedrawMainWindow();
+        this.toolContext.setRedrawMainWindow()
       }
     }
   }
 
-  protected inputKey_draw_down() {
+  inputKey_draw_down() {
 
-    const env = this.toolEnv;
-
-    if (!env.isDrawMode()) {
-      return;
+    if (!this.toolContext.isDrawMode()) {
+      return
     }
 
-    this.setCurrentMainTool(MainToolID.drawLine);
-    this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
+    this.appTool.setCurrentSubTool(SubToolID.drawLine)
 
-    this.updateFooterMessage();
-    env.setRedrawMainWindowEditorWindow();
-    env.setRedrawLayerWindow();
-    env.setRedrawSubtoolWindow();
+    this.appTool.updateFooterMessage()
   }
 
-  protected inputKey_eraser_down() {
+  inputKey_eraser_down() {
 
-    const env = this.toolEnv;
-    const context = this.toolContext;
-
-    if (!env.isDrawMode()) {
-      return;
+    if (!this.toolContext.isDrawMode()) {
+      return
     }
 
-    this.setCurrentMainTool(MainToolID.drawLine);
-    if (context.subToolIndex != <int>DrawLineToolSubToolID.deletePointBrush) {
+    if (this.docContext.subtoolID != SubToolID.deletePointBrush) {
 
-      this.setCurrentSubTool(<int>DrawLineToolSubToolID.deletePointBrush);
+      this.appTool.setCurrentSubTool(SubToolID.deletePointBrush)
     }
     else {
 
-      this.setCurrentSubTool(<int>DrawLineToolSubToolID.drawLine);
+      this.appTool.setCurrentSubTool(SubToolID.drawLine)
     }
 
-    this.updateFooterMessage();
-    env.setRedrawMainWindowEditorWindow();
-    env.setRedrawLayerWindow();
-    env.setRedrawSubtoolWindow();
+    this.appTool.updateFooterMessage()
   }
 
-  protected document_keyup(e: KeyboardEvent) {
+  document_keyup(e: KeyboardEvent) {
 
-    const env = this.toolEnv;
-
-    this.toolContext.shiftKey = e.shiftKey;
-    this.toolContext.altKey = e.altKey;
-    this.toolContext.ctrlKey = e.ctrlKey;
+    this.docContext.shiftKey = e.shiftKey
+    this.docContext.altKey = e.altKey
+    this.docContext.ctrlKey = e.ctrlKey
 
     if (e.key == ' ') {
 
-      if (this.viewOperation.isViewOperationRunning()) {
+      if (this.appView.viewOperation.isViewOperationRunning()) {
 
-        this.viewOperation.endViewOperation(this.mainWindow, true, env);
+        this.appView.viewOperation.endViewOperation(this.appView.mainWindow, true, this.toolContext)
       }
     }
   }
 
-  protected document_keydown_modalTool(key: string, e: KeyboardEvent) {
-
-    var env = this.toolEnv;
+  document_keydown_modalTool(key: string, e: KeyboardEvent) {
 
     if (key == 'Escape') {
 
-      this.cancelModalTool();
+      this.appTool.cancelModalTool()
     }
     else {
 
-      this.currentTool.keydown(e, env);
+      this.appTool.executeSubToolKeyDown(e)
     }
   }
 
-  protected document_keydown_timeLineWindow(key: string): boolean {
+  document_keydown_timeLineWindow(key: string): boolean {
 
-    var env = this.toolEnv;
-    let context = this.toolContext;
-    let aniSetting = context.document.animationSettingData;
+    const aniSetting = this.docContext.document.animationSettingData
 
     if (key == 'i') {
-      this.openNewKeyframeModal();
-      return true;
+      this.appView.dialog.newKeyframeDialog()
+      return true
     }
 
     if (key == 'Delete' || key == 'x') {
-      this.openDeleteKeyframeModal();
-      return true;
+      this.appView.dialog.deleteKeyframeDialog()
+      return true
     }
 
     if (key == 'k' || key == 'l') {
 
-      if (this.currentViewKeyframe != null) {
+      if (this.appDrawing.currentViewKeyframe != null) {
 
-        var add_FrameTime = 1;
+        let add_FrameTime = 1
         if (key == 'k') {
-          add_FrameTime = -1;
+          add_FrameTime = -1
         }
 
-        var newFrame = this.currentViewKeyframe.frame + add_FrameTime;
+        let newFrame = this.appDrawing.currentViewKeyframe.frame + add_FrameTime
 
         if (newFrame < 0) {
 
-          newFrame = 0;
+          newFrame = 0
         }
 
         if (add_FrameTime > 0
-          && this.nextKeyframe != null
-          && newFrame >= this.nextKeyframe.frame) {
+          && this.appDrawing.nextKeyframe != null
+          && newFrame >= this.appDrawing.nextKeyframe.frame) {
 
-          newFrame = this.nextKeyframe.frame - 1;
+          newFrame = this.appDrawing.nextKeyframe.frame - 1
         }
 
         if (add_FrameTime < 0
-          && this.previousKeyframe != null
-          && newFrame <= this.previousKeyframe.frame) {
+          && this.appDrawing.previousKeyframe != null
+          && newFrame <= this.appDrawing.previousKeyframe.frame) {
 
-          newFrame = this.previousKeyframe.frame + 1;
+          newFrame = this.appDrawing.previousKeyframe.frame + 1
         }
 
-        if (this.currentViewKeyframe.frame != newFrame) {
+        if (this.appDrawing.currentViewKeyframe.frame != newFrame) {
 
-          for (let viewKeyFrameLayer of this.currentViewKeyframe.layers) {
+          for (const viewKeyFrameLayer of this.appDrawing.currentViewKeyframe.layers) {
 
             if (viewKeyFrameLayer.hasKeyframe()) {
 
-              viewKeyFrameLayer.vectorLayerKeyframe.frame = newFrame;
+              viewKeyFrameLayer.vectorLayerKeyframe.frame = newFrame
             }
           }
 
-          this.currentViewKeyframe.frame = newFrame;
+          this.appDrawing.currentViewKeyframe.frame = newFrame
 
-          env.setRedrawMainWindowEditorWindow();
-          env.setRedrawTimeLineWindow();
+          this.toolContext.setRedrawMainWindowEditorWindow()
+          this.toolContext.setRedrawTimeLineWindow()
         }
       }
 
-      return true;
+      return true
     }
 
     if (key == 'o' || key == 'p') {
 
-      var add_FrameTime = 1;
+      let add_FrameTime = 1
       if (key == 'o') {
-        add_FrameTime = -1;
+        add_FrameTime = -1
       }
 
-      if (env.isShiftKeyPressing()) {
+      if (this.toolContext.isShiftKeyPressing()) {
 
-        aniSetting.loopEndFrame += add_FrameTime;
+        aniSetting.loopEndFrame += add_FrameTime
         if (aniSetting.loopEndFrame < 0) {
-          aniSetting.loopEndFrame = 0;
+          aniSetting.loopEndFrame = 0
         }
       }
-      else if (env.isCtrlKeyPressing()) {
+      else if (this.toolContext.isCtrlKeyPressing()) {
 
-        aniSetting.loopStartFrame += add_FrameTime;
+        aniSetting.loopStartFrame += add_FrameTime
         if (aniSetting.loopStartFrame < 0) {
-          aniSetting.loopStartFrame = 0;
+          aniSetting.loopStartFrame = 0
         }
       }
       else {
 
-        aniSetting.maxFrame += add_FrameTime;
+        aniSetting.maxFrame += add_FrameTime
         if (aniSetting.maxFrame < 0) {
-          aniSetting.maxFrame = 0;
+          aniSetting.maxFrame = 0
         }
       }
 
-      env.setRedrawMainWindowEditorWindow();
-      env.setRedrawTimeLineWindow();
+      this.toolContext.setRedrawMainWindowEditorWindow()
+      this.toolContext.setRedrawTimeLineWindow()
 
-      return true;
+      return true
     }
 
-    return false;
+    return false
   }
 
-  protected document_drop(e: DragEvent) {
+  document_drop(e: DragEvent) {
 
-    e.preventDefault();
+    e.preventDefault()
 
     // Check file exists
     if (e.dataTransfer.files.length == 0) {
 
-      console.log('error: no dropped files.');
-      return;
+      console.error('no dropped files.')
+      return
     }
 
     // Get file path or name
-    let file = e.dataTransfer.files[0];
+    const file = e.dataTransfer.files[0]
 
-    let filePath = '';
+    let filePath = ''
     if ('path' in file) {
-      filePath = file['path'];
+      filePath = file['path']
     }
     else {
-      filePath = file.name;
+      filePath = file.name
     }
 
-    if (StringIsNullOrEmpty(filePath)) {
+    if (Strings.isNullOrEmpty(filePath)) {
 
-      console.log('error: cannot get file path.');
-      return;
+      console.error('cannot get file path.')
+      return
     }
 
     // Start loading document
-    this.startReloadDocumentFromFile(file, filePath);
+    this.appMain.startReloadDocumentFromFile(file, filePath)
   }
 
-  protected htmlWindow_resize() {
+  htmlWindow_resize() {
 
-    this.setDefferedWindowResize();
+    this.appMain.setDefferedWindowResize()
   }
 
-  protected htmlWindow_contextmenu(e): boolean {
+  htmlWindow_contextmenu(e): boolean {
 
     if (e.preventDefault) {
-      e.preventDefault();
+      e.preventDefault()
     }
     else if (e.returnValue) {
-      e.returnValue = false;
+      e.returnValue = false
     }
 
-    return false;
+    return false
   }
 
-  protected mainWindow_mousedown() {
+  mainWindow_mousedown() {
 
-    let wnd = this.mainWindow;
-    let e = wnd.toolMouseEvent;
-    let env = this.toolEnv;
+    const wnd = this.appView.mainWindow
+    const e = wnd.pointerEvent
 
-    env.updateContext();
+    this.toolContext.updateContext()
 
-    // console.log('mainWindow_mousedown', e.offsetX, e.offsetY);
+    // console.log('mainWindow_mousedown', e.offsetX, e.offsetY)
 
     // Operation UI
-    if (!this.isModalToolRunning() && !this.viewOperation.isViewOperationRunning()) {
+    if (!this.appTool.isModalToolRunning() && !this.appView.viewOperation.isViewOperationRunning()) {
 
-      this.mainWindow_mousedown_OperationUI(e);
+      this.mainWindow_mousedown_OperationUI(e)
     }
 
-    if (this.viewOperation.isViewOperationRunning()) {
+    if (this.appView.viewOperation.isViewOperationRunning()) {
 
-      this.viewOperation.pointerDownAdditional(wnd, env);
+      this.appView.viewOperation.pointerDownAdditional(wnd)
 
-      return;
+      return
     }
 
     if (this.operationUI_IsHover(e)) {
-      return;
+      return
     }
 
     // Current tool
-    if (this.isModalToolRunning()) {
+    if (this.appTool.isModalToolRunning()) {
 
-      if (this.currentTool.isAvailable(env)) {
+      if (this.appTool.isCurrentSubToolAvailable()) {
 
-        this.currentTool.mouseDown(e, env);
+        this.appTool.executeSubToolMouseDown(e)
       }
     }
     else {
 
-      if (this.currentTool.isAvailable(env)) {
+      if (this.appTool.isCurrentSubToolAvailable()) {
 
-        this.currentTool.mouseDown(e, env);
+        this.appTool.executeSubToolMouseDown(e)
       }
     }
 
     // View operations
-    if (e.isRightButtonPressing() && env.isShiftKeyPressing()) {
+    if (e.isRightButtonPressing() && this.toolContext.isShiftKeyPressing()) {
 
-      this.setOperatorCursorLocationToMouse();
+      this.setOperatorCursorLocationToMouse()
     }
     else if (e.isRightButtonPressing() || e.isCenterButtonPressing()) {
 
-      this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, null, env);
+      this.appView.viewOperation.startViewOperation(ViewOperationMode.move, wnd, null, this.toolContext)
     }
     else {
 
-      this.viewOperation.endViewOperation(wnd, false, env);
+      this.appView.viewOperation.endViewOperation(wnd, false, this.toolContext)
     }
   }
 
-  protected mainWindow_mousemove() {
+  mainWindow_mousemove() {
 
-    const wnd = this.mainWindow;
-    const e = wnd.toolMouseEvent;
-    const env = this.toolEnv;
+    const wnd = this.appView.mainWindow
+    const e = wnd.pointerEvent
 
-    env.updateContext();
+    this.toolContext.updateContext()
 
     // View operations
-    if (this.viewOperation.isViewOperationRunning()) {
+    if (this.appView.viewOperation.isViewOperationRunning()) {
 
-      if (this.viewOperation.processViewOperation(wnd, wnd.toolMouseEvent, env)) {
+      if (this.appView.viewOperation.processViewOperation(wnd, wnd.pointerEvent, this.toolContext)) {
 
-        return;
+        return
       }
     }
 
     // Operation UI
-    if (!this.isModalToolRunning()) {
+    if (!this.appTool.isModalToolRunning()) {
 
       if (this.mainWindow_mousemove_OperationUI(e)) {
 
-        env.setRedrawEditorWindow();
+        this.toolContext.setRedrawEditorWindow()
       }
     }
 
     // Current tool
-    if (this.isModalToolRunning()) {
+    if (this.appTool.isModalToolRunning()) {
 
-      if (!e.isMouseDragging) {
+        // console.log(`mainWindow_mousemove (${e.location[0]} ${e.location[1]})`)
 
-        if (this.currentTool.isAvailable(env)) {
+        if (!e.isMouseDragging) {
 
-          this.currentTool.mouseMove(e, env);
+        if (this.appTool.isCurrentSubToolAvailable()) {
+
+        this.appTool.executeSubToolMouseMove(e)
         }
       }
     }
-    else if (env.isDrawMode()) {
+    else if (this.toolContext.isDrawMode()) {
 
-      this.currentTool.mouseMove(e, env);
+      this.appTool.executeSubToolMouseMove(e)
     }
-    else if (env.isEditMode()) {
+    else if (this.toolContext.isEditMode()) {
 
-      let isHitChanged = this.hittestToStrokes(e.location, env.mouseCursorViewRadius);
+      const isHitChanged = this.hittestToStrokes(e.location, this.toolContext.mouseCursorViewRadius)
 
       if (isHitChanged) {
 
-        env.setRedrawCurrentLayer();
+        this.toolContext.setRedrawCurrentLayer()
       }
 
-      this.currentTool.mouseMove(e, env);
+      this.appTool.executeSubToolMouseMove(e)
     }
   }
 
-  protected mainWindow_mouseup() {
+  mainWindow_mouseup() {
 
-    const wnd = this.mainWindow;
-    const e = wnd.toolMouseEvent;
-    const env = this.toolEnv;
+    const wnd = this.appView.mainWindow
+    const e = wnd.pointerEvent
 
-    env.updateContext();
+    this.toolContext.updateContext()
 
-    if (this.viewOperation.isViewOperationRunning()) {
+    if (this.appView.viewOperation.isViewOperationRunning()) {
 
-      if (this.viewOperation.endViewOperation(wnd, false, env)) {
+      if (this.appView.viewOperation.endViewOperation(wnd, false, this.toolContext)) {
 
-        return;
+        return
       }
     }
 
-    if (this.currentTool) {
-
-      this.currentTool.mouseUp(e, env);
-    }
+    this.appTool.executeSubToolMouseUp(e)
   }
 
-  protected mainWindow_mousewheel() {
+  mainWindow_mousewheel() {
 
-    let wnd = this.mainWindow;
-    let e = wnd.toolMouseEvent;
-    let env = this.toolEnv;
+    const wnd = this.appView.mainWindow
+    const e = wnd.pointerEvent
 
     // View operations
     if (e.wheelDelta != 0.0 && !e.isMouseDragging) {
 
-      let addScale = 1.0 + this.drawStyle.viewZoomAdjustingSpeedRate * 0.5;
+      let addScale = 1.0 + this.appDrawing.drawStyle.viewZoomAdjustingSpeedRate * 0.5
 
       if (e.wheelDelta < 0.0) {
 
-        addScale = 1.0 / addScale;
+        addScale = 1.0 / addScale
       }
 
-      this.viewOperation.addViewScale(addScale, wnd, env);
+      this.appView.viewOperation.addViewScale(addScale, wnd, this.toolContext)
     }
 
-    this.calculateTransfomredMouseParams(e, wnd);
+    this.appView.viewCoordinate.calculateTransfomredMouseParams(this.toolContext.mouseCursorLocation, e, wnd)
   }
 
-  protected hittestToStrokes(location: Vec3, minDistance: float): boolean {
+  hittestToStrokes(location: Vec3, minDistance: float): boolean {
 
-    let env = this.toolEnv;
+    if (this.toolContext.currentVectorGeometry == null) {
 
-    if (env.currentVectorGeometry == null) {
-
-      return false;
+      return false
     }
 
-    this.hittest_Line_IsCloseTo.startProcess();
+    this.appTool.hittest_Line_IsCloseTo.startProcess()
 
-    this.hittest_Line_IsCloseTo.processLayer(env.currentVectorGeometry, location, minDistance);
+    this.appTool.hittest_Line_IsCloseTo.processGeometry(this.toolContext.currentVectorGeometry, location, minDistance)
 
-    this.hittest_Line_IsCloseTo.endProcess();
+    this.appTool.hittest_Line_IsCloseTo.endProcess()
 
-    return this.hittest_Line_IsCloseTo.isChanged;
+    return this.appTool.hittest_Line_IsCloseTo.isChanged
   }
 
-  protected mainWindow_mousedown_OperationUI(e: ToolMouseEvent): boolean {
+  mainWindow_mousedown_OperationUI(e: ToolPointerEvent): boolean {
 
-    const area = LayoutLogic.hitTestLayout(this.mainOperationUI_Area.children, e.offsetX, e.offsetY);
+    const area = this.appView.operationPanel.hittestToButtons(e)
 
     if (area != null) {
 
-      this.operationUI_Click(area, this.mainWindow);
+      this.operationUI_Click(area, this.appView.mainWindow)
 
-      return true;
+      return true
     }
 
-    if (LayoutLogic.hitTestLayout(this.mainOperationUI_Area, e.offsetX, e.offsetY)) {
+    if (this.appView.operationPanel.hittestToPanel(e)) {
 
-      return true;
+      return true
     }
 
-    return false;
+    return false
   }
 
-  protected operationUI_IsHover(e: ToolMouseEvent): boolean {
+  operationUI_IsHover(e: ToolPointerEvent): boolean {
 
-    return LayoutLogic.hitTestLayout(this.mainOperationUI_Area, e.offsetX, e.offsetY) != null;
+    return (this.appView.operationPanel.hittestToPanel(e) != null)
   }
 
-  protected mainWindow_mousemove_OperationUI(e: ToolMouseEvent): boolean {
+  mainWindow_mousemove_OperationUI(e: ToolPointerEvent): boolean {
 
     // Operation UI
     if (this.operationUI_IsHover(e)) {
 
-      this.editorWindow.canvas.style.cursor = "default";
+      this.appView.editorWindow.canvas.style.cursor = "default"
     }
     else {
 
-      this.editorWindow.canvas.style.cursor = "crosshair";
+      this.appView.editorWindow.canvas.style.cursor = "crosshair"
     }
 
-    const area = LayoutLogic.hitTestLayout(this.mainOperationUI_Area.children, e.offsetX, e.offsetY);
+    const area = this.appView.operationPanel.hittestToButtons(e)
 
     if (this.lastHoverLayoutArea != null) {
 
-      this.lastHoverLayoutArea.saveState();
+      this.lastHoverLayoutArea.saveState()
     }
 
     if (area != null) {
 
-      area.saveState();
+      area.saveState()
     }
 
     if (this.lastHoverLayoutArea != null) {
 
-      this.lastHoverLayoutArea.hover = false;
+      this.lastHoverLayoutArea.hover = false
     }
 
     if (area != null) {
 
-      area.hover = true;
-      this.lastHoverLayoutArea = area;
+      area.hover = true
+      this.lastHoverLayoutArea = area
     }
 
-    const isChanged = (LayoutLogic.isChanged(area) || LayoutLogic.isChanged(this.lastHoverLayoutArea));
+    const isChanged = (LayoutLogic.isChanged(area) || LayoutLogic.isChanged(this.lastHoverLayoutArea))
 
-    return isChanged;
+    return isChanged
   }
 
-  protected menuButton_Click(id: MainCommandButtonID) {
+  menuButton_Click(id: MainCommandButtonID) {
 
-    if (this.isEventDisabled()) {
-      return;
+    if (this.appMain.isEventDisabled()) {
+      return
     }
 
     switch (id) {
 
       case MainCommandButtonID.open:
-        this.uiFileOpenDialogRef.show();
-        break;
+        this.appView.uiDialogDocumentFilerRef.show(this.userSetting)
+        break
 
       case MainCommandButtonID.save:
-        this.saveDocument();
-        break;
+        this.appMain.saveDocument()
+        break
 
       case MainCommandButtonID.export:
-        this.openExportImageFileModal();
-        break;
+        this.appView.dialog.exportImageFileDialog()
+        break
 
       case MainCommandButtonID.undo:
-        this.inputKey_undo_down();
-        break;
+        this.inputKey_undo_down()
+        break
 
       case MainCommandButtonID.redo:
-        this.inputKey_redo_down();
-        break;
-
-      case MainCommandButtonID.settings:
-        this.openDocumentSettingDialog();
-        break;
+        this.inputKey_redo_down()
+        break
 
       case MainCommandButtonID.layerWindow:
-        this.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.layerWindow]);
-        break;
+        this.appView.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.layerWindow])
+        break
 
       case MainCommandButtonID.paletteWindow:
-        this.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.paletteWindow]);
-        break;
+        this.appView.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.paletteWindow])
+        break
 
       case MainCommandButtonID.colorMixerWindow:
-        this.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.colorMixerWindow]);
-        break;
+        this.appView.uiSideBarContainerRef.toggleContent(MainCommandButtonID[MainCommandButtonID.colorMixerWindow])
+        break
 
       case MainCommandButtonID.timeLineWindow:
         // TOTO: きちんと実装する
-        if (this.timeLineWindow.canvas.parentElement.classList.contains('hidden')) {
+        if (this.appView.timeLineWindow.canvas.parentElement.classList.contains('hidden')) {
 
-          this.timeLineWindow.canvas.parentElement.classList.remove('hidden');
+          this.appView.timeLineWindow.canvas.parentElement.classList.remove('hidden')
 
           setTimeout(() => {
 
-            this.resizeCanvasToCurrent(this.timeLineWindow);
-            this.toolEnv.setRedrawTimeLineWindow();
-          }, 100);
+            this.appView.domResizing.resizeCanvasToClientSize(this.appView.timeLineWindow)
+            this.toolContext.setRedrawTimeLineWindow()
+          }, 100)
         }
         else {
 
-          this.timeLineWindow.canvas.parentElement.classList.add('hidden');
+          this.appView.timeLineWindow.canvas.parentElement.classList.add('hidden')
         }
-        break;
+        break
     }
   }
 
-  protected footerOperationpanel_Button_Click(id: UI_FooterOperationPanel_ID) {
+  footerOperationpanel_Button_Click(id: UI_FooterOperationPanel_ID) {
 
-    if (this.isEventDisabled()) {
-      return;
+    if (this.appMain.isEventDisabled()) {
+      return
     }
 
     if (id == UI_FooterOperationPanel_ID.copy) {
 
-      this.inputKey_copy_down();
-      return;
+      this.inputKey_copy_down()
+      return
     }
 
     if (id == UI_FooterOperationPanel_ID.paste) {
 
-      this.inputKey_paste_down();
-      return;
+      this.inputKey_paste_down()
+      return
     }
 
     if (id == UI_FooterOperationPanel_ID.cut) {
 
-      this.inputKey_delete_down(true);
-      return;
+      this.inputKey_delete_down(true)
+      return
     }
 
     if (id == UI_FooterOperationPanel_ID.undo) {
 
-      this.inputKey_undo_down();
-      return;
+      this.inputKey_undo_down()
+      return
     }
 
     if (id == UI_FooterOperationPanel_ID.redo) {
 
-      this.inputKey_redo_down();
-      return;
+      this.inputKey_redo_down()
+      return
     }
   }
 
-  protected operationUI_Click(area: RectangleLayoutArea, wnd: InputableWindow) {
+  operationUI_Click(area: RectangleLayoutArea, wnd: PointerInputWindow) {
 
-    const env = this.toolEnv;
+    if (area.index == OperationPanelButtonID.view_move) {
 
-    if (area.index == OperationUI_ID.view_move) {
-
-      this.viewOperation.startViewOperation(ViewOperationMode.move, wnd, area, env);
-      return;
+      this.appView.viewOperation.startViewOperation(ViewOperationMode.move, wnd, area, this.toolContext)
+      return
     }
 
-    if (area.index == OperationUI_ID.view_rotate) {
+    if (area.index == OperationPanelButtonID.view_rotate) {
 
-      this.viewOperation.startViewOperation(ViewOperationMode.rotate, wnd, area, env);
-      return;
+      this.appView.viewOperation.startViewOperation(ViewOperationMode.rotate, wnd, area, this.toolContext)
+      return
     }
 
-    if (area.index == OperationUI_ID.view_zoom) {
+    if (area.index == OperationPanelButtonID.view_zoom) {
 
-      this.viewOperation.startViewOperation(ViewOperationMode.zoom, wnd, area, env);
-      return;
+      this.appView.viewOperation.startViewOperation(ViewOperationMode.zoom, wnd, area, this.toolContext)
+      return
     }
 
-    if (area.index == OperationUI_ID.draw) {
+    if (area.index == OperationPanelButtonID.draw) {
 
-      this.inputKey_draw_down();
-      return;
+      this.inputKey_draw_down()
+      return
     }
 
-    if (area.index == OperationUI_ID.eraser) {
+    if (area.index == OperationPanelButtonID.eraser) {
 
-      this.inputKey_eraser_down();
-      return;
+      this.inputKey_eraser_down()
+      return
     }
   }
 
-  protected layerWindow_mousedown_LayerCommandButton(hitedButton: UI_CommandButtonsItem) {
+  layerWindow_mousedown_LayerCommandButton(hitedButton: UI_CommandButtonsItem) {
 
     if (hitedButton == null) {
-      return;
+      return
     }
 
     // Select command
-    let layerCommand: Command_Layer_CommandBase = null;
+    let layerCommand: Command_Layer_CommandBase = null
 
     if (hitedButton.index == <int>LayerWindowButtonID.addLayer) {
 
-      this.openNewLayerCommandOptionModal();
+      this.appView.dialog.newLayerCommandOptionDialog()
     }
     else if (hitedButton.index == <int>LayerWindowButtonID.deleteLayer) {
 
-      layerCommand = new Command_Layer_Delete();
+      layerCommand = new Command_Layer_Delete()
     }
     else if (hitedButton.index == <int>LayerWindowButtonID.moveUp) {
 
-      layerCommand = new Command_Layer_MoveUp();
+      layerCommand = new Command_Layer_MoveUp()
     }
     else if (hitedButton.index == <int>LayerWindowButtonID.moveDown) {
 
-      layerCommand = new Command_Layer_MoveDown();
+      layerCommand = new Command_Layer_MoveDown()
     }
 
     if (layerCommand == null) {
 
-      return;
+      return
     }
 
     // Execute command
-    this.executeLayerCommand(layerCommand);
+    this.appMain.executeLayerCommand(layerCommand)
   }
 
-  protected layerWindow_mousedown_LayerItem(clickedX: float, clickedY: float, doubleClicked: boolean) {
+  layerWindow_Item_Click(item: ViewLayerListItem) {
 
-    const env = this.toolEnv;
-    let wnd = this.layerWindow;
+    const selectedLayer = item.layer
 
-    if (wnd.layerWindowItems.length == 0) {
-      return;
-    }
+    if (this.toolContext.isShiftKeyPressing()) {
 
-    let firstItem = wnd.layerWindowItems[0];
-    let selectedIndex = Math.floor((clickedY - firstItem.top) / firstItem.getHeight());
-
-    if (selectedIndex >= 0 && selectedIndex < wnd.layerWindowItems.length) {
-
-      let selectedItem = wnd.layerWindowItems[selectedIndex];
-      let selectedLayer = selectedItem.layer;
-
-      if (clickedX <= selectedItem.textLeft) {
-
-        this.layerWindow_Visibility_Click(selectedItem);
-      }
-      else {
-
-        if (doubleClicked) {
-
-          // Layer property
-
-          this.openLayerPropertyModal(selectedLayer);
-        }
-        else {
-
-          // Select layer content
-
-          this.layerWindow_Item_Click(selectedItem);
-        }
-      }
-    }
-
-    env.setRedrawLayerWindow();
-    env.setRedrawSubtoolWindow();
-  }
-
-  protected layerWindow_Item_Click(item: LayerWindowItem) {
-
-    let env = this.toolEnv;
-    let selectedLayer = item.layer;
-
-    if (env.isShiftKeyPressing()) {
-
-      this.setLayerSelection(selectedLayer, !selectedLayer.isSelected);
-      this.activateCurrentTool();
-      this.startShowingLayerItem(item);
+      this.appTool.setLayerSelection(selectedLayer, !selectedLayer.isSelected)
+      this.appTool.activateCurrentTool()
+      this.appView.layerHighlight.startShowingLayerItem(item, this.toolContext)
     }
     else {
 
-      this.setCurrentLayer(selectedLayer);
-      this.startShowingCurrentLayer();
+      this.appTool.selectLayer(selectedLayer)
+      this.appView.layerHighlight.startShowingCurrentLayer(this.docContext, this.toolContext)
     }
 
-    Layer.updateHierarchicalStatesRecursive(selectedLayer);
-
-    env.setRedrawMainWindowEditorWindow();
-    env.setRedrawWebGLWindow();
-    env.setRedrawLayerWindow();
-    env.setRedrawSubtoolWindow();
+    Layer.updateHierarchicalStatesRecursive(selectedLayer)
   }
 
-  protected layerWindow_Visibility_Click(item: LayerWindowItem) {
+  layerWindow_Visibility_Click(item: ViewLayerListItem) {
 
-    let env = this.toolEnv;
+    this.appTool.setLayerVisiblity(item.layer, !item.layer.isVisible)
 
-    this.setLayerVisiblity(item.layer, !item.layer.isVisible);
+    Layer.updateHierarchicalStatesRecursive(this.toolContext.document.rootLayer)
 
-    Layer.updateHierarchicalStatesRecursive(env.document.rootLayer);
+    this.appTool.activateCurrentTool()
 
-    this.activateCurrentTool();
-
-    env.setRedrawMainWindowEditorWindow();
-    env.setRedrawLayerWindow();
-    env.setRedrawSubtoolWindow();
+    this.toolContext.setRedrawMainWindowEditorWindow()
+    this.toolContext.setRedrawLayerWindow()
+    this.toolContext.setRedrawRibbonUI()
   }
 
-  protected mainTool_ItemClick(mainToolID: MainToolID) {
+  ribbonUI_TabClick(tabID: MainToolTabID) {
 
-    if (this.isEventDisabled()) {
-      return;
+    this.appTool.setCurrentMainToolTab(tabID)
+    this.appTool.setCurrentSubToolForCurrentTab()
+  }
+
+  subtoolWindow_Item_Click(item: SubToolViewItem) {
+
+    this.subtoolButton_Click(item.subToolID)
+  }
+
+  subtoolWindow_Button_Click(item: SubToolViewItem) {
+
+    const tool = item.tool
+
+    if (!tool.isAvailable(this.toolContext)) {
+      return
     }
 
-    const env = this.toolEnv;
+    const buttonIndex = 0
 
-    switch(mainToolID) {
+    if (tool.optionButton_Click(buttonIndex, this.toolContext)) {
 
-      case MainToolID.drawLine:
-      case MainToolID.posing: {
+      item.buttonStateID = tool.getOptionButtonState(buttonIndex, this.toolContext)
 
-        this.setCurrentEditMode(EditModeID.drawMode);
-        this.setCurrentMainToolForCurentLayer();
-
-        this.toolEnv.setRedrawMainWindowEditorWindow();
-        this.toolEnv.setRedrawSubtoolWindow();
-
-        break;
-      }
-
-      case MainToolID.edit: {
-
-        if (env.isDrawMode()) {
-
-          this.setCurrentEditMode(EditModeID.editMode);
-        }
-
-        break;
-      }
-
-      case MainToolID.draw3D: {
-
-        this.setCurrentEditMode(EditModeID.drawMode);
-        this.setCurrentMainTool(MainToolID.draw3D);
-
-        this.toolEnv.setRedrawMainWindowEditorWindow();
-        this.toolEnv.setRedrawSubtoolWindow();
-        break;
-      }
-
-      case MainToolID.misc: {
-
-        this.setCurrentEditMode(EditModeID.drawMode);
-        this.setCurrentMainTool(MainToolID.misc);
-
-        this.toolEnv.setRedrawMainWindowEditorWindow();
-        this.toolEnv.setRedrawSubtoolWindow();
-
-        break;
-      }
+      this.toolContext.setRedrawMainWindowEditorWindow()
+      this.toolContext.setRedrawRibbonUI()
     }
   }
 
-  protected subtoolWindow_Item_Click(item: SubToolViewItem) {
+  subtoolButton_Click(subToolID: SubToolID) {
 
-    this.subtoolWindow_selectItem(item.subToolIndex);
+    this.appTool.setCurrentSubTool(subToolID)
+    this.appTool.activateCurrentTool()
+    this.appTool.getCurrentSubTool().toolWindowItemClick(this.toolContext)
   }
 
-  protected subtoolWindow_Button_Click(item: SubToolViewItem) {
+  ribbonUI_button_Click(id: RibbonUIControlID) {
 
-    let tool = item.tool;
-    let env = this.toolEnv;
-
-    if (!tool.isAvailable(env)) {
-      return;
-    }
-
-    let buttonIndex = 0;
-
-    if (tool.optionButton_Click(buttonIndex, env)) {
-
-      item.buttonStateID = tool.getOptionButtonState(buttonIndex, env);
-
-      env.setRedrawMainWindowEditorWindow();
-      env.setRedrawSubtoolWindow();
-
-      this.updateUISubToolWindow();
-    }
+    this.appTool.executeMainToolButtonClick(id)
   }
 
-  protected subtoolWindow_selectItem(subToolIndex: int) {
-
-    let env = this.toolEnv;
-
-    if (!this.isSubToolAvailable(subToolIndex)) {
-      return;
-    }
-
-    // Change current sub tool
-    this.setCurrentSubTool(subToolIndex);
-
-    env.setRedrawMainWindowEditorWindow();
-
-    // Tool event
-    this.activateCurrentTool();
-    this.currentTool.toolWindowItemClick(env);
-  }
-
-  protected ribbonUI_toggleButton_Click(id: RibbonUIControlID, value: float) {
-
-    let env = this.toolEnv;
+  ribbonUI_toggleButton_Click(id: RibbonUIControlID, value: number) {
 
     switch(id) {
 
+      case RibbonUIControlID.vectorLayer_drawLineType:
+        // TODO: undoの実装
+        if (this.docContext.currentVectorLayer) {
+
+          this.docContext.currentVectorLayer.drawLineType = value
+
+          const color = this.docContext.getCurrentLayerLineColor()
+          vec4.copy(this.docContext.currentVectorLayer.layerColor, color)
+
+          this.appMain.updateForLayerProperty()
+
+          this.toolContext.setRedrawRibbonUI()
+          this.toolContext.setRedrawMainWindowEditorWindow()
+        }
+        break
+
+        case RibbonUIControlID.vectorLayer_fillAreaType:
+          // TODO: undoの実装
+          if (this.docContext.currentVectorLayer) {
+
+            this.docContext.currentVectorLayer.fillAreaType = value
+
+            const color = this.docContext.getCurrentLayerFillColor()
+            vec4.copy(this.docContext.currentVectorLayer.fillColor, color)
+
+            this.appMain.updateForLayerProperty()
+
+            this.toolContext.setRedrawRibbonUI()
+            this.toolContext.setRedrawMainWindowEditorWindow()
+          }
+          break
+
       case RibbonUIControlID.vectorLayer_eyesSymmetryInputSide:
 
-        if (env.currentVectorLayer) {
+        if (this.toolContext.currentVectorLayer) {
 
-          env.currentVectorLayer.eyesSymmetryInputSide = value;
+          this.toolContext.currentVectorLayer.eyesSymmetryInputSide = value
 
-          let command = new Command_VectorLayer_SetProperty();
-          command.layer = env.currentVectorLayer;
-          command.new_eyesSymmetryInputSide = value;
-          if (command.isAvailable(env)) {
+          const command = new Command_VectorLayer_SetProperty()
+          command.layer = this.toolContext.currentVectorLayer
+          command.new_eyesSymmetryInputSide = value
+          if (command.isAvailable(this.toolContext)) {
 
-            env.commandHistory.executeCommand(command, env);
+            this.toolContext.commandHistory.executeCommand(command, this.toolContext)
           }
         }
 
-        break;
+        break
     }
   }
 
-  protected ribbonUI_numberInput_Change(id: RibbonUIControlID, value: float) {
+  ribbonUI_textInput_Change(id: RibbonUIControlID, value: string) {
 
-    // console.log(id, value);
+    if (typeof(value) != 'string') {
+      return
+    }
 
-    let env = this.toolEnv;
+    switch(id) {
+
+      case RibbonUIControlID.layer_name:
+        this.docContext.currentLayer.name = value
+        this.toolContext.setRedrawLayerWindow()
+        break
+    }
+  }
+
+  ribbonUI_numberInput_Change(id: RibbonUIControlID, value: float) {
+
+    // console.log(id, value)
+    if (!Number.isFinite(value)) {
+      return
+    }
 
     switch(id) {
 
       case RibbonUIControlID.brushWidth_Max:
-        this.toolContext.drawLineBaseWidth = value;
-        break;
+        this.docContext.drawLineBaseWidth = value
+        break
 
       case RibbonUIControlID.brushWidth_Min:
-        this.toolContext.drawLineMinWidth = value;
-        break;
+        this.docContext.drawLineMinWidth = value
+        break
 
       case RibbonUIControlID.eraserWidth_Max:
-        this.toolContext.eraserLineBaseWidth = value;
-        env.setRedrawEditorWindow();
-        break;
+        this.docContext.eraserLineBaseWidth = value
+        this.toolContext.setRedrawEditorWindow()
+        break
+
+      case RibbonUIControlID.document_lineWidthBiasRate:
+        this.docContext.document.lineWidthBiasRate = value
+        this.toolContext.setRedrawMainWindowEditorWindow()
+        break
+
+      case RibbonUIControlID.vectorLayer_lineWidthBiasRate:
+        if (this.docContext.currentVectorLayer) {
+
+          this.docContext.currentVectorLayer.lineWidthBiasRate = value
+          this.toolContext.setRedrawMainWindow()
+        }
+        break
     }
   }
 
-  protected ribbonUI_checkBox_Change(id: RibbonUIControlID, checked: boolean, value: boolean | number | null) {
-
-    let env = this.toolEnv;
+  ribbonUI_checkBox_Change(id: RibbonUIControlID, checked: boolean, _value: boolean | number | null) {
 
     switch (id) {
 
+      case RibbonUIControlID.document_hideOuterArea:
+        // TODO: undoの実装
+        this.toolContext.document.documentFrame_HideOuterArea = checked
+
+        this.toolContext.setRedrawRibbonUI()
+        this.toolContext.setRedrawMainWindowEditorWindow()
+        break
+
+      case RibbonUIControlID.layer_isRenderTarget:
+        // TODO: undoの実装
+        if (this.toolContext.currentLayer) {
+
+          this.toolContext.currentLayer.isRenderTarget = checked
+
+          this.appMain.updateForLayerProperty()
+
+          this.toolContext.setRedrawRibbonUI()
+          this.toolContext.setRedrawMainWindowEditorWindow()
+        }
+        break
+
+      case RibbonUIControlID.layer_isMaskedByBelowLayer:
+        // TODO: undoの実装
+        if (this.toolContext.currentLayer) {
+
+          this.toolContext.currentLayer.isMaskedByBelowLayer = checked
+
+          this.appMain.updateForLayerProperty()
+
+          this.toolContext.setRedrawRibbonUI()
+          this.toolContext.setRedrawMainWindowEditorWindow()
+        }
+        break
+
       case RibbonUIControlID.vectorLayer_enableEyesSymmetry:
 
-        if (env.currentVectorLayer) {
+        if (this.toolContext.currentVectorLayer) {
 
-          let command = new Command_VectorLayer_SetProperty();
-          command.layer = env.currentVectorLayer;
-          command.new_enableEyesSymmetry = checked;
-          if (command.isAvailable(env)) {
+          const command = new Command_VectorLayer_SetProperty()
+          command.layer = this.toolContext.currentVectorLayer
+          command.new_enableEyesSymmetry = checked
+          if (command.isAvailable(this.toolContext)) {
 
-            // console.log('ribbonUI_CheckBox_Change', id, checked, value);
+            // console.log('ribbonUI_CheckBox_Change', id, checked, value)
 
-            env.commandHistory.executeCommand(command, env);
+            this.toolContext.commandHistory.executeCommand(command, this.toolContext)
           }
         }
-        break;
+        break
     }
   }
 
-  protected ribbonUI_selectBox_Change(id: RibbonUIControlID, selected_Options: UI_SelectBoxOption[]) {
-
-    let env = this.toolEnv;
+  ribbonUI_selectBox_Change(id: RibbonUIControlID, selected_Options: UI_SelectBoxOption[]) {
 
     switch (id) {
 
       case RibbonUIControlID.vectorLayer_posingLayer:
+      {
+        const selected_Option = (selected_Options.length > 0 ? selected_Options[0] : null)
 
-        const selected_Option = (selected_Options.length > 0 ? selected_Options[0] : null);
+        if (this.toolContext.currentVectorLayer && selected_Option) {
 
-        if (env.currentVectorLayer && selected_Option) {
+          // console.log('ribbonUI_SelectBox_Change', id, selected_Option, this.toolContext.currentVectorLayer)
 
-          // console.log('ribbonUI_SelectBox_Change', id, selected_Option, env.currentVectorLayer);
+          const command = new Command_VectorLayer_SetProperty()
+          command.layer = this.toolContext.currentVectorLayer
+          command.new_posingLayer = selected_Option.data
+          if (command.isAvailable(this.toolContext)) {
 
-          let command = new Command_VectorLayer_SetProperty();
-          command.layer = env.currentVectorLayer;
-          command.new_posingLayer = selected_Option.data;
-          if (command.isAvailable(env)) {
-
-            env.commandHistory.executeCommand(command, env);
+            this.toolContext.commandHistory.executeCommand(command, this.toolContext)
           }
         }
-        break;
+        break
+      }
     }
   }
 
-  protected paletteSelectorWindow_CommandButton_Click(item: UI_CommandButtonsItem) {
+  documentFrame_Change(left: float, top: float, width: float, height: float) {
 
-    let wnd = this.paletteSelectorWindow;
-    let env = this.toolEnv;
+    this.docContext.document.documentFrame[0] = left
+    this.docContext.document.documentFrame[1] = top
+    this.docContext.document.documentFrame[2] = left + width - 1
+    this.docContext.document.documentFrame[3] = top + height - 1
 
-    wnd.currentTargetID = item.index;
+    this.toolContext.setRedrawMainWindowEditorWindow()
 
-    env.setRedrawColorSelectorWindow();
-    env.setRedrawColorMixerWindow();
+    this.appTool.activateCurrentTool()
   }
 
-  protected paletteSelectorWindow_Item_Click(paletteColorIndex: int, color: PaletteColor) {
+  documentViewSettings_change(defaultViewScale: float) {
 
-    let wnd = this.paletteSelectorWindow;
-    let env = this.toolEnv;
+    this.docContext.document.defaultViewScale = defaultViewScale
 
-    if (env.currentVectorLayer == null) {
-      return;
+    this.toolContext.setRedrawMainWindowEditorWindow()
+  }
+
+  paletteSelectorWindow_CommandButton_Click(item: UI_CommandButtonsItem) {
+
+    this.appView.paletteSelectorWindow.setCurrentTarget(item.index)
+
+    this.toolContext.setRedrawPalleteSelectorWindow()
+    this.toolContext.setRedrawColorMixerWindow()
+  }
+
+  paletteSelectorWindow_Item_Click(paletteColorIndex: int, color: PaletteColor) {
+
+    const wnd = this.appView.paletteSelectorWindow
+    const ctx = this.docContext
+
+    let needsUpdateForLayer = false
+    let needsUpdateForPallete = false
+
+    switch (wnd.currentTargetID) {
+
+      case PaletteSelectorWindowButtonID.lineColor:
+        if (ctx.currentStrokeDrawable != null) {
+
+          ctx.currentStrokeDrawable.line_PaletteColorIndex = paletteColorIndex
+          vec4.copy(ctx.currentStrokeDrawable.layerColor, color.color)
+          needsUpdateForLayer = true
+        }
+        break
+
+      case PaletteSelectorWindowButtonID.fillColor:
+        if (ctx.currentFillDrawable) {
+
+          ctx.currentFillDrawable.fill_PaletteColorIndex = paletteColorIndex
+          vec4.copy(ctx.currentFillDrawable.fillColor, color.color)
+          needsUpdateForLayer = true
+        }
+        break
+
+      case PaletteSelectorWindowButtonID.adjustmentMode:
+        wnd.setCurrentPaletteIndex(paletteColorIndex)
+        needsUpdateForPallete = true
+        break
     }
 
-    let destColor = this.getPaletteSelectorWindow_SelectedColor();
-    vec4.copy(destColor, color.color);
+    if (needsUpdateForLayer) {
 
-    if (wnd.currentTargetID == PaletteSelectorWindowButtonID.lineColor) {
+      this.appMain.updateForLayerProperty()
 
-      env.currentVectorLayer.line_PaletteColorIndex = paletteColorIndex;
-    }
-    else if (wnd.currentTargetID == PaletteSelectorWindowButtonID.fillColor) {
-
-      env.currentVectorLayer.fill_PaletteColorIndex = paletteColorIndex;
+      this.toolContext.setRedrawLayerWindow()
+      this.toolContext.setRedrawRibbonUI()
+      this.toolContext.setRedrawMainWindowEditorWindow()
     }
 
-    env.setRedrawLayerWindow();
-    env.setRedrawMainWindowEditorWindow();
+    if (needsUpdateForPallete) {
+
+      this.toolContext.setRedrawPaletteWindow()
+    }
   }
 
-  protected setColorMixerRGBElementEvent(id: string, elementID: int) {
+  colorMixerWindow_colorCanvas_mousedown() {
 
-    let env = this.toolEnv;
-
-    this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', () => {
-
-      let numberValue = this.getInputElementNumber(id + this.ID.colorMixer_id_number, 0.0);
-
-      let color = this.getPaletteSelectorWindow_CurrentColor();
-
-      if (color != null) {
-
-        color[elementID] = numberValue;
-      }
-
-      env.setRedrawMainWindow();
-      env.setRedrawColorSelectorWindow();
-      env.setRedrawColorMixerWindow();
-    });
-
-    this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', () => {
-
-      let rangeValue = this.getInputElementRangeValue(id + this.ID.colorMixer_id_range, 1.0, 1.0);
-
-      let color = this.getPaletteSelectorWindow_CurrentColor();
-
-      if (color != null) {
-
-        color[elementID] = rangeValue;
-      }
-
-      env.setRedrawMainWindow();
-      env.setRedrawColorSelectorWindow();
-      env.setRedrawColorMixerWindow();
-    });
-  }
-
-  protected setColorMixerHSVElementEvent(id: string) {
-
-    let env = this.toolEnv;
-
-    this.getElement(id + this.ID.colorMixer_id_number).addEventListener('change', () => {
-
-      let hueValue = this.getInputElementNumber(this.ID.colorMixer_hue + this.ID.colorMixer_id_number, 0.0);
-      let satValue = this.getInputElementNumber(this.ID.colorMixer_sat + this.ID.colorMixer_id_number, 0.0);
-      let valValue = this.getInputElementNumber(this.ID.colorMixer_val + this.ID.colorMixer_id_number, 0.0);
-
-      let color = this.getPaletteSelectorWindow_CurrentColor();
-
-      if (color != null) {
-
-        ColorLogic.hsvToRGB(color, hueValue, satValue, valValue);
-
-        env.setRedrawMainWindow();
-        env.setRedrawColorSelectorWindow();
-        env.setRedrawColorMixerWindow();
-      }
-    });
-
-    this.getElement(id + this.ID.colorMixer_id_range).addEventListener('change', () => {
-
-      let hueValue = this.getInputElementRangeValue(this.ID.colorMixer_hue + this.ID.colorMixer_id_range, 1.0, 1.0);
-      let satValue = this.getInputElementRangeValue(this.ID.colorMixer_sat + this.ID.colorMixer_id_range, 1.0, 1.0);
-      let valValue = this.getInputElementRangeValue(this.ID.colorMixer_val + this.ID.colorMixer_id_range, 1.0, 1.0);
-
-      let color = this.getPaletteSelectorWindow_CurrentColor();
-
-      if (color != null) {
-
-        ColorLogic.hsvToRGB(color, hueValue, satValue, valValue);
-
-        env.setRedrawMainWindow();
-        env.setRedrawColorSelectorWindow();
-        env.setRedrawColorMixerWindow();
-      }
-    });
-  }
-
-  protected colorMixerWindow_colorCanvas_mousedown() {
-
-    let wnd = this.colorMixerWindow_colorCanvas;
-    let e = wnd.toolMouseEvent;
-    let env = this.toolEnv;
+    const wnd = this.appView.colorMixerWindow.colorCanvas
+    const e = wnd.pointerEvent
 
     if (!e.isLeftButtonPressing()) {
-      return;
+      return
     }
 
-    this.canvasRender.setContext(wnd);
-    this.canvasRender.pickColor(this.tempColor4, wnd, e.offsetX, e.offsetY);
+    this.appDrawing.canvasRender.setContext(wnd)
+    this.appDrawing.canvasRender.pickColor(this.tempColor4, e.offsetX, e.offsetY)
 
-    let color = this.getPaletteSelectorWindow_CurrentColor();
+    this.updateCurrentLayerColor(this.tempColor4, true)
+  }
 
-    if (color != null) {
+  colorMixerWindow_changeColor(newColor: Vec4) {
 
-      color[0] = this.tempColor4[0];
-      color[1] = this.tempColor4[1];
-      color[2] = this.tempColor4[2];
+    this.updateCurrentLayerColor(newColor, false)
+  }
 
-      env.setRedrawMainWindow();
-      env.setRedrawColorSelectorWindow();
-      env.setRedrawColorMixerWindow();
+  updateCurrentLayerColor(newColor: Vec4, keepAlpha: boolean) {
+
+    const isChanged = this.appView.paletteSelectorWindow.updateCurrentLayerColor(newColor, keepAlpha, this.docContext)
+
+    if (isChanged) {
+
+      this.toolContext.setRedrawMainWindow()
+      this.toolContext.setRedrawPalleteSelectorWindow()
+      this.toolContext.setRedrawColorMixerWindow()
+      this.toolContext.setRedrawLayerWindow()
     }
   }
 
-  protected colorMixerWindow_changeColor(newColor: Vec4) {
+  timeLineWindow_mousedown() {
 
-    let env = this.toolEnv;
+    const wnd = this.appView.timeLineWindow
+    const e = wnd.pointerEvent
 
-    let color = this.getPaletteSelectorWindow_CurrentColor();
-
-    if (color != null) {
-
-      vec4.copy(color, newColor);
-
-      env.setRedrawMainWindow();
-      env.setRedrawColorSelectorWindow();
-    }
-
-  }
-
-  protected timeLineWindow_mousedown() {
-
-    let wnd = this.timeLineWindow;
-    let e = wnd.toolMouseEvent;
-
-    let context = this.toolContext;
-
-    let left = wnd.getTimeLineLeft();
+    const left = wnd.getTimeLineLeft()
 
     if (e.offsetX < left) {
 
-      this.timeLineWindow_OnPlayPauseButton();
+      this.timeLineWindow_OnPlayPauseButton()
     }
     else {
 
-      this.timeLineWindow_ProcessFrameInput();
+      this.timeLineWindow_ProcessFrameInput()
     }
   }
 
-  protected timeLineWindow_OnPlayPauseButton() {
+  timeLineWindow_OnPlayPauseButton() {
 
-    let context = this.toolContext;
-    let env = this.toolEnv;
-    let aniSetting = context.document.animationSettingData;
+    const aniSetting = this.docContext.document.animationSettingData
 
-    if (context.animationPlaying) {
+    if (this.docContext.animationPlaying) {
 
-      context.animationPlaying = false;
+      this.docContext.animationPlaying = false
 
-      env.setRedrawTimeLineWindow();
+      this.toolContext.setRedrawTimeLineWindow()
     }
     else {
 
-      context.animationPlaying = true;
-      context.animationPlayingFPS = aniSetting.animationFrameParSecond;
+      this.docContext.animationPlaying = true
+      this.docContext.animationPlayingFPS = aniSetting.animationFrameParSecond
     }
   }
 
-  protected timeLineWindow_ProcessFrameInput() {
+  timeLineWindow_ProcessFrameInput() {
 
-    let wnd = this.timeLineWindow;
-    let e = wnd.toolMouseEvent;
+    const wnd = this.appView.timeLineWindow
+    const e = wnd.pointerEvent
+    const aniSetting = this.docContext.document.animationSettingData
 
-    let context = this.toolContext;
-    let env = this.toolEnv;
-    let aniSetting = context.document.animationSettingData;
-
-    let clickedFrame = wnd.getFrameByLocation(e.offsetX, aniSetting);
+    const clickedFrame = wnd.getFrameByLocation(e.offsetX, aniSetting)
 
     if (clickedFrame != -1 && clickedFrame != aniSetting.currentTimeFrame) {
 
-      this.setCurrentFrame(clickedFrame);
-      env.setRedrawMainWindowEditorWindow();
-      env.setRedrawTimeLineWindow();
+      this.appTool.setCurrentFrame(clickedFrame)
+
+      this.toolContext.setRedrawMainWindowEditorWindow()
+      this.toolContext.setRedrawTimeLineWindow()
     }
   }
 
-  protected timeLineWindow_mousemove() {
+  timeLineWindow_mousemove() {
 
-    let wnd = this.timeLineWindow;
-    let e = wnd.toolMouseEvent;
+    const wnd = this.appView.timeLineWindow
+    const e = wnd.pointerEvent
 
     if (e.isLeftButtonPressing()) {
 
-      this.timeLineWindow_ProcessFrameInput();
+      this.timeLineWindow_ProcessFrameInput()
     }
   }
 
-  protected timeLineWindow_mouseup() {
-  }
+  timeLineWindow_mousewheel() {
 
-  protected timeLineWindow_mousewheel() {
+    const wnd = this.appView.timeLineWindow
+    const e = wnd.pointerEvent
+    const aniSetting = this.docContext.document.animationSettingData
 
-    let wnd = this.timeLineWindow;
-    let e = wnd.toolMouseEvent;
+    if (this.toolContext.isCtrlKeyPressing()) {
 
-    let context = this.toolContext;
-    let env = this.toolEnv;
-    let aniSetting = context.document.animationSettingData;
-
-    if (env.isCtrlKeyPressing()) {
-
-      let addScale = 0.2;
+      const addScale = 0.2
 
       if (e.wheelDelta > 0) {
 
-        aniSetting.timeLineWindowScale += addScale;
+        aniSetting.timeLineWindowScale += addScale
       }
       else {
 
-        aniSetting.timeLineWindowScale -= addScale;
+        aniSetting.timeLineWindowScale -= addScale
       }
 
       if (aniSetting.timeLineWindowScale < 1.0) {
 
-        aniSetting.timeLineWindowScale = 1.0;
+        aniSetting.timeLineWindowScale = 1.0
       }
 
       if (aniSetting.timeLineWindowScale > aniSetting.timeLineWindowScaleMax) {
 
-        aniSetting.timeLineWindowScale = aniSetting.timeLineWindowScaleMax;
+        aniSetting.timeLineWindowScale = aniSetting.timeLineWindowScaleMax
       }
 
-      env.setRedrawTimeLineWindow();
+      this.toolContext.setRedrawTimeLineWindow()
     }
   }
 
-  protected setOperatorCursorLocationToMouse() {
+  setOperatorCursorLocationToMouse() {
 
-    vec3.copy(this.toolContext.operatorCursor.location, this.mainWindow.toolMouseEvent.location);
-    this.toolEnv.setRedrawEditorWindow();
+    vec3.copy(this.docContext.operatorCursor.location, this.appView.mainWindow.pointerEvent.location)
+    this.toolContext.setRedrawEditorWindow()
+  }
+
+  modal_ImageFileReference_Closed(filePath: string, image: HTMLImageElement) {
+
+    const command = new Command_SetReferenceImageToLayer()
+    command.targetLayer = this.toolContext.currentImageFileReferenceLayer
+    command.image = image
+    command.filePath = filePath
+
+    this.toolContext.commandHistory.executeCommand(command, this.toolContext)
+  }
+
+  onModalWindowClosed() {
+
+    // TODO: ダイアログの刷新後この関数は不要になるため削除する
+
+    this.appView.dialog.onDialogClosed()
+
+    this.toolContext.setRedrawMainWindowEditorWindow()
+    this.toolContext.setRedrawLayerWindow()
+    this.toolContext.setRedrawRibbonUI()
   }
 }

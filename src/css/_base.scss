@@ -8,18 +8,19 @@ $windowBackgroundHalf: #f6f6f87e;
 $windowLabelColor: #eee;
 $windowLabelBackground: #888;
 
-$controlackground: #fff;
+$controlBackground: #fff;
 $controlBorderColor: #888;
 $controlBorderWidth: 1px;
 $controlBorder: solid $windowBorderWidth $windowBorderColor;
+$controlBackgroundDisabled: #888;
 
 $listItemBackground: #fefefe;
 $listItemBackgroundOdd: #f8f8f8;
 
 $canvasBackground: #fff;
-$activeBackground: #ddf;
 $selectedBackground: #ddf;
-$hoverBackground: #e0e0ff;
+$activeBackground: darken($selectedBackground, 3%);
+$hoverBackground: #e8e8e8;
 $buttonBackground: #f0f0f0;
 $buttonCornerRadius: 3px;
 
@@ -29,14 +30,20 @@ $fontSizeNormal: 14px;
 $fontSizeNormalLineHeight: 24px;
 $fontSizeNormalIconSize: 22px;
 
-$zindex-screen-sub: 1000;
-$zindex-center-panel: 100;
-$zindex-side-panel: 200;
-
 $margin-basic: 5px;
 $padding-basic: 5px;
 $border-radius-basic: 5px;
 $border-radius-inner: 3px;
+
+$zindex-screen-sub: 1000;
+$zindex-modal: 1000;
+$zindex-center-panel: 100;
+$zindex-side-panel: 200;
+$zindex-footer-ui: 300;
+$zindex-timeline-panel: 301;
+$zindex-tool-ribbon: 302;
+
+$dialog-padding: 10px;
 
 // 選択可能項目
 
@@ -49,11 +56,11 @@ $border-radius-inner: 3px;
   &.selected {
 
     .selectable-item-inner {
-      background-color: darken($selectedBackground, 3%) !important;
+      background-color: $selectedBackground !important;
     }
 
     .selectable-item-inner-sq {
-      background-color: darken($selectedBackground, 3%) !important;
+      background-color: $selectedBackground !important;
     }
   }
 
@@ -73,7 +80,6 @@ $border-radius-inner: 3px;
   line-height: $fontSizeNormal * 2.0;
   border: $windowBorder;
   border-radius: 3px;
-  user-select: none;
 
   &:focus {
     outline: none;
@@ -87,8 +93,12 @@ $border-radius-inner: 3px;
   background-color: $backGround;
   color: #fff;
 
-  &:hover {
+  &:hover:not(.disabled) {
     background-color: lighten($backGround, 10%);
+  }
+
+  &.disabled {
+    background-color: $controlBackgroundDisabled;
   }
 }
 
@@ -100,6 +110,10 @@ $border-radius-inner: 3px;
 
   &:hover {
     background-color: lighten($backGround, 5%);
+  }
+
+  &.disabled {
+    background-color: $controlBackgroundDisabled;
   }
 }
 
@@ -113,4 +127,14 @@ $border-radius-inner: 3px;
 
 input[type=number] {
   text-align: right;
+}
+
+// 半透明表現
+.alpha-checker-background {
+
+  background-image: linear-gradient(45deg, gray 25%, transparent 25%, transparent 75%, gray 75%, gray),
+                    linear-gradient(45deg, gray 25%, transparent 25%, transparent 75%, gray 75%, gray);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+
 }

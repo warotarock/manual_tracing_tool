@@ -1,4 +1,82 @@
-﻿@import "base";
+﻿.modal-overlay-container {
+
+  .overlay {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index: $zindex-modal;
+    background-color:rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &.hidden {
+      display: none;
+    }
+  }
+}
+
+.modal-window-container {
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  overflow: hidden;
+
+  .modal-window-header {
+    padding: 10px;
+    background-color: $systemBackground;
+    font-size: $fontSizeNormal;
+    line-height: $fontSizeNormalLineHeight;
+    text-align: center;
+  }
+
+  .modal-window-content {
+    padding: 20px;
+  }
+
+  .ok-cancel-buttons {
+    text-align: center;
+    margin-top: 20px;
+    width: 100%;
+  }
+}
+
+.modal-image-file-reference {
+
+  input[type=file] {
+    display: none;
+  }
+
+  .image {
+    width: 300px;
+    height: 300px;
+    border: solid 1px $controlBorderColor;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .text {
+      font-size: $fontSizeNormal;
+
+      &.hidden {
+        display: none;
+      }
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+
+      &.hidden {
+        display: none;
+      }
+    }
+  }
+}
 
 .modalDialogWindow {
   background-color: #fff;
@@ -6,37 +84,6 @@
   border-radius: 10px;
   display: none;
   padding: 20px;
-}
-
-.layerPropertyModal {
-  width: 400px;
-  height: 380px;
-  position: absolute;
-  bottom: 100px;
-
-  div {
-    margin-top: 15px;
-  }
-
-  input {
-    margin-left: 10px;
-  }
-
-  input[type=radio] {
-    margin-left: 15px;
-  }
-
-  input[type=checkbox] {
-    margin-left: 0px;
-  }
-
-  #layerPropertyModal_layerAlpha {
-    width: 200px;
-  }
-
-  #layerPropertyModal_fillColorAlpha {
-    width: 200px;
-  }
 }
 
 .messageDialogModal {
@@ -59,60 +106,6 @@
     margin-left: 5px;
     margin-top: 5px;
     width: 100%;
-  }
-}
-
-.paletteColorModal {
-  width: 660px;
-  height: 280px;
-  position: absolute;
-  bottom: 100px;
-
-  input {
-    margin-left: 15px;
-    margin-top: 15px;
-  }
-
-  #paletteColorModal_colors {
-    margin-top: 10px;
-    width: 460px;
-    float: left;
-
-    div.colorItem {
-      width: 80px;
-      height: 30px;
-      margin-left: 10px;
-      margin-top: 10px;
-      float: left;
-      /*border-style: solid;*/
-    }
-
-    div.colorItem input[type="radio"] {
-      margin-left: 0px;
-      margin-top: 0px;
-      width: 30px;
-      height: 20px;
-    }
-
-    div.colorItem input[type="color"] {
-      margin-left: 0px;
-      margin-top: 0px;
-      width: 30px;
-      height: 30px;
-    }
-  }
-
-  #paletteColorModal_colorMixer {
-    margin-top: 10px;
-    width: 200px;
-    height: 200px;
-    float: left;
-
-    canvas {
-      margin-top: 10px;
-      width: 200px;
-      height: 200px;
-    }
   }
 }
 
@@ -155,36 +148,14 @@
   }
 }
 
-.documentSettingModal {
-  width: 400px;
-  height: 230px;
-
-  div {
-    margin-bottom: 10px;
-  }
-
-  div label {
-    margin-left: 10px;
-  }
-
-  div label input.lineWidthMax {
-    width: 50px;
-    margin-left: 5px;
-  }
-
-  input {
-    margin-left: 15px;
-    margin-top: 10px;
-  }
-
-  div label input.location {
-    width: 60px;
-  }
-}
-
 .exportImageFileModal {
   width: 400px;
-  height: 220px;
+  height: 270px;
+
+  .nameInputTextBox {
+    width: 250px;
+    padding-left: $margin-basic;
+  }
 
   div {
     margin-bottom: 15px;

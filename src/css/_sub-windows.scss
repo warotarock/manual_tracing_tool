@@ -1,33 +1,4 @@
-﻿@import "base";
-@import "ui";
-
-.main-canvas-window {
-  flex: 1;
-  position: relative;
-  // border: $windowBorder;
-  // margin-bottom: $margin-basic;
-  background-color: $canvasBackground;
-
-  .main-canvas {
-    position: absolute;
-    border: none;
-    z-index: 2;
-  }
-
-  .editor-canvas {
-    position: absolute;
-    border: none;
-    z-index: 3;
-    cursor: crosshair;
-  }
-
-  .webgl-canvas {
-    position: absolute;
-    border: none;
-    z-index: 1;
-  }
-}
-
+﻿
 .test-window {
   margin-top: 4px;
   border: 1px solid #eee;
@@ -35,373 +6,52 @@
 
 $main-tool-width: 150px;
 $sub-tool-buttons-width: 180px;
-$main-tool-height: 300px;
-$ribbon-height: 125px;
-$tool-button-width: 70px;
-$operation-ui-border: solid 1px $windowBorderColor;
 
-.tool-ribbon {
-  z-index: 300;
-  width: 100%;
+.footer-operation-panel-container {
+  position: absolute;
+  left: $main-tool-width + $margin-basic;
+  width: $sub-tool-buttons-width;
+  bottom: 0;
   height: $ribbon-height;
   box-sizing: border-box;
   border-top: $operation-ui-border;
-  border-bottom: $operation-ui-border;
-  padding: $padding-basic $padding-basic 0 $padding-basic;
+  border-left: $operation-ui-border;
+  border-right: $operation-ui-border;
+  border-top-left-radius: $border-radius-basic;
+  border-top-right-radius: $border-radius-basic;
+  padding: $padding-basic;
   display: flex;
   background-color: $windowBackground;
 
-  $item-padding: 3px;
+  .command-buttons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    align-items: center;
+    justify-items: center;
 
-  .tool-ribbon-rows {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    button {
+      border: 1px solid #888;
+      border-radius: $border-radius-basic;
+      width: 1.5em;
+      height: 1.5em;
+      padding: 0.15em 0 0 0.12em;
+      font-size: 32px;
+      overflow: hidden;
+      text-align: left;
+      background-color: $buttonBackground;
 
-    .menu-buttons-row {
-      display: flex;
-
-      .menu-buttons {
-        display: flex;
-        user-select: none;
-
-        .button {
-          box-sizing: border-box;
-          min-width: 80px;
-          height: 25px;
-          border-left: $windowBorder;
-          border-top: $windowBorder;
-          text-align: center;
-          font-size: 14px;
-          line-height: 25px;
-          vertical-align: middle;
-          cursor: default;
-          color: #000;
-          background-color: $windowBackground;
-          padding-inline-start: 10px;
-          padding-inline-end: 10px;
-
-          &:hover {
-            background-color: $hoverBackground;
-          }
-
-          $borderRadius: $border-radius-basic;
-
-          &:first-child {
-            border-top-left-radius: $borderRadius;
-          }
-
-          &:last-child {
-            border-right: $windowBorder;
-            border-top-right-radius: $borderRadius;
-          }
-
-          &.selected {
-            color: #fff;
-            background: #000;
-            border-color: #000;
-            border-width: 1px;
-
-            &:hover {
-              color: $hoverBackground;
-              border-color: #000;
-              background: #555;
-            }
-          }
-        }
+      &:hover {
+        background-color: $hoverBackground;
       }
 
-      .headerCommandButton {
-        margin-inline-start: 8px;
-
-        img {
-          width: 13px;
-          height: 13px;
-        }
-      }
-    }
-
-    .ribbon-ui-row {
-      display: flex;
-      flex: 1;
-      border-left: $windowBorder;
-      border-right: $windowBorder;
-      border-top: $windowBorder;
-      padding: $item-padding;
-
-      .ribbon-ui-home, .ribbon-ui-edit, .ribbon-ui-draw3d {
-        display: flex;
+      &:focus {
+        outline: none;
       }
 
-      .subtool-window {
-        flex: 1;
-        position: relative;
-
-        .ui-scroll-view-container {
-          position: absolute;
-          box-sizing: border-box;
-          left: 0;
-          right: 0;
-          top: 0px;
-          bottom: 0;
-          white-space:nowrap;
-        }
-
-        $item-scale: 0.9;
-
-        .item {
-          display: inline-block;
-          box-sizing: border-box;
-          height: 75px * $item-scale;
-          vertical-align: middle;
-          padding: 3px;
-
-          &:not(:last-child) {
-            border-right: solid 1px #ccc;
-          }
-
-          .item-inner {
-            display: flex;
-            background-size: 128px * $item-scale;
-            background-repeat: no-repeat;
-            height: 100%;
-
-            .spacer {
-              width: 80px * $item-scale;
-              height: 100%;
-            }
-
-            .command-button {
-              width: 64px * $item-scale;
-              height: 100%;
-              background-size: 256px * $item-scale;
-            }
-          }
-        }
-      }
-
-      .separator {
-        width: 1px;
-        border-right: solid 1px #ccc;
-        margin-inline-start: 3px;
-        margin-inline-end: 3px;
-      }
-
-      .tool-button {
-        box-sizing: border-box;
-        min-width: $tool-button-width;
-        height: 100%;
-        display: flex;
-        padding: 3px;
-        user-select: none;
-        // border: solid 1px #ccc;
-        margin-inline-end: 3px;
-
-        .tool-button-inner {
-          padding: 3px;
-          display: flex;
-          flex-direction: column;
-          flex: 1;
-
-          .icon {
-            height: 38px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-
-            img {
-              width: 38px;
-              pointer-events: none;
-            }
-          }
-
-          .label {
-            text-align: center;
-            font-size: 12px;
-            flex: 1;
-          }
-        }
-      }
-
-      .number-input {
-        display: flex;
-        height: 24px;
-
-        &:not(:first-child) {
-          padding-block-start: $margin-basic;
-        }
-
-        .label {
-          flex: 1;
-          font-size: 12px;
-          line-height: 24px;
-          vertical-align: middle;
-          user-select: none;
-        }
-
-        input {
-          width: 45px;
-          font-size: 12px;
-        }
-      }
-
-      .draw-line-params {
-        width: 100px;
-        display: flex;
-        flex-direction: column;
-        padding: $margin-basic;
-        user-select: none;
-      }
-
-      .group-container {
-        display: flex;
-        flex-direction: column;
-        padding: 0 $margin-basic $margin-basic $margin-basic;
-
-        >.label {
-          font-size: $fontSizeSmall;
-          padding-left: 2px;
-          text-align: center;;
-          // background-color: #ddd;
-          // border-bottom: solid 1px #ddd;
-          user-select: none;
-        }
-
-        .contents {
-          display: flex;
-          padding-left: $margin-basic;
-          justify-content: center;
-
-          .item {
-
-            &:not(:first-child) {
-              margin-inline-start: $margin-basic * 2;
-            }
-
-            .label {
-              margin-top: $margin-basic;
-              margin-bottom: 3px;
-              font-size: $fontSizeSmall;
-              padding-left: $margin-basic;
-              padding-right: $margin-basic;
-              user-select: none;
-            }
-          }
-
-          .item .toggle {
-            display: flex;
-            justify-content: center;
-
-            .button {
-              border: solid 1px $controlBorderColor;
-              user-select: none;
-              display: flex;
-              overflow: hidden;
-
-              &:first-child {
-                border-top-left-radius: 4px;
-                border-bottom-left-radius: 4px;
-              }
-
-              &:last-child {
-                border-top-right-radius: 4px;
-                border-bottom-right-radius: 4px;
-                border-left: none;
-              }
-
-              > div {
-                padding : 3px 8px 3px 8px;
-                font-size: $fontSizeSmall;
-              }
-
-              .selectable-item-inner-sq {
-
-                background-color: $controlackground;
-              }
-            }
-          }
-
-          .checkbox-item {
-            @extend .item;
-            display: flex;
-            flex-direction: column;
-
-            .checkbox {
-              text-align: center;;
-            }
-          }
-
-          .select-item {
-            @extend .item;
-            display: flex;
-            flex-direction: column;
-
-            &.eyes-symmetry {
-              width: 200px;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-.footer-ui {
-  position: absolute;
-  left: $main-tool-width + $margin-basic;
-  right: 10px;
-  bottom: 0;
-  height: 0;
-  z-index: 300;
-  overflow: visible;
-
-  .sub-command-buttons-container {
-    position: absolute;
-    left: 0;
-    width: $sub-tool-buttons-width;
-    bottom: 0;
-    height: $ribbon-height;
-    box-sizing: border-box;
-    border-top: $operation-ui-border;
-    border-left: $operation-ui-border;
-    border-right: $operation-ui-border;
-    border-top-left-radius: $border-radius-basic;
-    border-top-right-radius: $border-radius-basic;
-    padding: $padding-basic;
-    display: flex;
-    background-color: $windowBackground;
-
-    .sub-command-buttons {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      align-items: center;
-      justify-items: center;
-
-      button {
-        border: 1px solid #888;
-        border-radius: $border-radius-basic;
-        width: 1.5em;
-        height: 1.5em;
-        padding: 0.15em 0 0 0.12em;
-        font-size: 32px;
-        overflow: hidden;
-        text-align: left;
-        background-color: $buttonBackground;
-
-        &:hover {
-          background-color: $hoverBackground;
-        }
-
-        &:focus {
-          outline: none;
-        }
-
-        i {
-          font-size: 1.2em;
-        }
+      i {
+        font-size: 1.2em;
       }
     }
   }
@@ -410,7 +60,6 @@ $operation-ui-border: solid 1px $windowBorderColor;
 .layer-window {
   overflow: hidden;
   flex: 1;
-  // border: $windowBorder;
   background-color: $windowBackground;
   display: flex;
   flex-direction: column;
@@ -422,14 +71,10 @@ $operation-ui-border: solid 1px $windowBorderColor;
   }
 
   .layer-window-items {
-    // margin-top: 4px;
-    // border: 1px solid #000;
 
     .item {
       display: flex;
-      // border: 1px solid #eee;
       cursor: default;
-      user-select: none;
       height: 30px;
 
       &:hover {
@@ -438,15 +83,22 @@ $operation-ui-border: solid 1px $windowBorderColor;
 
       &.current {
         background-color: $activeBackground;
+
+        &:hover {
+          background-color: darken($activeBackground, 3%);
+        }
       }
 
-      &.selected {
+      &.selected:not(.current) {
         background-color: $selectedBackground;
+
+        &:hover {
+          background-color: darken($selectedBackground, 3%);
+        }
       }
 
       .visibility-icon-container {
         padding-left: 3px;
-        ;
         padding-top: 4px;
         width: 24px;
 
@@ -512,6 +164,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
         }
 
         .item {
+          display: flex;
           box-sizing: border-box;
           height: 17px;
           position: relative;
@@ -532,6 +185,23 @@ $operation-ui-border: solid 1px $windowBorderColor;
               bottom: -2px;
               border: solid 3px #99f;
               z-index: 5;
+            }
+          }
+
+          .rgb {
+            width: 50%;
+            height: 100%;
+            // border-right: solid 1px $controlBorderColor;
+          }
+
+          .alpha {
+            width: 50%;
+            height: 100%;
+            background-color: #eee;
+
+            .alpha-color {
+              width: 100%;
+              height: 100%;
             }
           }
         }
@@ -558,7 +228,6 @@ $operation-ui-border: solid 1px $windowBorderColor;
     display: flex;
     height: 22px;
     padding: 2px 10px 0 4px;
-    user-select: none;
 
     div.label {
       width: 20px;
@@ -594,7 +263,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
   border-left: $operation-ui-border;
   border-right: $operation-ui-border;
   background-color: $windowBackground;
-  z-index: 301;
+  z-index: $zindex-timeline-panel;
 
   &.hidden {
     display: none;
@@ -607,7 +276,7 @@ $operation-ui-border: solid 1px $windowBorderColor;
   }
 }
 
-.file-open-dialog-container {
+.dialog-document-filer-container {
   display: flex;
   background-color: $systemBackground;
 
@@ -615,9 +284,13 @@ $operation-ui-border: solid 1px $windowBorderColor;
     display: none;
   }
 
+  $sections-width: 230px;
+
   .sections-container {
-    width: 230px;
-    margin-right: 8px;
+    position: absolute;
+    top: $dialog-padding;
+    left: $dialog-padding;
+    width: $sections-width;
 
     .section-label {
       padding: 2px 0 2px $padding-basic;
@@ -629,10 +302,12 @@ $operation-ui-border: solid 1px $windowBorderColor;
     .section-list {
       border: $windowBorder;
       background-color: $windowBackground;
-      user-select: none;
 
       .section-item {
         padding: 3px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
 
         &:hover {
 
@@ -677,6 +352,11 @@ $operation-ui-border: solid 1px $windowBorderColor;
   }
 
   .files-container {
+    position: absolute;
+    top: $dialog-padding;
+    left: $dialog-padding + $sections-width + 8px;
+    right: $dialog-padding;
+    bottom: $dialog-padding;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -700,11 +380,9 @@ $operation-ui-border: solid 1px $windowBorderColor;
       flex: 1;
       border: $windowBorder;
       background-color: $windowBackground;
-      user-select: none;
       overflow-y: scroll;
 
       ul {
-        height: 100%;
         margin: 0;
         padding: 0;
 
@@ -725,6 +403,9 @@ $operation-ui-border: solid 1px $windowBorderColor;
           .selectable-item-inner {
             padding: 8px $padding-basic 8px 12px;
             border-radius: $border-radius-inner;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
 
             i {
               font-size: $fontSizeNormal * 1.5 * 1.5;
@@ -760,6 +441,9 @@ $operation-ui-border: solid 1px $windowBorderColor;
         font-size: $fontSizeNormal;
         line-height: $fontSizeNormal * 2.0;
         border: $windowBorder;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
       }
 
       button {

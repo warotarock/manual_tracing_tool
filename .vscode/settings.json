@@ -1,10 +1,16 @@
 {
-    "liveSassCompile.settings.formats": [
-
-      {
-          "format": "expanded",
-          "extensionName": ".css",
-          "savePath": "/dist"
-      }
-  ]
+  "liveSassCompile.settings.formats": [
+    {
+        "format": "expanded",
+        "extensionName": ".css",
+        "savePath": "/dist"
+    }
+  ],
+  "search.exclude": {
+    "**/node_modules": true,
+    "dist": true,
+    "libs": true,
+    "package.json": true,
+    "package-lock.json": true,
+  }
 }

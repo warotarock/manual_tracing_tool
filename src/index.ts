@@ -1,66 +1,99 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-
-import { Platform } from './platform/platform';
-import { DocumentData } from './base/data';
-
-import { App_Main, MainProcessStateID } from './app/main';
-
-import { UI_LayerWindow } from './ui/layer_window';
-import { UI_PaletteSelectorWindow } from './ui/palette_selector_window';
-import { UI_ColorMixerWindow } from './ui/color_mixer_window';
-import { UI_FileOpenDialog } from './ui/file_open_dialog';
-import { UI_HeaderWindow } from './ui/header_window';
-import { UI_SideBarContainer } from './ui/side_bar_container';
-import { UI_FooterOperationPanel } from './ui/footer_operation_panel';
-import { UI_RibbonUI } from './ui/ribbon_ui';
-import { MainCommandButtonID } from './app/view.class';
+import * as React from 'react'
+import * as ReactDOM from 'react-dom'
+import { App_Main, MainProcessStateID } from './app/main'
+import { LocalSetting } from './app/preferences/local_setting'
+import { UserSettingLogic } from './app/preferences/user_setting'
+import { MainCommandButtonID } from './app/window/constants'
+import { UserStorage } from './platform/user_strage'
+import { UI_ColorMixerWindow } from './app/ui/color_mixer_window'
+import { UI_Dialog_DocumentFiler } from './app/ui/dialog_document_filer'
+import { UI_FooterOperationPanel } from './app/ui/footer_operation_panel'
+import { UI_HeaderWindow } from './app/ui/header_window'
+import { UI_LayerWindow } from './app/ui/layer_window'
+import { UI_PaletteSelectorWindow } from './app/ui/palette_selector_window'
+import { UI_RibbonUI } from './app/ui/ribbon_ui'
+import { UI_SideBarContainer } from './app/ui/side_bar_container'
+import { UI_Modals } from './app/ui/modals'
 
 // 大改修計画
 // ・直近の仮題と対応
-// 　・リボンＵＩの見た目をそれっぽいレベルにする
-// 　　・エディットモードのアイコンの作成
-// 　　・ポージングレイヤーのとき以外はサブツールウィンドウを非表示
-// 　　・消しゴムや選択の範囲の設定項目を追加、反映する
-// 　・顔の左右対称描き機能を作る
-// 　　・ベクターレイヤーの一機能として作る
+//   ・リボンＵＩの見た目をそれっぽいレベルにする
+//     ・ポージングレイヤーのとき以外はサブツールウィンドウを非表示  →  OK
+//     ・消しゴムの半径の設定項目を追加、反映する  →  OK
+//     ・アイコンの作成
+//       ・線/線分/点の選択
+//       ・移動/変形
+//       ・再分割
+//       ・太さを足す
+//       ・太さの上書き
+//       ・エクスポート範囲の設定
+//       ・ファイル参照レイヤーのファイル選択
+//   ・顔の左右対称描き機能を作る
+//     ・ベクターレイヤーの機能として作る  →  OK
+//   ・よく使う機能を固める
+//     ・線の修正ツールでドラッグしないクリックをした場合、線を選択する
+//     ・太さの修正ツール  →  もっと直感的にする
+//     ・再分割  →  わかりやすくする…プレビューみたいな表示？
+//     ・選択/編集単位をリボンに入れる
+//     ・選択ブラシの半径をリボンに入れる
+//     ・ビューのリセットを左手用ＵＩでできるようにする
+//     ・ラティス変形ツールで移動や回転をマウスだけでできるようにする  →  フロートボタンを表示する
+//   ・ダイアログのリニューアル、共通化
+//     ・レイヤーの設定
+//       ・変更が即反映されるように、ダイアログではなくウィンドウにする？
+//     ・編集単位などの設定ダイアログは削除
+//     ・ドキュメントの設定  →  可能ならリボンに入れる
+//   ・コンボボックスを別のライブラリにする
+//   ・スライダーを別のライブラリにする
+//   ・oraファイルのサムネイルで左右対称が正しく出ていない
+// ・ビューの状態をドキュメントに保存する
+//   ・ビューの状態を複数管理できるようにする
 // ・新規作成テンプレート、最近使ったファイル、ファイルを開く、保存する画面
-// 　・ソース、フォルダ、ファイルの３階層にする→デスクトップ、モバイルの両方に対応できる
-// 　・ソースにデフォルトで「最近使ったファイル」があるようにする。そこを最初に表示する。
-// 　・デスクトップでは実ディスクのファイルを参照できるようにする→ソールにはお気に入りを登録できるようにする
-// 　・モバイルでは仮想的な階層となる→ソースは単なる１階層目のフォルダ、２階層目にはファイルかフォルダを置ける、三階層目はファイルのみ
-// 　・リストを表示できるビューをコンポーネントにする
-// 　・サムネイルを表示できるビューをコンポーネントにする
-// 　・ファイルの保存、エクスポートはフォルダ指定やファイル名の指定という意味では保存と似ている同じだが、違う部分もある。
-// 　　初期表示の指定はそれぞれ持つほうがよいだろう。
-// 　　エクスポート先は最近使った場所とは別に記憶されていると便利。
-// 　　モバイル対応を考えるとファイル名の入力欄は画面の上のほうに置いた方がいい。
-// 　　エクスポートは毎回保存先の指定画面を出さなくていい。エクスポート画面でＯＫを押したら確認せずに保存していい。保存先の指定ボタンを用意する。
+//   ・ソース、フォルダ、ファイルの３階層にする→デスクトップ、モバイルの両方に対応できる
+//   ・ソースにデフォルトで「最近使ったファイル」があるようにする。そこを最初に表示する。
+//   ・デスクトップでは実ディスクのファイルを参照できるようにする→ソールにはお気に入りを登録できるようにする  →  OK
+//   ・モバイルでは仮想的な階層となる→ソースは単なる１階層目のフォルダ、２階層目にはファイルかフォルダを置ける、三階層目はファイルのみ
+//   ・リストを表示できるビューをコンポーネントにする
+//   ・サムネイルを表示できるビューをコンポーネントにする
+//   ・ファイルの保存、エクスポートはフォルダ指定やファイル名の指定という意味では保存と似ている同じだが、違う部分もある。
+//     初期表示の指定はそれぞれ持つほうがよいだろう。
+//     エクスポート先は最近使った場所とは別に記憶されていると便利。
+//     モバイル対応を考えるとファイル名の入力欄は画面の上のほうに置いた方がいい。
+//     エクスポートは毎回保存先の指定画面を出さなくていい。エクスポート画面でＯＫを押したら確認せずに保存していい。保存先の指定ボタンを用意する。
 // ・塗りつぶし機能の拡充
 //   ・描画グループを単位として描画するようにする
-// 　　・データ構造の変更
-// 　　　VectorLayerGeometry → VectorGeometry
-// 　　　                    → VectorDrawingUnit
-// 　　　VectorGroup         → VectorStrokeGroup
-// 　　　VectorLine          → VectorStroke
-// 　　　LinePoint           → VectorPoint
-// 　　　StrokeFillType: fill, holeFill
-// 　　・データのコンバート処理を作る
-// 　　　・連結描画しないLine、連結描画するLineをそれぞれまとめてStrokeGroupに入れ、それをDrawingUnitに入れる（一つのDrawingUnitに一つのStrokeGroupが入った状態になる）
-// 　　・DrawingUnitごとに描画するようにする
+//     ・データ構造の変更
+//       VectorLayerGeometry → VectorGeometry
+//                           → VectorDrawingUnit
+//       VectorGroup         → VectorStrokeGroup
+//       VectorLine          → VectorStroke
+//       LinePoint           → VectorPoint
+//       StrokeFillType: fill, holeFill
+//     ・データのコンバート処理を作る
+//       ・連結描画しないLine、連結描画するLineをそれぞれまとめてStrokeGroupに入れ、それをDrawingUnitに入れる（一つのDrawingUnitに一つのStrokeGroupが入った状態になる）
+//     ・DrawingUnitごとに描画するようにする
 //   ・DrawingUnit、StrokeGroupの編集処理
-// 　　・DrawingUnit、StrokeGroupを可視化する
-// 　　　・Drawモードで選択可能にする。選択した瞬間だけ矩形と強調表示で示す。また、画面上部で選択中のユニットの可視化をON/OFF可能にする
-// 　　　・切り取り、貼り付けなどをしたときの処理を実装する
-// 　　　・編集単位を画面の上部で変更できるようにする。描画単位、ストロークグループ単位を追加
-// 　　　・Editモードで描画単位、ストロークグループの可視化
-// 　　　　・マウス移動時に近接する対象を強調表示する
-// 　　・DrawingUnitを編集処理のループの中に足す
+//     ・DrawingUnit、StrokeGroupを可視化する
+//       ・Drawモードで選択可能にする。選択した瞬間だけ矩形と強調表示で示す。また、画面上部で選択中のユニットの可視化をON/OFF可能にする
+//       ・切り取り、貼り付けなどをしたときの処理を実装する
+//       ・編集単位を画面の上部で変更できるようにする。描画単位、ストロークグループ単位を追加
+//       ・Editモードで描画単位、ストロークグループの可視化
+//         ・マウス移動時に近接する対象を強調表示する
+//     ・DrawingUnitを編集処理のループの中に足す
 //   ・StrokeGroupの頂点や線の削除をしても正しくなるようにする
-//   　・StrokeGroupの中で最も近い位置のStrokeが連結描画されるように再構築する処理を実装する
+//     ・StrokeGroupの中で最も近い位置のStrokeが連結描画されるように再構築する処理を実装する
 //   ・holeFillを描画できるようにする
-//   　・Strokeのがfillのときは右回り、holeFillのときは左回りになるように自動的に再構築する処理を実装する
+//     ・Strokeのがfillのときは右回り、holeFillのときは左回りになるように自動的に再構築する処理を実装する
 //   ・ブラシ塗りの実装
+//  ・ポージング３Ｄ機能の拡充
+//    ・モデルのカスタマイズ
+//      ・パーツモデルのカスタマイズ
+//      ・プロポーションのカスタマイズ
+//      ・フロートボタンの実装
+//        ・手前と奥の切替
+//        ・入力解除
+//     ・人形の移動、回転、拡大縮小を可能にする
+//     ・親の向きに合わせて子も回転してしまう（していい部位もある）のでどうにかする
 // ・線描画ツールで角度がきついところで自動的に線を分割する機能の追加
 // ・文字入れ機能の追加
 //   ・それぞれの文字入れをプロパティパネルとして表示する
@@ -73,9 +106,11 @@ import { MainCommandButtonID } from './app/view.class';
 // ・ウィンドウの配置を変えられるようにする、またはウィンドウ種類を変更できるようにする
 // ・レイヤーウィンドウをアウトライナーウィンドウにして、レイヤー以外の情報も表示できるようにする
 //   ・ドキュメントをルートに表示し、それを選択しているときにドキュメントフレームなどドキュメント設定を編集できるメインツールにする
+// ・ファイルの読み書きの高速化
+//   ・現状はjsでzip圧縮をしているので速くはない→Electron環境ではNode.jsの機能を使い、モバイルアプリではＯＳの機能を活用するなどして高速化したい
 
 // どこかでやる必要があること (nearest future tasks)
-// ・ = new List<T> を = [] にする
+// ・名称の再考。ToolContextをDocumentContext、ToolEnvironmentをSubToolContextに変更する。
 // ・ファイル管理
 //   ・デフォルトの線の太さ設定の保存
 //   ・デフォルトのエクスポート倍率設定の保存
@@ -84,22 +119,11 @@ import { MainCommandButtonID } from './app/view.class';
 //   ・ファイルを指定してのドキュメント読み込み
 //   ・ファイルを指定してのドキュメント保存
 //   ・ドキュメントフレームの表示設定
-// ・ポージングツールの整備
-//   ・ポージングで入力後にキャラの移動、回転、拡大縮小を可能にする
-//   ・親の向きに合わせて子も回転してしまう（していい部位もある）のでどうにかする
-//   ・モデルを切り替えられるようにする
 // ・Web向け仕様
 //   ・Webで保存をダウンロード、読み込みをブロブにする
-// ・編集ツールの整備
-//   ・選択ツールのアイコンの作成
-//   ・ポージングツールのアイコンの作成
-// ・ミラー表示にＵＩがきちんとついてくるようにする
-// ・線スクラッチの線修正ツールを実用的な使いやすさにする
-//   ・影響範囲が感覚と合わないのでどうにかしたい
 // ・グループレイヤーを選択したとき一定時間選択レイヤーだけを表示するときグループレイヤー以下のレイヤー全てを表示対象とする（今はグループレイヤーしか表示されない）
 // ・グループレイヤーを選択したときそれ以下のレイヤーをまとめて編集できるようにする…ベクターレイヤーだけならできるだろうけど他の種類のレイヤーも一緒に編集するのは無理？
 // ・エディットモードの各モードでラティスを表示して変形をすぐできるようにする（今はラティス変形ツールに行かないとできない）
-// ・レイヤーごとの線の基本太さの設定
 // ・モバイル対応
 //   ・タッチ操作をきちんとする
 //   ・画面サイズによってはダイアログがまともに表示されない問題の対応
@@ -110,21 +134,28 @@ import { MainCommandButtonID } from './app/view.class';
 //   ・複数レイヤー選択、グループレイヤー選択時の全てのツールの動作確認修正
 // ・Render2DのtrnasformMatrixの更新やコピーのタイミングが分かりづらすぎる。というかRender2Dも3Dも描画関係はもうわけわからん…なんとかしる！
 // ・enumを<int>でキャストしているところは厳密といえばそうだがどうなのか
+// ・レイヤーのピッキング時、マスクされている箇所でもヒットするので、マスクも考慮した処理にする必要があるか？描画パスを使用する。
+// ・ドキュメントフレームの設定をリボンUIから変更した場合、アンドゥが実装されていないので実装する。
 
 // 既知のバグ (remaining bugs)
 // ・グループレイヤー
 //   ・グループレイヤー下のレイヤーがレイヤーウィンドウで一番下にあるとき下移動でグループを抜け出せない
-//   ・グループレイヤー外のレイヤーを上移動でグループに入れるとき、グループの一番最後に挿入されるのでなく最初に挿入される
+//   ・グループレイヤー選択時に、線の延長ツールでキャンバスをクリックするとエラーになる
+//   ・画面が最初に開いたときに選択されるレイヤーがグループレイヤーだと、メインツールのタブにベクターレイヤーのタブが表示されないが、
+//     メインツールのIDとしてはベクターレイヤーのツールが選択されていて、その状態から別のベクターレイヤーを選択してもメインツールのIDが変わらないのでタブの
+//     更新処理が動かず（setCurrentMainToolの中でif文で制御している）、ベクターレイヤーのメインツールのタブが表示されない
+//     グループレイヤーが選択されたときメインツールをnoneに設定することでタブが切り替わるようにすることは可能だが、リボンが空になり、見た感じが良くない。
+//     とりあえずグループレイヤーをUIの表示に関してはベクターレイヤーと同じ条件文に入れるようにしたが、贅沢をいえばグループレイヤーなりの操作ができるリボンでツールもそれに対応していることが理想だろう。遠い。
+// ・頂点を短い線で描画しているが、ビューの拡大率が大きいと長くなって線であることがわかってしまう
 // ・編集単位が辺のときでも線全体が選択色で表示される
 // ・レイヤーウィンドウでレイヤー移動時にグループの中に入れなくなっている
 // ・点の移動ツールなどで右クリックでキャンセルしたときに点の位置がモーダル中の位置で表示されつづけていた
 // ・線の連続塗りつぶしで後ろの線が削除されたときにフラグを解除していない
-// ・ドローツールで線の最後の点が重複しているときがある？（リサンプリングで最後と同じ位置に点が追加されている？）
 // ・セグメント単位の選択ツールで選択されているセグメント単位に色が変わらず線単位で色が変わっている
 // ・座標計算でzが0.0でなくなる場合があるらしい。どこでそうなっているのか未調査手掛かりなし。
 // ・編集単位が辺単位のときの表示が線単位になっていうｒ
 // ・線のレンダリングで端点は隣の点のエッジをミラーしているが、太さが考慮されたエッジをコピーしているので端点より内側が細いとたぶんおかしくなる
-// ・ベクターレイヤー参照レイヤーが参照先のレイヤーのキーフレームの変更に追従しない。キーフレームの配列を参照しているが、配列が置き換わったときに参照を更新していないため。
+// ・oraファイルを読み込んだときに最近使ったファイルのリストが更新されていないらしい
 
 // いつかやるかも (anytime tasks)
 // ・アクティブ線、レイヤによる絞り込み処理と可視化
@@ -145,15 +176,19 @@ import { MainCommandButtonID } from './app/view.class';
 //   ・ラティス変形ツール
 //   ・アンカーの表示/非表示をツールで切り替えるようにする
 //   ・角度を指定した後での拡縮操作
-// ・ポージング
-//   ・ポージングレイヤーの透明度
-//   ・ポージングで頭の角度の入力で画面の回転に対応する
 // ・モディファイア
 // ・直線の点削減アルゴリズムの改良
 //   ・直線上の点は削減する
 //   ・曲線が曲がった量が一定を超えたところでそこまでの部分曲線の真ん中に点を配置するという方法、部分曲線に点が一つしかない場合どうするか？
 
 // 終わったもの (done)
+// ・ = new List<T> を = [] にする
+// ・グループレイヤー外のレイヤーを上移動でグループに入れるとき、グループの一番最後に挿入されるのでなく最初に挿入される不具合
+// ・ドローツールで線の最後の点が重複しているときがある？（リサンプリングで最後と同じ位置に点が追加されている？）
+// ・ポージング
+//   ・ポージングレイヤーの透明度
+//   ・ポージングで頭の角度の入力で画面の回転に対応する
+// ・ベクターレイヤー参照レイヤーが参照先のレイヤーのキーフレームの変更に追従しない。キーフレームの配列を参照しているが、配列が置き換わったときに参照を更新していないため。
 // ・バッファリングによる編集中の描画の高速化とレイヤー合成モードの実装
 //   ・isVisibleの階層を考慮した反映
 //   ・合成モード
@@ -251,107 +286,105 @@ import { MainCommandButtonID } from './app/view.class';
 // ・リサンプリングツールで線の太さがビューのスケールに応じて変わってしまっている？→スムージング処理中の不具合だった
 // ・線スクラッチの点削減ツールの実現
 
-var _Main: App_Main;
+let _Main: App_Main
 
 window.onload = () => {
 
-  Platform.settings.load();
+  loadSetings()
+   .then(() => {
+      initializeMain()
+      setTimeout(run, 1000 / 30)
+   })
+}
 
-  _Main = new App_Main();
-  _Main.mainWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.mainCanvas);
-  _Main.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.editorCanvas);
-  _Main.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.webglCanvas);
-  // _Main.layerWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.layerCanvas);
-  //_Main.subtoolWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.subtoolCanvas);
-  _Main.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.timeLineCanvas);
-  // _Main.paletteSelectorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteSelectorCanvas);
-  _Main.drawGPUWindow.createCanvas();
-  _Main.foreLayerRenderWindow.createCanvas();
-  _Main.backLayerRenderWindow.createCanvas();
-  //_Main.pickingWindow.createCanvas();
-  _Main.exportRenderWindow.createCanvas();
-  _Main.paletteColorModal_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.paletteColorModal_colorCanvas);
+async function loadSetings() {
 
+  const defaultUserData = {
+    version: '0.1.1',
+    [UserSettingLogic.localStorage_ActiveSettingNameKey]: 'setting1',
+    setting1: {
+      currentDirectoryPath: './',
+      referenceDirectoryPath: './test',
+      exportPath: './',
+      maxLastUsedFilePaths: 10,
+      lastUsedFilePaths: [
+        './test/test01_app_demo.v.ora',
+        './test/test02_eyes_symmetry.v.ora',
+      ],
+      fileSections: []
+    } as LocalSetting
+  }
+
+  await UserStorage.load(defaultUserData)
+}
+
+function initializeMain() {
+
+  _Main = new App_Main()
+  _Main.appView.mainWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.mainCanvas)
+  _Main.appView.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.editorCanvas)
+  _Main.appView.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.webglCanvas)
+  _Main.appView.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.timeLineCanvas)
   ReactDOM.render(
-    React.createElement(UI_HeaderWindow, { uiRef: _Main.uiHeaderWindowRef })
-    , document.getElementById(_Main.ID.header)
-  );
+    React.createElement(UI_HeaderWindow, { uiRef: _Main.appView.headerWindow.uiHeaderWindowRef })
+    , document.getElementById(_Main.appView.ID.header)
+  )
 
   ReactDOM.render(
     React.createElement(UI_RibbonUI, {
-      uiRef: _Main.uiRibbonUIRef,
-      menuButtonsRef: _Main.uiMenuButtonsRef,
-      subToolWindowRef: _Main.uiSubToolWindowRef,
+      uiRef: _Main.appView.ribbonUIWindow.uiRibbonUIRef,
+      menuButtonsRef: _Main.appView.ribbonUIWindow.uiRibbonUITabsRef,
+      subToolWindowRef: _Main.appView.subToolWindow.uiSubToolWindowRef,
     })
-    , document.getElementById(_Main.ID.ribbonUI)
-  );
+    , document.getElementById(_Main.appView.ID.ribbonUI)
+  )
 
   ReactDOM.render(
     React.createElement(UI_FooterOperationPanel, {
-      uiRef: _Main.uiFooterOperationpanelRef
+      uiRef: _Main.appView.footerWindow.uiFooterOperationpanelRef
     })
-    , document.getElementById(_Main.ID.footerUI)
-  );
+    , document.getElementById(_Main.appView.ID.footerUI)
+  )
 
   ReactDOM.render(
     React.createElement(UI_SideBarContainer,
       {
         dockingTo: 'left',
         contents: [
-          // { key: 1, component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: true},
-          // { key: 2, component: UI_SubToolWindow, uiRef: _Main.uiSubToolWindowRef, icon: 'layers', isOpened: true}
         ],
-        uiRef: _Main.uiSideBarContainerRef,
+        uiRef: _Main.appView.uiSideBarContainerRef,
       })
     , document.getElementById("left-side-panel")
-  );
+  )
 
   ReactDOM.render(
     React.createElement(UI_SideBarContainer,
       {
         dockingTo: 'right',
         contents: [
-          { key: 1, id: MainCommandButtonID[MainCommandButtonID.layerWindow], component: UI_LayerWindow, uiRef: _Main.uiLayerwindowRef, icon: 'layers', isOpened: true },
-          { key: 2, id: MainCommandButtonID[MainCommandButtonID.paletteWindow], component: UI_PaletteSelectorWindow, uiRef: _Main.uiPaletteSelectorWindowRef, icon: 'palette', isOpened: true },
-          { key: 3, id: MainCommandButtonID[MainCommandButtonID.colorMixerWindow], component: UI_ColorMixerWindow, uiRef: _Main.uiColorMixerWindowRef, icon: 'colorize', isOpened: false}
+          { key: 1, id: MainCommandButtonID[MainCommandButtonID.layerWindow], component: UI_LayerWindow, uiRef: _Main.appView.layerWindow.uiRef, icon: 'layers', isOpened: true },
+          { key: 2, id: MainCommandButtonID[MainCommandButtonID.paletteWindow], component: UI_PaletteSelectorWindow, uiRef: _Main.appView.paletteSelectorWindow.uiRef, icon: 'palette', isOpened: true },
+          { key: 3, id: MainCommandButtonID[MainCommandButtonID.colorMixerWindow], component: UI_ColorMixerWindow, uiRef: _Main.appView.colorMixerWindow.uiRef, icon: 'colorize', isOpened: false}
         ],
-        uiRef: _Main.uiSideBarContainerRef,
+        uiRef: _Main.appView.uiSideBarContainerRef,
       })
     , document.getElementById("right-side-panel")
-  );
+  )
 
   ReactDOM.render(
-    React.createElement(UI_FileOpenDialog, { uiRef: _Main.uiFileOpenDialogRef })
+    React.createElement(UI_Modals, { uiRef: _Main.appView.modalWindow.uiRef })
+    , document.getElementById("modal-window")
+  )
+
+  ReactDOM.render(
+    React.createElement(UI_Dialog_DocumentFiler, { uiRef: _Main.appView.uiDialogDocumentFilerRef })
     , document.getElementById("file-open-dialog")
-  );
+  )
 
-  _Main.colorMixerWindow_colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.ID.colorMixerWindow_colorCanvas);
+  _Main.appView.colorMixerWindow.colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.colorMixerWindow_colorCanvas)
 
-  var layerColorModal_colors = document.getElementById(_Main.ID.paletteColorModal_colors);
-  for (let paletteColorIndex = 0; paletteColorIndex < DocumentData.maxPaletteColors; paletteColorIndex++) {
-
-    let colorItemDiv = document.createElement('div');
-    colorItemDiv.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
-    layerColorModal_colors.appendChild(colorItemDiv);
-
-    let radioInput = document.createElement('input');
-    radioInput.type = 'radio';
-    radioInput.id = _Main.ID.paletteColorModal_colorIndex + paletteColorIndex;
-    radioInput.name = _Main.ID.paletteColorModal_colorIndex;
-    radioInput.value = paletteColorIndex.toString();
-    colorItemDiv.appendChild(radioInput);
-
-    let colorInput = document.createElement('input');
-    colorInput.type = 'color';
-    colorInput.id = _Main.ID.paletteColorModal_colorValue + paletteColorIndex;
-    colorInput.classList.add(_Main.ID.paletteColorModal_colorItemStyle);
-    colorItemDiv.appendChild(colorInput);
-  }
-
-  _Main.onInitializeSystemDevices();
-
-  setTimeout(run, 1000 / 30);
-};
+  _Main.onInitializeSystemDevices()
+}
 
 function run() {
 
@@ -359,38 +392,38 @@ function run() {
 
     if (_Main.mainProcessState == MainProcessStateID.pause) {
 
-      setTimeout(run, 1000);
-      return;
+      setTimeout(run, 1000)
+      return
     }
     else if (_Main.mainProcessState == MainProcessStateID.running) {
 
-      _Main.run();
-      _Main.draw();
+      _Main.run()
+      _Main.draw()
     }
     else if (_Main.mainProcessState == MainProcessStateID.systemResourceLoading) {
 
-      _Main.processLoadingSystemResources();
+      _Main.processLoadingSystemResources()
     }
     else if (_Main.mainProcessState == MainProcessStateID.documentJSONLoading) {
 
-      _Main.processLoadingDocumentJSON();
+      _Main.processLoadingDocumentFile()
     }
     else if (_Main.mainProcessState == MainProcessStateID.documentResourceLoading) {
 
-      _Main.processLoadingDocumentResources();
+      _Main.processLoadingDocumentResources()
     }
 
-    if (_Main.toolContext != null && _Main.toolContext.animationPlaying) {
+    if (_Main.docContext != null && _Main.docContext.animationPlaying) {
 
-      setTimeout(run, 1000 / _Main.toolContext.animationPlayingFPS);
+      setTimeout(run, 1000 / _Main.docContext.animationPlayingFPS)
     }
     else {
 
-      window.requestAnimationFrame(run);
+      window.requestAnimationFrame(run)
     }
   }
   catch (e) {
-    console.log(e);
-    setTimeout(run, 1000);
+    console.log(e)
+    setTimeout(run, 1000)
   }
 }

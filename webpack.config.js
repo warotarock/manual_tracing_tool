@@ -8,7 +8,10 @@ module.exports = {
   mode: "development",
   entry: src + "/index.ts",
   cache: true,
-  devtool: '#eval-cheap-source-map',
+  devtool: 'eval-cheap-source-map',
+  node: {
+      __dirname: false
+  },
 
   output: {
     path: dist,

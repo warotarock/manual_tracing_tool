@@ -1,231 +1,194 @@
-import { int, ListRemoveAt, ListInsertAt, ListGetRange } from '../base/conversion';
-import { LocalSetting, LocalSettingFileSection } from '../base/data';
+import { int } from '../app/logics/conversion'
 
-var require = window['require'];
+interface PlatformFS {
 
-export module Platform {
+  readFileSync(fileName: string): string
+  writeFileSync(fileName: string, text: string, format: 'base64' | 'utf8')
+  readDirSync(directoryPath: string, options: { withFileTypes: boolean }): any[]
+  readUserDataFile(fileName: string): Promise<string>
+  writeUserDataFile(fileName: string, data: string): Promise<void>
+}
 
-  export function supportsNative(): boolean {
+interface PlatformPath {
 
-    return (typeof (require) != 'undefined');
+  basename(path: string): string
+  join(path1: string, path2: string): string
+}
+
+interface PlatformClipboard {
+
+  writeText(text: string, _type?: string)
+  readText(_type: string): string
+  availableFormats(_type: string): string
+}
+
+interface PlatformDialog {
+
+  openFileDialog(defaultPath: string)
+}
+
+declare global {
+  interface Window {
+    api: NodeAPI
+  }
+}
+
+export type NodeAPI = {
+  fs: PlatformFS
+  clipboard: PlatformClipboard
+  path: PlatformPath
+  dialog: PlatformDialog
+}
+
+export class Platform {
+
+  static supportsNative(): boolean {
+
+    return (typeof (window.api) != 'undefined')
   }
 
-  export function getCurrentTime(): int {
+  static getCurrentTime(): int {
 
-    return performance.now();
+    return performance.now()
   }
 
-  const fs = supportsNative() ? require('fs')
-  : {
+  static readonly clipboard: PlatformClipboard = Platform.supportsNative() ? window.api.clipboard : {
 
-    readFileSync(fileName: string): string {
+    writeText(text: string, _type?: string) {
 
-      return window.localStorage.getItem(fileName);
+      window.localStorage.setItem('clipboard', text)
     },
 
-    writeFile(fileName: string, text: string) {
+    readText(_type: string): string {
 
-      window.localStorage.setItem(fileName, text);
+      return window.localStorage.getItem('clipboard')
+    },
+
+    availableFormats(_type: string): string {
+
+      return window.localStorage.getItem('clipboard') ? 'clipboard' : null
     }
-  };
-
-  class Settings {
-
-    data = {
-      activeSettingName: "setting1",
-      setting1: {
-        currentDirectoryPath: "./",
-        referenceDirectoryPath: "./test",
-        exportPath: "./",
-        maxLastUsedFilePaths: 5,
-        lastUsedFilePaths: [
-          './test/test01_app_demo.ora',
-          './test/test02_eyes_symmetry.ora',
-        ],
-        fileSections: []
-      } as LocalSetting
-    };
-
-    load() {
-
-      let text = fs.readFileSync('./test/settings.json');
-
-      if (text) {
-
-        let json = JSON.parse(text);
-
-        if (json) {
-
-          this.data = json;
-
-          if (this.data.setting1.fileSections == undefined) {
-
-            this.data.setting1.fileSections = [];
-          }
-        }
-      }
-    }
-
-    save() {
-
-      fs.writeFileSync('./test/settings.json', JSON.stringify(this.data));
-    }
-
-    setItem(key: string, value: object) {
-
-      this.data[key] = value;
-
-      this.save();
-    }
-
-    getItem(key: string): any {
-
-      return this.data[key];
-    }
-
-    getOpenFileEnvitonments() {
-
-      return {
-        fileSections: this.data.setting1.fileSections,
-        lastUsedFilePaths: this.data.setting1.lastUsedFilePaths
-      }
-    }
-
-    addFileSection(fileSection: LocalSettingFileSection) {
-
-      const new_FileSections = this.data.setting1.fileSections
-        .filter(section => section.path != fileSection.path);
-
-      new_FileSections.push(fileSection);
-
-      this.saveFileSections(new_FileSections);
-    }
-
-    removeFileSection(fileSection: LocalSettingFileSection) {
-
-      const new_FileSections = this.data.setting1.fileSections
-        .filter(section => section != fileSection);
-
-      this.saveFileSections(new_FileSections);
-    }
-
-    private saveFileSections(new_FileSections: LocalSettingFileSection[]) {
-
-      let index = 0;
-      new_FileSections.forEach(item => item.index = index++);
-
-      this.data.setting1.fileSections = new_FileSections;
-
-      this.save();
-    }
-
-    registerLastUsedFile(filePath: string) {
-
-      let paths = this.data.setting1.lastUsedFilePaths;
-
-      for (let index = 0; index < paths.length; index++) {
-
-          if (paths[index] == filePath) {
-
-              ListRemoveAt(paths, index);
-          }
-      }
-
-      ListInsertAt(paths, 0, filePath);
-
-      if (paths.length > this.data.setting1.maxLastUsedFilePaths) {
-
-          paths = ListGetRange(paths, 0, this.data.setting1.maxLastUsedFilePaths);
-      }
-
-      this.data.setting1.lastUsedFilePaths = paths;
   }
-  };
 
-  export const settings = new Settings();
+  static readonly path: PlatformPath = Platform.supportsNative() ? window.api.path : {
 
-  export const path = supportsNative() ? require('path')
-  : {
+    basename(path: string): string {
 
-    basename(path: string) {
-
-      return path;
-    }
-  };
-
-  const electron = supportsNative() ? require('electron') : null;
-
-  export const clipboard: any = electron ? electron.clipboard
-  : {
-
-    writeText(text: string, type: string) {
-
-      window.localStorage.setItem('clipboard', text);
+      return path
     },
 
-    readText(type: string): string {
+    join(path1: string, path2: string): string {
 
-      return window.localStorage.getItem('clipboard');
-    },
-
-    availableFormats(type: string): string {
-
-      return window.localStorage.getItem('clipboard') ? 'clipboard' : null;
+      return path1 + '/' + path2
     }
-  };
+  }
 
-  export const fileSystem = {
+  static readonly fileSystem = {
 
-    writeFileSync(fileName: string, data: any, format: 'base64' | 'utf8', callback: Function) {
+    writeFile(filePath: string, data: string, format: 'base64' | 'utf8') {
 
       if (format == 'base64') {
 
-        if (supportsNative()) {
+        if (Platform.supportsNative()) {
 
-          let base64Data = data.substr(data.indexOf(',') + 1);
+          const base64Data = data.substr(data.indexOf(',') + 1)
 
-          fs.writeFileSync(fileName, base64Data, format, callback);
+          Platform.fs.writeFileSync(filePath, base64Data, 'base64')
         }
         else {
 
-          let link = document.createElement("a");
-          link.download = fileName;
-          link.href = data;
-          link.click();
+          const link = document.createElement("a")
+          link.download = filePath
+          link.href = data
+          link.click()
         }
       }
       else {
 
-        fs.writeFileSync(fileName, data, format, callback);
+        Platform.fs.writeFileSync(filePath, data, 'utf8')
       }
     },
 
-    getFilesSync(directoryPath: string) {
+    readFile(filePath: string): string {
 
-      const dirents: any[] = fs.readdirSync(directoryPath, { withFileTypes: true });
-
-      const files = dirents
-        .filter(dirent => dirent.isFile())
-        .map(dirent => ({
-          name: path.basename(dirent.name),
-          path: path.join(directoryPath, dirent.name)
-        }));
-
-      return files;
+      return Platform.fs.readFileSync(filePath)
     },
 
-    async selectDirectory(defaultPath: string) {
+    getFileInfos(directoryPath: string) {
 
-      const openDialogResult = await electron.ipcRenderer.invoke('select-file-place-folder', defaultPath);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const entries: any[] = Platform.fs.readDirSync(directoryPath, { withFileTypes: true })
+
+      const files = entries
+        .filter(dirent => dirent.isFile())
+        .map(dirent => ({
+          name: Platform.path.basename(dirent.name),
+          path: Platform.path.join(directoryPath, dirent.name)
+        }))
+
+      return files
+    },
+
+    async readUserDataFile(fileName: string) {
+
+      return await Platform.fs.readUserDataFile(fileName)
+    },
+
+    async writeUserDataFile(fileName: string, data: string) {
+
+      return await Platform.fs.writeUserDataFile(fileName, data)
+    },
+
+    async openFileDialog(defaultPath: string): Promise<string> {
+
+      if (!Platform.supportsNative()) {
+
+        return new Promise((resolve) => resolve(null))
+      }
+
+      const openDialogResult = await window.api.dialog.openFileDialog(defaultPath)
 
       if (openDialogResult.filePaths && openDialogResult.filePaths.length > 0) {
 
-        return openDialogResult.filePaths[0];
+        return openDialogResult.filePaths[0]
       }
       else {
 
-        return null;
+        return null
       }
+    }
+  }
+
+  private static readonly fs: PlatformFS = Platform.supportsNative() ? window.api.fs : {
+
+    readFileSync(fileName: string): string {
+
+      return window.localStorage.getItem(fileName)
     },
-  };
+
+    writeFileSync(fileName: string, text: string) {
+
+      window.localStorage.setItem(fileName, text)
+    },
+
+    readDirSync(_directoryPath: string, _options: { withFileTypes: boolean }) {
+
+      return []
+    },
+
+    readUserDataFile(fileName: string): Promise<string> {
+
+      return new Promise((resolve) => {
+        resolve(window.localStorage.getItem(fileName))
+      })
+    },
+
+    writeUserDataFile(fileName: string, data: string) {
+
+      return new Promise((resolve) => {
+        window.localStorage.setItem(fileName, data)
+        resolve()
+      })
+    }
+  }
 }
