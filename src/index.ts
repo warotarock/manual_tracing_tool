@@ -1,19 +1,17 @@
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import { App_Main, MainProcessStateID } from './app/main'
-import { LocalSetting } from './app/preferences/local_setting'
-import { UserSettingLogic } from './app/preferences/user_setting'
-import { MainCommandButtonID } from './app/window/constants'
-import { UserStorage } from './platform/user_strage'
-import { UI_ColorMixerWindow } from './app/ui/color_mixer_window'
-import { UI_Dialog_DocumentFiler } from './app/ui/dialog_document_filer'
-import { UI_FooterOperationPanel } from './app/ui/footer_operation_panel'
-import { UI_HeaderWindow } from './app/ui/header_window'
-import { UI_LayerWindow } from './app/ui/layer_window'
-import { UI_PaletteSelectorWindow } from './app/ui/palette_selector_window'
-import { UI_RibbonUI } from './app/ui/ribbon_ui'
-import { UI_SideBarContainer } from './app/ui/side_bar_container'
-import { UI_Modals } from './app/ui/modals'
+import { App_Main, MainProcessStateID } from './app/app-main'
+import { SideBarContentID } from './app/ui'
+import { UI_Dialog_DocumentFiler, UI_Dialog_ShortcutKeys } from './app/ui-dialog-screen'
+import { UI_Modal_ExportImage, UI_Modal_ImageFileReference, UI_Modal_RadioSelection } from './app/ui-modal-window'
+import { UI_FooterOperationPanel, UI_HeaderWindow, UI_TimeLineWindow } from './app/ui-panel'
+import { UI_PopoverRouter } from './app/ui-popover'
+import { UI_RibbonUI } from './app/ui-ribbon'
+import { UI_ColorMixerWindow, UI_LayerWindow, UI_PaletteSelectorWindow, UI_SideBarContainer } from './app/ui-sidebar'
+import { LocalSetting, UserSettingFileLogic } from './app/user-setting'
+import { UserUIStateLogic } from './app/user-setting/user-ui-state'
+import { Platform } from './platform'
+import { UserStorage } from './platform/user-strage'
 
 // 大改修計画
 // ・直近の仮題と対応
@@ -63,7 +61,6 @@ import { UI_Modals } from './app/ui/modals'
 // ・塗りつぶし機能の拡充
 //   ・描画グループを単位として描画するようにする
 //     ・データ構造の変更
-//       VectorLayerGeometry → VectorGeometry
 //                           → VectorDrawingUnit
 //       VectorGroup         → VectorStrokeGroup
 //       VectorLine          → VectorStroke
@@ -110,6 +107,7 @@ import { UI_Modals } from './app/ui/modals'
 //   ・現状はjsでzip圧縮をしているので速くはない→Electron環境ではNode.jsの機能を使い、モバイルアプリではＯＳの機能を活用するなどして高速化したい
 
 // どこかでやる必要があること (nearest future tasks)
+// ・throwしているエラーコードの整理
 // ・名称の再考。ToolContextをDocumentContext、ToolEnvironmentをSubToolContextに変更する。
 // ・ファイル管理
 //   ・デフォルトの線の太さ設定の保存
@@ -299,89 +297,133 @@ window.onload = () => {
 
 async function loadSetings() {
 
-  const defaultUserData = {
-    version: '0.1.1',
-    [UserSettingLogic.localStorage_ActiveSettingNameKey]: 'setting1',
-    setting1: {
-      currentDirectoryPath: './',
-      referenceDirectoryPath: './test',
-      exportPath: './',
-      maxLastUsedFilePaths: 10,
-      lastUsedFilePaths: [
-        './test/test01_app_demo.v.ora',
-        './test/test02_eyes_symmetry.v.ora',
-      ],
-      fileSections: []
-    } as LocalSetting
+  const currentDirectoryPath = await Platform.fileSystem.getUserDefaultDocumentDirectory()
+
+  const localSetting: LocalSetting = {
+    currentDirectoryPath,
+    referenceDirectoryPath: './test',
+    exportPath: './',
+    autoNumberingEnabled: false,
+    maxLastUsedFilePaths: 10,
+    lastUsedFilePaths: [
+      './test/test01-app-demo.v.ora',
+      './test/test02-eyes-symmetry-colored.v.ora',
+    ],
+    fileSections: [],
+    uiStates: UserUIStateLogic.createDefaultUIStates(),
+    shortcutKeySettings: []
   }
 
-  await UserStorage.load(defaultUserData)
+  const defaultUserStrageData = {
+    version: '0.1.1',
+    [UserSettingFileLogic.localStorage_ActiveSettingNameKey]: 'setting1',
+    setting1: localSetting
+  }
+
+  await UserStorage.load(defaultUserStrageData)
 }
 
 function initializeMain() {
 
   _Main = new App_Main()
-  _Main.appView.mainWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.mainCanvas)
-  _Main.appView.editorWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.editorCanvas)
-  _Main.appView.webglWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.webglCanvas)
-  _Main.appView.timeLineWindow.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.timeLineCanvas)
+  _Main.appView.mainWindow.attachCanvas(<HTMLCanvasElement>document.getElementById(_Main.appView.dom.ID.mainCanvas))
+  _Main.appView.editorWindow.attachCanvas(<HTMLCanvasElement>document.getElementById(_Main.appView.dom.ID.editorCanvas))
+  _Main.appView.webglWindow.attachCanvas(<HTMLCanvasElement>document.getElementById(_Main.appView.dom.ID.webglCanvas))
+  _Main.appView.timeLineWindow.canvasWindow.attachCanvas(<HTMLCanvasElement>document.getElementById(_Main.appView.dom.ID.timeLineCanvas))
+
+  const ua = navigator.userAgent;
+  _Main.appView.isForMobile = ((ua.indexOf('iPhone') > 0 || ua.indexOf('iPad') > 0 || ua.indexOf('Android') > 0 || ua.indexOf('Mobile') > 0 ))
+  _Main.appView.footerWindow.uiFooterOperationpanelRef.isForMobile = _Main.appView.isForMobile
+
+  _Main.appView.setMobileMode()
+
   ReactDOM.render(
-    React.createElement(UI_HeaderWindow, { uiRef: _Main.appView.headerWindow.uiHeaderWindowRef })
-    , document.getElementById(_Main.appView.ID.header)
+    React.createElement(UI_HeaderWindow, { uiRef: _Main.appView.headerWindow.uiHeaderWindowRef }),
+    document.getElementById(_Main.appView.dom.ID.header)
   )
 
   ReactDOM.render(
     React.createElement(UI_RibbonUI, {
       uiRef: _Main.appView.ribbonUIWindow.uiRibbonUIRef,
-      menuButtonsRef: _Main.appView.ribbonUIWindow.uiRibbonUITabsRef,
       subToolWindowRef: _Main.appView.subToolWindow.uiSubToolWindowRef,
     })
-    , document.getElementById(_Main.appView.ID.ribbonUI)
+    , document.getElementById(_Main.appView.dom.ID.ribbonUI)
   )
 
   ReactDOM.render(
     React.createElement(UI_FooterOperationPanel, {
       uiRef: _Main.appView.footerWindow.uiFooterOperationpanelRef
     })
-    , document.getElementById(_Main.appView.ID.footerUI)
+    , document.getElementById(_Main.appView.dom.ID.footerUI)
   )
 
   ReactDOM.render(
     React.createElement(UI_SideBarContainer,
       {
         dockingTo: 'left',
+        isMobileMode: _Main.appView.isForMobile,
         contents: [
         ],
-        uiRef: _Main.appView.uiSideBarContainerRef,
+        uiRef: _Main.appView.left_SideBarContainerRef,
       })
-    , document.getElementById("left-side-panel")
+    , document.getElementById(_Main.appView.dom.ID.leftSidePanel)
   )
 
   ReactDOM.render(
     React.createElement(UI_SideBarContainer,
       {
         dockingTo: 'right',
+        isMobileMode: _Main.appView.isForMobile,
         contents: [
-          { key: 1, id: MainCommandButtonID[MainCommandButtonID.layerWindow], component: UI_LayerWindow, uiRef: _Main.appView.layerWindow.uiRef, icon: 'layers', isOpened: true },
-          { key: 2, id: MainCommandButtonID[MainCommandButtonID.paletteWindow], component: UI_PaletteSelectorWindow, uiRef: _Main.appView.paletteSelectorWindow.uiRef, icon: 'palette', isOpened: true },
-          { key: 3, id: MainCommandButtonID[MainCommandButtonID.colorMixerWindow], component: UI_ColorMixerWindow, uiRef: _Main.appView.colorMixerWindow.uiRef, icon: 'colorize', isOpened: false}
+          { key: 1, id: SideBarContentID.layerWindow, component: UI_LayerWindow, uiRef: _Main.appView.layerWindow.uiRef, icon: 'layers', isOpened: false },
+          { key: 2, id: SideBarContentID.paletteWindow, component: UI_PaletteSelectorWindow, uiRef: _Main.appView.paletteSelectorWindow.uiRef, icon: 'palette', isOpened: false },
+          { key: 3, id: SideBarContentID.colorMixerWindow, component: UI_ColorMixerWindow, uiRef: _Main.appView.colorMixerWindow.uiRef, icon: 'colorize', isOpened: false }
         ],
-        uiRef: _Main.appView.uiSideBarContainerRef,
-      })
-    , document.getElementById("right-side-panel")
+        uiRef: _Main.appView.right_SideBarContainerRef,
+      }),
+    document.getElementById(_Main.appView.dom.ID.rightSidePanel)
   )
 
   ReactDOM.render(
-    React.createElement(UI_Modals, { uiRef: _Main.appView.modalWindow.uiRef })
-    , document.getElementById("modal-window")
+    React.createElement(UI_TimeLineWindow, { uiRef: _Main.appView.timeLineWindow.uiTimeLineWindowRef }),
+    document.getElementById("time-line-ui")
   )
 
   ReactDOM.render(
-    React.createElement(UI_Dialog_DocumentFiler, { uiRef: _Main.appView.uiDialogDocumentFilerRef })
-    , document.getElementById("file-open-dialog")
+    React.createElement(UI_PopoverRouter, {
+      mainMenuUIRef: _Main.appView.popover.mainMenuUIRef,
+      brushPropertyBoxRef: _Main.appView.popover.brushPropertyBoxRef,
+      selectBoxRef: _Main.appView.popover.selectBoxPopoverRef
+    }),
+    document.getElementById("popover-dock-container")
   )
 
-  _Main.appView.colorMixerWindow.colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.ID.colorMixerWindow_colorCanvas)
+  ReactDOM.render(
+    React.createElement(UI_Modal_RadioSelection, { uiRef: _Main.appView.modalWindow.uiRadioSelectionRef }),
+    document.getElementById("modal-radio-selection")
+  )
+
+  ReactDOM.render(
+    React.createElement(UI_Modal_ImageFileReference, { uiRef: _Main.appView.modalWindow.uiImageFileReferenceRef }),
+    document.getElementById("modal-image-file-ref")
+  )
+
+  ReactDOM.render(
+    React.createElement(UI_Modal_ExportImage, { uiRef: _Main.appView.modalWindow.uiExportImageRef }),
+    document.getElementById("modal-export-image")
+  )
+
+  ReactDOM.render(
+    React.createElement(UI_Dialog_DocumentFiler, { uiRef: _Main.appView.dialogScreen.uiDocumentFilerRef }),
+    document.getElementById("dialog-document-filer")
+  )
+
+  ReactDOM.render(
+    React.createElement(UI_Dialog_ShortcutKeys, { uiRef: _Main.appView.dialogScreen.uiShortcutKeysRef }),
+    document.getElementById("dialog-shortcut-keys")
+  )
+
+  _Main.appView.colorMixerWindow.colorCanvas.canvas = <HTMLCanvasElement>document.getElementById(_Main.appView.dom.ID.colorMixerWindow_colorCanvas)
 
   _Main.onInitializeSystemDevices()
 }

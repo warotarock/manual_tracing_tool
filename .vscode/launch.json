@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Electron: Main",
+      "type": "node",
+      "request": "launch",
+      "env": {"NODE_ENV": "development"},
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "runtimeArgs": [
+        "--remote-debugging-port=9223"
+      ],
+      "args": ["."],
+      "outputCapture": "std",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/dist/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "Electron: Renderer",
+      "type": "pwa-chrome",             //use the Chrome debugger that comes with VS Code
+      "request": "attach",
+      "port": 9223,                     //use debug port opened in Electron: Main configuration
+      "webRoot": "${workspaceFolder}",
+      "timeout": 60000
+    }
+  ],
+  "compounds": [                        //launch multiple configurations concurrently
+    {
+      "name": "Electron: All",
+      "configurations": [
+        "Electron: Main",
+        "Electron: Renderer"
+      ]
+    }
+  ]
+}

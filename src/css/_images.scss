@@ -1,23 +1,23 @@
 ﻿
 // CSSスプライト
 .image-splite-system {
-  background-image: url(./res/system_image01.png);
+  background-image: url(../res/system_image01.png);
 }
 
 .image-splite-layerbar {
-  background-image: url(./res/layerbar_image01.png);
+  background-image: url(../res/layerbar_image01.png);
 }
 
 .image-splite-document {
-  background-image: url(./res/toolbar_image01.png);
+  background-image: url(../res/toolbar_image01.png);
 }
 
 .image-splite-subtool {
-  background-image: url(./res/toolbar_image02.png);
+  background-image: url(../res/toolbar_image02.png);
 }
 
 .image-splite-posing3d {
-  background-image: url(./res/toolbar_image03.png);
+  background-image: url(../res/toolbar_image03.png);
 }
 
 // アイコンフォント
@@ -25,22 +25,18 @@
   font-family: 'Material Icons';
   font-style: normal;
   font-weight: 400;
-  src: url(./res/materialIcons-regular.woff2) format('woff2');
+  src: url('../res/google-icon-min.woff2') format('woff2');
 }
 
 .material-icons {
   font-family: 'Material Icons';
   font-weight: normal;
   font-style: normal;
-  font-size: 24px;
-  line-height: 1;
   letter-spacing: normal;
   text-transform: none;
   display: inline-block;
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
-  // -moz-font-feature-settings: 'liga';
-  // -moz-osx-font-smoothing: grayscale;
   user-select: none;
 }

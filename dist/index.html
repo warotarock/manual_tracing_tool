@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <!-- <meta http-equiv="content-security-policy" content="default-src 'self' 'unsafe-eval' 'unsafe-inline' http://localhost; style-src 'self' 'unsafe-inline'; object-src 'none'; img-src 'self' data:;" /> -->
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>セルガスタジオ - CelGa Studio 0.1</title>
+  
+  
+  <script src="./libs/glmatrix/gl-matrix-min.js"></script>
+  <script src="./libs/custombox/custombox.min.js"></script>
+  <script src="./libs/custombox/custombox.legacy.min.js"></script>
+  <script src="./libs/ora_js/zip.js"></script>
+  <script src="./libs/ora_js/zip-fs.js"></script>
+  <script src="./libs/ora_js/deflate.js"></script>
+  <script src="./libs/ora_js/inflate.js"></script>
+  <script src="./libs/ora_js/ora.js"></script>
+  <script src="./libs/ora_js/ora-blending.js"></script>
+  
+  <script type="module" crossorigin src="./src/index.js"></script>
+  <link rel="stylesheet" href="./src/index.css">
+</head>
+<body>
+  <div class="screen-main" id="screen-main">
+    <header class="screen-main-row1">
+      <div class="header-row1" id="header-ui"></div>
+      <div class="header-row2" id="ribbon-ui"></div>
+    </header>
+    <div class="side-panel-dock" id="side-panel-left-dock"></div>
+    <main>
+      <div class="center-panel">
+        <div class="main-canvas-container">
+          <canvas id="webglCanvas" class="webgl-canvas"></canvas>
+          <canvas id="mainCanvas" class="main-canvas"></canvas>
+          <canvas id="editorCanvas" class="editor-canvas"></canvas>
+        </div>
+      </div>
+      <div id="time-line-window" class="time-line-window hidden">
+        <div id="time-line-ui" class="time-line-ui"></div>
+        <div class="canvas-container">
+          <canvas id="timeLineCanvas"></canvas>
+        </div>
+      </div>
+    </main>
+    <div class="side-panel-dock" id="side-panel-right-dock"></div>
+    <footer class="screen-main-row3">
+      <div class="footer-ui-container" id="footer-ui"></div>
+      <div class="help-text" id="footer"></div>
+    </footer>
+    <div class="side-panel left-panel" id="side-panel-left"></div>
+    <div class="side-panel right-panel" id="side-panel-right"></div>
+  </div>
+
+  <div id="messageDialogModal" class="modalDialogWindow messageDialogModal">
+    <div id="messageDialogModal_message">
+    </div>
+    <div class="OKCalcelButtons">
+      <input type="button" id="messageDialogModal_ok" value="OK">
+    </div>
+  </div>
+
+  <div id="openFileDialogModal" class="modalDialogWindow openFileDialogModal">
+    <label>
+      <input type="file" class="openFileDialogModal_file" id="openFileDialogModal_file" />
+    </label>
+    <br />
+    <div class="OKCalcelButtons">
+      <input type="button" id="openFileDialogModal_ok" value="ロード">
+      <input type="button" id="openFileDialogModal_cancel" value="キャンセル">
+    </div>
+  </div>
+
+  <div id="popover-dock-container" class="overlay-container popover-dock-container hidden"></div>
+
+  <div id="modal-image-file-ref" class="overlay-container modal-window-dock-container hidden"></div>
+
+  <div id="modal-export-image" class="overlay-container modal-window-dock-container hidden"></div>
+
+  <div id="modal-radio-selection" class="overlay-container modal-window-dock-container hidden"></div>
+
+  <div id="dialog-document-filer" class="overlay-container dialog-screen-dock-container hidden"></div>
+
+  <div id="dialog-shortcut-keys" class="overlay-container dialog-screen-dock-container hidden"></div>
+</body>
+<script>
+  document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')
+</script>
+</html>

@@ -2,15 +2,21 @@
   "name": "manualtracingtool",
   "version": "1.0.0",
   "description": "",
-  "main": "electron_main.js",
+  "main": "electron-main.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "build": "webpack",
-    "watch": "webpack -w",
+    "vite watch electron": "npx vite build --config=vite.config.dev.js",
+    "vite build electron": "npx vite build",
+    "esbuild watch": "npx esbuild --bundle --watch --sourcemap --outfile=./dist/bundle.js ./src/index.ts",
+    "tsc type check": "tsc --noEmit",
+    "webpack watch": "webpack -w",
+    "webpack build": "webpack",
     "run": "npx electron ./electron_main.js",
-    "live-server": "npx live-server ./ --watch ./dist --no-browser"
+    "http-server": "npx http-server ./dist",
+    "livereload": "npx livereload ./dist",
+    "convert svgfont": "node gen_svg_font"
   },
   "task": {
     "webpack-watch": "webpack"
@@ -19,8 +25,7 @@
   "license": "ISC",
   "dependencies": {
     "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-dropdown-select": "^4.7.4"
+    "react-dom": "^17.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.13.14",
@@ -33,14 +38,20 @@
     "@typescript-eslint/parser": "^4.20.0",
     "babel-loader": "^8.2.2",
     "css-loader": "^5.2.0",
-    "electron": "^12.0.2",
+    "electron": "^21.2.0",
     "electron-reload": "^1.5.0",
-    "eslint": "^7.23.0",
-    "live-server": "^1.2.1",
+    "esbuild": "^0.14.8",
+    "eslint": "^8.25.0",
+    "http-server": "^14.1.0",
+    "livereload": "^0.9.3",
     "prop-types": "^15.7.2",
+    "sass": "^1.54.9",
     "style-loader": "^2.0.0",
+    "svgtofont": "^3.18.0",
     "ts-loader": "^8.1.0",
     "typescript": "^4.2.3",
+    "vite": "^3.1.0",
+    "vite-plugin-static-copy": "^0.9.0",
     "webpack": "^5.28.0",
     "webpack-cli": "^4.6.0"
   }

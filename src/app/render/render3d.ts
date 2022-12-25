@@ -1,4 +1,4 @@
-import { float, int } from '../logics/conversion'
+import { float, int } from '../common-logics'
 
 export class RenderModel {
 

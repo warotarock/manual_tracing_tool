@@ -1,17 +1,38 @@
-﻿html {
+﻿:root {
+  font-size: 15px;
+  --ui-large-text-size: 1.25rem;
+  --ui-normal-text-size: 1.0rem;
+  --ui-small-text-size: 0.75rem;
+  --ui-basic-control-size: 0.85rem;
+}
+
+html {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   margin: 0;
   padding: 0;
-  left: 100%;
-  height: 100%;
   background-color: $systemBackground;
+  overflow: hidden;
+
+  font-family: "Helvetica Neue",
+    Arial,
+    "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans",
+    Meiryo,
+    sans-serif;
 }
 
 body {
-  position: relative;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
   overflow: hidden; // これを入れないとmainが何かはみでて横スクロールバーが出る
   user-select: none;
 
@@ -19,69 +40,44 @@ body {
     width: 500px;
     height: 500px;
   }
-
-  .screen-main {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .overlay-container {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: $zindex-screen-sub;
-
-    &.hidden {
-      display: none;
-    }
-
-    .dialog-screen-container {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      padding: 10px;
-
-      &:focus {
-        outline: none;
-      }
-    }
-
-    .modal-window-overlay {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      background-color:rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &:focus {
-        outline: none;
-      }
-    }
-  }
 }
 
-input {
-  user-select: unset;
+$side-panel-tab-width: 1.8rem;
+$side-panel-width: $side-panel-tab-width + $padding-basic;
+
+.screen-main {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 0 1fr $side-panel-width;
+  grid-template-rows: min-content auto min-content;
+
+  &.mobile-screen {
+    grid-template-columns: 0px 1fr 0;
+  }
+
+  .screen-main-row1 {
+    grid-column: 1/4;
+  }
+
+  .screen-main-row3 {
+    grid-column: 1/4;
+  }
 }
 
 header {
   box-sizing: border-box;
+  width: 100%;
+  overflow-x: hidden;
+  z-index: 3;
 
   .header-row1 {
-    display: flex;
-    padding: 0 $padding-basic 0 $padding-basic;
+    width: 100%;
+    // display: flex;
+    display: none;
+    padding: 0;
     border-bottom: $windowBorder;
+    overflow-x: hidden;
   }
 
   .header-row2 {
@@ -96,13 +92,14 @@ header {
   .file-name {
     flex: 1;
     border: none;
-    padding-top: $padding-basic + 1px;
+    padding-top: $padding-basic + 0.1rem;
     padding-left: 30px;
     padding-right: 30px;
     display: flex;
 
     input {
       flex: 1;
+      width: 100%;
       height: 18px;
       border: none;
       padding: 3px $padding-basic 0px $padding-basic;
@@ -119,189 +116,208 @@ header {
 main {
   padding: 0;
   flex: 1;
+  z-index: 2;
+  position: relative;
 
-  .main-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
+  .center-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
 
-    .side-panel {
-      position: absolute;
-      top: 20px;
-      display: flex;
-      pointer-events: none;
+    .main-canvas-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: $canvasBackground;
+
+      .main-canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        border: none;
+        z-index: 2;
+        touch-action: none;
+      }
+
+      .editor-canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        border: none;
+        z-index: 3;
+        cursor: crosshair;
+        touch-action: none;
+      }
+
+      .webgl-canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        border: none;
+        z-index: 1;
+        touch-action: none;
+      }
+    }
+  }
+}
+
+.side-panel-dock {
+  pointer-events: none;
+}
+
+.side-panel {
+  display: flex;
+  position: fixed;
+  width: 0;
+  z-index: 4;
+  pointer-events: none;
+
+  &.left-panel {
+    left: 0;
+  }
+
+  &.right-panel {
+    right: 0;
+    flex-flow: row-reverse;
+  }
+
+  .side-panel-tabs {
+    display: flex;
+    flex-direction: column;
+    padding-top: $padding-basic;
+    padding-left: $padding-basic;
+    background-color: $windowBackground;
+    border-left: $windowBorder;
+    pointer-events: auto;
+
+    :not(:first-child) {
+      margin-block-start: 0.2rem;
+    }
+
+    .side-panel-tab {
+      width: $side-panel-tab-width;
+      height: 3.0rem;
+      background-color: $buttonBackground;
+      text-align: center;
+      padding-top: $padding-basic;
+      box-shadow: $box-shadow-basic;
+
+      i {
+        font-size: 1.4rem;
+        line-height: 1.4rem;
+        vertical-align: middle;
+      }
+
+      &:hover {
+        background-color: $hoverBackground;
+      }
 
       &.left-panel {
-        left: 0;
-        z-index: $zindex-side-panel;
+        border-top: $controlBorderLight;
+        border-left: $controlBorderLight;
+        border-bottom: $controlBorderLight;
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
       }
 
       &.right-panel {
-        right: 0;
-        z-index: $zindex-side-panel;
+        border-top: $controlBorderLight;
+        border-left: $controlBorderLight;
+        border-bottom: $controlBorderLight;
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
       }
+    }
+  }
 
-      .side-panel-contents {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        // background-color: $windowBackgroundHalf;
-        > div:not(:first-child) {
-          margin-top: 4px;
-        }
+  .side-panel-contents {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: $padding-basic;
+    width: 0;
+    height: 100%;
+    flex-wrap: nowrap;
+    overflow-x: visible;
+    overflow-y: visible;
 
-        .side-panel-content {
-          display: flex;
+    &.mobile-screen {
+      justify-content: flex-end;
 
-
-          &.right-panel {
-            flex-flow: row-reverse;
-          }
-
-          .tab-locator {
-            position: relative;
-
-            .side-panel-tab {
-              position: absolute;
-              width: 25px;
-              height: 54px;
-              background-color: $windowBackground;
-              text-align: center;
-              pointer-events: auto;
-
-              i {
-                font-size: 22px;
-                line-height: 34px;
-                vertical-align: middle;
-              }
-
-              &:hover {
-                background-color: $hoverBackground;
-              }
-
-              &.left-panel {
-                left: 0;
-                border-top: solid;
-                border-right: solid;
-                border-bottom: solid;
-                border-width: $windowBorderWidth;
-                border-color: $windowBorderColor;
-                border-top-right-radius: 8px;
-                border-bottom-right-radius: 8px;
-
-                &.closed {
-                  left: 0px;
-                  position: unset;
-                }
-              }
-
-              &.right-panel {
-                right: 0;
-                border-top: solid;
-                border-left: solid;
-                border-bottom: solid;
-                border-width: $windowBorderWidth;
-                border-color: $windowBorderColor;
-                border-top-left-radius: 8px;
-                border-bottom-left-radius: 8px;
-
-                &.closed {
-                  right: 0px;
-                  position: unset;
-                }
-              }
-            }
-          }
-
-          .content-container {
-            pointer-events: auto;
-
-            &.left-panel {
-              width: 240px;
-              border-top: solid;
-              border-right: solid;
-              border-bottom: solid;
-              border-width: $windowBorderWidth;
-              border-color: $windowBorderColor;
-            }
-
-            &.right-panel {
-              width: 242px;
-              border-top: solid;
-              border-left: solid;
-              border-bottom: solid;
-              border-width: $windowBorderWidth;
-              border-color: $windowBorderColor;
-            }
-
-            &.closed {
-              display: none;
-            }
-          }
-        }
+      .side-panel-content {
+        margin-block-start: 0;
+        margin-block-end: 0.2rem;
+        width: 14rem;
       }
     }
 
-    .center-panel {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
+    &.right-panel {
+      align-items: flex-end;
+    }
+
+    .side-panel-content {
       display: flex;
-      flex-direction: column;
-      padding: 0;
-      z-index: $zindex-center-panel;
+      margin-block-start: 0.2rem;
+      width: 18rem;
 
-      .main-canvas-container {
-        flex: 1;
-        position: relative;
-        background-color: $canvasBackground;
+      &.closed {
+        display: none;
+      }
 
-        .main-canvas {
-          position: absolute;
-          border: none;
-          z-index: 2;
+      .content-container {
+        pointer-events: auto;
+        width: 100%;
+
+        &.left-panel {
+          border-top: $controlBorder;
+          border-right: $controlBorder;
+          border-bottom: $controlBorder;
+          border-width: $windowBorderWidth;
+          border-color: $windowBorderColor;
         }
 
-        .editor-canvas {
-          position: absolute;
-          border: none;
-          z-index: 3;
-          cursor: crosshair;
+        &.right-panel {
+          border-top: $controlBorder;
+          border-left: $controlBorder;
+          border-bottom: $controlBorder;
+          border-width: $windowBorderWidth;
+          border-color: $windowBorderColor;
         }
 
-        .webgl-canvas {
-          position: absolute;
-          border: none;
-          z-index: 1;
+        .content-inner-container {
+
+          &.closed {
+            display: none;
+          }
         }
       }
-    }
-
-    .footer-ui-container {
-      position: absolute;
-      left: 0;
-      right: 10px;
-      bottom: 0;
-      height: 0;
-      z-index: $zindex-footer-ui;
-      overflow: visible;
     }
   }
 }
 
 footer {
-  height: 40px;
   display: flex;
-  z-index: $zindex-center-panel + 1;
+  align-items: stretch;
   border-top: $windowBorder;
-  background-color: $systemBackground;
+  background-color: $windowBackground;
+  z-index: 2;
 
   .help-text {
-    width: 100%;
+    display: none;
+    flex: 1;
+    height: 100%;
     padding: 3px;
-    text-align: center;
-    font-size: 12px;
+    font-size: $uiFontSizeSmall;
+    overflow-y: hidden;
   }
+}
+
+input {
+  user-select: unset;
+}
+
+button {
+  color: $controlTextColor;
 }

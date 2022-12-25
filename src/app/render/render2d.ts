@@ -1,10 +1,10 @@
-﻿import { float, int } from '../logics/conversion'
+﻿import { float, int } from '../common-logics'
 
 export class CanvasWindow {
 
   canvas: HTMLCanvasElement = null
   context: CanvasRenderingContext2D = null
-
+  devicePixelRatio: float = 1.0
   width: float = 0.0
   height: float = 0.0
 
@@ -12,21 +12,32 @@ export class CanvasWindow {
   centerLocationRate = vec3.fromValues(0.0, 0.0, 0.0)
   viewScale = 1.0
   viewRotation = 0.0
-
   mirrorX = false
   mirrorY = false
-
   maxViewScale = 50.0
   minViewScale = 0.01
-
   transformMatrix = mat4.create()
 
   private tempVec3 = vec3.create()
   private tmpMatrix = mat4.create()
 
-  createCanvas() {
+  createCanvas(width?: int, height?: int, willReadFrequently = false) {
 
-    this.canvas = document.createElement('canvas')
+    this.attachCanvas(document.createElement('canvas'))
+
+    if (width && height) {
+
+      this.setCanvasSize(width, height)
+      this.initializeContext(willReadFrequently)
+    }
+  }
+
+  attachCanvas(canvas: HTMLCanvasElement) {
+
+    this.canvas = canvas
+    this.devicePixelRatio = window.devicePixelRatio
+    this.width = canvas.width
+    this.height = canvas.height
   }
 
   releaseCanvas(): HTMLCanvasElement {
@@ -47,9 +58,24 @@ export class CanvasWindow {
     this.height = height
   }
 
-  initializeContext() {
+  initializeContext(willReadFrequently = false) {
 
-    this.context = this.canvas.getContext('2d')
+    this.context = <CanvasRenderingContext2D>this.canvas.getContext('2d', { willReadFrequently: willReadFrequently })
+  }
+
+  isInitialized(): boolean {
+
+    return (this.canvas != null && this.context != null)
+  }
+
+  isSameMetrics(targetWindow: CanvasWindow): boolean {
+
+    return (
+      this.isInitialized() &&
+      targetWindow.isInitialized() &&
+      targetWindow.width == this.width &&
+      targetWindow.height == this.height
+    )
   }
 
   copyTransformTo(targetWindow: CanvasWindow) {
@@ -158,11 +184,16 @@ export class CanvasWindow {
     mat4.scale(result, result, vec3.set(this.tempVec3, this.viewScale, this.viewScale, 1.0))
     mat4.rotateZ(result, result, this.viewRotation * Math.PI / 180.0)
   }
+
+  getViewScaledLength(length: float) {
+
+    return length / this.viewScale
+  }
 }
 
 export enum CanvasRenderBlendMode {
 
-  default, alphaOver, add, color, luminosity
+  default, alphaOver, add,  sourceAtop, destinationIn
 }
 
 export enum CanvasRenderLineCap {
@@ -173,29 +204,31 @@ export enum CanvasRenderLineCap {
 export class CanvasRender {
 
   private context: CanvasRenderingContext2D = null
+  private canvasWindow: CanvasWindow = null
   private currentTransform = mat4.create()
   private tempMat = mat4.create()
-  private viewWidth = 1.0
-  private viewHeight = 1.0
-  private viewScale = 1.0
-
-  private viewCenterX = 0.0
-  private viewCenterY = 0.0
-  private viewRange = 1.0
-
   private lastFontHeight = 0.0
+  private strokeDashEmpty: float[] = []
+
+  get transformMatrix(): Mat4 {
+
+    return this.canvasWindow.transformMatrix
+  }
+
+  get canvasWidth(): int {
+
+    return this.canvasWindow.width
+  }
+
+  get canvasHeight(): int {
+
+    return this.canvasWindow.height
+  }
 
   setContext(canvasWindow: CanvasWindow) {
 
     this.context = canvasWindow.context
-    this.viewWidth = canvasWindow.width
-    this.viewHeight = canvasWindow.height
-    this.viewScale = canvasWindow.viewScale
-
-    this.viewCenterX = canvasWindow.viewLocation[0]
-    this.viewCenterY = canvasWindow.viewLocation[1]
-    this.viewRange = Math.sqrt(Math.pow(this.viewWidth * 0.5, 2) + Math.pow(this.viewHeight * 0.5, 2)) / this.viewScale
-
+    this.canvasWindow = canvasWindow
     this.lastFontHeight = 0.0
 
     canvasWindow.updateViewMatrix()
@@ -205,7 +238,12 @@ export class CanvasRender {
 
   getViewScale(): float {
 
-    return this.viewScale
+    return this.canvasWindow.viewScale
+  }
+
+  getViewScaledSize(size: float): float {
+
+    return size / this.canvasWindow.viewScale
   }
 
   resetTransform() {
@@ -224,10 +262,10 @@ export class CanvasRender {
 
   setTransformFromMatrix(matrix: Mat4) {
 
-    CanvasRender.setTransformToContext(this.context, matrix)
+    CanvasRender.setTransformMat4(this.context, matrix)
   }
 
-  static setTransformToContext(context: CanvasRenderingContext2D, matrix: Mat4) {
+  static setTransformMat4(context: CanvasRenderingContext2D, matrix: Mat4) {
 
     context.setTransform(
       matrix[0], matrix[1],
@@ -248,19 +286,19 @@ export class CanvasRender {
     this.setTransformFromMatrix(this.currentTransform)
   }
 
-  isInViewRectangle(left: float, top: float, right: float, bottom: float, range: float) {
+  isInViewRectangle(location: Vec3, range: float) {
 
-    const centerX = (right + left) * 0.5
-    const centerY = (bottom + top) * 0.5
+    const centerX = this.canvasWindow.viewLocation[0]
+    const centerY = this.canvasWindow.viewLocation[0]
 
-    const distance = Math.sqrt(Math.pow(centerX - this.viewCenterX, 2) + Math.pow(centerY - this.viewCenterY, 2))
+    const distance = Math.sqrt(Math.pow(location[0] - centerX, 2) + Math.pow(location[1] - centerY, 2))
 
-    return ((distance - range) < this.viewRange)
-  }
+    const rangeX = Math.max(centerX , this.canvasWidth - centerX)
+    const rangeY = Math.max(centerY , this.canvasHeight - centerY)
 
-  setCompositeOperation(operationText: 'source-over' | 'source-atop') {
+    const viewRange = Math.sqrt(rangeX * rangeX + rangeY * rangeY) / this.canvasWindow.viewScale
 
-    this.context.globalCompositeOperation = operationText
+    return ((distance - range) < viewRange)
   }
 
   private getColorStyleText(r: float, g: float, b: float, a: float) {
@@ -281,6 +319,16 @@ export class CanvasRender {
   setFillColorV(color: Vec4) {
 
     this.setFillColor(color[0], color[1], color[2], color[3])
+  }
+
+  createRadialGradient(x: float, y: float, radius: float) {
+
+    return this.context.createRadialGradient(x, y, 0, x, y, radius)
+  }
+
+  setFillGradiaent(gradient: CanvasGradient) {
+
+    this.context.fillStyle = gradient
   }
 
   setFillLinearGradient(x0: float, y0: float, x1: float, y1: float, color1: Vec4, color2: Vec4) {
@@ -319,6 +367,11 @@ export class CanvasRender {
     this.context.setLineDash(segments)
   }
 
+  clearLineDash() {
+
+    this.context.setLineDash(this.strokeDashEmpty)
+  }
+
   setGlobalAlpha(a: float) {
 
     this.context.globalAlpha = a
@@ -326,21 +379,24 @@ export class CanvasRender {
 
   setBlendMode(blendMode: CanvasRenderBlendMode) {
 
-    if (blendMode == CanvasRenderBlendMode.default || blendMode == CanvasRenderBlendMode.alphaOver) {
+    switch (blendMode) {
 
-      this.context.globalCompositeOperation = 'source-over'
-    }
-    else if (blendMode == CanvasRenderBlendMode.add) {
+      case CanvasRenderBlendMode.default:
+      case CanvasRenderBlendMode.alphaOver:
+        this.context.globalCompositeOperation = 'source-over'
+        break
 
-      this.context.globalCompositeOperation = 'lighter'
-    }
-    else if (blendMode == CanvasRenderBlendMode.luminosity) {
+      case CanvasRenderBlendMode.sourceAtop:
+        this.context.globalCompositeOperation = 'source-atop'
+        break
 
-      this.context.globalCompositeOperation = 'luminosity'
-    }
-    else if (blendMode == CanvasRenderBlendMode.color) {
+      case CanvasRenderBlendMode.destinationIn:
+        this.context.globalCompositeOperation = 'destination-in'
+        break
 
-      this.context.globalCompositeOperation = 'color'
+      case CanvasRenderBlendMode.add:
+        this.context.globalCompositeOperation = 'lighter'
+        break
     }
   }
 
@@ -417,11 +473,24 @@ export class CanvasRender {
     this.context.lineTo(location[0], location[1])
   }
 
+  clear() {
+
+    mat4.copy(this.tempMat, this.canvasWindow.transformMatrix)
+
+    this.context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+    this.context.clearRect(0, 0, this.canvasWindow.width, this.canvasWindow.height)
+
+    this.setTransformFromMatrix(this.tempMat)
+  }
+
   clearRect(left: int, top: int, width: int, height: int) {
 
     this.context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
 
     this.context.clearRect(left, top, width, height)
+
+    this.cancelLocalTransform()
   }
 
   strokeRect(left: int, top: int, width: int, height: int) {
@@ -483,17 +552,56 @@ export class CanvasRender {
     this.context.drawImage(image, srcX, srcY, srcW, srcH, dstX, detY, dstW, dstH)
   }
 
+  putImageData(imageData: ImageData, destX: int, destY: int) {
+
+    this.context.putImageData(imageData, destX, destY)
+  }
+
   setFontSize(height: float) {
 
     if (height != this.lastFontHeight) {
 
-      this.context.font = height.toFixed(0) + `px 'MS Gothic', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Osaka-Mono', 'Noto Sans JP', monospace`
+      this.context.font = `${height.toFixed(0)}px 'MS Gothic', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Osaka-Mono', 'Noto Sans JP', monospace`
     }
   }
 
-  fillText(text: string, x: float, y: float) {
+  fillText(text: string, x: float, y: float, horizontalCenter = false, verticalCenter = false) {
 
-    this.context.fillText(text, x, y)
+    this.strokeOrFillText(true, text, x, y, horizontalCenter, verticalCenter)
+  }
+
+  strokeText(text: string, x: float, y: float, horizontalCenter = false, verticalCenter = false) {
+
+    this.strokeOrFillText(false, text, x, y, horizontalCenter, verticalCenter)
+  }
+
+  private strokeOrFillText(fill: boolean, text: string, x: float, y: float, horizontalCenter = false, verticalCenter = false) {
+
+    if (verticalCenter || horizontalCenter) {
+
+      const metrics = this.context.measureText(text)
+
+      if (horizontalCenter) {
+
+        x -= metrics.width / 2
+      }
+
+      if (verticalCenter) {
+
+        y += (metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent) / 2
+      }
+    }
+
+    if (fill) {
+
+      this.context.fillText(text, x, y)
+    }
+    else {
+
+      this.context.lineJoin = 'round';
+      this.context.strokeText(text, x, y)
+      this.context.lineJoin = 'miter';
+    }
   }
 
   pickColor(outColor: Vec4, x: float, y: float) {

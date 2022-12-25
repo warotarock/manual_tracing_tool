@@ -1,0 +1,16 @@
+﻿// @index('./*.{ts,tsx}', f => `export * from '${f.path}'`)
+export * from './ribbon-auto-fill-layer'
+export * from './ribbon-controls'
+export * from './ribbon-document'
+export * from './ribbon-edit'
+export * from './ribbon-home'
+export * from './ribbon-layer'
+export * from './ribbon-layer-vector-layer'
+export * from './ribbon-main-drawing'
+export * from './ribbon-main-group'
+export * from './ribbon-main-image-file-ref'
+export * from './ribbon-ui'
+export * from './ribbon-ui-tabs'
+export * from './ribbon-view'
+export * from './subtool-window'
+// @endindex

@@ -8,9 +8,16 @@ export enum EditModeID {
 export enum OperationUnitID {
 
   none = 0,
-  linePoint,
-  lineSegment,
-  line,
+  strokePoint,
+  strokeSegment,
+  stroke,
   layer,
   countOfID,
+}
+
+export enum OperationOriginTypeID {
+
+  none = 0,
+  medianCenter,
+  pivot,
 }

@@ -1,5 +1,244 @@
-﻿.ui-scroll-view-container {
+﻿.ui-select-box {
+  display: flex;
+  box-sizing: border-box;
+  padding: 0 0.2em 0 0.8em;
+  min-height: 2.15em;
+  align-items: center;
+  position: relative;
+  border-radius: $controlBorderRadius;
+  background-color: $buttonBackground;
+  color: $controlTextColor;
+  font-size: $uiFontSizeSmall;
+
+  &.large {
+    font-size: $uiFontSizeNormal;
+  }
+
+  &.button-border {
+    border: $controlBorder;
+  }
+
+  &:not(.button-border) {
+    box-shadow: $box-shadow-basic;
+  }
+
+  &:focus, &:focus-within {
+    outline: none;
+  }
+
+  .ui-select-box-label {
+    pointer-events: none;
+
+    &.placeholder {
+      color: $controlTextColorPlaceholder;
+    }
+  }
+
+  .ui-select-box-expand {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    pointer-events: none;
+    padding-top: 0.1em;
+
+    i {
+      display: inline-block;
+      width: 1.333em;
+      height: 1.333em;
+      font-size: 1.5em;
+    }
+  }
+}
+
+.ui-select-box-popover {
+  width: 100%;
+  padding: $margin-basic 0 $margin-basic 0;
+  background: $propertyPopoverBackground;
+  backdrop-filter: $commonBackdropFilter;
+  border: $propertyPopoverBorder;
+  border-radius: $border-radius-basic;
+  box-shadow: $popover-shadow;
+  overflow-y: auto;
+  pointer-events: auto;
+
+  .ui-select-box-list-item {
+    padding: $selectable-item-padding;
+    width: auto;
+    font-size: $uiFontSizeSmall;
+
+    &.large {
+      font-size: $uiFontSizeNormal;
+    }
+
+    .selectable-item-inner {
+      display: flex;
+      align-items: center;
+      padding: 0 $margin-basic 0 $margin-basic;
+      width: auto;
+      min-height: 1.9rem;
+      color: $controlTextColor;
+    }
+  }
+}
+
+.ui-command-button {
+  flex-shrink: 0;
+  background-color: $buttonBackground;
+  border: $controlBorderTransparent;
+  border-radius: $controlBorderRadius;
+  box-shadow: $box-shadow-basic;
   overflow: hidden;
+
+  &:not(:first-child) {
+    margin-inline-start: 0.27rem;
+  }
+
+  &.button-border {
+    border: $controlBorder;
+  }
+
+  &.menu-button-border {
+    border-right: $windowBorder;
+    border-left: none;
+    border-top: none;
+    border-bottom: none;
+    border-radius: 0;
+  }
+
+  >div {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: $uiControlSizeBasic;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.15rem;
+    outline: none;
+
+    // &.no-border {
+    //   border: 1px solid #ddd;
+    // }
+
+    i {
+      font-size: $commandButtonIconSize;
+    }
+  }
+}
+
+.ui-command-buttons-container {
+  display: flex;
+
+  .separator {
+    width: $command-button-separator-width;
+  }
+}
+
+.ui-checkbox-container {
+  display: inline-block;
+  border: $controlBorder;
+  background-color: $controlBackground;
+  border-radius: $controlBorderRadius;
+  overflow: hidden;
+  font-size: 1.0rem;
+  width: 1.5em;
+  height: 1.5em;
+
+  .content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+
+    i {
+      font-size: 1.0em;
+    }
+  }
+}
+
+.radio-button {
+  display: flex;
+  align-items: center;
+  padding: $padding-basic;
+
+  .radio-button-marker {
+    font-size: $uiFontSizeNormal;
+    margin-inline-end: $padding-basic;
+  }
+
+  .radio-button-label {
+    flex: 1;
+    font-size: $uiFontSizeNormal;
+  }
+}
+
+.ui-color-slider-container {
+  display: inline-flex;
+  align-items: stretch;
+  width: 100%;
+  position: relative;
+  cursor: crosshair;
+  touch-action: none;
+
+  .rail {
+    display: flex;
+    width: 100%;
+
+    .rail-body {
+      pointer-events: none;
+      height: 100%;
+    }
+
+    .filled {
+      box-shadow: 0px 10px 8px -8px rgba(255, 255, 255, 0.5) inset;
+    }
+
+    .not-filled {
+      box-shadow: 0px 10px 8px -8px rgba(0, 0, 0, 0.1) inset;
+      pointer-events: none;
+      height: 100%;
+    }
+
+    .track {
+      height: 100%;
+    }
+
+    .rest {
+      flex: 1;
+    }
+
+    .head {
+      width: 0.5rem;
+    }
+  }
+
+  .text-container {
+    position: absolute;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    padding-left: $margin-basic;
+    pointer-events: none;
+
+    .text {
+      font-size: $uiFontSizeSmall;
+      color: #fff;
+    }
+  }
+}
+
+.ui-scroll-view-container {
+  overflow: hidden;
+  touch-action: none;
 
   &.horizontal {
     width: 100%;
@@ -9,94 +248,287 @@
     height: 100%;
   }
 
+  &.center {
+    width: unset;
+    display: flex;
+  }
+
   &.no-shrink {
     flex-shrink: 0;
   }
 }
 
-.command-buttons-container {
+.ui-number-spinner-container {
   display: flex;
-  padding: 4px;
+  background-color: $buttonBackground;
+  border: $controlBorderTransparent;
+  border-radius: $border-radius-basic;
+  overflow: hidden;
+  box-shadow: $box-shadow-basic;
 
-  > div {
-    width: 31px;
-    height: 30px;
+  &.button-border {
+    border: $controlBorder;
+  }
 
-    &:not(:first-child) {
-      margin-inline-start: 4px;
-    }
+  .ui-number-spinner-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: $padding-basic;
+    padding-right: $padding-basic;
+    width: 0.7rem;
+    background-color: $buttonBackground;
 
     &:hover {
-      button {
-        background-color: $hoverBackground;
-      }
+      background-color: $hoverBackground !important;
     }
-
-    > button {
-      width: 100%;
-      height: 100%;
-      padding: 0;
-      outline: none;
-
-      background-size: 32px;
-      background-color: transparent;
-
-      &.no-border {
-        border: none;
-      }
-
-      &:not(.no-border) {
-        border: 1px solid #888;
-        border-radius: $border-radius-basic;
-      }
-
-      &.selected {
-        background-color: $activeBackground;
-      }
-
-      i {
-        font-size: 24px;
-        line-height: 24px;
-        vertical-align: middle;
-      }
-    }
-  }
-}
-
-.ui-checkbox-container {
-  display: inline-block;
-  border: $controlBorder;
-  background-color: $controlBackground;
-  border-radius: 2px;
-
-  .content {
-    width: 23px;
-    height: 23px;
-    text-align: center;
 
     i {
-      font-size: 14px;
-      line-height: 23px;
-      vertical-align: middle;
+      font-size: $commandButtonIconSize;
+    }
+  }
+
+  .ui-number-spinner-text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: $uiFontSizeSmall;
+    padding: $padding-basic;
+    min-width: 1.5rem;
+    overflow: hidden;
+    flex-wrap: nowrap;
+  }
+}
+
+.main-menu-button {
+  border-left: $controlBorderLight;
+}
+
+.main-menu-popover {
+  display: flex;
+  flex-direction: column;
+  padding: $margin-basic;
+  background: $propertyPopoverBackground;
+  backdrop-filter: $commonBackdropFilter;
+  border: $propertyPopoverBorder;
+  border-radius: $border-radius-basic;
+  box-shadow: $popover-shadow;
+  pointer-events: auto;
+
+  .file-name {
+    border: none;
+    padding: $margin-basic;
+    display: flex;
+    flex-grow: 0;
+    background: $propertyPopoverBackground;
+
+    input {
+      flex: 1;
+      width: 100%;
+      height: 18px;
+      border: none;
+      padding: 3px $padding-basic 0px $padding-basic;
+      background-color: $controlBackground;
+
+      &:focus, &:focus-within {
+        outline: none;
+      }
+    }
+  }
+
+  .main-menu-commands-container {
+    display: flex;
+    flex-direction: column;
+
+    .main-menu-item {
+      display: flex;
+      align-items: center;
+      padding: $margin-basic;
+      border-radius: $border-radius-basic;
+      min-width: calc(#{$uiFontSizeSmall} * 20.0);
+
+      i {
+        font-size: $commandButtonIconSize;
+      }
+
+      .main-menu-item-text {
+        margin-inline-start: $margin-basic;
+        font-size: $uiFontSizeSmall;
+      }
+
+      .main-menu-item-keymap {
+        margin-inline-start: $margin-basic;
+        font-size: $uiFontSizeSmall;
+        text-align: right;
+      }
     }
   }
 }
 
-.ui-color-slider-container {
-  display: inline-block;
-  width: 100%;
-  height: 100%;
+.brush-property-box {
+  display: inline-flex;
+  box-sizing: border-box;
+  font-size: $uiFontSizeSmall;
+  height: 5.3rem;
+  overflow-y: hidden;
 
-  .rail {
-    width: 100%;
-    height: 100%;
-    background-color: #eee;
-    padding: 4px 0 4px 0;
-  }
+  .brush-property-box-inner-container {
+    display: flex;
+    flex-direction: column;
+    border-radius: $border-radius-basic;
+    background-color: $buttonBackground;
+    box-shadow: $box-shadow-basic;
+    padding: $padding-basic;
 
-  .track {
-    height: calc(100% - 6px);
-    pointer-events: none;
+    &:hover {
+      background-color: $hoverBackground;
+    }
+
+    &:focus, &:focus-within {
+      outline: none;
+      box-shadow: unset;
+    }
+
+    .expand {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+
+      i {
+        font-size: calc(#{$uiFontSizeSmall} * 1.8);
+        line-height: calc(#{$uiFontSizeSmall} * 1.6);
+      }
+    }
   }
 }
 
+.brush-thumbnail-frame {
+  width: 3.5rem;;
+  height: 3.5rem;;
+  border: $controlBorderLight;
+  padding: $padding-basic;
+  position: relative;
+
+  .brush-thumbnail-canvas {
+    border: none;
+    width: 100%;
+    height: 100%;
+  }
+
+  .brush-size-text-frame {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0.2rem;
+
+    &.back {
+      z-index: 2;
+    }
+
+    &.front {
+      z-index: 1;
+
+      .brush-size-text {
+        -webkit-text-stroke: 0.2rem $controlBackground;
+      }
+    }
+
+    .brush-size-text {
+      font-size: calc(#{$uiFontSizeSmall} * 1.2);
+    }
+  }
+}
+
+.brush-property-popover-locator {
+  width: 100%;
+  padding-right: 1.6rem;
+  padding-bottom: 1.6rem;
+
+  .brush-property-popover {
+    display: inline-flex;
+    flex-direction: column;
+    padding: $margin-basic;
+    background: $propertyPopoverBackground;
+    backdrop-filter: $commonBackdropFilter;
+    border: $propertyPopoverBorder;
+    border-radius: $border-radius-basic;
+    box-shadow: $popover-shadow;
+    width: 100%;
+    height: 100%;
+    max-width: 30rem;
+    max-height: 27rem;
+    pointer-events: auto;
+
+    .preview-canvas-frame {
+      box-sizing: border-box;
+      border: $controlBorderLight;
+      background-color: $controlBackground;
+      width: auto;
+      max-width: 30rem;
+      min-width: 20rem;
+      height: 7.0rem;
+      margin-block-end: $margin-basic;
+
+      .preview-canvas-size-calculator {
+        width: 100%;
+        height: 100%;
+
+        .preview-canvas {
+          border: none;
+          width: 100%;
+          height: 100%;
+        }
+      }
+    }
+
+    .param-slider-container {
+      display: flex;
+      align-items: stretch;
+      height: 1.4rem;
+      margin-block-end: $margin-basic;
+
+      .label {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        margin-inline-end: $margin-basic;
+        min-width: 3rem;
+
+        .label-text {
+          font-size: $uiFontSizeSmall;
+        }
+      }
+    }
+
+    .brush-presets-container {
+      flex: 1;
+      padding: $padding-basic;
+      border: $controlBorderLight;
+      width: auto;
+      overflow-y: auto;
+
+      .brush-preset-group-container {
+        display: flex;
+        flex-wrap: wrap;
+        padding: $padding-basic;
+
+        &:not(:last-child) {
+          margin-block-end: $margin-basic;
+        }
+
+        .brush-preset-frame {
+          padding: 0.1rem;
+
+          &:hover {
+            background-color: $hoverBackground;
+          }
+        }
+      }
+    }
+  }
+}

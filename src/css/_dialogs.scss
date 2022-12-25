@@ -1,0 +1,304 @@
+﻿.dialog-screen-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 10px;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.dialog-document-filer-container {
+  display: flex;
+  background-color: $dialogBackground;
+
+  .input-file {
+    display: none;
+  }
+
+  $sections-width: 230px;
+
+  .sections-container {
+    width: $sections-width;
+
+    .menu-commands {
+      margin-block-end: $margin-basic;
+    }
+
+    .section-label {
+      padding: 0.1rem 0 0.1rem $padding-basic;
+      font-size: $uiFontSizeSmall;
+      color: $windowLabelColor;
+      background-color: $windowLabelBackground;
+    }
+
+    .section-list {
+      border: $windowBorder;
+      background-color: $windowBackground;
+
+      .section-item {
+        padding: $padding-basic;
+
+        &:hover {
+
+          .section-item-inner .button {
+            opacity: 100%;
+          }
+        }
+
+        .section-item-inner {
+          display: flex;
+          align-items: stretch;
+          padding: 0.1rem $padding-basic 0.1rem 0.5rem;
+          border-radius: $border-radius-inner;
+
+          $lineHeight: calc($uiFontSizeNormal * 2.0);
+
+          .name {
+            flex: 1;
+            line-height: $lineHeight;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+
+            i {
+              margin-right: 0.5rem;
+              font-size: $uiFontSizeNormalIconSize;
+              vertical-align: text-bottom;
+            }
+
+            span {
+              font-size: $uiFontSizeNormal;
+              vertical-align: middle;
+            }
+          }
+
+          .button {
+            margin-inline-start: 0.5rem;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+
+            i {
+              font-size: $uiFontSizeSmalllIconSize;
+              box-sizing: border-box;
+            }
+
+            &:hover {
+
+              i {
+                box-shadow: $box-shadow-basic;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .files-container {
+    margin-inline-start: $margin-basic;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    .section-info {
+      margin-block-start: $margin-basic;
+      padding: $padding-basic 2px $padding-basic 8px;
+      display: flex;
+      align-items: center;
+
+      i {
+        margin-right: 4px;
+        font-size: $uiFontSizeNormalIconSize;
+        vertical-align: text-bottom;
+      }
+
+      span {
+        font-size: $uiFontSizeNormal;
+        vertical-align: text-bottom;
+      }
+    }
+
+    .file-list {
+      flex: 1;
+      border: $windowBorder;
+      background-color: $windowBackground;
+      overflow-y: scroll;
+
+      ul {
+        margin: 0;
+        padding: 0;
+
+        li {
+          @extend .selectable-item;
+          list-style: none;
+          background-color: $listItemBackground;
+          padding: 3px;
+
+          &:nth-child(odd) {
+            background-color: $listItemBackgroundOdd;
+
+            &:hover {
+              background-color: $hoverBackground;
+            }
+          }
+
+          .selectable-item-inner {
+            padding: 8px $padding-basic 8px 12px;
+            border-radius: $border-radius-inner;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+
+            i {
+              font-size: $uiFontSizeLargeIconSize;
+              vertical-align: middle;
+              margin-right: 12px;
+            }
+
+            span.name {
+              font-size: $uiFontSizeLarge;
+              min-width: 50%;
+              vertical-align: middle;
+            }
+
+            span.path {
+              margin-left: 10px;
+              font-size: $uiFontSizeSmall;
+              color: #555;
+              vertical-align: middle;
+            }
+          }
+        }
+      }
+    }
+
+    .file-commands {
+      margin-block-end: $margin-basic;
+      display: flex;
+
+      .file-info {
+        flex: 1;
+        padding: 0px 2px 0px 8px;
+        font-size: $uiFontSizeNormal;
+        line-height: $uiFontSizeNormalLineHeight;
+        border: $windowBorder;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      button {
+        margin-left: $margin-basic;
+      }
+    }
+  }
+}
+
+.dialog-shortcut-keys-container {
+  display: flex;
+  flex-direction: column;
+  background-color: $dialogBackground;
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    margin-block-start: $margin-basic;
+    max-width: 40rem;
+    padding: $padding-basic;
+
+    >:not(:first-child) {
+      margin-block-start: $margin-basic;
+    }
+
+    .select {
+
+      >:not(:first-child) {
+        margin-block-start: $margin-basic;
+      }
+    }
+
+    .commands {
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+
+  .list {
+    margin-block-start: $margin-basic;
+    border: $controlBorderLight;
+    flex: 1;
+    overflow-y: scroll;
+    background-color: $windowBackground;
+
+    .item-column {
+      display: inline-flex;
+      padding: $padding-basic;
+      align-items: center;
+      font-size: $uiFontSizeNormal;
+
+      &:not(:first-child) {
+        border-left: $controlBorderLight;
+      }
+
+      &:last-child {
+        flex: 1;
+      }
+
+      &.key-text {
+        width: 4rem;
+        padding-left: 1.5rem;
+      }
+
+      &.modifier-text {
+        width: 8rem;
+        padding-left: 1.5rem;
+      }
+
+      &.command-text {
+        width: 17rem;
+        padding-left: 1.0rem;
+      }
+    }
+
+    .header-item {
+      padding: $selectable-item-padding;
+      border-bottom: $controlBorderLight;
+      background-color: #e0e0e0;
+
+      .item-inner {
+        display: flex;
+        align-items: stretch;
+        padding: $padding-basic;
+      }
+    }
+
+    .shortcutkey-item {
+      padding: $selectable-item-padding;
+      background-color: #f5f5f5;
+
+      &:nth-child(2n) {
+        background-color: #ebebeb;
+      }
+
+      &:last-child {
+        border-bottom: $controlBorderLight;
+      }
+
+      .selectable-item-inner {
+        display: flex;
+        align-items: stretch;
+        width: auto;
+        padding: $padding-basic;
+      }
+    }
+  }
+}

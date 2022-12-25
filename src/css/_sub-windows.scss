@@ -4,55 +4,30 @@
   border: 1px solid #eee;
 }
 
-$main-tool-width: 150px;
-$sub-tool-buttons-width: 180px;
+$main-tool-width: 4.7rem;
+$sub-tool-buttons-width: 11rem;
 
-.footer-operation-panel-container {
-  position: absolute;
-  left: $main-tool-width + $margin-basic;
-  width: $sub-tool-buttons-width;
-  bottom: 0;
-  height: $ribbon-height;
-  box-sizing: border-box;
-  border-top: $operation-ui-border;
-  border-left: $operation-ui-border;
-  border-right: $operation-ui-border;
-  border-top-left-radius: $border-radius-basic;
-  border-top-right-radius: $border-radius-basic;
-  padding: $padding-basic;
+.footer-ui-container {
   display: flex;
-  background-color: $windowBackground;
+  width: 100%;
+  padding: $padding-commands;
 
-  .command-buttons {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    align-items: center;
-    justify-items: center;
+  .footer-ui-container-left {
+    display: flex;
+    justify-content: flex-start;
 
-    button {
-      border: 1px solid #888;
-      border-radius: $border-radius-basic;
-      width: 1.5em;
-      height: 1.5em;
-      padding: 0.15em 0 0 0.12em;
-      font-size: 32px;
-      overflow: hidden;
-      text-align: left;
-      background-color: $buttonBackground;
+    &.mobile-screen {
+      flex: 1;
+    }
+  }
 
-      &:hover {
-        background-color: $hoverBackground;
-      }
+  .footer-ui-container-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
 
-      &:focus {
-        outline: none;
-      }
-
-      i {
-        font-size: 1.2em;
-      }
+    &.mobile-screen {
+      justify-content: flex-end;
     }
   }
 }
@@ -61,9 +36,14 @@ $sub-tool-buttons-width: 180px;
   overflow: hidden;
   flex: 1;
   background-color: $windowBackground;
+  backdrop-filter: $commonBackdropFilter;
   display: flex;
   flex-direction: column;
   height: 300px;
+
+  .command-buttons-container {
+    padding: $padding-commands;
+  }
 
   .ui-scroll-view-container {
     flex: 1;
@@ -75,7 +55,7 @@ $sub-tool-buttons-width: 180px;
     .item {
       display: flex;
       cursor: default;
-      height: 30px;
+      height: 2.2rem;
 
       &:hover {
         background-color: $hoverBackground;
@@ -97,22 +77,6 @@ $sub-tool-buttons-width: 180px;
         }
       }
 
-      .visibility-icon-container {
-        padding-left: 3px;
-        padding-top: 4px;
-        width: 24px;
-
-        .visibility-icon {
-          $srcSize: 64px;
-          $iconSize: 22px;
-          $scale: $iconSize / $srcSize;
-          background-size: 512px * $scale;
-          background-position-y: -128px * $scale;
-          width: $iconSize;
-          height: $iconSize;
-        }
-      }
-
       .layer-name {
         flex: 1;
         font-size: 14.0px;
@@ -122,6 +86,38 @@ $sub-tool-buttons-width: 180px;
         white-space: nowrap;
         text-overflow: ellipsis;
       }
+
+      .expander {
+        width: 2.0rem;
+
+        .expander-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2.2rem;
+          height: 2.2rem;
+
+          i {
+            font-size: 1.5rem;
+          }
+        }
+      }
+
+      .layer-visibility {
+        width: 2.2rem;
+
+        .visibility-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2.2rem;
+          height: 2.2rem;
+
+          i {
+            font-size: 1.5rem;
+          }
+        }
+      }
     }
   }
 }
@@ -129,6 +125,11 @@ $sub-tool-buttons-width: 180px;
 .palette-selector-window {
   // border: $windowBorder;
   background-color: $windowBackground;
+  backdrop-filter: $commonBackdropFilter;
+
+  .command-buttons-container {
+    padding: $padding-commands;
+  }
 
   .items-container {
     padding: 2px;
@@ -173,7 +174,7 @@ $sub-tool-buttons-width: 180px;
           border-bottom: solid 1px;
 
           &.selected {
-            // box-shadow: 0 0 0 3px #99f;
+            // box-shadow: $popover-shadow
             // border: solid 3px #99f;
 
             &::after {
@@ -216,48 +217,59 @@ $sub-tool-buttons-width: 180px;
   // border: $windowBorder;
   padding: 0px 0 8px 0;
   background-color: $windowBackground;
+  backdrop-filter: $commonBackdropFilter;
 
-  .colorCanvas {
+  .color-canvas {
     border: none;
     width: 100%;
     height: 100px;
     cursor: crosshair;
   }
 
-  .colorMixerValueSlide {
+  .color-mixer-value-slider {
     display: flex;
     height: 22px;
     padding: 2px 10px 0 4px;
 
-    div.label {
+    .label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 20px;
-      font-size: 14px;
-      text-align: center;
+
+      .label-text {
+        font-size: 14px;
+      }
     }
 
-    input[type=number] {
-      width: 50px;
-      height: 14px;
-      font-size: 12px;
-      border: none;
-      background-color: #f8f8f8;
-      margin-top: 2px;
-      margin-left: 2px;
+    .input {
+      box-sizing: border-box;
+      border-bottom: 1px solid;
+
+      input {
+        box-sizing: border-box;
+        width: 50px;
+        height: 100%;
+        font-size: 12px;
+        border: none;
+        background-color: transparent;
+      }
     }
 
-    div.range {
+    .range {
       flex: 1;
-      padding-left: 4px;
+      display: flex;
+      align-items: stretch;
+      padding: 0.3rem 0 0 0;
     }
   }
 }
 
 .time-line-window {
   position: absolute;
-  left: $main-tool-width  + $sub-tool-buttons-width + 10px;
+  left: $main-tool-width  + $sub-tool-buttons-width + 1.0rem;
   right: $padding-basic;
   bottom: 0;
-  height: 46px;
   overflow: hidden;
   border-top: $operation-ui-border;
   border-left: $operation-ui-border;
@@ -265,189 +277,91 @@ $sub-tool-buttons-width: 180px;
   background-color: $windowBackground;
   z-index: $zindex-timeline-panel;
 
-  &.hidden {
-    display: none;
+  .time-line-ui {
+    border-bottom: $controlBorderLight;
+
+    .command-buttons {
+      display: flex;
+      align-items: stretch;
+      padding: $padding-commands;
+
+      >div {
+
+        &:not(:first-child) {
+          margin-inline-start: $command-button-separator-width
+        }
+      }
+
+      .command-button-group {
+        display: flex;
+        align-items: stretch;
+
+        >div {
+
+          &:not(:first-child) {
+            margin-inline-start: $margin-basic;
+          }
+        }
+      }
+
+      .ui-select-box {
+        width: 6.5rem;
+      }
+    }
   }
 
-  canvas {
-    border: none;
+  .canvas-container {
     width: 100%;
-    height: 100%;
+    height: 3rem;
+
+    canvas {
+      border: none;
+      width: 100%;
+      height: 100%;
+    }
   }
 }
 
-.dialog-document-filer-container {
-  display: flex;
-  background-color: $systemBackground;
+.subtool-window {
 
-  .input-file {
-    display: none;
+  .ui-scroll-view-container {
+    position: absolute;
+    box-sizing: border-box;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    white-space:nowrap;
   }
 
-  $sections-width: 230px;
+  $item-scale: 0.9;
 
-  .sections-container {
-    position: absolute;
-    top: $dialog-padding;
-    left: $dialog-padding;
-    width: $sections-width;
+  .item {
+    display: inline-block;
+    box-sizing: border-box;
+    height: 75px * $item-scale;
+    vertical-align: middle;
+    padding: 3px;
 
-    .section-label {
-      padding: 2px 0 2px $padding-basic;
-      font-size: $fontSizeSmall;
-      color: $windowLabelColor;
-      background-color: $windowLabelBackground;
+    &:not(:last-child) {
+      border-right: solid 1px #ccc;
     }
 
-    .section-list {
-      border: $windowBorder;
-      background-color: $windowBackground;
-
-      .section-item {
-        padding: 3px;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-
-        &:hover {
-
-          .section-item-inner .button {
-            opacity: 100%;
-          }
-        }
-
-        .section-item-inner {
-          display: flex;
-          padding: 2px $padding-basic 2px 8px;
-          border-radius: 3px;
-
-          $lineHeight: $fontSizeNormal * 2.0;
-
-          .name {
-            flex: 1;
-            line-height: $lineHeight;
-
-            i {
-              margin-right: 4px;
-              font-size: $fontSizeNormalIconSize;
-              vertical-align: text-bottom;
-            }
-
-            span {
-              font-size: $fontSizeNormal;
-              vertical-align: middle;
-            }
-          }
-
-          .button {
-            margin-inline-start: 4px;
-            font-size: $fontSizeNormalIconSize;
-            opacity: 0;
-            line-height: $lineHeight;
-            vertical-align: text-bottom;
-          }
-        }
-      }
-    }
-  }
-
-  .files-container {
-    position: absolute;
-    top: $dialog-padding;
-    left: $dialog-padding + $sections-width + 8px;
-    right: $dialog-padding;
-    bottom: $dialog-padding;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-
-    .section-info {
-      padding: $padding-basic 2px $padding-basic 8px;
-
-      i {
-        margin-right: 4px;
-        font-size: $fontSizeNormalIconSize;
-        vertical-align: text-bottom;
-      }
-
-      span {
-        font-size: $fontSizeNormal;
-        vertical-align: text-bottom;
-      }
-    }
-
-    .file-list {
-      flex: 1;
-      border: $windowBorder;
-      background-color: $windowBackground;
-      overflow-y: scroll;
-
-      ul {
-        margin: 0;
-        padding: 0;
-
-        li {
-          @extend .selectable-item;
-          list-style: none;
-          background-color: $listItemBackground;
-          padding: 3px;
-
-          &:nth-child(odd) {
-            background-color: $listItemBackgroundOdd;
-
-            &:hover {
-              background-color: $hoverBackground;
-            }
-          }
-
-          .selectable-item-inner {
-            padding: 8px $padding-basic 8px 12px;
-            border-radius: $border-radius-inner;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-
-            i {
-              font-size: $fontSizeNormal * 1.5 * 1.5;
-              vertical-align: middle;
-              margin-right: 12px;
-            }
-
-            span.name {
-              font-size: $fontSizeNormal * 1.5;
-              min-width: 50%;
-              vertical-align: middle;
-            }
-
-            span.path {
-              margin-left: 10px;
-              font-size: $fontSizeNormal;
-              color: #555;
-              vertical-align: middle;
-            }
-          }
-        }
-      }
-    }
-
-    .file-commands {
+    .item-inner {
       display: flex;
-      margin-top: $margin-basic;
+      background-size: 128px * $item-scale;
+      background-repeat: no-repeat;
+      height: 100%;
 
-      .file-info {
-        flex: 1;
-        padding: 0px 2px 0px 8px;
-        background-color: $windowBackground;
-        font-size: $fontSizeNormal;
-        line-height: $fontSizeNormal * 2.0;
-        border: $windowBorder;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
+      .spacer {
+        width: 80px * $item-scale;
+        height: 100%;
       }
 
-      button {
-        margin-left: $margin-basic;
+      .command-button {
+        width: 64px * $item-scale;
+        height: 100%;
+        background-size: 256px * $item-scale;
       }
     }
   }

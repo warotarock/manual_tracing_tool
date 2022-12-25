@@ -1,6 +1,20 @@
-﻿$systemBackground: #e6e6e8;
+﻿$margin-basic: 0.5rem;
+$margin-small: 0.3rem;
+$padding-basic: 0.2rem;
+$padding-commands: 0.3rem;
+$border-radius-basic: 0.4rem;
+$border-radius-inner: 0.15rem;
+$box-shadow-basic: 0.1rem 0.1rem 0.2rem rgba(0, 0, 0, 0.2);
 
-$windowBackground: #f6f6f8;
+$systemBackground: #e6e6e8;
+$dialogBackground: $systemBackground;
+$selectedBackground: #ddf;
+$activeBackground: darken($selectedBackground, 3%);
+$selectedActiveBackground: darken($selectedBackground, 3.2%);
+$hoverBackground: #e8e8e8;
+$commonBackdropFilter: blur(0.5rem);
+
+$windowBackground: rgba(252, 252, 252, 0.9);
 $windowBorderColor: #888;
 $windowBorderWidth: 1px;
 $windowBorder: solid $windowBorderWidth $windowBorderColor;
@@ -8,44 +22,66 @@ $windowBackgroundHalf: #f6f6f87e;
 $windowLabelColor: #eee;
 $windowLabelBackground: #888;
 
+$uiControlSizeBasic: var(--ui-basic-control-size);
+$controlTextColor: #000;
+$controlTextColorDisabled: #888;
+$controlTextColorPlaceholder: #999;
 $controlBackground: #fff;
 $controlBorderColor: #888;
 $controlBorderWidth: 1px;
-$controlBorder: solid $windowBorderWidth $windowBorderColor;
-$controlBackgroundDisabled: #888;
+$controlBorderRadius: 0.3rem;
+$controlBorder: solid $controlBorderWidth $controlBorderColor;
+$controlBorderColorLight:  #ccc;
+$controlBorderLight: solid $windowBorderWidth $controlBorderColorLight;
+$controlBorderTransparent: solid $windowBorderWidth rgba(0, 0, 0, 0.0);
+$controlBackgroundReadOnly: #e6e6e8;
+$controlBackgroundDisabled: #ddd;
+
+$propertyPopoverBorder: solid 1px rgba(120, 120, 120, 1.0);
+$propertyPopoverBackground: rgba(255, 255, 255, 0.8);
+
+$commandButtonIconSize: 1.7em;
+$command-button-separator-width: calc(#{$margin-basic} * 2);
 
 $listItemBackground: #fefefe;
 $listItemBackgroundOdd: #f8f8f8;
 
 $canvasBackground: #fff;
-$selectedBackground: #ddf;
-$activeBackground: darken($selectedBackground, 3%);
-$hoverBackground: #e8e8e8;
-$buttonBackground: #f0f0f0;
-$buttonCornerRadius: 3px;
 
-$fontSizeSmall: 12px;
-$fontSizeSmallLineHeight: 15px;
-$fontSizeNormal: 14px;
-$fontSizeNormalLineHeight: 24px;
-$fontSizeNormalIconSize: 22px;
+$buttonBackground: #fbfbfd;
 
-$margin-basic: 5px;
-$padding-basic: 5px;
-$border-radius-basic: 5px;
-$border-radius-inner: 3px;
+$uiFontSizeSmall: var(--ui-small-text-size);
+$uiFontSizeNormal: var(--ui-normal-text-size);
+$uiFontSizeLarge: var(--ui-large-text-size);
+
+$uiFontSizeSmallLineHeight: calc(#{$uiFontSizeSmall} * 2.2);
+$uiFontSizeNormalLineHeight: calc(#{$uiFontSizeNormal} * 2.0);
+$uiFontSizeLargeLineHeight: calc(#{$uiFontSizeLarge} * 2.0);
+
+$uiFontSizeSmalllIconSize: calc(#{$uiFontSizeSmall} * 1.5);
+$uiFontSizeNormalIconSize: calc(#{$uiFontSizeNormal} * 1.5);
+$uiFontSizeLargeIconSize: calc(#{$uiFontSizeLarge} * 1.5);
+
+$popover-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.4);
 
 $zindex-screen-sub: 1000;
-$zindex-modal: 1000;
-$zindex-center-panel: 100;
-$zindex-side-panel: 200;
-$zindex-footer-ui: 300;
-$zindex-timeline-panel: 301;
-$zindex-tool-ribbon: 302;
+$zindex-dialog-screen: 1001;
+$zindex-modal-window: 1002;
+$zindex-popover: 1003;
+$zindex-center-panel: 1;
+$zindex-side-panel: 2;
+$zindex-footer-ui: 3;
+$zindex-timeline-panel: 4;
 
-$dialog-padding: 10px;
+// 非表示用クラス
+
+.hidden {
+  display: none !important;
+}
 
 // 選択可能項目
+
+$selectable-item-padding: 0.3rem;
 
 .selectable-item {
 
@@ -57,6 +93,10 @@ $dialog-padding: 10px;
 
     .selectable-item-inner {
       background-color: $selectedBackground !important;
+
+      &:hover {
+        background-color: $selectedActiveBackground !important;
+      }
     }
 
     .selectable-item-inner-sq {
@@ -72,17 +112,30 @@ $dialog-padding: 10px;
 // ボタン
 
 .app-button {
-  min-width: 120px;
-  margin-left: $margin-basic;
-  padding: 0;
-  font-size: $fontSizeNormal;
-  text-align: center;
-  line-height: $fontSizeNormal * 2.0;
+  display: inline-flex;
+  min-width: 8rem;
+  padding: $padding-basic;
+  font-size: $uiFontSizeNormal;
   border: $windowBorder;
-  border-radius: 3px;
+  border-radius: $border-radius-basic;
+  justify-content: center;
+  align-items: center;
 
   &:focus {
     outline: none;
+  }
+
+  &:not(:first-child) {
+    margin-left: $margin-basic;
+  }
+
+  i {
+    font-size: $commandButtonIconSize;
+  }
+
+  &.disabled {
+    color: $controlTextColorDisabled;
+    background-color: $controlBackgroundDisabled;
   }
 }
 
@@ -96,10 +149,6 @@ $dialog-padding: 10px;
   &:hover:not(.disabled) {
     background-color: lighten($backGround, 10%);
   }
-
-  &.disabled {
-    background-color: $controlBackgroundDisabled;
-  }
 }
 
 .app-button-cancel {
@@ -108,12 +157,22 @@ $dialog-padding: 10px;
 
   background-color: $backGround;
 
-  &:hover {
+  &:hover:not(.disabled) {
     background-color: lighten($backGround, 5%);
   }
+}
 
-  &.disabled {
-    background-color: $controlBackgroundDisabled;
+.app-button-back {
+  @extend .app-button;
+  $backGround: #eee;
+  border: none;
+  padding-left: 0;
+  justify-content: start;
+
+  background-color: $backGround;
+
+  &:hover:not(.disabled) {
+    background-color: lighten($backGround, 5%);
   }
 }
 
@@ -129,12 +188,91 @@ input[type=number] {
   text-align: right;
 }
 
-// 半透明表現
+input {
+  border: $controlBorder;
+  background-color: $controlBackground;
+  border-radius: 0;
+
+  &.readonly {
+    background-color: $controlBackgroundReadOnly;
+  }
+
+  &.disabled {
+    background-color: $controlBackgroundDisabled;
+  }
+}
+
+// パレット半透明色
+
 .alpha-checker-background {
 
-  background-image: linear-gradient(45deg, gray 25%, transparent 25%, transparent 75%, gray 75%, gray),
-                    linear-gradient(45deg, gray 25%, transparent 25%, transparent 75%, gray 75%, gray);
+  // background-image: linear-gradient(45deg, gray 25%, transparent 25%, transparent 75%, gray 75%, gray),
+  //                   linear-gradient(45deg, gray 25%, transparent 25%, transparent 75%, gray 75%, gray);
+  // background-size: 16px 16px;
+  // background-position: 0 0, 8px 8px;
+  background: url(../res/transparent_medium.png);
   background-size: 16px 16px;
-  background-position: 0 0, 8px 8px;
+}
 
+.alpha-checker-background-pallete {
+
+  background: url(../res/transparent_palette.png);
+  background-size: 16px 16px;
+}
+
+// オーバーレイ
+
+.overlay-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.dialog-screen-dock-container {
+  z-index: $zindex-dialog-screen;
+}
+
+.modal-window-dock-container {
+  z-index: $zindex-modal-window;
+}
+
+.popover-dock-container {
+  z-index: $zindex-popover;
+}
+
+.popover-hidden-container {
+  display: none;
+
+  &.visible {
+    display: unset;
+  }
+}
+
+.popover-content-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  // background-color:rgba(0, 0, 0, 0.5);
+
+  .popover-content-container {
+    position: fixed;
+    display: flex;
+    pointer-events: none;
+
+    &:focus {
+      outline: none;
+    }
+
+    &.align-left {
+      justify-content: start;
+    }
+
+    &.align-right {
+      justify-content: end;
+    }
+  }
 }

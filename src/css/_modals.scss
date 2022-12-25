@@ -1,45 +1,73 @@
-﻿.modal-overlay-container {
+﻿// react modals
 
-  .overlay {
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    z-index: $zindex-modal;
-    background-color:rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.modal-window-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color:rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    &.hidden {
-      display: none;
+  &:focus {
+    outline: none;
+  }
+
+  .modal-window-container {
+    background-color: $windowBackground;
+    backdrop-filter: $commonBackdropFilter;
+    box-shadow: $popover-shadow;
+    border-radius: 10px;
+    overflow: hidden;
+
+    &:focus {
+      outline: none;
+    }
+
+    .modal-window-header {
+      padding: 10px;
+      background-color: $systemBackground;
+      font-size: $uiFontSizeNormal;
+      line-height: $uiFontSizeNormalLineHeight;
+      text-align: center;
+    }
+
+    .modal-window-content {
+      padding: 20px;
+    }
+
+    .ok-cancel-buttons {
+      text-align: center;
+      margin-top: 20px;
+      width: 100%;
     }
   }
 }
 
-.modal-window-container {
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  border-radius: 10px;
-  overflow: hidden;
+.modal-radio-selection {
 
-  .modal-window-header {
-    padding: 10px;
-    background-color: $systemBackground;
-    font-size: $fontSizeNormal;
-    line-height: $fontSizeNormalLineHeight;
-    text-align: center;
-  }
+  .options {
 
-  .modal-window-content {
-    padding: 20px;
-  }
+    .option-item {
+      display: flex;
+      align-items: center;
 
-  .ok-cancel-buttons {
-    text-align: center;
-    margin-top: 20px;
-    width: 100%;
+      &:not(:first-child) {
+        margin-block-start: $margin-basic;
+      }
+
+      .option-marker {
+        font-size: $uiFontSizeNormal;
+        margin-inline-end: $padding-basic;
+      }
+
+      .option-label {
+        flex: 1;
+        font-size: $uiFontSizeNormal;
+      }
+    }
   }
 }
 
@@ -59,28 +87,23 @@
     justify-content: center;
 
     .text {
-      font-size: $fontSizeNormal;
-
-      &.hidden {
-        display: none;
-      }
+      font-size: $uiFontSizeNormal;
     }
 
     img {
       width: 100%;
       height: 100%;
       object-fit: contain;
-
-      &.hidden {
-        display: none;
-      }
     }
   }
 }
 
+// custombox modals
+
 .modalDialogWindow {
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background-color: $windowBackground;
+  backdrop-filter: $commonBackdropFilter;
+  box-shadow: $popover-shadow;
   border-radius: 10px;
   display: none;
   padding: 20px;
@@ -134,35 +157,61 @@
   }
 }
 
-.newLayerCommandOptionModal {
-  width: 400px;
-  height: 250px;
+.modal-export-image {
 
-  input {
-    margin-left: 15px;
-    margin-top: 10px;
+  .section-item {
+
+    &:not(:first-child) {
+      margin-block-start: $margin-basic;
+    }
+
+    .label {
+      font-size: $uiFontSizeNormal;
+    }
+
+    input.text-input {
+      padding: $padding-basic;
+      width: 100%;
+      font-size: $uiFontSizeNormal;
+    }
+
+    input.number-input {
+      width: 4.0em;
+      font-size: $uiFontSizeNormal;
+    }
+
+    .radio-buttons {
+      padding-left: 0.5rem;
+
+      .radio-button {
+        min-height: 1.6rem;
+      }
+    }
+
+    &.auto-nmber-subsection {
+      display: flex;
+      justify-content: flex-end;
+
+      >input {
+        margin-inline-start: 1rem;
+        font-size: $uiFontSizeNormal;
+      }
+    }
+
+    .checkbox {
+      display: flex;
+
+      >div {
+
+        &:not(:first-child) {
+          margin-inline-start: $margin-basic;
+        }
+      }
+    }
   }
 
-  div {
-    margin-bottom: 15px;
-  }
-}
-
-.exportImageFileModal {
-  width: 400px;
-  height: 270px;
-
-  .nameInputTextBox {
-    width: 250px;
-    padding-left: $margin-basic;
-  }
-
-  div {
-    margin-bottom: 15px;
-  }
-
-  div label input.scale {
-    width: 50px;
+  .section-spacer {
+    height: $margin-basic;
   }
 }
 
