@@ -67,11 +67,18 @@ export class DocumentFileNameLogic {
 
   static getDocumentRelativeFilePath(documentFilePath: string, absoluteFilePath: string) {
 
-    let relativeDir = Platform.path.getRelativePath(
+    let relativeDir = Platform.path.getRelativeDirectoryPath(
       Platform.path.getDirectoryPath(documentFilePath),
       Platform.path.getDirectoryPath(absoluteFilePath)
     )
 
-    return Platform.path.join(relativeDir, Platform.path.getFileName(absoluteFilePath))
+    if (!Strings.isNullOrEmpty(relativeDir)) {
+
+      return Platform.path.join(relativeDir, Platform.path.getFileName(absoluteFilePath))
+    }
+    else {
+
+      return absoluteFilePath
+    }
   }
 }

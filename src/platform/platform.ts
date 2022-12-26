@@ -116,10 +116,51 @@ class PlatformPath {
     }
   }
 
-  getRelativePath(from: string, to: string): string {
+  getRelativeDirectoryPath(from: string, to: string): string {
 
-    // TODO: 実装する
-    return to
+    const pi_from = this.getPlatformIndependentPath(from)
+    const pi_to = this.getPlatformIndependentPath(to)
+
+    if (pi_from.length > pi_to.length) {
+      return ''
+    }
+
+    const joinLetter = this.platFormIndependentPathJoinLetter
+
+    let samePart_index = -1
+
+    for (let index = 0; index < from.length && index < to.length; index++) {
+
+      const from_letter = pi_from[index]
+      const to_letter = pi_to[index]
+
+      if (from_letter == to_letter) {
+
+        samePart_index = index
+      }
+      else {
+
+        break
+      }
+    }
+
+    if (samePart_index != -1 && samePart_index == pi_from.length - 1) {
+
+      if (samePart_index + 1 < pi_to.length) {
+
+        const differentPart = Strings.substring(pi_to, samePart_index + 1)
+
+        return this.join(`.${this.platFormIndependentPathJoinLetter}`, differentPart)
+      }
+      else {
+
+        return `.`
+      }
+    }
+    else {
+
+      return ''
+    }
   }
 
   resolveRelativePath(baseDirectoryPath: string, targetPath: string): string {
