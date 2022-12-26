@@ -7610,8 +7610,33 @@ class PlatformPath {
       return Strings.startsWith(targetPath, "./");
     }
   }
-  getRelativePath(from, to) {
-    return to;
+  getRelativeDirectoryPath(from, to) {
+    const pi_from = this.getPlatformIndependentPath(from);
+    const pi_to = this.getPlatformIndependentPath(to);
+    if (pi_from.length > pi_to.length) {
+      return "";
+    }
+    this.platFormIndependentPathJoinLetter;
+    let samePart_index = -1;
+    for (let index2 = 0; index2 < from.length && index2 < to.length; index2++) {
+      const from_letter = pi_from[index2];
+      const to_letter = pi_to[index2];
+      if (from_letter == to_letter) {
+        samePart_index = index2;
+      } else {
+        break;
+      }
+    }
+    if (samePart_index != -1 && samePart_index == pi_from.length - 1) {
+      if (samePart_index + 1 < pi_to.length) {
+        const differentPart = Strings.substring(pi_to, samePart_index + 1);
+        return this.join(`.${this.platFormIndependentPathJoinLetter}`, differentPart);
+      } else {
+        return `.`;
+      }
+    } else {
+      return "";
+    }
   }
   resolveRelativePath(baseDirectoryPath, targetPath) {
     if (this.isRelativePath(targetPath)) {
@@ -15196,11 +15221,15 @@ class DocumentFileNameLogic {
     return fileType;
   }
   static getDocumentRelativeFilePath(documentFilePath, absoluteFilePath) {
-    let relativeDir = Platform.path.getRelativePath(
+    let relativeDir = Platform.path.getRelativeDirectoryPath(
       Platform.path.getDirectoryPath(documentFilePath),
       Platform.path.getDirectoryPath(absoluteFilePath)
     );
-    return Platform.path.join(relativeDir, Platform.path.getFileName(absoluteFilePath));
+    if (!Strings.isNullOrEmpty(relativeDir)) {
+      return Platform.path.join(relativeDir, Platform.path.getFileName(absoluteFilePath));
+    } else {
+      return absoluteFilePath;
+    }
   }
 }
 DocumentFileNameLogic.fileNameCount = 1;
@@ -19677,13 +19706,13 @@ const _UserSettingFileLogic = class {
       return;
     }
     this.uiState.fixLoadedUIStates(localSetting);
-    if (localSetting.fileSections == void 0) {
+    if (!localSetting.fileSections) {
       localSetting.fileSections = [];
     }
-    if (localSetting.shortcutKeySettings == void 0) {
+    if (!localSetting.shortcutKeySettings) {
       localSetting.shortcutKeySettings = this.shortcutKey.createDefaultShortcutKeySettings();
     }
-    if (localSetting.autoNumberingEnabled == void 0) {
+    if (!localSetting.autoNumberingEnabled) {
       localSetting.autoNumberingEnabled = false;
     }
     this.localSetting = localSetting;
@@ -33316,7 +33345,7 @@ async function loadSetings() {
     ],
     fileSections: [],
     uiStates: UserUIStateLogic.createDefaultUIStates(),
-    shortcutKeySettings: []
+    shortcutKeySettings: null
   };
   const defaultUserStrageData = {
     version: "0.1.1",
