@@ -311,7 +311,7 @@ async function loadSetings() {
     ],
     fileSections: [],
     uiStates: UserUIStateLogic.createDefaultUIStates(),
-    shortcutKeySettings: []
+    shortcutKeySettings: null
   }
 
   const defaultUserStrageData = {

@@ -33,17 +33,17 @@ export class UserSettingFileLogic {
     this.uiState.fixLoadedUIStates(localSetting)
 
     // @migration
-    if (localSetting.fileSections == undefined) {
+    if (!localSetting.fileSections) {
 
       localSetting.fileSections = []
     }
 
-    if (localSetting.shortcutKeySettings == undefined) {
+    if (!localSetting.shortcutKeySettings) {
 
       localSetting.shortcutKeySettings = this.shortcutKey.createDefaultShortcutKeySettings()
     }
 
-    if (localSetting.autoNumberingEnabled == undefined) {
+    if (!localSetting.autoNumberingEnabled) {
 
       localSetting.autoNumberingEnabled = false
     }
